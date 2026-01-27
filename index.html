@@ -6,7 +6,7 @@
     <title>MegaTaskBot</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://adsgram.ai/sdk/v1/adsgram-sdk.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; margin: 0; }
         .container { max-width: 400px; margin: auto; }
@@ -43,52 +43,56 @@
         webapp.ready();
         webapp.expand();
 
-        // 🔗 إعدادات Supabase (قاعدة البيانات)
+        // 🔗 إعدادات Supabase الصحيحة
         const SUPABASE_URL = 'https://smukfrwnguvmxvfwqwrv.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM';
+        
+        // تعديل مهم هنا: استخدام supabase.createClient مباشرة
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const userId = webapp.initDataUnsafe.user.id;
         const userName = webapp.initDataUnsafe.user.username || "User";
 
-        // دالة لجلب وتحديث النقاط
         async function updateUI() {
-            let { data: user } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).single();
-            if (user) {
-                document.getElementById('points').innerText = user.points;
-            } else {
-                // لو المستخدم جديد، نسجله في قاعدة البيانات
-                await supabaseClient.from('users').insert([{ telegram_id: userId, username: userName }]);
-            }
+            try {
+                let { data: user, error } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).maybeSingle();
+                
+                if (!user && !error) {
+                    await supabaseClient.from('users').insert([{ telegram_id: userId, username: userName }]);
+                    document.getElementById('points').innerText = "0";
+                } else if (user) {
+                    document.getElementById('points').innerText = user.points;
+                }
+            } catch (e) { console.error(e); }
         }
 
-        // تشغيل التحديث عند الفتح
         updateUI();
 
-        // 📺 إعداد Adsgram (الإعلانات)
-        // ملاحظة: الـ ID ده تجريبي "YOUR_BLOCK_ID" استبدله باللي جالك من الموقع
-        const AdController = window.Adsgram.init({ 
-    blockId: "21839", // الرقم اللي جبته
-    type: "Interstitial" // النوع اللي اخترناه عشان نعدي العقبة
-}); 
+        // 📺 إعداد Adsgram بالرقم (21839)
+        const AdController = window.Adsgram.init({ blockId: "21839" }); 
+
         async function runTask() {
+            const btn = document.getElementById('taskBtn');
+            btn.disabled = true;
+            btn.innerText = "جاري تحميل الإعلان...";
+
             AdController.show().then(async (result) => {
-                // 🔗 رابط Shrinkme الخاص بك
                 const shrinkmeApi = '8c0118dbbeaa89891a4957b552419561f3399c24';
-                const destinationUrl = 'https://google.com'; // الرابط اللي عايز الناس تروحه
-                const finalUrl = `https://shrinkme.io/st?api=${shrinkmeApi}&url=${destinationUrl}`;
+                const finalUrl = `https://shrinkme.io/st?api=${shrinkmeApi}&url=https://google.com`;
                 
-                // فتح رابط المهمة
                 webapp.openLink(finalUrl);
 
-                // 💰 إضافة النقاط في قاعدة البيانات أوتوماتيكياً
+                // تحديث النقاط
                 await supabaseClient.rpc('increment_points', { user_id: userId, amount: 50 });
                 
-                // تحديث الشاشة
-                setTimeout(updateUI, 2000);
+                setTimeout(updateUI, 3000);
+                btn.disabled = false;
+                btn.innerText = "تنفيذ المهمة";
 
             }).catch((err) => {
-                alert("يجب مشاهدة الإعلان كاملاً للحصول على النقاط!");
+                alert("الإعلان غير جاهز، حاول مرة أخرى.");
+                btn.disabled = false;
+                btn.innerText = "تنفيذ المهمة";
             });
         }
     </script>
