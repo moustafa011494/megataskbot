@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تأكيد المهمة</title>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #1e293b; padding: 30px; border-radius: 20px; text-align: center; border: 2px solid #38bdf8; box-shadow: 0 10px 30px rgba(56,189,248,0.2); }
+        .code-box { font-size: 50px; font-weight: bold; color: #38bdf8; letter-spacing: 5px; margin: 20px 0; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 10px; }
+        p { color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>كود التحقق الخاص بك 🛡️</h2>
+        <p>انسخ الكود التالي وضعه في البوت لاستلام النقاط:</p>
+        <div class="code-box" id="displayCode">----</div>
+        <p>شكراً لإتمامك المهمة بنجاح!</p>
+    </div>
+
+    <script>
+        // دالة لجلب الكود من الرابط (URL)
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('c');
+        if (code) {
+            document.getElementById('displayCode').innerText = code;
+        } else {
+            document.getElementById('displayCode').innerText = "خطأ";
+        }
+    </script>
+</body>
+</html>
