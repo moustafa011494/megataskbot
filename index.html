@@ -7,27 +7,26 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; --success: #10b981; }
+        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; --success: #10b981; --admin: #f59e0b; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 0; display: flex; justify-content: center; }
         .container { max-width: 450px; width: 100%; padding: 20px; text-align: center; }
         
-        .balance-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 30px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .balance-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 30px; margin-bottom: 25px; cursor: pointer; }
         .balance-amount { font-size: 48px; font-weight: 800; color: var(--primary); margin: 10px 0; }
         
         .task-box { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); }
         .btn { background: var(--primary); color: #000; border: none; padding: 18px; border-radius: 16px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
         .btn:active { transform: scale(0.96); }
-        .btn:disabled { background: #64748b; opacity: 0.6; }
-
+        
         .input-code { background: #0f172a; border: 2px solid var(--primary); border-radius: 12px; padding: 15px; width: 80%; color: white; text-align: center; font-size: 24px; margin: 20px 0; display: none; outline: none; }
         #confirmBtn { display: none; background: var(--success); }
-        .status-msg { font-size: 14px; color: #94a3b8; margin-top: 15px; line-height: 1.5; }
+        #adminArea { display: none; margin-top: 20px; padding: 15px; border: 2px dashed var(--admin); border-radius: 15px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="balance-card">
+    <div class="balance-card" onclick="adminTrigger()">
         <div style="color: #94a3b8; font-size: 14px;">رصيدك الحالي</div>
         <div class="balance-amount" id="points">0</div>
         <div style="font-size: 12px; color: #64748b;">10,000 نقطة = 5 دولار</div>
@@ -35,30 +34,32 @@
 
     <div class="task-box">
         <h3 style="margin-top: 0;">مهمة الكود السري 🔒</h3>
-        <p class="status-msg" id="instruction">اضغط على الزر بالأسفل، تخطى الرابط للنهاية وستجد "كود التحقق" المكون من 4 أرقام.</p>
-        
+        <p id="instruction" style="font-size: 14px; color: #94a3b8;">تخطى الرابط للنهاية وستجد "كود التحقق" المكون من 4 أرقام.</p>
         <input type="number" id="codeInp" class="input-code" placeholder="0000">
-        
         <button class="btn" id="startBtn" onclick="startTask()">🚀 ابدأ المهمة الآن</button>
         <button class="btn" id="confirmBtn" onclick="verifyCode()">✅ التحقق واستلام 50 نقطة</button>
-        
-        <p id="cancelLink" style="color: #ef4444; font-size: 12px; margin-top: 15px; cursor: pointer; display: none;" onclick="resetUI()">إلغاء المهمة والبدء من جديد</p>
+        <p id="cancelLink" style="color: #ef4444; font-size: 12px; margin-top: 15px; cursor: pointer; display: none;" onclick="resetUI()">إلغاء المهمة</p>
     </div>
 
-    <div style="margin-top: 40px; opacity: 0.3; font-size: 10px;">MegaTaskBot v3.0 | 2026</div>
+    <div id="adminArea">
+        <div style="color: var(--admin); font-weight: bold; margin-bottom: 10px;">👑 لوحة التحكم</div>
+        <div id="stats" style="font-size: 12px; margin-bottom: 10px;">جاري التحميل...</div>
+        <button class="btn" style="background: var(--admin); padding: 10px; font-size: 14px;" onclick="manageUser()">تعديل نقاط مستخدم</button>
+    </div>
+
+    <div style="margin-top: 40px; opacity: 0.3; font-size: 10px;">MegaTaskBot v3.5 | 2026</div>
 </div>
 
 <script>
     const webapp = window.Telegram.WebApp;
-    webapp.ready();
-    webapp.expand();
-
     const SUPABASE_URL = 'https://smukfrwnguvmxvfwqwrv.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const userId = webapp.initDataUnsafe.user.id;
+    const ADMIN_ID = 875021647; 
     let generatedCode = "";
+    let clickCount = 0;
 
     async function updateUI() {
         const { data: user } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).maybeSingle();
@@ -67,46 +68,23 @@
     updateUI();
 
     function startTask() {
-        // 1. توليد كود عشوائي جديد
         generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
-        
-        // 2. تجهيز رابط صفحة الكود (استخدم رابط Vercel الخاص بك)
         const landingPage = `https://megataskbot.vercel.app/code.html?c=${generatedCode}`;
-        const shrinkmeApi = '8c0118dbbeaa89891a4957b552419561f3399c24';
-        const finalUrl = `https://shrinkme.io/st?api=${shrinkmeApi}&url=${landingPage}`;
-        
-        // 3. فتح الرابط
-        webapp.openLink(finalUrl);
+        webapp.openLink(`https://shrinkme.io/st?api=8c0118dbbeaa89891a4957b552419561f3399c24&url=${landingPage}`);
 
-        // 4. تحديث الواجهة لإدخال الكود
         document.getElementById('startBtn').style.display = 'none';
-        document.getElementById('instruction').innerText = "تم فتح الرابط في نافذة جديدة. بعد الاختصار، أدخل الكود هنا:";
+        document.getElementById('instruction').innerText = "أدخل كود التحقق الذي وجدته:";
         document.getElementById('codeInp').style.display = 'inline-block';
         document.getElementById('confirmBtn').style.display = 'block';
         document.getElementById('cancelLink').style.display = 'block';
     }
 
     async function verifyCode() {
-        const userValue = document.getElementById('codeInp').value;
-        const btn = document.getElementById('confirmBtn');
-
-        if (userValue === generatedCode) {
-            btn.disabled = true;
-            btn.innerText = "جاري الحفظ...";
-            
-            const { error } = await supabaseClient.rpc('increment_points', { user_id: userId, amount: 50 });
-            
-            if (!error) {
-                alert("ممتاز! كود صحيح وتم إضافة 50 نقطة لرصيدك.");
-                resetUI();
-                updateUI();
-            } else {
-                alert("خطأ في قاعدة البيانات، حاول ثانية.");
-                btn.disabled = false;
-            }
-        } else {
-            alert("الكود خطأ! تأكد من إنهاء الاختصار والحصول على الكود الصحيح.");
-        }
+        if (document.getElementById('codeInp').value === generatedCode) {
+            await supabaseClient.rpc('increment_points', { user_id: userId, amount: 50 });
+            alert("صحيح! زدت 50 نقطة.");
+            resetUI(); updateUI();
+        } else { alert("الكود خطأ!"); }
     }
 
     function resetUI() {
@@ -115,7 +93,35 @@
         document.getElementById('confirmBtn').style.display = 'none';
         document.getElementById('cancelLink').style.display = 'none';
         document.getElementById('codeInp').value = "";
-        document.getElementById('instruction').innerText = "اضغط على الزر بالأسفل، تخطى الرابط للنهاية وستجد كود التحقق المكون من 4 أرقام.";
+        document.getElementById('instruction').innerText = "تخطى الرابط للنهاية وستجد كود التحقق.";
+    }
+
+    // وظائف الإدارة
+    function adminTrigger() {
+        if (userId === ADMIN_ID) {
+            clickCount++;
+            if (clickCount >= 5) {
+                document.getElementById('adminArea').style.display = 'block';
+                loadStats();
+            }
+        }
+    }
+
+    async function loadStats() {
+        const { data: all } = await supabaseClient.from('users').select('points');
+        if (all) document.getElementById('stats').innerText = `المستخدمين: ${all.length} | إجمالي النقاط: ${all.reduce((s, u) => s + (u.points || 0), 0)}`;
+    }
+
+    async function manageUser() {
+        const id = prompt("ID المستخدم:");
+        const { data: u } = await supabaseClient.from('users').select('*').eq('telegram_id', id).maybeSingle();
+        if (u) {
+            const p = prompt(`نقاطه: ${u.points}\nالجديد:`, u.points);
+            if (p) {
+                await supabaseClient.from('users').update({ points: parseInt(p) }).eq('telegram_id', id);
+                alert("تم!"); loadStats();
+            }
+        }
     }
 </script>
 </body>
