@@ -67,8 +67,10 @@
 
         // 📺 إعداد Adsgram (الإعلانات)
         // ملاحظة: الـ ID ده تجريبي "YOUR_BLOCK_ID" استبدله باللي جالك من الموقع
-        const AdController = window.Adsgram.init({ blockId: "4534" }); 
-
+        const AdController = window.Adsgram.init({ 
+    blockId: "21839", // الرقم اللي جبته
+    type: "Interstitial" // النوع اللي اخترناه عشان نعدي العقبة
+}); 
         async function runTask() {
             AdController.show().then(async (result) => {
                 // 🔗 رابط Shrinkme الخاص بك
