@@ -3,98 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTaskBot</title>
+    <title>MegaTaskBot Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://adsgram.ai/sdk/v1/adsgram-sdk.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; margin: 0; }
-        .container { max-width: 400px; margin: auto; }
-        .card { background: #1e293b; border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); }
-        .balance-title { font-size: 16px; color: #94a3b8; }
-        .balance-amount { font-size: 40px; color: #38bdf8; font-weight: bold; margin: 10px 0; }
-        .btn { background: #0284c7; color: white; border: none; padding: 18px; border-radius: 12px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn:active { transform: scale(0.98); background: #0369a1; }
-        .footer { margin-top: 30px; font-size: 12px; color: #64748b; }
+        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: white; margin: 0; padding: 0; overflow-x: hidden; }
+        .container { max-width: 450px; margin: auto; padding: 20px; }
+        
+        /* تصميم الرصيد */
+        .balance-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 30px; margin-bottom: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); }
+        .balance-amount { font-size: 48px; font-weight: 800; color: var(--primary); margin: 10px 0; }
+        
+        /* الأزرار */
+        .btn { background: var(--primary); color: #000; border: none; padding: 16px; border-radius: 16px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-withdraw { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn:active { transform: scale(0.95); }
+
+        /* نافذة السحب (Modal) */
+        .modal { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-radius: 30px 30px 0 0; padding: 30px; box-shadow: 0 -10px 20px rgba(0,0,0,0.5); z-index: 100; animation: slideUp 0.4s ease; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 99; }
+        
+        .method-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
+        .close-modal { color: #ef4444; font-weight: bold; cursor: pointer; margin-top: 15px; display: block; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="card">
-            <div class="balance-title">رصيدك الحالي</div>
-            <div class="balance-amount"><span id="points">0</span></div>
-            <p style="font-size: 14px;">نقطة</p>
-        </div>
-
-        <div class="card">
-            <h3 style="margin-top: 0;">مهمة الربح اليومية ⚡</h3>
-            <p style="color: #94a3b8; font-size: 14px;">شاهد الإعلان ثم تخطى الرابط للحصول على 50 نقطة فوراً.</p>
-            <button id="taskBtn" class="btn" onclick="runTask()">تنفيذ المهمة</button>
-        </div>
-
-        <div class="footer">
-            MegaTaskBot v1.0 <br> يتم تحديث المهمات أوتوماتيكياً
-        </div>
+<div class="container">
+    <div class="balance-card">
+        <div style="color: #94a3b8; font-size: 14px;">إجمالي النقاط القابلة للسحب</div>
+        <div class="balance-amount" id="points">0</div>
+        <div style="font-size: 12px; color: #64748b;">(10,000 نقطة = 5 دولار)</div>
     </div>
 
-    <script>
-        const webapp = window.Telegram.WebApp;
-        webapp.ready();
-        webapp.expand();
+    <button class="btn" id="taskBtn" onclick="runTask()">
+        <span>⚡</span> تنفيذ مهمة الربح (50+)
+    </button>
 
-        // 🔗 إعدادات Supabase الصحيحة
-        const SUPABASE_URL = 'https://smukfrwnguvmxvfwqwrv.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM';
-        
-        // تعديل مهم هنا: استخدام supabase.createClient مباشرة
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    <button class="btn btn-withdraw" onclick="toggleModal(true)">
+        <span>💰</span> طلب سحب الأرباح
+    </button>
 
-        const userId = webapp.initDataUnsafe.user.id;
-        const userName = webapp.initDataUnsafe.user.username || "User";
+    <div class="footer" style="margin-top: 50px; opacity: 0.5; font-size: 12px;">
+        MegaTaskBot v2.0 <br> يتم معالجة السحوبات خلال 48 ساعة
+    </div>
+</div>
 
-        async function updateUI() {
-            try {
-                let { data: user, error } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).maybeSingle();
-                
-                if (!user && !error) {
-                    await supabaseClient.from('users').insert([{ telegram_id: userId, username: userName }]);
-                    document.getElementById('points').innerText = "0";
-                } else if (user) {
-                    document.getElementById('points').innerText = user.points;
-                }
-            } catch (e) { console.error(e); }
-        }
+<div class="overlay" id="overlay" onclick="toggleModal(false)"></div>
+<div class="modal" id="withdrawModal">
+    <h3 style="margin-top: 0;">اختر وسيلة السحب 🏦</h3>
+    <div class="method-card">
+        <span>Vodafone Cash (مصر)</span>
+        <span style="color: #10b981;">Min: 5000 Pt</span>
+    </div>
+    <div class="method-card">
+        <span>Telegram Wallet (TON)</span>
+        <span style="color: #10b981;">Min: 2000 Pt</span>
+    </div>
+    <div class="method-card">
+        <span>Binance (USDT)</span>
+        <span style="color: #10b981;">Min: 10000 Pt</span>
+    </div>
+    <p style="font-size: 12px; color: #94a3b8; margin-top: 15px;">رصيدك غير كافٍ للسحب حالياً، استمر في جمع النقاط!</p>
+    <span class="close-modal" onclick="toggleModal(false)">إغلاق النافذة</span>
+</div>
 
-        updateUI();
+<script>
+    const webapp = window.Telegram.WebApp;
+    webapp.ready();
+    webapp.expand();
+    webapp.setHeaderColor('#0f172a');
 
-        // 📺 إعداد Adsgram بالرقم (21839)
-        const AdController = window.Adsgram.init({ blockId: "21839" }); 
+    const SUPABASE_URL = 'https://smukfrwnguvmxvfwqwrv.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function runTask() {
-            const btn = document.getElementById('taskBtn');
-            btn.disabled = true;
-            btn.innerText = "جاري تحميل الإعلان...";
+    const userId = webapp.initDataUnsafe.user.id;
+    const userName = webapp.initDataUnsafe.user.username || "User";
 
-            AdController.show().then(async (result) => {
-                const shrinkmeApi = '8c0118dbbeaa89891a4957b552419561f3399c24';
-                const finalUrl = `https://shrinkme.io/st?api=${shrinkmeApi}&url=https://google.com`;
-                
-                webapp.openLink(finalUrl);
+    async function updateUI() {
+        let { data: user } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).maybeSingle();
+        if (user) document.getElementById('points').innerText = user.points.toLocaleString();
+    }
+    updateUI();
 
-                // تحديث النقاط
-                await supabaseClient.rpc('increment_points', { user_id: userId, amount: 50 });
-                
-                setTimeout(updateUI, 3000);
-                btn.disabled = false;
-                btn.innerText = "تنفيذ المهمة";
+    function toggleModal(show) {
+        document.getElementById('withdrawModal').style.display = show ? 'block' : 'none';
+        document.getElementById('overlay').style.display = show ? 'block' : 'none';
+    }
 
-            }).catch((err) => {
-                alert("الإعلان غير جاهز، حاول مرة أخرى.");
-                btn.disabled = false;
-                btn.innerText = "تنفيذ المهمة";
-            });
-        }
-    </script>
+    const AdController = window.Adsgram.init({ blockId: "21839" }); 
+
+    async function runTask() {
+        const btn = document.getElementById('taskBtn');
+        btn.innerText = "جاري تحضير المكافأة...";
+        btn.disabled = true;
+
+        AdController.show().then(async () => {
+            const shrinkmeApi = '8c0118dbbeaa89891a4957b552419561f3399c24';
+            webapp.openLink(`https://shrinkme.io/st?api=${shrinkmeApi}&url=https://google.com`);
+            
+            await supabaseClient.rpc('increment_points', { user_id: userId, amount: 50 });
+            setTimeout(updateUI, 2000);
+            btn.innerText = "⚡ تنفيذ مهمة الربح (50+)";
+            btn.disabled = false;
+        }).catch(() => {
+            alert("المهمة جاهزة، لكن الإعلان يحتاج لحظة للتحميل. جرب مرة أخرى.");
+            btn.innerText = "⚡ تنفيذ مهمة الربح (50+)";
+            btn.disabled = false;
+        });
+    }
+</script>
 </body>
 </html>
