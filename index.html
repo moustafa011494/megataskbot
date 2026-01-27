@@ -3,91 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTaskBot Pro</title>
+    <title>MegaTaskBot - Secure Mode</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: white; margin: 0; padding: 0; }
-        .container { max-width: 450px; margin: auto; padding: 20px; text-align: center; }
+        :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; --success: #10b981; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 0; display: flex; justify-content: center; }
+        .container { max-width: 450px; width: 100%; padding: 20px; text-align: center; }
         
-        /* تصميم كارت الرصيد */
-        .balance-card { 
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); 
-            border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 24px; 
-            padding: 30px; 
-            margin-bottom: 25px; 
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); 
-        }
+        .balance-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 30px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .balance-amount { font-size: 48px; font-weight: 800; color: var(--primary); margin: 10px 0; }
         
-        /* الأزرار */
-        .btn { 
-            background: var(--primary); color: #000; border: none; padding: 18px; 
-            border-radius: 16px; width: 100%; font-size: 18px; font-weight: bold; 
-            cursor: pointer; transition: 0.3s; margin-bottom: 15px; 
-            display: flex; align-items: center; justify-content: center; gap: 10px; 
-        }
-        .btn-withdraw { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
-        .btn:active { transform: scale(0.95); }
-        .btn:disabled { background: #64748b; cursor: not-allowed; }
+        .task-box { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .btn { background: var(--primary); color: #000; border: none; padding: 18px; border-radius: 16px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn:active { transform: scale(0.96); }
+        .btn:disabled { background: #64748b; opacity: 0.6; }
 
-        /* نافذة السحب (Modal) */
-        .modal { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-radius: 30px 30px 0 0; padding: 30px; box-shadow: 0 -10px 20px rgba(0,0,0,0.5); z-index: 100; animation: slideUp 0.4s ease; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 99; }
-        
-        .method-card { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
-        .close-modal { color: #ef4444; font-weight: bold; cursor: pointer; margin-top: 15px; display: block; text-decoration: none; }
+        .input-code { background: #0f172a; border: 2px solid var(--primary); border-radius: 12px; padding: 15px; width: 80%; color: white; text-align: center; font-size: 24px; margin: 20px 0; display: none; outline: none; }
+        #confirmBtn { display: none; background: var(--success); }
+        .status-msg { font-size: 14px; color: #94a3b8; margin-top: 15px; line-height: 1.5; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="balance-card">
-        <div style="color: #94a3b8; font-size: 14px;">رصيدك الحالي من النقاط</div>
+        <div style="color: #94a3b8; font-size: 14px;">رصيدك الحالي</div>
         <div class="balance-amount" id="points">0</div>
-        <div style="font-size: 12px; color: #64748b;">(10,000 نقطة = 5 دولار كاش)</div>
+        <div style="font-size: 12px; color: #64748b;">10,000 نقطة = 5 دولار</div>
     </div>
 
-    <div style="background: rgba(56, 189, 248, 0.1); padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; border: 1px dashed var(--primary);">
-        📢 شاهد الرابط المختصر بالكامل لتحصل على المكافأة فوراً!
+    <div class="task-box">
+        <h3 style="margin-top: 0;">مهمة الكود السري 🔒</h3>
+        <p class="status-msg" id="instruction">اضغط على الزر بالأسفل، تخطى الرابط للنهاية وستجد "كود التحقق" المكون من 4 أرقام.</p>
+        
+        <input type="number" id="codeInp" class="input-code" placeholder="0000">
+        
+        <button class="btn" id="startBtn" onclick="startTask()">🚀 ابدأ المهمة الآن</button>
+        <button class="btn" id="confirmBtn" onclick="verifyCode()">✅ التحقق واستلام 50 نقطة</button>
+        
+        <p id="cancelLink" style="color: #ef4444; font-size: 12px; margin-top: 15px; cursor: pointer; display: none;" onclick="resetUI()">إلغاء المهمة والبدء من جديد</p>
     </div>
 
-    <button class="btn" id="taskBtn" onclick="runTask()">
-        <span>🚀</span> ابدأ المهمة السريعة (50+)
-    </button>
-
-    <button class="btn btn-withdraw" onclick="toggleModal(true)">
-        <span>🏦</span> سحب الأرباح
-    </button>
-
-    <div style="margin-top: 40px; opacity: 0.5; font-size: 12px; line-height: 1.6;">
-        MegaTaskBot v2.1 (نسخة سريعة) <br> 
-        تاريخ اليوم: 27 يناير 2026
-    </div>
-</div>
-
-<div class="overlay" id="overlay" onclick="toggleModal(false)"></div>
-<div class="modal" id="withdrawModal">
-    <h3 style="margin-top: 0;">اختر وسيلة السحب 🏦</h3>
-    <div class="method-card">
-        <span>فودافون كاش (مصر)</span>
-        <span style="color: #10b981;">5000 Pt</span>
-    </div>
-    <div class="method-card">
-        <span>محفظة تليجرام (TON)</span>
-        <span style="color: #10b981;">2000 Pt</span>
-    </div>
-    <div class="method-card">
-        <span>باينانس (USDT)</span>
-        <span style="color: #10b981;">10000 Pt</span>
-    </div>
-    <p style="font-size: 13px; color: #94a3b8; margin-top: 15px;">
-        * تأكد من تخطي الروابط للنهاية حتى لا يتم تجميد حسابك.
-    </p>
-    <a href="javascript:void(0)" class="close-modal" onclick="toggleModal(false)">إغلاق</a>
+    <div style="margin-top: 40px; opacity: 0.3; font-size: 10px;">MegaTaskBot v3.0 | 2026</div>
 </div>
 
 <script>
@@ -100,39 +58,64 @@
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const userId = webapp.initDataUnsafe.user.id;
-    const userName = webapp.initDataUnsafe.user.username || "User";
+    let generatedCode = "";
 
     async function updateUI() {
-        let { data: user } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).maybeSingle();
-        if (user) {
-            document.getElementById('points').innerText = user.points.toLocaleString();
-        }
+        const { data: user } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).maybeSingle();
+        if (user) document.getElementById('points').innerText = user.points.toLocaleString();
     }
     updateUI();
 
-    async function runTask() {
-        const btn = document.getElementById('taskBtn');
-        btn.innerText = "جاري تسجيل النقاط...";
-        btn.disabled = true;
+    function startTask() {
+        // 1. توليد كود عشوائي جديد
+        generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
+        
+        // 2. تجهيز رابط صفحة الكود (استخدم رابط Vercel الخاص بك)
+        const landingPage = `https://megataskbot.vercel.app/code.html?c=${generatedCode}`;
+        const shrinkmeApi = '8c0118dbbeaa89891a4957b552419561f3399c24';
+        const finalUrl = `https://shrinkme.io/st?api=${shrinkmeApi}&url=${landingPage}`;
+        
+        // 3. فتح الرابط
+        webapp.openLink(finalUrl);
 
-        // 1. إضافة النقاط أولاً
-        const { error } = await supabaseClient.rpc('increment_points', { user_id: userId, amount: 50 });
+        // 4. تحديث الواجهة لإدخال الكود
+        document.getElementById('startBtn').style.display = 'none';
+        document.getElementById('instruction').innerText = "تم فتح الرابط في نافذة جديدة. بعد الاختصار، أدخل الكود هنا:";
+        document.getElementById('codeInp').style.display = 'inline-block';
+        document.getElementById('confirmBtn').style.display = 'block';
+        document.getElementById('cancelLink').style.display = 'block';
+    }
 
-        if (!error) {
-            // 2. فتح الرابط بعد تسجيل النقاط
-            const shrinkmeApi = '8c0118dbbeaa89891a4957b552419561f3399c24';
-            webapp.openLink(`https://shrinkme.io/st?api=${shrinkmeApi}&url=https://google.com`);
+    async function verifyCode() {
+        const userValue = document.getElementById('codeInp').value;
+        const btn = document.getElementById('confirmBtn');
+
+        if (userValue === generatedCode) {
+            btn.disabled = true;
+            btn.innerText = "جاري الحفظ...";
             
-            // تحديث الشاشة
-            setTimeout(() => {
+            const { error } = await supabaseClient.rpc('increment_points', { user_id: userId, amount: 50 });
+            
+            if (!error) {
+                alert("ممتاز! كود صحيح وتم إضافة 50 نقطة لرصيدك.");
+                resetUI();
                 updateUI();
-                btn.innerText = "🚀 ابدأ المهمة السريعة (50+)";
+            } else {
+                alert("خطأ في قاعدة البيانات، حاول ثانية.");
                 btn.disabled = false;
-            }, 1000);
+            }
         } else {
-            alert("حدث خطأ، تأكد من إعدادات قاعدة البيانات.");
-            btn.disabled = false;
+            alert("الكود خطأ! تأكد من إنهاء الاختصار والحصول على الكود الصحيح.");
         }
+    }
+
+    function resetUI() {
+        document.getElementById('startBtn').style.display = 'block';
+        document.getElementById('codeInp').style.display = 'none';
+        document.getElementById('confirmBtn').style.display = 'none';
+        document.getElementById('cancelLink').style.display = 'none';
+        document.getElementById('codeInp').value = "";
+        document.getElementById('instruction').innerText = "اضغط على الزر بالأسفل، تخطى الرابط للنهاية وستجد كود التحقق المكون من 4 أرقام.";
     }
 </script>
 </body>
