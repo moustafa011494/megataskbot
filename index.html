@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MegaTaskBot</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://adsgram.ai/sdk/v1/adsgram-sdk.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: white; text-align: center; padding: 20px; margin: 0; }
+        .container { max-width: 400px; margin: auto; }
+        .card { background: #1e293b; border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); }
+        .balance-title { font-size: 16px; color: #94a3b8; }
+        .balance-amount { font-size: 40px; color: #38bdf8; font-weight: bold; margin: 10px 0; }
+        .btn { background: #0284c7; color: white; border: none; padding: 18px; border-radius: 12px; width: 100%; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn:active { transform: scale(0.98); background: #0369a1; }
+        .footer { margin-top: 30px; font-size: 12px; color: #64748b; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="card">
+            <div class="balance-title">رصيدك الحالي</div>
+            <div class="balance-amount"><span id="points">0</span></div>
+            <p style="font-size: 14px;">نقطة</p>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top: 0;">مهمة الربح اليومية ⚡</h3>
+            <p style="color: #94a3b8; font-size: 14px;">شاهد الإعلان ثم تخطى الرابط للحصول على 50 نقطة فوراً.</p>
+            <button id="taskBtn" class="btn" onclick="runTask()">تنفيذ المهمة</button>
+        </div>
+
+        <div class="footer">
+            MegaTaskBot v1.0 <br> يتم تحديث المهمات أوتوماتيكياً
+        </div>
+    </div>
+
+    <script>
+        const webapp = window.Telegram.WebApp;
+        webapp.ready();
+        webapp.expand();
+
+        // 🔗 إعدادات Supabase (قاعدة البيانات)
+        const SUPABASE_URL = 'https://smukfrwnguvmxvfwqwrv.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const userId = webapp.initDataUnsafe.user.id;
+        const userName = webapp.initDataUnsafe.user.username || "User";
+
+        // دالة لجلب وتحديث النقاط
+        async function updateUI() {
+            let { data: user } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).single();
+            if (user) {
+                document.getElementById('points').innerText = user.points;
+            } else {
+                // لو المستخدم جديد، نسجله في قاعدة البيانات
+                await supabaseClient.from('users').insert([{ telegram_id: userId, username: userName }]);
+            }
+        }
+
+        // تشغيل التحديث عند الفتح
+        updateUI();
+
+        // 📺 إعداد Adsgram (الإعلانات)
+        // ملاحظة: الـ ID ده تجريبي "YOUR_BLOCK_ID" استبدله باللي جالك من الموقع
+        const AdController = window.Adsgram.init({ blockId: "4534" }); 
+
+        async function runTask() {
+            AdController.show().then(async (result) => {
+                // 🔗 رابط Shrinkme الخاص بك
+                const shrinkmeApi = '8c0118dbbeaa89891a4957b552419561f3399c24';
+                const destinationUrl = 'https://google.com'; // الرابط اللي عايز الناس تروحه
+                const finalUrl = `https://shrinkme.io/st?api=${shrinkmeApi}&url=${destinationUrl}`;
+                
+                // فتح رابط المهمة
+                webapp.openLink(finalUrl);
+
+                // 💰 إضافة النقاط في قاعدة البيانات أوتوماتيكياً
+                await supabaseClient.rpc('increment_points', { user_id: userId, amount: 50 });
+                
+                // تحديث الشاشة
+                setTimeout(updateUI, 2000);
+
+            }).catch((err) => {
+                alert("يجب مشاهدة الإعلان كاملاً للحصول على النقاط!");
+            });
+        }
+    </script>
+</body>
+</html>
