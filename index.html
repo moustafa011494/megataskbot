@@ -104,11 +104,19 @@
         } else { alert("الكود خطأ!"); }
     }
 
-    function copyRef() {
-        // 🔗 استبدل اسم البوت بـ Username بتاعك الحقيقي (MegaTaskBot)
-const refLink = `https://t.me/MegaTaskBot/start?startapp=${userId}`;
-        navigator.clipboard.writeText(refLink);
-        alert("تم نسخ رابط الإحالة! انشره واكسب 100 نقطة عن كل صديق.");
+        function copyRef() {
+        // الرابط الصحيح لليوزر @MegaTask1Bot عشان يفتح الـ Mini App مباشرة
+        const refLink = `https://t.me/MegaTask1Bot/app?startapp=${userId}`;
+        
+        // محاولة نسخ الرابط للمقصد
+        const tempInput = document.createElement("input");
+        tempInput.value = refLink;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+        
+        alert("✅ تم نسخ رابط الإحالة الخاص بك!\nانشره واكسب 100 نقطة عن كل صديق.");
     }
 
     function adminTrigger() { if (userId === ADMIN_ID) { clickCount++; if (clickCount >= 5) { document.getElementById('adminArea').style.display = 'block'; loadStats(); } } }
