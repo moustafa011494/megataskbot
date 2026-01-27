@@ -10,13 +10,14 @@
         :root { --primary: #38bdf8; --bg: #0f172a; --card: #1e293b; --success: #10b981; --admin: #f59e0b; --referral: #a855f7; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 20px; text-align: center; }
         .container { max-width: 450px; margin: auto; }
-        .balance-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 25px; margin-bottom: 20px; cursor: pointer; }
+        .balance-card { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 25px; margin-bottom: 20px; cursor: pointer; transition: 0.3s; }
+        .balance-card:active { transform: scale(0.98); }
         .balance-amount { font-size: 42px; font-weight: 800; color: var(--primary); margin: 5px 0; }
         .task-box { background: var(--card); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px; }
         .btn { background: var(--primary); color: #000; border: none; padding: 15px; border-radius: 14px; width: 100%; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        .btn-ref { background: var(--referral); color: white; margin-top: 10px; }
+        .btn-delete { background: #ef4444 !important; color: white !important; margin-top: 10px; }
         .input-code { background: #0f172a; border: 2px solid var(--primary); border-radius: 12px; padding: 12px; width: 80%; color: white; text-align: center; font-size: 20px; margin: 15px 0; display: none; }
-        #adminArea { display: none; margin-top: 20px; padding: 15px; border: 2px dashed var(--admin); border-radius: 15px; }
+        #adminArea { display: none; margin-top: 20px; padding: 15px; border: 2px dashed var(--admin); border-radius: 15px; background: rgba(245, 158, 11, 0.05); }
     </style>
 </head>
 <body>
@@ -25,12 +26,12 @@
     <div class="balance-card" onclick="adminTrigger()">
         <div style="color: #94a3b8; font-size: 12px;">رصيدك الحالي</div>
         <div class="balance-amount" id="points">0</div>
-        <div style="font-size: 11px; color: #64748b;">MegaTask v4.0 | 2026</div>
+        <div style="font-size: 11px; color: #64748b;">MegaTask v5.0 | 2026</div>
     </div>
 
     <div class="task-box">
         <h3 style="margin: 0; font-size: 18px;">مهمة الكود السري 🔒</h3>
-        <p id="instruction" style="font-size: 13px; color: #94a3b8; margin: 10px 0;">تخطى الرابط للحصول على الكود.</p>
+        <p id="instruction" style="font-size: 13px; color: #94a3b8; margin: 10px 0;">تخطى الرابط للحصول على الكود السري.</p>
         <input type="number" id="codeInp" class="input-code" placeholder="0000">
         <button class="btn" id="startBtn" onclick="startTask()">🚀 ابدأ المهمة</button>
         <button class="btn" id="confirmBtn" style="display:none; background:var(--success);" onclick="verifyCode()">✅ تحقق واستلم 50 نقطة</button>
@@ -38,14 +39,15 @@
 
     <div class="task-box" style="border-color: var(--referral);">
         <h3 style="margin: 0; font-size: 18px; color: var(--referral);">نظام الإحالة 👥</h3>
-        <p style="font-size: 12px; color: #94a3b8; margin: 10px 0;">انسخ رابطك وانشره؛ ستحصل على 100 نقطة عن كل صديق يسجل من خلالك!</p>
-        <button class="btn btn-ref" onclick="copyRef()">🔗 نسخ رابط الإحالة الخاص بي</button>
+        <p style="font-size: 12px; color: #94a3b8;">انسخ رابطك؛ ستحصل على 100 نقطة عن كل صديق يسجل من طرفك!</p>
+        <button class="btn" style="background: var(--referral); color: white;" onclick="copyRef()">🔗 نسخ رابط الإحالة</button>
     </div>
 
     <div id="adminArea">
-        <div style="color: var(--admin); font-weight: bold; margin-bottom: 10px;">👑 لوحة الإدارة</div>
+        <div style="color: var(--admin); font-weight: bold; margin-bottom: 10px;">👑 غرفة العمليات</div>
         <div id="stats" style="font-size: 12px; margin-bottom: 10px;">جاري التحميل...</div>
-        <button class="btn" style="background: var(--admin); padding: 8px;" onclick="manageUser()">تعديل مستخدم</button>
+        <button class="btn" style="background: var(--admin); padding: 10px; font-size: 14px;" onclick="manageUser()">تعديل نقاط</button>
+        <button class="btn btn-delete" onclick="deleteUser()">🗑️ حذف مستخدم نهائياً</button>
     </div>
 </div>
 
@@ -57,45 +59,25 @@
 
     const userId = webapp.initDataUnsafe.user.id;
     const userName = webapp.initDataUnsafe.user.username || "User";
-    const ADMIN_ID = 875021647; 
+    const ADMIN_ID = 875021647; // الـ ID الخاص بك
     let generatedCode = "";
     let clickCount = 0;
 
-        async function init() {
-        webapp.ready();
-        webapp.expand();
-
-        // 1. جلب بيانات المستخدم الحالي
-        let { data: user, error: userError } = await supabaseClient.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+    async function init() {
+        webapp.ready(); webapp.expand();
         
-        // 2. لو المستخدم جديد تماماً (أول مرة يفتح البوت)
-        if (!user && !userError) {
-            // انتظار ثانية لضمان وصول بيانات الإحالة من تليجرام
-            setTimeout(async () => {
-                const referrerId = webapp.initDataUnsafe.start_param;
-                
-                // إنشاء حساب للمستخدم الجديد
-                await supabaseClient.from('users').insert([{ 
-                    telegram_id: userId, 
-                    username: userName, 
-                    points: 0 
-                }]);
-
-                // لو جاي من طرف حد، نبعت الهدية للشخص التاني
-                if (referrerId && referrerId != userId) {
-                    await supabaseClient.rpc('increment_points', { 
-                        user_id: parseInt(referrerId), 
-                        amount: 100 
-                    });
-                    console.log("تم إرسال هدية الإحالة لـ:", referrerId);
-                }
-                updateUI();
-            }, 1500); 
-        } else {
-            updateUI();
+        let { data: user } = await supabaseClient.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+        
+        if (!user) {
+            const referrerId = webapp.initDataUnsafe.start_param;
+            await supabaseClient.from('users').insert([{ telegram_id: userId, username: userName, points: 0 }]);
+            
+            if (referrerId && referrerId != userId) {
+                await supabaseClient.rpc('increment_points', { user_id: parseInt(referrerId), amount: 100 });
+            }
         }
+        updateUI();
     }
-
 
     async function updateUI() {
         const { data: user } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).maybeSingle();
@@ -106,48 +88,64 @@
         generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
         const landingPage = `https://megataskbot.vercel.app/code.html?c=${generatedCode}`;
         webapp.openLink(`https://shrinkme.io/st?api=8c0118dbbeaa89891a4957b552419561f3399c24&url=${landingPage}`);
+        
         document.getElementById('startBtn').style.display = 'none';
         document.getElementById('codeInp').style.display = 'inline-block';
         document.getElementById('confirmBtn').style.display = 'block';
-        document.getElementById('instruction').innerText = "أدخل الكود المستلم:";
+        document.getElementById('instruction').innerText = "أدخل كود التحقق من الرابط:";
     }
 
     async function verifyCode() {
         if (document.getElementById('codeInp').value === generatedCode) {
             await supabaseClient.rpc('increment_points', { user_id: userId, amount: 50 });
-            alert("تمت إضافة 50 نقطة!");
+            alert("صحيح! زدت 50 نقطة.");
             location.reload();
-        } else { alert("الكود خطأ!"); }
+        } else { alert("الكود غلط!"); }
     }
 
-        function copyRef() {
-        // الرابط الصحيح لليوزر @MegaTask1Bot عشان يفتح الـ Mini App مباشرة
+    function copyRef() {
         const refLink = `https://t.me/MegaTask1Bot/app?startapp=${userId}`;
-        
-        // محاولة نسخ الرابط للمقصد
-        const tempInput = document.createElement("input");
-        tempInput.value = refLink;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand("copy");
-        document.body.removeChild(tempInput);
-        
-        alert("✅ تم نسخ رابط الإحالة الخاص بك!\nانشره واكسب 100 نقطة عن كل صديق.");
+        const el = document.createElement('textarea');
+        el.value = refLink;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        alert("✅ تم نسخ رابط الإحالة!");
     }
 
-    function adminTrigger() { if (userId === ADMIN_ID) { clickCount++; if (clickCount >= 5) { document.getElementById('adminArea').style.display = 'block'; loadStats(); } } }
-    async function loadStats() {
-        const { data: all } = await supabaseClient.from('users').select('points');
-        if (all) document.getElementById('stats').innerText = `المستخدمين: ${all.length} | النقاط: ${all.reduce((s, u) => s + (u.points || 0), 0)}`;
-    }
-    async function manageUser() {
-        const id = prompt("ID المستخدم:");
-        const { data: u } = await supabaseClient.from('users').select('*').eq('telegram_id', id).maybeSingle();
-        if (u) {
-            const p = prompt(`نقاطه: ${u.points}\nالجديد:`, u.points);
-            if (p) { await supabaseClient.from('users').update({ points: parseInt(p) }).eq('telegram_id', id); alert("تم!"); loadStats(); }
+    function adminTrigger() {
+        if (userId === ADMIN_ID) {
+            clickCount++;
+            if (clickCount >= 5) {
+                document.getElementById('adminArea').style.display = 'block';
+                loadStats();
+            }
         }
     }
+
+    async function loadStats() {
+        const { data: all } = await supabaseClient.from('users').select('points');
+        if (all) document.getElementById('stats').innerText = `مستخدمين: ${all.length} | نقاط: ${all.reduce((s, u) => s + (u.points || 0), 0).toLocaleString()}`;
+    }
+
+    async function manageUser() {
+        const id = prompt("ادخل ID المستخدم:");
+        const { data: u } = await supabaseClient.from('users').select('*').eq('telegram_id', id).maybeSingle();
+        if (u) {
+            const p = prompt(`رصيده: ${u.points}\nالجديد:`, u.points);
+            if (p) { await supabaseClient.from('users').update({ points: parseInt(p) }).eq('telegram_id', id); alert("تم التعديل!"); loadStats(); }
+        }
+    }
+
+    async function deleteUser() {
+        const id = prompt("ادخل ID المستخدم لحذفه نهائياً:");
+        if (id && confirm("متأكد من مسح اليوزر ده؟")) {
+            await supabaseClient.from('users').delete().eq('telegram_id', id);
+            alert("تم الحذف!"); loadStats();
+        }
+    }
+
     init();
 </script>
 </body>
