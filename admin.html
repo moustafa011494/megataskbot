@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: sans-serif; background: #0f172a; color: white; padding: 20px; text-align: center; }
+        .card { background: #1e293b; padding: 20px; border-radius: 15px; border: 2px solid #f59e0b; margin-bottom: 20px; }
+        .btn { width: 100%; padding: 15px; margin-top: 10px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="accessDenied">جاري التحقق من الهوية...</div>
+    <div id="mainAdmin" style="display:none;">
+        <div class="card">
+            <h2 style="color:#f59e0b;">👑 لوحة المدير</h2>
+            <div id="stats">جاري جلب البيانات...</div>
+        </div>
+        <button class="btn" style="background:#f59e0b;" onclick="manageUser()">تعديل نقاط</button>
+        <button class="btn" style="background:#ef4444; color:white;" onclick="deleteUser()">🗑️ حذف مستخدم</button>
+    </div>
+
+<script>
+    const webapp = window.Telegram.WebApp;
+    const SUPABASE_URL = 'https://smukfrwnguvmxvfwqwrv.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const ADMIN_ID = 875021647; 
+    const userId = webapp.initDataUnsafe.user.id;
+
+    if (userId === ADMIN_ID) {
+        document.getElementById('accessDenied').style.display = 'none';
+        document.getElementById('mainAdmin').style.display = 'block';
+        loadStats();
+    } else {
+        document.getElementById('accessDenied').innerText = "عذراً، لا تملك صلاحية الوصول.";
+    }
+
+    async function loadStats() {
+        const { data: all } = await supabaseClient.from('users').select('points');
+        if (all) document.getElementById('stats').innerText = `المستخدمين: ${all.length} | النقاط: ${all.reduce((s,u)=>s+(u.points||0),0)}`;
+    }
+
+    async function manageUser() {
+        const id = prompt("ادخل ID المستخدم:");
+        const { data: u } = await supabaseClient.from('users').select('*').eq('telegram_id', id).maybeSingle();
+        if (u) {
+            const p = prompt(`رصيده: ${u.points}\nالجديد:`, u.points);
+            if (p) { await supabaseClient.from('users').update({ points: parseInt(p) }).eq('telegram_id', id); loadStats(); }
+        }
+    }
+
+    async function deleteUser() {
+        const id = prompt("ID للحذف:");
+        if (id && confirm("متأكد؟")) { await supabaseClient.from('users').delete().eq('telegram_id', id); loadStats(); }
+    }
+</script>
+</body>
+</html>
