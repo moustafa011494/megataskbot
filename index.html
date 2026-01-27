@@ -94,9 +94,7 @@
     const webapp = window.Telegram.WebApp;
     webapp.ready();
     webapp.expand();
-    webapp.setHeaderColor('#0f172a');
 
-    // إعدادات قاعدة البيانات
     const SUPABASE_URL = 'https://smukfrwnguvmxvfwqwrv.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM';
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -104,56 +102,36 @@
     const userId = webapp.initDataUnsafe.user.id;
     const userName = webapp.initDataUnsafe.user.username || "User";
 
-    // تحديث الرصيد من قاعدة البيانات
     async function updateUI() {
-        try {
-            let { data: user, error } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).maybeSingle();
-            
-            if (!user && !error) {
-                // تسجيل مستخدم جديد لو مش موجود
-                await supabaseClient.from('users').insert([{ telegram_id: userId, username: userName }]);
-                document.getElementById('points').innerText = "0";
-            } else if (user) {
-                document.getElementById('points').innerText = user.points.toLocaleString();
-            }
-        } catch (e) { console.error("Database Error:", e); }
+        let { data: user } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).maybeSingle();
+        if (user) {
+            document.getElementById('points').innerText = user.points.toLocaleString();
+        }
     }
-
     updateUI();
 
-    function toggleModal(show) {
-        document.getElementById('withdrawModal').style.display = show ? 'block' : 'none';
-        document.getElementById('overlay').style.display = show ? 'block' : 'none';
-    }
-
-    // دالة تنفيذ المهمة (بدون Adsgram)
     async function runTask() {
         const btn = document.getElementById('taskBtn');
-        btn.innerText = "جاري فتح المهمة...";
+        btn.innerText = "جاري تسجيل النقاط...";
         btn.disabled = true;
 
-        try {
-            // رابط Shrinkme الخاص بك
-            const shrinkmeApi = '8c0118dbbeaa89891a4957b552419561f3399c24';
-            const finalUrl = `https://shrinkme.io/st?api=${shrinkmeApi}&url=https://google.com`;
-            
-            // فتح الرابط فوراً
-            webapp.openLink(finalUrl);
+        // 1. إضافة النقاط أولاً
+        const { error } = await supabaseClient.rpc('increment_points', { user_id: userId, amount: 50 });
 
-            // إضافة النقاط للمستخدم
-            await supabaseClient.rpc('increment_points', { user_id: userId, amount: 50 });
+        if (!error) {
+            // 2. فتح الرابط بعد تسجيل النقاط
+            const shrinkmeApi = '8c0118dbbeaa89891a4957b552419561f3399c24';
+            webapp.openLink(`https://shrinkme.io/st?api=${shrinkmeApi}&url=https://google.com`);
             
-            // تحديث الشاشة بعد فترة بسيطة
+            // تحديث الشاشة
             setTimeout(() => {
                 updateUI();
                 btn.innerText = "🚀 ابدأ المهمة السريعة (50+)";
                 btn.disabled = false;
-            }, 3000);
-
-        } catch (err) {
-            alert("حدث خطأ، يرجى المحاولة مرة أخرى.");
+            }, 1000);
+        } else {
+            alert("حدث خطأ، تأكد من إعدادات قاعدة البيانات.");
             btn.disabled = false;
-            btn.innerText = "🚀 ابدأ المهمة السريعة (50+)";
         }
     }
 </script>
