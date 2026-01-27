@@ -61,25 +61,41 @@
     let generatedCode = "";
     let clickCount = 0;
 
-    async function init() {
-        webapp.ready(); webapp.expand();
-        // تسجيل المستخدم والتحقق من الإحالة
-        let { data: user } = await supabaseClient.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-        
-        if (!user) {
-            // جلب الـ referrer من الـ start_param لو موجود
-            const urlParams = new URLSearchParams(webapp.initDataUnsafe.start_param);
-            const referrerId = webapp.initDataUnsafe.start_param;
+        async function init() {
+        webapp.ready();
+        webapp.expand();
 
-            await supabaseClient.from('users').insert([{ telegram_id: userId, username: userName, points: 0 }]);
-            
-            if (referrerId && referrerId != userId) {
-                // إضافة نقاط للشخص اللي دعاك
-                await supabaseClient.rpc('increment_points', { user_id: parseInt(referrerId), amount: 100 });
-            }
+        // 1. جلب بيانات المستخدم الحالي
+        let { data: user, error: userError } = await supabaseClient.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+        
+        // 2. لو المستخدم جديد تماماً (أول مرة يفتح البوت)
+        if (!user && !userError) {
+            // انتظار ثانية لضمان وصول بيانات الإحالة من تليجرام
+            setTimeout(async () => {
+                const referrerId = webapp.initDataUnsafe.start_param;
+                
+                // إنشاء حساب للمستخدم الجديد
+                await supabaseClient.from('users').insert([{ 
+                    telegram_id: userId, 
+                    username: userName, 
+                    points: 0 
+                }]);
+
+                // لو جاي من طرف حد، نبعت الهدية للشخص التاني
+                if (referrerId && referrerId != userId) {
+                    await supabaseClient.rpc('increment_points', { 
+                        user_id: parseInt(referrerId), 
+                        amount: 100 
+                    });
+                    console.log("تم إرسال هدية الإحالة لـ:", referrerId);
+                }
+                updateUI();
+            }, 1500); 
+        } else {
+            updateUI();
         }
-        updateUI();
     }
+
 
     async function updateUI() {
         const { data: user } = await supabaseClient.from('users').select('points').eq('telegram_id', userId).maybeSingle();
