@@ -3,71 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Gold Bot UI</title>
+    <title>MegaTask Bot</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body {
-            background-color: #0d0d0d;
-            color: #fff;
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0; padding: 20px;
+        /* ستايل سريع عشان يطابق تصميمك */
+        body { background-color: #0d0d0d; color: white; font-family: sans-serif; text-align: center; }
+        .balance-card { 
+            background: linear-gradient(45deg, #1a1a1a, #2c004d); 
+            padding: 30px; border-radius: 20px; border: 1px solid #bc13fe; margin: 20px;
         }
-        .balance-card {
-            background: linear-gradient(45deg, #2c004d, #5a0099);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 0 15px #bc13fe;
-            margin-bottom: 20px;
-            cursor: pointer;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        .nav-button {
-            background: #1a1a1a;
-            border: 1px solid #bc13fe;
-            padding: 20px;
-            border-radius: 12px;
-            color: white;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-        .nav-button:active { transform: scale(0.95); background: #bc13fe; }
+        .points { font-size: 40px; color: #00f2ff; font-weight: bold; }
     </style>
 </head>
 <body>
-
-    <div class="balance-card" onclick="openDeposit()">
-        <h3>رصيدك الحالي</h3>
-        <h2 id="user-points">جاري التحميل...</h2>
-    </div>
-
-    <div class="grid-container">
-        <div class="nav-button" onclick="navigate('tasks')">بيدج المهام</div>
-        <div class="nav-button" onclick="navigate('deposit')">الإيداع</div>
-        <div class="nav-button" onclick="navigate('withdraw')">السحب</div>
-        <div class="nav-button" onclick="navigate('smm')">خدمات SMM</div>
-        <div class="nav-button" onclick="navigate('referral')">الدعوة</div>
-        <div class="nav-button" onclick="navigate('support')">تواصل معنا</div>
+    <div class="balance-card">
+        <p>رصيدك الحالي</p>
+        <div class="points" id="user-points">0000</div>
+        <p id="user-name">جاري التحميل...</p>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // تمديد الصفحة لملء الشاشة
+        tg.expand();
 
-        // هنجيب بيانات اليوزر من الـ WebApp
-        const user = tg.initDataUnsafe.user;
+        // بيانات سوبابيز بتاعتك
+        const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const SUPABASE_KEY = "حط_هنا_الـ_Anon_Key_بتاعك_اللي_بعتهولي_قبل_كده";
         
-        // هنا المفروض نكلم Supabase عشان نجيب نقط اليوزر الحقيقية
-        document.getElementById('user-points').innerText = "1,250 نقطة";
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const user = tg.initDataUnsafe.user;
 
-        function navigate(page) {
-            alert("سيتم فتح صفحة: " + page);
-            // هنا هنضيف الكود اللي بيغير المحتوى داخلياً
+        async function loadData() {
+            if (user) {
+                // بنجيب النقط من جدول users عن طريق الـ ID
+                let { data, error } = await supabase
+                    .from('users')
+                    .select('points')
+                    .eq('id', user.id)
+                    .single();
+
+                if (data) {
+                    document.getElementById('user-points').innerText = data.points;
+                    document.getElementById('user-name').innerText = user.first_name;
+                }
+            }
         }
+        loadData();
     </script>
 </body>
 </html>
