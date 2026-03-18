@@ -3,53 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask Bot</title>
+    <title>MegaTask Platform</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        /* ستايل سريع عشان يطابق تصميمك */
-        body { background-color: #0d0d0d; color: white; font-family: sans-serif; text-align: center; }
-        .balance-card { 
-            background: linear-gradient(45deg, #1a1a1a, #2c004d); 
-            padding: 30px; border-radius: 20px; border: 1px solid #bc13fe; margin: 20px;
-        }
-        .points { font-size: 40px; color: #00f2ff; font-weight: bold; }
+        body { background-color: #0d0d0d; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .balance-card { background: linear-gradient(45deg, #1a1a1a, #2c004d); padding: 25px; border-radius: 20px; border: 1px solid #bc13fe; box-shadow: 0 0 15px #bc13fe; margin-bottom: 20px; }
+        .points { font-size: 35px; color: #00f2ff; font-weight: bold; }
+        .task-list { display: flex; flex-direction: column; gap: 10px; }
+        .task-item { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px dotted #bc13fe; display: flex; justify-content: space-between; align-items: center; }
+        button { background: #bc13fe; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
+
     <div class="balance-card">
-        <p>رصيدك الحالي</p>
-        <div class="points" id="user-points">0000</div>
-        <p id="user-name">جاري التحميل...</p>
+        <p>مرحباً <span id="user-name">...</span></p>
+        <div class="points" id="user-points">0</div>
+        <p>نقطة ذهبية 💰</p>
     </div>
+
+    <h3>📜 المهام المتاحة</h3>
+    <div id="tasks-container" class="task-list">جاري تحميل المهام...</div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // بيانات سوبابيز بتاعتك
         const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const SUPABASE_KEY = "حط_هنا_الـ_Anon_Key_بتاعك_اللي_بعتهولي_قبل_كده";
-        
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         const user = tg.initDataUnsafe.user;
 
-        async function loadData() {
+        async function init() {
             if (user) {
-                // بنجيب النقط من جدول users عن طريق الـ ID
-                let { data, error } = await supabase
-                    .from('users')
-                    .select('points')
-                    .eq('id', user.id)
-                    .single();
-
-                if (data) {
-                    document.getElementById('user-points').innerText = data.points;
-                    document.getElementById('user-name').innerText = user.first_name;
-                }
+                document.getElementById('user-name').innerText = user.first_name;
+                await loadUserPoints();
+                await loadTasks();
             }
         }
-        loadData();
+
+        async function loadUserPoints() {
+            let { data } = await supabaseClient.from('users').select('points').eq('id', user.id).single();
+            if (data) document.getElementById('user-points').innerText = data.points;
+        }
+
+        async function loadTasks() {
+            let { data: tasks } = await supabaseClient.from('tasks').select('*');
+            const container = document.getElementById('tasks-container');
+            container.innerHTML = "";
+            
+            tasks.forEach(task => {
+                container.innerHTML += `
+                    <div class="task-item">
+                        <span>${task.title} (+${task.reward})</span>
+                        <button onclick="doTask('${task.link}', ${task.reward})">تنفيذ</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function doTask(link, reward) {
+            window.open(link, '_blank');
+            tg.showConfirm("هل أنهيت المهمة؟", async (ok) => {
+                if (ok) {
+                    // استدعاء الوظيفة اللي عملناها في SQL Editor
+                    const { error } = await supabaseClient.rpc('increment_points', { 
+                        user_id_v: user.id, 
+                        amount_v: reward 
+                    });
+                    if (!error) {
+                        tg.showAlert("مبروك! تم إضافة النقاط.");
+                        loadUserPoints();
+                    }
+                }
+            });
+        }
+
+        init();
     </script>
 </body>
 </html>
