@@ -1,18 +1,106 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MegaTask - المهام</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --neon-purple: #bc13fe; --neon-blue: #00f2ff; --bg-dark: #0d0d0d; }
+        body { background: var(--bg-dark); color: white; font-family: sans-serif; padding: 15px; }
+        
+        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
+        .back-btn { background: #222; color: white; border: 1px solid #444; padding: 8px 15px; border-radius: 10px; cursor: pointer; }
+        
+        .task-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-right: 4px solid var(--neon-blue);
+        }
+        .task-info b { display: block; font-size: 16px; margin-bottom: 5px; }
+        .task-info span { color: var(--neon-blue); font-weight: bold; }
+        
+        .go-btn {
+            background: var(--neon-purple);
+            color: white; border: none; padding: 10px 20px;
+            border-radius: 10px; font-weight: bold; cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-    <button class="back-btn" onclick="history.back()">← رجوع</button>
-    <h2>📋 قائمة المهام المتاحة</h2>
-    
-    <div id="tasks-list">جاري تحميل المهام...</div>
+
+    <div class="header">
+        <button class="back-btn" onclick="location.href='index.html'">← رجوع</button>
+        <h2>📋 المهام المتاحة</h2>
+    </div>
+
+    <div id="tasks-container">جاري تحميل المهام...</div>
 
     <script>
-        // هنا تحط كود الـ JavaScript الخاص بجلب المهام فقط من سوبابيز
-        // وتنفيذ المهمة (doTask)
+        const tg = window.Telegram.WebApp;
+        
+        // بيانات سوبابيز
+        const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const user = tg.initDataUnsafe.user;
+
+        async function getTasks() {
+            const container = document.getElementById('tasks-container');
+            
+            // جلب المهام من جدول tasks
+            let { data: tasks, error } = await supabaseClient.from('tasks').select('*');
+
+            if (error) {
+                container.innerHTML = "خطأ في تحميل المهام.";
+                return;
+            }
+
+            if (tasks.length === 0) {
+                container.innerHTML = "لا توجد مهام حالياً.";
+                return;
+            }
+
+            container.innerHTML = "";
+            tasks.forEach(task => {
+                container.innerHTML += `
+                    <div class="task-card">
+                        <div class="task-info">
+                            <b>${task.title}</b>
+                            <span>💰 +${task.reward} نقطة</span>
+                        </div>
+                        <button class="go-btn" onclick="doTask('${task.link}', ${task.reward})">تنفيذ</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function doTask(link, reward) {
+            window.open(link, '_blank');
+            tg.showConfirm("هل نفذت المهمة؟", async (ok) => {
+                if (ok && user) {
+                    const { error } = await supabaseClient.rpc('increment_points', { 
+                        user_id_v: user.id, 
+                        amount_v: reward 
+                    });
+                    if (!error) {
+                        tg.showAlert("تمت إضافة النقاط بنجاح!");
+                    } else {
+                        tg.showAlert("حدث خطأ أثناء إضافة النقاط.");
+                    }
+                }
+            });
+        }
+
+        getTasks();
     </script>
 </body>
 </html>
