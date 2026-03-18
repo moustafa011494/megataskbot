@@ -1,0 +1,10 @@
+:root {
+    --neon-purple: #bc13fe;
+    --neon-blue: #00f2ff;
+    --bg-dark: #0d0d0d;
+}
+body { background: var(--bg-dark); color: white; font-family: sans-serif; padding: 20px; direction: rtl; }
+.balance-card { background: linear-gradient(135deg, #1a1a1a, #2c004d); padding: 20px; border-radius: 20px; border: 1px solid var(--neon-purple); text-align: center; margin-bottom: 20px; }
+.btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.menu-item { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; text-align: center; text-decoration: none; color: white; }
+.back-btn { background: none; border: 1px solid #555; color: #ccc; padding: 5px 15px; border-radius: 8px; cursor: pointer; }
