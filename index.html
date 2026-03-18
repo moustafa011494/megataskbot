@@ -1,226 +1,26 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask CyberNet</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <style>
-        :root {
-            --neon-purple: #bc13fe;
-            --neon-blue: #00f2ff;
-            --bg-dark: #0d0d0d;
-            --card-bg: #1a1a1a;
-            --border-color: #333;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 15px;
-            overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* حاوية الصفحات SPA */
-        .page { 
-            display: none; 
-            width: 100%; 
-            max-width: 400px; 
-            animation: fadeIn 0.4s ease; 
-        }
-        .active-page { display: flex; flex-direction: column; }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* كارت الرصيد العلوي النيون */
-        .balance-card {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2c004d 100%);
-            padding: 30px;
-            border-radius: 25px;
-            border: 1px solid var(--neon-purple);
-            box-shadow: 0 0 20px rgba(188, 19, 254, 0.5);
-            margin-bottom: 25px;
-            text-align: center;
-            width: calc(100% - 60px);
-        }
-
-        .balance-card small { color: #aaa; font-size: 12px; }
-        .balance-amount {
-            font-size: 50px;
-            font-weight: bold;
-            color: var(--neon-blue);
-            text-shadow: 0 0 15px var(--neon-blue);
-            margin: 10px 0;
-        }
-
-        /* شبكة الأزرار الـ 6 */
-        .grid-menu {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            width: 100%;
-        }
-
-        .menu-btn {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            padding: 25px 15px;
-            border-radius: 18px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            text-align: center;
-        }
-
-        /* ألوان حدود نيون مختلفة لكل زرار */
-        .menu-btn.purple { border-color: var(--neon-purple); }
-        .menu-btn.blue { border-color: var(--neon-blue); }
-        .menu-btn.orange { border-color: #ff9f43; }
-        .menu-btn.green { border-color: #2ecc71; }
-
-        .menu-btn:active {
-            transform: scale(0.95);
-            box-shadow: 0 0 15px currentColor;
-        }
-
-        .menu-btn span.icon { font-size: 28px; }
-        .menu-btn span.text { font-weight: bold; font-size: 14px; }
-
-        /* ستايل صفحة المهام */
-        .task-item {
-            background: #222;
-            padding: 15px;
-            margin-bottom: 12px;
-            border-radius: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-right: 4px solid var(--neon-blue);
-        }
-
-        .back-btn {
-            background: none; border: 1px solid #555; color: #ccc;
-            padding: 8px 18px; border-radius: 10px; margin-bottom: 20px;
-            align-self: flex-start; cursor: pointer;
-        }
-
-        button.action-btn {
-            background: var(--neon-purple);
-            color: white; border: none; padding: 10px 20px;
-            border-radius: 8px; font-weight: bold; cursor: pointer;
-        }
-    </style>
 </head>
 <body>
-
-    <div id="home-page" class="page active-page">
-        <div class="balance-card">
-            <small>بـرنـس الـتـنـفـيـذ: <span id="user-name">...</span></small>
-            <div class="balance-amount" id="user-points">0</div>
-            <small>Algorithm CyberNet V1.0 Encrypted</small>
-        </div>
-
-        <div class="grid-menu">
-            <div class="menu-btn purple" onclick="showPage('tasks-page')"><span class="icon">📋</span><span class="text">بيدج المهام</span></div>
-            <div class="menu-btn orange" onclick="showPage('deposit-page')"><span class="icon">💰</span><span class="text">الإيداع</span></div>
-            <div class="menu-btn green" onclick="showPage('withdraw-page')"><span class="icon">💸</span><span class="text">السحب</span></div>
-            <div class="menu-btn blue" onclick="showPage('smm-page')"><span class="icon">🚀</span><span class="text">خدمات SMM</span></div>
-            <div class="menu-btn orange" onclick="showPage('referral-page')"><span class="icon">👥</span><span class="text">الدعوة</span></div>
-            <div class="menu-btn purple" onclick="showPage('support-page')"><span class="icon">🛠</span><span class="text">تواصل معنا</span></div>
-        </div>
+    <div class="balance-card">
+        <small>رصيدك الحالي</small>
+        <h1 id="user-points">0</h1>
     </div>
 
-    <div id="tasks-page" class="page">
-        <button class="back-btn" onclick="showPage('home-page')">← رجوع</button>
-        <h2>📋 المهام المتاحة</h2>
-        <div id="tasks-list">جاري تحميل المهام...</div>
+    <div class="btn-grid">
+        <a href="tasks.html" class="menu-item">📋 بيدج المهام</a>
+        <a href="deposit.html" class="menu-item">💰 الإيداع</a>
+        <a href="withdraw.html" class="menu-item">💸 السحب</a>
+        <a href="smm.html" class="menu-item">🚀 خدمات SMM</a>
+        <a href="referral.html" class="menu-item">👥 الدعوة</a>
+        <a href="support.html" class="menu-item">🛠 تواصل معنا</a>
     </div>
-
-    <div id="deposit-page" class="page"><button class="back-btn" onclick="showPage('home-page')">← رجوع</button><h2>💰 شحن الرصيد</h2><p>قريباً...</p></div>
-    <div id="withdraw-page" class="page"><button class="back-btn" onclick="showPage('home-page')">← رجوع</button><h2>💸 طلب سحب</h2><p>قريباً...</p></div>
-    <div id="smm-page" class="page"><button class="back-btn" onclick="showPage('home-page')">← رجوع</button><h2>🚀 خدمات SMM</h2><p>قريباً...</p></div>
-    <div id="referral-page" class="page"><button class="back-btn" onclick="showPage('home-page')">← رجوع</button><h2>👥 رابط الدعوة</h2><p>قريباً...</p></div>
-    <div id="support-page" class="page"><button class="back-btn" onclick="showPage('home-page')">← رجوع</button><h2>🛠 تواصل معنا</h2><p>قريباً...</p></div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-
-        // بيانات سوبابيز الخاصة بك
-        const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        const user = tg.initDataUnsafe.user;
-
-        // 1. التنقل بين الصفحات SPA
-        function showPage(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-            document.getElementById(pageId).classList.add('active-page');
-            if(pageId === 'tasks-page') loadTasks();
-        }
-
-        // 2. تحميل بيانات اليوزر والرصيد لايف
-        async function loadUser() {
-            if (user) {
-                document.getElementById('user-name').innerText = user.first_name;
-                let { data, error } = await supabaseClient.from('users').select('points').eq('id', user.id).single();
-                if (data) document.getElementById('user-points').innerText = data.points.toLocaleString();
-            }
-        }
-
-        // 3. تحميل المهام من سوبابيز
-        async function loadTasks() {
-            const container = document.getElementById('tasks-list');
-            container.innerHTML = "جاري التحميل...";
-            let { data: tasks, error } = await supabaseClient.from('tasks').select('*');
-            if (tasks && tasks.length > 0) {
-                container.innerHTML = "";
-                tasks.forEach(t => {
-                    container.innerHTML += `
-                        <div class="task-item">
-                            <div><b>${t.title}</b><br><small>+${t.reward} نقطة</small></div>
-                            <button class="action-btn" onclick="doTask('${t.link}', ${t.reward})">تنفيذ</button>
-                        </div>`;
-                });
-            } else {
-                container.innerHTML = "لا يوجد مهام متاحة حالياً.";
-            }
-        }
-
-        // 4. تنفيذ المهمة (نظام التأكيد الأولي)
-        async function doTask(link, reward) {
-            window.open(link, '_blank');
-            tg.showConfirm("هل اشتركت بالفعل؟", async (ok) => {
-                if (ok) {
-                    // استدعاء الـ RPC اللي عملناها في سوبابيز لزيادة النقط
-                    const { error } = await supabaseClient.rpc('increment_points', { 
-                        user_id_v: user.id, 
-                        amount_v: reward 
-                    });
-                    if (!error) {
-                        tg.showAlert("مبروك! تمت إضافة النقاط.");
-                        loadUser(); // تحديث الرصيد لايف
-                    } else {
-                        tg.showAlert("حدث خطأ، جرب مرة أخرى.");
-                    }
-                }
-            });
-        }
-
-        // تشغيل البداية
-        loadUser();
+        // هنا كود جلب النقط من سوبابيز زي ما عملناه قبل كدة
     </script>
 </body>
 </html>
