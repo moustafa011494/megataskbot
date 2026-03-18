@@ -3,85 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask Platform</title>
+    <title>MegaTask CyberNet</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
-        body { background-color: #0d0d0d; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
-        .balance-card { background: linear-gradient(45deg, #1a1a1a, #2c004d); padding: 25px; border-radius: 20px; border: 1px solid #bc13fe; box-shadow: 0 0 15px #bc13fe; margin-bottom: 20px; }
-        .points { font-size: 35px; color: #00f2ff; font-weight: bold; }
-        .task-list { display: flex; flex-direction: column; gap: 10px; }
-        .task-item { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px dotted #bc13fe; display: flex; justify-content: space-between; align-items: center; }
-        button { background: #bc13fe; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        :root {
+            --neon-purple: #bc13fe;
+            --neon-blue: #00f2ff;
+            --bg-dark: #0d0d0d;
+            --card-bg: #1a1a1a;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 15px;
+            overflow-x: hidden;
+        }
+
+        /* الصفحة الرئيسية */
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .active-page { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* كارت الرصيد العلوي */
+        .balance-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c004d 100%);
+            padding: 25px;
+            border-radius: 20px;
+            border: 1px solid var(--neon-purple);
+            box-shadow: 0 0 15px rgba(188, 19, 254, 0.4);
+            margin-bottom: 25px;
+            cursor: pointer;
+        }
+
+        .balance-amount {
+            font-size: 45px;
+            font-weight: bold;
+            color: var(--neon-blue);
+            text-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        /* شبكة الأزرار الـ 6 */
+        .grid-menu {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .menu-btn {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            padding: 20px;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            transition: 0.3s;
+            text-decoration: none;
+            color: white;
+        }
+
+        .menu-btn:active {
+            transform: scale(0.95);
+            border-color: var(--neon-purple);
+            box-shadow: 0 0 10px var(--neon-purple);
+        }
+
+        /* ستايل قائمة المهام */
+        .task-item {
+            background: #222;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-right: 4px solid var(--neon-blue);
+        }
+
+        .back-btn {
+            background: none; border: 1px solid #555; color: #ccc;
+            padding: 5px 15px; border-radius: 8px; margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
 
-    <div class="balance-card">
-        <p>مرحباً <span id="user-name">...</span></p>
-        <div class="points" id="user-points">0</div>
-        <p>نقطة ذهبية 💰</p>
+    <div id="home-page" class="page active-page">
+        <div class="balance-card" onclick="showPage('deposit-page')">
+            <small>Balance amount</small>
+            <div class="balance-amount" id="user-points">0000</div>
+            <small>Algorithm V1.0 Encrypted</small>
+        </div>
+
+        <div class="grid-menu">
+            <div class="menu-btn" onclick="showPage('tasks-page')"><span>📋</span> بيدج المهام</div>
+            <div class="menu-btn" onclick="showPage('deposit-page')"><span>💰</span> الإيداع</div>
+            <div class="menu-btn" onclick="showPage('withdraw-page')"><span>💸</span> السحب</div>
+            <div class="menu-btn" onclick="showPage('smm-page')"><span>🚀</span> خدمات SMM</div>
+            <div class="menu-btn" onclick="showPage('referral-page')"><span>👥</span> الدعوة</div>
+            <div class="menu-btn" onclick="showPage('support-page')"><span>🎧</span> تواصل معنا</div>
+        </div>
     </div>
 
-    <h3>📜 المهام المتاحة</h3>
-    <div id="tasks-container" class="task-list">جاري تحميل المهام...</div>
+    <div id="tasks-page" class="page">
+        <button class="back-btn" onclick="showPage('home-page')">← رجوع</button>
+        <h2>📋 المهام المتاحة</h2>
+        <div id="tasks-list">جاري تحميل المهام...</div>
+    </div>
+
+    <div id="deposit-page" class="page">
+        <button class="back-btn" onclick="showPage('home-page')">← رجوع</button>
+        <h2>💰 شحن الرصيد</h2>
+        <p>اختر وسيلة الدفع المناسبة لك (قريباً باينانس باي)</p>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        // بيانات سوبابيز بتاعتك
         const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const user = tg.initDataUnsafe.user;
 
-        async function init() {
+        // 1. التنقل بين الصفحات
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.getElementById(pageId).classList.add('active-page');
+            if(pageId === 'tasks-page') loadTasks();
+        }
+
+        // 2. تحميل بيانات اليوزر
+        async function loadUser() {
             if (user) {
-                document.getElementById('user-name').innerText = user.first_name;
-                await loadUserPoints();
-                await loadTasks();
+                let { data } = await supabaseClient.from('users').select('points').eq('id', user.id).single();
+                if (data) document.getElementById('user-points').innerText = data.points;
             }
         }
 
-        async function loadUserPoints() {
-            let { data } = await supabaseClient.from('users').select('points').eq('id', user.id).single();
-            if (data) document.getElementById('user-points').innerText = data.points;
-        }
-
+        // 3. تحميل المهام
         async function loadTasks() {
+            const container = document.getElementById('tasks-list');
             let { data: tasks } = await supabaseClient.from('tasks').select('*');
-            const container = document.getElementById('tasks-container');
             container.innerHTML = "";
-            
-            tasks.forEach(task => {
+            tasks.forEach(t => {
                 container.innerHTML += `
                     <div class="task-item">
-                        <span>${task.title} (+${task.reward})</span>
-                        <button onclick="doTask('${task.link}', ${task.reward})">تنفيذ</button>
-                    </div>
-                `;
+                        <div><b>${t.title}</b><br><small>+${t.reward} نقطة</small></div>
+                        <button onclick="doTask('${t.link}', ${t.reward})" style="background:var(--neon-purple); color:white; border:none; padding:8px; border-radius:5px;">تنفيذ</button>
+                    </div>`;
             });
         }
 
+        // 4. تنفيذ المهمة (نظام التأكيد)
         async function doTask(link, reward) {
             window.open(link, '_blank');
-            tg.showConfirm("هل أنهيت المهمة؟", async (ok) => {
+            tg.showConfirm("هل اشتركت بالفعل؟", async (ok) => {
                 if (ok) {
-                    // استدعاء الوظيفة اللي عملناها في SQL Editor
                     const { error } = await supabaseClient.rpc('increment_points', { 
                         user_id_v: user.id, 
                         amount_v: reward 
                     });
                     if (!error) {
-                        tg.showAlert("مبروك! تم إضافة النقاط.");
-                        loadUserPoints();
+                        tg.showAlert("تمت إضافة النقاط!");
+                        loadUser();
                     }
                 }
             });
         }
 
-        init();
+        // تشغيل البداية
+        loadUser();
     </script>
 </body>
 </html>
