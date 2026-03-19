@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم MegaTask</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --neon: #bc13fe; --bg: #0d0d0d; }
+        body { background: var(--bg); color: white; font-family: sans-serif; padding: 20px; }
+        .card { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
+        input { width: 90%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid var(--neon); color: white; border-radius: 10px; }
+        button { background: var(--neon); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .task-item { display: flex; justify-content: space-between; background: #222; padding: 10px; margin-top: 5px; border-radius: 8px; align-items: center; }
+        .del-btn { background: #ff4d4d; padding: 5px 10px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <h1>🛡️ لوحة الإدارة السرية</h1>
+
+    <div class="card">
+        <h3>➕ إضافة مهمة جديدة</h3>
+        <input type="text" id="t-title" placeholder="اسم المهمة (بالعربي عادي)">
+        <input type="text" id="t-link" placeholder="رابط المهمة (https://..)">
+        <input type="number" id="t-reward" placeholder="عدد النقاط">
+        <br>
+        <button onclick="addTask()">حفظ المهمة ✅</button>
+    </div>
+
+    <div class="card">
+        <h3>📋 المهام الحالية</h3>
+        <div id="tasks-list">جاري التحميل...</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // جلب المهام وعرضها
+        async function loadTasks() {
+            const list = document.getElementById('tasks-list');
+            let { data: tasks } = await supabaseClient.from('tasks').select('*').order('id', { ascending: false });
+            
+            list.innerHTML = "";
+            tasks.forEach(t => {
+                list.innerHTML += `
+                    <div class="task-item">
+                        <span>${t.title} (${t.reward} نقطة)</span>
+                        <button class="del-btn" onclick="deleteTask(${t.id})">حذف 🗑️</button>
+                    </div>`;
+            });
+        }
+
+        // إضافة مهمة
+        async function addTask() {
+            const title = document.getElementById('t-title').value;
+            const link = document.getElementById('t-link').value;
+            const reward = document.getElementById('t-reward').value;
+
+            if(!title || !link || !reward) return alert("املأ كل الخانات يا بطل");
+
+            const { error } = await supabaseClient.from('tasks').insert([{ title, link, reward: parseInt(reward) }]);
+            
+            if(!error) {
+                alert("تمت الإضافة بنجاح!");
+                location.reload();
+            } else {
+                alert("خطأ: " + error.message);
+            }
+        }
+
+        // حذف مهمة
+        async function deleteTask(id) {
+            if(confirm("متأكد إنك عايز تحذف المهمة دي؟")) {
+                await supabaseClient.from('tasks').delete().eq('id', id);
+                location.reload();
+            }
+        }
+
+        loadTasks();
+    </script>
+</body>
+</html>
