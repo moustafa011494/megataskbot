@@ -11,7 +11,7 @@
         body { background: var(--bg-dark); color: white; font-family: sans-serif; padding: 15px; }
         
         .header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .back-btn { background: #222; color: white; border: 1px solid #444; padding: 8px 15px; border-radius: 10px; cursor: pointer; }
+        .back-btn { background: #222; color: white; border: 1px solid #444; padding: 8px 15px; border-radius: 10px; cursor: pointer; text-decoration: none; font-size: 14px; }
         
         .task-card {
             background: #1a1a1a;
@@ -37,35 +37,39 @@
 <body>
 
     <div class="header">
-        <button class="back-btn" onclick="location.href='index.html'">← رجوع</button>
+        <button class="back-btn" onclick="goBack()">← رجوع</button>
         <h2>📋 المهام المتاحة</h2>
     </div>
 
-    <div id="tasks-container">جاري تحميل المهام...</div>
+    <div id="tasks-container">جاري تحميل المهام... ⏳</div>
 
     <script>
         const tg = window.Telegram.WebApp;
+        tg.expand();
         
-        // بيانات سوبابيز
         const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const user = tg.initDataUnsafe.user;
+        // جلب الـ ID من الرابط (الـ URL) عشان نضمن إنه موجود
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('id');
+
+        function goBack() {
+            window.location.href = `index.html?id=${userId}`;
+        }
 
         async function getTasks() {
             const container = document.getElementById('tasks-container');
-            
-            // جلب المهام من جدول tasks
             let { data: tasks, error } = await supabaseClient.from('tasks').select('*');
 
             if (error) {
-                container.innerHTML = "خطأ في تحميل المهام.";
+                container.innerHTML = "❌ خطأ في تحميل المهام.";
                 return;
             }
 
-            if (tasks.length === 0) {
-                container.innerHTML = "لا توجد مهام حالياً.";
+            if (!tasks || tasks.length === 0) {
+                container.innerHTML = "📭 لا توجد مهام حالياً.";
                 return;
             }
 
@@ -84,22 +88,50 @@
         }
 
         async function doTask(link, reward) {
+            if (!userId) {
+                tg.showAlert("⚠️ عذراً، لم يتم العثور على بيانات المستخدم.");
+                return;
+            }
+
             window.open(link, '_blank');
-            tg.showConfirm("هل نفذت المهمة؟", async (ok) => {
-                if (ok && user) {
-                    const { error } = await supabaseClient.rpc('increment_points', { 
-                        user_id_v: user.id, 
-                        amount_v: reward 
-                    });
-                    if (!error) {
-                        tg.showAlert("تمت إضافة النقاط بنجاح!");
-                    } else {
-                        tg.showAlert("حدث خطأ أثناء إضافة النقاط.");
+
+            // إظهار رسالة تأكيد بعد ما اليوزر يفتح اللينك
+            tg.showConfirm("هل نفذت المهمة فعلاً؟ (سيتم مراجعة طلبك)", async (ok) => {
+                if (ok) {
+                    try {
+                        // 1. جلب رصيد اليوزر الحالي أولاً
+                        let { data: userData, error: fetchError } = await supabaseClient
+                            .from('users')
+                            .select('points')
+                            .eq('telegram_id', userId)
+                            .single();
+
+                        if (fetchError) throw fetchError;
+
+                        const currentPoints = userData ? userData.points : 0;
+                        const newPoints = currentPoints + parseInt(reward);
+
+                        // 2. تحديث الرصيد بالنقاط الجديدة
+                        const { error: updateError } = await supabaseClient
+                            .from('users')
+                            .update({ points: newPoints })
+                            .eq('telegram_id', userId);
+
+                        if (!updateError) {
+                            tg.showAlert(`✅ أحسنت! تم إضافة ${reward} نقطة لرصيدك.`);
+                            // تحديث الصفحة لإخفاء المهام أو تحديث الرؤية (اختياري)
+                        } else {
+                            throw updateError;
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        tg.showAlert("❌ حدث خطأ أثناء إضافة النقاط: " + err.message);
                     }
                 }
             });
         }
 
+        // تشغيل الجلب عند الفتح
         getTasks();
     </script>
 </body>
