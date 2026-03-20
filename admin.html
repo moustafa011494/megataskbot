@@ -72,12 +72,29 @@
         }
 
         // حذف مهمة
-        async function deleteTask(id) {
-            if(confirm("متأكد إنك عايز تحذف المهمة دي؟")) {
-                await supabaseClient.from('tasks').delete().eq('id', id);
-                location.reload();
-            }
+        async function delTask(id) {
+    if (!confirm("متأكد إنك عايز تحذف المهمة دي؟")) return;
+
+    // تحويل الـ ID لرقم لضمان التوافق مع قاعدة البيانات
+    const taskId = Number(id);
+
+    try {
+        const { data, error } = await client
+            .from('tasks')
+            .delete()
+            .eq('id', taskId); // بنستخدم المتغير الجديد اللي اتأكدنا إنه رقم
+
+        if (error) {
+            alert("فشل الحذف: " + error.message);
+        } else {
+            alert("تم الحذف بنجاح ✅");
+            location.reload(); 
         }
+    } catch (err) {
+        alert("خطأ غير متوقع: " + err.message);
+    }
+}
+
 
         loadTasks();
     </script>
