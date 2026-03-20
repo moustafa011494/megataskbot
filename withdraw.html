@@ -35,7 +35,7 @@
         <a href="#" class="back-link" onclick="goBack()">← العودة للرئيسية</a>
     </div>
 
-    <script>
+        <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
@@ -46,22 +46,33 @@
         let userId, currentPoints, userName;
 
         async function init() {
+            // سحب الـ ID من تليجرام مباشرة زي الرئيسية
+            const user = tg.initDataUnsafe.user;
             const params = new URLSearchParams(window.location.search);
-            userId = params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "");
+            userId = params.get('id') || (user ? user.id : null);
 
             if (!userId) {
                 document.getElementById('user-points').innerText = "⚠️ افتح من البوت";
                 return;
             }
 
-            const { data, error } = await client.from('users').select('points, name').eq('telegram_id', userId).maybeSingle();
+            // جلب البيانات (نفس سطر الرئيسية بالظبط)
+            try {
+                let { data, error } = await client
+                    .from('users')
+                    .select('points, name')
+                    .eq('telegram_id', userId) 
+                    .maybeSingle();
 
-            if (data) {
-                currentPoints = data.points;
-                userName = data.name;
-                document.getElementById('user-points').innerText = currentPoints.toLocaleString() + " نقطة";
-            } else {
-                document.getElementById('user-points').innerText = "0 نقطة";
+                if (data) {
+                    currentPoints = data.points;
+                    userName = data.name || user.first_name;
+                    document.getElementById('user-points').innerText = currentPoints.toLocaleString() + " نقطة";
+                } else {
+                    document.getElementById('user-points').innerText = "0 نقطة (حساب جديد)";
+                }
+            } catch (err) {
+                document.getElementById('user-points').innerText = "❌ عطل في البيانات";
             }
         }
 
@@ -76,11 +87,17 @@
 
             document.getElementById('withdraw-btn').disabled = true;
 
+            // تنفيذ السحب
             const { error: inErr } = await client.from('withdrawals').insert([{
-                user_id: userId, user_name: userName, amount: amount, wallet_address: `${method}: ${wallet}`, status: 'pending'
+                user_id: userId,
+                user_name: userName,
+                amount: amount,
+                wallet_address: `${method}: ${wallet}`,
+                status: 'pending'
             }]);
 
             if (!inErr) {
+                // تحديث النقط
                 await client.from('users').update({ points: currentPoints - amount }).eq('telegram_id', userId);
                 alert("✅ تم إرسال طلبك بنجاح!");
                 location.reload();
