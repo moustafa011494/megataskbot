@@ -37,7 +37,7 @@
         <a href="#" class="back-link" onclick="goBack()">← العودة</a>
     </div>
 
-    <script>
+        <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
@@ -47,93 +47,77 @@
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
-            // تحويل الـ ID لنص (String) فوراً لمنع أخطاء الأرقام الكبيرة
-            let tid = String(params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : ""));
+            let tid = params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "");
 
-            if (!tid || tid === "null") {
+            if (!tid) {
                 document.getElementById('debug').innerText = "❌ لم يتم العثور على ID";
                 return;
             }
 
-            document.getElementById('debug').innerText = "🆔 معرفك الحالي: " + tid;
+            document.getElementById('debug').innerText = "🆔 معرفك: " + tid;
 
             try {
-                // البحث بالـ ID كنص
+                // السر هنا: بنحول الرقم لـ Number عادي بس بنبعته كـ Filter
                 const { data, error } = await client
                     .from('users')
                     .select('points, name')
-                    .eq('telegram_id', tid) 
+                    .filter('telegram_id', 'eq', tid) // الطريقة دي أضمن للأرقام الكبيرة
                     .maybeSingle();
 
-                if (error) {
-                    // لو طلع خطأ، نجرب نبحث بالرقم كـ BigInt
-                    console.log("Retrying with BigInt logic...");
-                    const { data: retryData, error: retryError } = await client
-                        .from('users')
-                        .select('points, name')
-                        .filter('telegram_id', 'eq', tid)
-                        .maybeSingle();
-                    
-                    if (retryError) throw retryError;
-                    displayData(retryData);
+                if (error) throw error;
+
+                if (data) {
+                    window.currentPoints = data.points;
+                    window.userId = tid;
+                    window.userName = data.name;
+                    document.getElementById('user-points').innerText = data.points.toLocaleString() + " نقطة";
                 } else {
-                    displayData(data);
+                    document.getElementById('user-points').innerText = "⚠️ سجل دخول أولاً";
                 }
-
             } catch (err) {
-                document.getElementById('user-points').innerText = "❌ خطأ في قاعدة البيانات";
-                console.error("Supabase Error:", err);
+                document.getElementById('user-points').innerText = "❌ عطل في الربط";
+                console.error(err);
             }
-        }
-
-        function displayData(data) {
-            if (data) {
-                window.currentPoints = data.points;
-                window.userId = String(getUserIdFromUrl());
-                window.userName = data.name;
-                document.getElementById('user-points').innerText = data.points.toLocaleString() + " نقطة";
-            } else {
-                document.getElementById('user-points').innerText = "0 (اليوزر غير مسجل)";
-            }
-        }
-
-        function getUserIdFromUrl() {
-            const params = new URLSearchParams(window.location.search);
-            return params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "");
         }
 
         async function requestWithdraw() {
             const wallet = document.getElementById('wallet').value;
             const amount = parseInt(document.getElementById('amount').value);
-            const method = document.getElementById('method').value;
 
-            if(!wallet || !amount || isNaN(amount)) return alert("اكمل البيانات!");
-            if(amount < 5000) return alert("الحد الأدنى 5000 نقطة!");
-            if(amount > window.currentPoints) return alert("رصيدك لا يكفي!");
+            if(!wallet || !amount) return alert("اكمل البيانات!");
+            if(amount < 5000) return alert("الحد الأدنى 5000!");
+            if(amount > window.currentPoints) return alert("رصيدك غير كافٍ!");
 
             document.getElementById('withdraw-btn').disabled = true;
 
-            const { error } = await client.from('withdrawals').insert([{
-                user_id: window.userId,
-                user_name: window.userName || "مستخدم",
-                amount: amount,
-                wallet_address: `${method}: ${wallet}`,
-                status: 'pending'
-            }]);
+            try {
+                // 1. تسجيل الطلب
+                const { error: inErr } = await client.from('withdrawals').insert([{
+                    user_id: window.userId,
+                    user_name: window.userName,
+                    amount: amount,
+                    wallet_address: wallet,
+                    status: 'pending'
+                }]);
+                if (inErr) throw inErr;
 
-            if (error) {
-                alert("فشل الإرسال: " + error.message);
-                document.getElementById('withdraw-btn').disabled = false;
-            } else {
-                // خصم النقط
-                await client.from('users').update({ points: window.currentPoints - amount }).eq('telegram_id', window.userId);
-                alert("تم الإرسال بنجاح! ✅");
+                // 2. تحديث النقط باستخدام فلتر الـ EQ المضمون
+                const { error: upErr } = await client.from('users')
+                    .update({ points: window.currentPoints - amount })
+                    .filter('telegram_id', 'eq', window.userId);
+
+                if (upErr) throw upErr;
+
+                alert("✅ طلبك وصل يا وحش وجاري المراجعة!");
                 location.reload();
+            } catch (err) {
+                alert("❌ فشل: " + err.message);
+                document.getElementById('withdraw-btn').disabled = false;
             }
         }
 
         function goBack() {
-            window.location.href = `index.html?id=${getUserIdFromUrl()}`;
+            window.location.href = `index.html?id=${window.userId}`;
         }
 
         init();
