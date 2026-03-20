@@ -56,22 +56,24 @@
 
         let currentPoints = 0;
 
-                async function getUserData() {
+     async function getUserData() {
             if(!userId) return document.body.innerHTML = "<h1>⚠️ خطأ: افتح من البوت</h1>";
             
-            // بنبحث بـ telegram_id عشان ده الرقم اللي بيجي من تليجرام
+            // البحث بالعمود الجديد اللي إنت عملته telegram_id
             let { data, error } = await client
                 .from('users')
                 .select('points, name')
                 .eq('telegram_id', userId) 
-                .single();
+                .maybeSingle();
 
-            if(data) {
+            if (data) {
                 currentPoints = data.points;
+                // عرض الرصيد في الصفحة
                 document.getElementById('user-points').innerText = currentPoints.toLocaleString();
                 window.userName = data.name;
+                console.log("تم جلب الرصيد بنجاح:", currentPoints);
             } else {
-                console.log("Error or no data:", error);
+                console.error("فشل في جلب الرصيد:", error);
                 document.getElementById('user-points').innerText = "0";
             }
         }
