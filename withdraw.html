@@ -46,47 +46,96 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         async function init() {
-            // 1. استخراج الـ ID من الرابط بكل الطرق
             const params = new URLSearchParams(window.location.search);
-            let tid = params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null);
+            // تحويل الـ ID لنص (String) فوراً لمنع أخطاء الأرقام الكبيرة
+            let tid = String(params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : ""));
 
-            if (!tid) {
-                document.getElementById('debug').innerText = "❌ لم يتم العثور على ID - حاول الفتح من الرئيسية";
-                setTimeout(init, 1000);
+            if (!tid || tid === "null") {
+                document.getElementById('debug').innerText = "❌ لم يتم العثور على ID";
                 return;
             }
 
             document.getElementById('debug').innerText = "🆔 معرفك الحالي: " + tid;
 
-            // 2. طلب البيانات من سوبابيز
             try {
+                // البحث بالـ ID كنص
                 const { data, error } = await client
                     .from('users')
                     .select('points, name')
-                    .eq('telegram_id', tid) // تأكدنا إن الاسم telegram_id
+                    .eq('telegram_id', tid) 
                     .maybeSingle();
 
-                if (error) throw error;
-
-                if (data) {
-                    window.currentPoints = data.points;
-                    window.userId = tid;
-                    window.userName = data.name;
-                    document.getElementById('user-points').innerText = data.points.toLocaleString() + " نقطة";
+                if (error) {
+                    // لو طلع خطأ، نجرب نبحث بالرقم كـ BigInt
+                    console.log("Retrying with BigInt logic...");
+                    const { data: retryData, error: retryError } = await client
+                        .from('users')
+                        .select('points, name')
+                        .filter('telegram_id', 'eq', tid)
+                        .maybeSingle();
+                    
+                    if (retryError) throw retryError;
+                    displayData(retryData);
                 } else {
-                    document.getElementById('user-points').innerText = "0 (اليوزر غير مسجل)";
+                    displayData(data);
                 }
+
             } catch (err) {
-                document.getElementById('user-points').innerText = "خطأ في الاتصال";
-                console.error(err);
+                document.getElementById('user-points').innerText = "❌ خطأ في قاعدة البيانات";
+                console.error("Supabase Error:", err);
+            }
+        }
+
+        function displayData(data) {
+            if (data) {
+                window.currentPoints = data.points;
+                window.userId = String(getUserIdFromUrl());
+                window.userName = data.name;
+                document.getElementById('user-points').innerText = data.points.toLocaleString() + " نقطة";
+            } else {
+                document.getElementById('user-points').innerText = "0 (اليوزر غير مسجل)";
+            }
+        }
+
+        function getUserIdFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "");
+        }
+
+        async function requestWithdraw() {
+            const wallet = document.getElementById('wallet').value;
+            const amount = parseInt(document.getElementById('amount').value);
+            const method = document.getElementById('method').value;
+
+            if(!wallet || !amount || isNaN(amount)) return alert("اكمل البيانات!");
+            if(amount < 5000) return alert("الحد الأدنى 5000 نقطة!");
+            if(amount > window.currentPoints) return alert("رصيدك لا يكفي!");
+
+            document.getElementById('withdraw-btn').disabled = true;
+
+            const { error } = await client.from('withdrawals').insert([{
+                user_id: window.userId,
+                user_name: window.userName || "مستخدم",
+                amount: amount,
+                wallet_address: `${method}: ${wallet}`,
+                status: 'pending'
+            }]);
+
+            if (error) {
+                alert("فشل الإرسال: " + error.message);
+                document.getElementById('withdraw-btn').disabled = false;
+            } else {
+                // خصم النقط
+                await client.from('users').update({ points: window.currentPoints - amount }).eq('telegram_id', window.userId);
+                alert("تم الإرسال بنجاح! ✅");
+                location.reload();
             }
         }
 
         function goBack() {
-            window.location.href = `index.html?id=${window.userId}`;
+            window.location.href = `index.html?id=${getUserIdFromUrl()}`;
         }
 
-        // تشغيل فوراً
         init();
     </script>
 </body>
