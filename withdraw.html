@@ -10,130 +10,84 @@
         :root { --neon-blue: #00f2ff; --bg: #0d0d0d; }
         body { background: var(--bg); color: white; font-family: sans-serif; padding: 20px; text-align: center; }
         .card { background: #161616; padding: 25px; border-radius: 20px; border: 1px solid #333; max-width: 400px; margin: auto; }
-        .balance-box { font-size: 24px; margin-bottom: 20px; color: var(--neon-blue); font-weight: bold; text-shadow: 0 0 10px var(--neon-blue); }
-        .rules { text-align: right; font-size: 13px; color: #aaa; background: #222; padding: 10px; border-radius: 10px; margin-bottom: 20px; }
+        .balance-box { font-size: 24px; margin-bottom: 20px; color: var(--neon-blue); font-weight: bold; }
+        .debug-info { font-size: 10px; color: #444; margin-bottom: 10px; } /* سطر كشف الأخطاء */
         select, input { width: 90%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid var(--neon-blue); color: white; border-radius: 10px; }
         .btn-withdraw { background: var(--neon-blue); color: #000; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .back-link { display: block; margin-top: 20px; color: #777; text-decoration: none; font-size: 14px; }
+        .back-link { display: block; margin-top: 20px; color: #777; text-decoration: none; }
     </style>
 </head>
 <body>
 
+    <div class="debug-info" id="debug">جاري فحص المعرّف...</div>
+
     <div class="card">
         <h2>💸 سحب الأرباح</h2>
-        
-        <div class="balance-box">رصيدك: <span id="user-points">جاري التحميل...</span></div>
-
-        <div class="rules">
-            <b>⚠️ قواعد السحب:</b>
-            <ul>
-                <li>الحد الأدنى للسحب هو 5000 نقطة.</li>
-                <li>يتم مراجعة الطلب خلال 24 ساعة.</li>
-            </ul>
-        </div>
+        <div class="balance-box">رصيدك: <span id="user-points">...</span></div>
 
         <select id="method">
             <option value="Vodafone Cash">فودافون كاش 🇪🇬</option>
             <option value="Binance Pay">باينانس باي 💰</option>
         </select>
 
-        <input type="text" id="wallet" placeholder="رقم الموبايل أو ID باينانس">
+        <input type="text" id="wallet" placeholder="رقم المحفظة">
         <input type="number" id="amount" placeholder="كمية النقاط">
 
-        <button id="withdraw-btn" class="btn-withdraw" onclick="requestWithdraw()">إرسال طلب السحب 🚀</button>
-        <p id="msg" style="margin-top:15px; font-size:14px;"></p>
-        
-        <a href="#" class="back-link" onclick="goBack()">← العودة للرئيسية</a>
+        <button id="withdraw-btn" class="btn-withdraw" onclick="requestWithdraw()">إرسال الطلب</button>
+        <a href="#" class="back-link" onclick="goBack()">← العودة</a>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.ready();
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        let userId = null;
-        let currentPoints = 0;
+        async function init() {
+            // 1. استخراج الـ ID من الرابط بكل الطرق
+            const params = new URLSearchParams(window.location.search);
+            let tid = params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null);
 
-        // دالة الحصول على الـ ID المضمون
-        function getUserId() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null);
-        }
-
-        async function fetchBalance() {
-            userId = getUserId();
-            if (!userId) {
-                // محاولة إعادة الجلب بعد قليل إذا لم تكن البيانات جاهزة
-                setTimeout(fetchBalance, 500);
+            if (!tid) {
+                document.getElementById('debug').innerText = "❌ لم يتم العثور على ID - حاول الفتح من الرئيسية";
+                setTimeout(init, 1000);
                 return;
             }
 
-            // البحث باستخدام العمود الجديد telegram_id
-            const { data, error } = await client
-                .from('users')
-                .select('points, name')
-                .eq('telegram_id', userId) 
-                .maybeSingle();
+            document.getElementById('debug').innerText = "🆔 معرفك الحالي: " + tid;
 
-            if (data) {
-                currentPoints = data.points;
-                document.getElementById('user-points').innerText = currentPoints.toLocaleString() + " نقطة";
-                window.userName = data.name || "مستخدم";
-            } else {
-                document.getElementById('user-points').innerText = "0 نقطة";
-                if(error) console.error("Error fetching data:", error);
-            }
-        }
-
-        async function requestWithdraw() {
-            const wallet = document.getElementById('wallet').value;
-            const amount = parseInt(document.getElementById('amount').value);
-            const method = document.getElementById('method').value;
-
-            if(!wallet || !amount) return alert("اكمل البيانات!");
-            if(amount < 5000) return alert("الحد الأدنى 5000 نقطة!");
-            if(amount > currentPoints) return alert("رصيدك لا يكفي!");
-
-            document.getElementById('withdraw-btn').disabled = true;
-            document.getElementById('msg').innerText = "جاري معالجة طلبك... ⏳";
-
+            // 2. طلب البيانات من سوبابيز
             try {
-                // 1. خصم النقاط من telegram_id
-                const { error: upErr } = await client.from('users')
-                    .update({ points: currentPoints - amount })
-                    .eq('telegram_id', userId);
+                const { data, error } = await client
+                    .from('users')
+                    .select('points, name')
+                    .eq('telegram_id', tid) // تأكدنا إن الاسم telegram_id
+                    .maybeSingle();
 
-                if(upErr) throw upErr;
+                if (error) throw error;
 
-                // 2. تسجيل طلب السحب
-                const { error: inErr } = await client.from('withdrawals').insert([{
-                    user_id: userId,
-                    user_name: window.userName,
-                    amount: amount,
-                    wallet_address: `${method}: ${wallet}`,
-                    status: 'pending'
-                }]);
-
-                if(inErr) throw inErr;
-
-                alert("تم إرسال طلب السحب بنجاح! ✅");
-                location.reload();
-
+                if (data) {
+                    window.currentPoints = data.points;
+                    window.userId = tid;
+                    window.userName = data.name;
+                    document.getElementById('user-points').innerText = data.points.toLocaleString() + " نقطة";
+                } else {
+                    document.getElementById('user-points').innerText = "0 (اليوزر غير مسجل)";
+                }
             } catch (err) {
-                alert("حدث خطأ: " + err.message);
-                document.getElementById('withdraw-btn').disabled = false;
+                document.getElementById('user-points').innerText = "خطأ في الاتصال";
+                console.error(err);
             }
         }
 
         function goBack() {
-            window.location.href = `index.html?id=${getUserId()}`;
+            window.location.href = `index.html?id=${window.userId}`;
         }
 
-        fetchBalance();
+        // تشغيل فوراً
+        init();
     </script>
 </body>
 </html>
