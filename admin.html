@@ -34,89 +34,65 @@
     </div>
 
     <script>
-        const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                   const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
 
-        // جلب المهام وعرضها
-        async function loadTasks() {
-            const list = document.getElementById('tasks-list');
-            let { data: tasks } = await supabaseClient.from('tasks').select('*').order('id', { ascending: false });
-            
-            list.innerHTML = "";
-            tasks.forEach(t => {
-                list.innerHTML += `
-                    <div class="task-item">
-                        <span>${t.title} (${t.reward} نقطة)</span>
-                        <button class="del-btn" onclick="deleteTask(${t.id})">حذف 🗑️</button>
-                    </div>`;
-            });
-        }
+        async function load() {
+            try {
+                // جلب البيانات مع ترتيبها من الأحدث للأقدم
+                let { data, error } = await client.from('tasks').select('*').order('created_at', { ascending: false });
+                
+                if (error) throw error;
 
-        // إضافة مهمة
-        async function addTask() {
-            const title = document.getElementById('t-title').value;
-            const link = document.getElementById('t-link').value;
-            const reward = document.getElementById('t-reward').value;
+                const div = document.getElementById('list');
+                div.innerHTML = ""; // مسح كلمة جاري التحميل
 
-            if(!title || !link || !reward) return alert("املأ كل الخانات يا بطل");
+                if (data.length === 0) {
+                    div.innerHTML = "📭 مفيش مهام حالياً.";
+                    return;
+                }
 
-            const { error } = await supabaseClient.from('tasks').insert([{ title, link, reward: parseInt(reward) }]);
-            
-            if(!error) {
-                alert("تمت الإضافة بنجاح!");
-                location.reload();
-            } else {
-                alert("خطأ: " + error.message);
+                data.forEach(t => {
+                    // ركز هنا: الـ ID بيتحط بين سنجل كوت ' عشان هو UUID (نص)
+                    div.innerHTML += `
+                        <div class="task-row" style="display:flex; justify-content:space-between; background:#222; padding:10px; margin:5px; border-radius:5px;">
+                            <span>${t.title} - ${t.reward}ن</span>
+                            <button onclick="delTask('${t.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">حذف</button>
+                        </div>`;
+                });
+            } catch (err) {
+                console.error(err);
+                document.getElementById('list').innerHTML = "❌ فشل التحميل: " + err.message;
             }
         }
 
-        // حذف مهمة
-        // 1. تحديث دالة العرض عشان تتأكد إن الـ ID بيتبعت صح
-async function loadTasks() {
-    const list = document.getElementById('list');
-    let { data: tasks, error } = await client.from('tasks').select('*');
-    
-    if (error) {
-        alert("خطأ في جلب البيانات: " + error.message);
-        return;
-    }
+        async function addTask() {
+            const title = document.getElementById('title').value;
+            const link = document.getElementById('link').value;
+            const reward = document.getElementById('reward').value;
 
-    list.innerHTML = "";
-    tasks.forEach(t => {
-        // نضع الـ ID بين علامات تنصيص لأنه UUID (نص)
-        list.innerHTML += `
-            <div class="task-row">
-                <span>${t.title}</span> 
-                <button onclick="delTask('${t.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">حذف 🗑️</button>
-            </div>`;
-    });
-}
+            if(!title || !link || !reward) return alert("املأ البيانات كاملة");
 
-// 2. تحديث دالة الحذف للتعامل مع الـ UUID
-async function delTask(id) {
-    if (!confirm("هل أنت متأكد من حذف هذه المهمة؟")) return;
-
-    try {
-        // الحذف باستخدام الـ ID كـ String (نص)
-        const { error } = await client
-            .from('tasks')
-            .delete()
-            .eq('id', id); 
-
-        if (error) {
-            alert("فشل الحذف من سوبابيز: " + error.message);
-        } else {
-            alert("تم حذف المهمة بنجاح ✅");
-            location.reload(); 
+            const { error } = await client.from('tasks').insert([{ title, link, reward: parseInt(reward) }]);
+            
+            if (error) alert("فشل الإضافة: " + error.message);
+            else { alert("تمت الإضافة بنجاح ✅"); location.reload(); }
         }
-    } catch (err) {
-        alert("خطأ غير متوقع: " + err.message);
-    }
-}
 
+        async function delTask(id) {
+            if (!confirm("متأكد إنك عايز تحذف المهمة دي؟")) return;
+            
+            // الحذف بيتم بالـ ID كنص مباشرة
+            const { error } = await client.from('tasks').delete().eq('id', id);
+            
+            if (error) alert("فشل الحذف: " + error.message);
+            else { alert("تم الحذف! 🗑️"); location.reload(); }
+        }
 
-        loadTasks();
+        // تشغيل دالة التحميل أول ما الصفحة تفتح
+        window.onload = load;
+
     </script>
 </body>
 </html>
