@@ -119,43 +119,46 @@
         </div>
     </div>
 
-    <script>
+        <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        // إخبار تليجرام إن الصفحة جاهزة فوراً
+        tg.ready();
 
         const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const user = tg.initDataUnsafe.user;
-
-        // دالة التنقل السحرية اللي بتبعت الـ ID لكل الصفحات
+        // دالة التنقل المعدلة (بتتأكد إن الـ ID موجود الأول)
         function navigate(page) {
+            const user = tg.initDataUnsafe.user;
             if (user && user.id) {
                 window.location.href = `${page}?id=${user.id}`;
             } else {
-                // لو فتح من متصفح عادي
-                window.location.href = page;
+                // محاولة أخيرة لو لسه بيحمل
+                setTimeout(() => {
+                    const retryUser = window.Telegram.WebApp.initDataUnsafe.user;
+                    if (retryUser) window.location.href = `${page}?id=${retryUser.id}`;
+                    else alert("يا درش استنى ثانية البيانات بتحمل!");
+                }, 500);
             }
         }
 
         async function loadData() {
+            const user = tg.initDataUnsafe.user;
             if (user) {
                 document.getElementById('user-name').innerText = user.first_name;
 
-                // جلب النقاط من جدول users
-                // ملاحظة: تأكد إن العمود اسمه telegram_id في سوبابيز لو الـ ID مش شغال
+                // التعديل الجوهري لجلب الرصيد
                 let { data, error } = await supabaseClient
                     .from('users')
                     .select('points')
-                    .eq('telegram_id', user.id) 
+                    .eq('telegram_id', user.id) // اتأكد إن العمود في سوبابيز اسمه telegram_id
                     .single();
 
                 if (data) {
                     document.getElementById('user-points').innerText = data.points.toLocaleString();
                 }
-            } else {
-                document.getElementById('user-name').innerText = "زائر";
             }
         }
 
