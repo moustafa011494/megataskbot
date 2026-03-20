@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>سحب الأرباح - MegaTask</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --neon-blue: #00f2ff; --bg: #0d0d0d; }
@@ -12,8 +13,8 @@
         .rules { text-align: right; font-size: 13px; color: #aaa; background: #222; padding: 10px; border-radius: 10px; margin-bottom: 20px; }
         select, input { width: 90%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid var(--neon-blue); color: white; border-radius: 10px; }
         .btn-withdraw { background: var(--neon-blue); color: #000; border: none; padding: 15px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .btn-withdraw:disabled { background: #444; color: #888; }
         .balance-box { font-size: 20px; margin-bottom: 20px; color: var(--neon-blue); font-weight: bold; }
+        .back-link { display: block; margin-top: 20px; color: #777; text-decoration: none; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -21,45 +22,56 @@
     <div class="card">
         <h2>💸 سحب الأرباح</h2>
         
-        <div class="balance-box">رصيدك: <span id="user-points">0</span> نقطة</div>
+        <div class="balance-box">رصيدك: <span id="user-points">جاري التحميل...</span> نقطة</div>
 
         <div class="rules">
             <b>⚠️ قواعد السحب:</b>
             <ul>
                 <li>الحد الأدنى للسحب هو 5000 نقطة.</li>
                 <li>يتم مراجعة الطلب خلال 24 ساعة.</li>
-                <li>تأكد من صحة بيانات المحفظة، الخطأ مسؤوليتك.</li>
             </ul>
         </div>
 
-        <label>اختر وسيلة السحب:</label>
         <select id="method">
             <option value="Vodafone Cash">فودافون كاش 🇪🇬</option>
-            <option value="Binance Pay">باينانس باي (USDT) 💰</option>
+            <option value="Binance Pay">باينانس باي 💰</option>
         </select>
 
         <input type="text" id="wallet" placeholder="رقم الموبايل أو ID باينانس">
-        <input type="number" id="amount" placeholder="كمية النقاط (مثال: 5000)">
+        <input type="number" id="amount" placeholder="كمية النقاط">
 
         <button id="withdraw-btn" class="btn-withdraw" onclick="requestWithdraw()">إرسال طلب السحب 🚀</button>
         <p id="msg" style="margin-top:15px; font-size:14px;"></p>
+        
+        <a href="#" class="back-link" onclick="goBack()">← العودة للرئيسية</a>
     </div>
 
     <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        // جلب بيانات اليوزر من اللينك (مثال: ?id=123)
+        // جلب الـ ID من الرابط
         const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('id');
+        let userId = urlParams.get('id');
+
+        // لو الـ ID مش في اللينك، نحاول نجيبه من تليجرام مباشرة
+        if (!userId && tg.initDataUnsafe.user) {
+            userId = tg.initDataUnsafe.user.id;
+        }
 
         let currentPoints = 0;
 
-     async function getUserData() {
-            if(!userId) return document.body.innerHTML = "<h1>⚠️ خطأ: افتح من البوت</h1>";
+        async function getUserData() {
+            if (!userId) {
+                document.getElementById('user-points').innerText = "خطأ في التعريف";
+                return;
+            }
             
-            // البحث بالعمود الجديد اللي إنت عملته telegram_id
+            // البحث بالعمود الجديد telegram_id
             let { data, error } = await client
                 .from('users')
                 .select('points, name')
@@ -68,13 +80,11 @@
 
             if (data) {
                 currentPoints = data.points;
-                // عرض الرصيد في الصفحة
                 document.getElementById('user-points').innerText = currentPoints.toLocaleString();
-                window.userName = data.name;
-                console.log("تم جلب الرصيد بنجاح:", currentPoints);
+                window.userName = data.name || "مستخدم";
             } else {
-                console.error("فشل في جلب الرصيد:", error);
                 document.getElementById('user-points').innerText = "0";
+                console.log("User not found or error:", error);
             }
         }
 
@@ -82,42 +92,44 @@
             const method = document.getElementById('method').value;
             const wallet = document.getElementById('wallet').value;
             const amount = parseInt(document.getElementById('amount').value);
-            const btn = document.getElementById('withdraw-btn');
 
-            // الشروط
-            if(!wallet || !amount) return alert("اكمل البيانات يا بطل!");
-            if(amount < 5000) return alert("الحد الأدنى للسحب هو 5000 نقطة!");
-            if(amount > currentPoints) return alert("رصيدك غير كافي!");
+            if(!wallet || !amount) return alert("اكمل البيانات!");
+            if(amount < 5000) return alert("الحد الأدنى 5000 نقطة!");
+            if(amount > currentPoints) return alert("رصيدك لا يكفي!");
 
-            btn.disabled = true;
-            document.getElementById('msg').innerText = "جاري معالجة الطلب... ⏳";
+            document.getElementById('withdraw-btn').disabled = true;
+            document.getElementById('msg').innerText = "جاري الإرسال... ⏳";
 
             try {
-                // 1. خصم النقط من اليوزر أولاً
-                const { error: updateErr } = await client.from('users')
+                // 1. خصم النقط من telegram_id
+                const { error: upErr } = await client.from('users')
                     .update({ points: currentPoints - amount })
                     .eq('telegram_id', userId);
 
-                if(updateErr) throw updateErr;
+                if(upErr) throw upErr;
 
-                // 2. تسجيل الطلب في جدول withdrawals اللي عملناه للأدمن
-                const { error: insertErr } = await client.from('withdrawals').insert([{
+                // 2. تسجيل الطلب
+                const { error: inErr } = await client.from('withdrawals').insert([{
                     user_id: userId,
-                    user_name: window.userName || "مستخدم",
+                    user_name: window.userName,
                     amount: amount,
                     wallet_address: `${method}: ${wallet}`,
                     status: 'pending'
                 }]);
 
-                if(insertErr) throw insertErr;
+                if(inErr) throw inErr;
 
-                alert("تم إرسال طلبك بنجاح! راقب اللوحة.");
+                alert("تم طلب السحب بنجاح! سيتم المراجعة ✅");
                 location.reload();
 
             } catch (err) {
-                alert("حدث خطأ: " + err.message);
-                btn.disabled = false;
+                alert("خطأ: " + err.message);
+                document.getElementById('withdraw-btn').disabled = false;
             }
+        }
+
+        function goBack() {
+            window.location.href = `index.html?id=${userId}`;
         }
 
         getUserData();
