@@ -26,7 +26,6 @@
             align-items: center;
         }
 
-        /* كارت الرصيد الكبير */
         .balance-card {
             background: linear-gradient(135deg, #1a1a1a 0%, #2c004d 100%);
             padding: 30px 20px;
@@ -49,7 +48,6 @@
 
         .user-welcome { color: #aaa; font-size: 14px; }
 
-        /* شبكة الأزرار الـ 6 */
         .grid-menu {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -58,6 +56,7 @@
             max-width: 400px;
         }
 
+        /* تعديل الـ CSS عشان الزرار يبقى Clickable */
         .menu-item {
             background: var(--card-bg);
             border: 1px solid #333;
@@ -68,8 +67,7 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            text-decoration: none; /* عشان يشيل الخط تحت اللينك */
-            color: white;
+            cursor: pointer;
             transition: 0.3s;
         }
 
@@ -82,7 +80,6 @@
         .icon { font-size: 30px; }
         .text { font-weight: bold; font-size: 14px; }
 
-        /* ألوان الحدود للتمييز */
         .border-purple { border-color: var(--neon-purple); }
         .border-blue { border-color: var(--neon-blue); }
     </style>
@@ -96,66 +93,72 @@
     </div>
 
     <div class="grid-menu">
-        <a href="tasks.html" class="menu-item border-purple">
+        <div onclick="navigate('tasks.html')" class="menu-item border-purple">
             <span class="icon">📋</span>
             <span class="text">بيدج المهام</span>
-        </a>
-        <a href="deposit.html" class="menu-item border-blue">
+        </div>
+        <div onclick="navigate('deposit.html')" class="menu-item border-blue">
             <span class="icon">💰</span>
             <span class="text">الإيداع</span>
-        </a>
-        <a href="withdraw.html" class="menu-item border-blue">
+        </div>
+        <div onclick="navigate('withdraw.html')" class="menu-item border-blue">
             <span class="icon">💸</span>
             <span class="text">السحب</span>
-        </a>
-        <a href="smm.html" class="menu-item border-purple">
+        </div>
+        <div onclick="navigate('smm.html')" class="menu-item border-purple">
             <span class="icon">🚀</span>
             <span class="text">خدمات SMM</span>
-        </a>
-        <a href="referral.html" class="menu-item border-purple">
+        </div>
+        <div onclick="navigate('referral.html')" class="menu-item border-purple">
             <span class="icon">👥</span>
             <span class="text">الدعوة</span>
-        </a>
-        <a href="support.html" class="menu-item border-blue">
+        </div>
+        <div onclick="navigate('support.html')" class="menu-item border-blue">
             <span class="icon">🛠</span>
             <span class="text">تواصل معنا</span>
-        </a>
+        </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // بيانات سوبابيز (المحفوظة عندي)
         const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const user = tg.initDataUnsafe.user;
 
+        // دالة التنقل السحرية اللي بتبعت الـ ID لكل الصفحات
+        function navigate(page) {
+            if (user && user.id) {
+                window.location.href = `${page}?id=${user.id}`;
+            } else {
+                // لو فتح من متصفح عادي
+                window.location.href = page;
+            }
+        }
+
         async function loadData() {
             if (user) {
-                // عرض اسم اليوزر
                 document.getElementById('user-name').innerText = user.first_name;
 
                 // جلب النقاط من جدول users
+                // ملاحظة: تأكد إن العمود اسمه telegram_id في سوبابيز لو الـ ID مش شغال
                 let { data, error } = await supabaseClient
                     .from('users')
                     .select('points')
-                    .eq('id', user.id)
+                    .eq('telegram_id', user.id) 
                     .single();
 
                 if (data) {
                     document.getElementById('user-points').innerText = data.points.toLocaleString();
-                } else if (error) {
-                    console.error("Error fetching points:", error);
                 }
             } else {
                 document.getElementById('user-name').innerText = "زائر";
             }
         }
 
-        // تشغيل الجلب عند الفتح
         loadData();
     </script>
 </body>
