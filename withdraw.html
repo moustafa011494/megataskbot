@@ -34,84 +34,60 @@
         <button id="withdraw-btn" class="btn-withdraw" onclick="requestWithdraw()">إرسال الطلب 🚀</button>
         <a href="#" class="back-link" onclick="goBack()">← العودة للرئيسية</a>
     </div>
-
-            <script>
+    <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.ready();
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        let userId, currentPoints, userName;
-
         async function init() {
-            // 1. جلب الـ ID من اللينك أو تليجرام
             const params = new URLSearchParams(window.location.search);
-            userId = params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : null);
+            // تحويل الـ ID لنص فوراً
+            let tid = String(params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : ""));
 
-            if (!userId) {
+            if (!tid) {
                 document.getElementById('user-points').innerText = "⚠️ افتح من البوت";
                 return;
             }
 
-            try {
-                // 2. طلب البيانات مع "كسر الكاش"
-                const { data, error } = await client
-                    .from('users')
-                    .select('points, name')
-                    .eq('telegram_id', userId)
-                    .maybeSingle();
+            const { data, error } = await client
+                .from('users')
+                .select('points, name')
+                .eq('telegram_id', tid) // البحث عن النص
+                .maybeSingle();
 
-                if (error) throw error;
-
-                if (data) {
-                    currentPoints = data.points;
-                    userName = data.name || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.first_name : "مستخدم");
-                    // تحديث الرصيد في الصفحة
-                    document.getElementById('user-points').innerText = currentPoints.toLocaleString() + " نقطة";
-                } else {
-                    document.getElementById('user-points').innerText = "0 نقطة (غير مسجل)";
-                }
-            } catch (err) {
-                console.error("Fetch Error:", err.message);
-                document.getElementById('user-points').innerText = "⚠️ محاولة اتصال ثانية...";
-                setTimeout(init, 2000); // إعادة المحاولة لو حصل عطل
+            if (data) {
+                window.currentPoints = data.points;
+                window.userId = tid;
+                window.userName = data.name;
+                document.getElementById('user-points').innerText = data.points.toLocaleString() + " نقطة";
+            } else {
+                document.getElementById('user-points').innerText = "0 نقطة";
+                console.log("User not found for ID:", tid);
             }
         }
 
         async function requestWithdraw() {
             const wallet = document.getElementById('wallet').value;
             const amount = parseInt(document.getElementById('amount').value);
-            const method = document.getElementById('method').value;
+            if(!wallet || !amount || amount < 5000 || amount > window.currentPoints) return alert("تأكد من الرصيد والبيانات");
 
-            if(!wallet || !amount || isNaN(amount)) return alert("اكمل البيانات!");
-            if(amount < 5000) return alert("الحد الأدنى 5000 نقطة!");
-            if(amount > currentPoints) return alert("رصيدك لا يكفي!");
-
-            document.getElementById('withdraw-btn').disabled = true;
-
-            const { error: inErr } = await client.from('withdrawals').insert([{
-                user_id: userId,
-                user_name: userName,
-                amount: amount,
-                wallet_address: `${method}: ${wallet}`,
-                status: 'pending'
+            const { error } = await client.from('withdrawals').insert([{
+                user_id: window.userId, user_name: window.userName, amount: amount, wallet_address: wallet, status: 'pending'
             }]);
 
-            if (!inErr) {
-                // تحديث النقط فوراً
-                await client.from('users').update({ points: currentPoints - amount }).eq('telegram_id', userId);
-                alert("✅ تم إرسال طلبك بنجاح!");
-                window.location.href = `index.html?id=${userId}`;
+            if (!error) {
+                await client.from('users').update({ points: window.currentPoints - amount }).eq('telegram_id', window.userId);
+                alert("✅ طلبك قيد المراجعة!");
+                window.location.href = `index.html?id=${window.userId}`;
             } else {
-                alert("❌ فشل: " + inErr.message);
-                document.getElementById('withdraw-btn').disabled = false;
+                alert("❌ خطأ: " + error.message);
             }
         }
 
-        function goBack() { window.location.href = `index.html?id=${userId}`; }
+        function goBack() { window.location.href = `index.html?id=${new URLSearchParams(window.location.search).get('id')}`; }
         init();
     </script>
 </body>
