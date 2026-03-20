@@ -2,97 +2,93 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم MegaTask</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --neon: #bc13fe; --bg: #0d0d0d; }
-        body { background: var(--bg); color: white; font-family: sans-serif; padding: 20px; }
-        .card { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
-        input { width: 90%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid var(--neon); color: white; border-radius: 10px; }
-        button { background: var(--neon); color: white; border: none; padding: 12px 25px; border-radius: 10px; cursor: pointer; font-weight: bold; }
-        .task-item { display: flex; justify-content: space-between; background: #222; padding: 10px; margin-top: 5px; border-radius: 8px; align-items: center; }
-        .del-btn { background: #ff4d4d; padding: 5px 10px; font-size: 12px; }
+        body { background: #000; color: #fff; font-family: sans-serif; padding: 20px; text-align: center; }
+        .card { border: 2px solid #bc13fe; padding: 20px; border-radius: 15px; margin-bottom: 20px; background: #111; }
+        input { width: 80%; padding: 10px; margin: 10px; border-radius: 8px; border: 1px solid #333; background: #000; color: #fff; }
+        button { background: #bc13fe; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .task-item { background: #222; padding: 15px; margin: 10px auto; border-radius: 10px; display: flex; justify-content: space-between; max-width: 500px; border-right: 5px solid #00f2ff; }
+        .del-btn { background: #ff4d4d; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h1>🛡️ لوحة الإدارة السرية</h1>
+    <h1>🛡️ لوحة التحكم السرية</h1>
 
     <div class="card">
         <h3>➕ إضافة مهمة جديدة</h3>
-        <input type="text" id="t-title" placeholder="اسم المهمة (بالعربي عادي)">
-        <input type="text" id="t-link" placeholder="رابط المهمة (https://..)">
-        <input type="number" id="t-reward" placeholder="عدد النقاط">
+        <input type="text" id="title" placeholder="اسم المهمة">
+        <input type="text" id="link" placeholder="الرابط">
+        <input type="number" id="reward" placeholder="النقاط">
         <br>
         <button onclick="addTask()">حفظ المهمة ✅</button>
     </div>
 
     <div class="card">
         <h3>📋 المهام الحالية</h3>
-        <div id="tasks-list">جاري التحميل...</div>
+        <div id="list">جاري فحص قاعدة البيانات... ⏳</div>
     </div>
 
     <script>
-                   const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        async function load() {
+        async function loadTasks() {
+            const listDiv = document.getElementById('list');
             try {
-                // جلب البيانات مع ترتيبها من الأحدث للأقدم
-                let { data, error } = await client.from('tasks').select('*').order('created_at', { ascending: false });
+                // جلب البيانات
+                const { data, error } = await client.from('tasks').select('*');
                 
                 if (error) throw error;
 
-                const div = document.getElementById('list');
-                div.innerHTML = ""; // مسح كلمة جاري التحميل
-
-                if (data.length === 0) {
-                    div.innerHTML = "📭 مفيش مهام حالياً.";
+                if (!data || data.length === 0) {
+                    listDiv.innerHTML = "📭 لا توجد مهام حالياً.";
                     return;
                 }
 
-                data.forEach(t => {
-                    // ركز هنا: الـ ID بيتحط بين سنجل كوت ' عشان هو UUID (نص)
-                    div.innerHTML += `
-                        <div class="task-row" style="display:flex; justify-content:space-between; background:#222; padding:10px; margin:5px; border-radius:5px;">
-                            <span>${t.title} - ${t.reward}ن</span>
-                            <button onclick="delTask('${t.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">حذف</button>
+                listDiv.innerHTML = "";
+                data.forEach(task => {
+                    // تحويل الـ ID لـ String لضمان التعامل مع الـ UUID
+                    const taskId = String(task.id);
+                    listDiv.innerHTML += `
+                        <div class="task-item">
+                            <span>${task.title} (${task.reward}ن)</span>
+                            <button class="del-btn" onclick="deleteTask('${taskId}')">حذف 🗑️</button>
                         </div>`;
                 });
             } catch (err) {
+                listDiv.innerHTML = "❌ خطأ في التحميل: " + err.message;
                 console.error(err);
-                document.getElementById('list').innerHTML = "❌ فشل التحميل: " + err.message;
             }
         }
 
         async function addTask() {
-            const title = document.getElementById('title').value;
-            const link = document.getElementById('link').value;
-            const reward = document.getElementById('reward').value;
+            const t = document.getElementById('title').value;
+            const l = document.getElementById('link').value;
+            const r = document.getElementById('reward').value;
 
-            if(!title || !link || !reward) return alert("املأ البيانات كاملة");
+            if(!t || !l || !r) return alert("املأ البيانات!");
 
-            const { error } = await client.from('tasks').insert([{ title, link, reward: parseInt(reward) }]);
+            const { error } = await client.from('tasks').insert([{ title: t, link: l, reward: parseInt(r) }]);
             
             if (error) alert("فشل الإضافة: " + error.message);
-            else { alert("تمت الإضافة بنجاح ✅"); location.reload(); }
+            else { alert("تمت الإضافة! ✅"); location.reload(); }
         }
 
-        async function delTask(id) {
-            if (!confirm("متأكد إنك عايز تحذف المهمة دي؟")) return;
+        async function deleteTask(id) {
+            if (!confirm("حذف المهمة؟")) return;
             
-            // الحذف بيتم بالـ ID كنص مباشرة
             const { error } = await client.from('tasks').delete().eq('id', id);
             
             if (error) alert("فشل الحذف: " + error.message);
             else { alert("تم الحذف! 🗑️"); location.reload(); }
         }
 
-        // تشغيل دالة التحميل أول ما الصفحة تفتح
-        window.onload = load;
-
+        // تشغيل التحميل فوراً
+        loadTasks();
     </script>
 </body>
 </html>
