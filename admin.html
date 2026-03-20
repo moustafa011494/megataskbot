@@ -72,22 +72,42 @@
         }
 
         // حذف مهمة
-        async function delTask(id) {
-    if (!confirm("متأكد إنك عايز تحذف المهمة دي؟")) return;
+        // 1. تحديث دالة العرض عشان تتأكد إن الـ ID بيتبعت صح
+async function loadTasks() {
+    const list = document.getElementById('list');
+    let { data: tasks, error } = await client.from('tasks').select('*');
+    
+    if (error) {
+        alert("خطأ في جلب البيانات: " + error.message);
+        return;
+    }
 
-    // تحويل الـ ID لرقم لضمان التوافق مع قاعدة البيانات
-    const taskId = Number(id);
+    list.innerHTML = "";
+    tasks.forEach(t => {
+        // نضع الـ ID بين علامات تنصيص لأنه UUID (نص)
+        list.innerHTML += `
+            <div class="task-row">
+                <span>${t.title}</span> 
+                <button onclick="delTask('${t.id}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">حذف 🗑️</button>
+            </div>`;
+    });
+}
+
+// 2. تحديث دالة الحذف للتعامل مع الـ UUID
+async function delTask(id) {
+    if (!confirm("هل أنت متأكد من حذف هذه المهمة؟")) return;
 
     try {
-        const { data, error } = await client
+        // الحذف باستخدام الـ ID كـ String (نص)
+        const { error } = await client
             .from('tasks')
             .delete()
-            .eq('id', taskId); // بنستخدم المتغير الجديد اللي اتأكدنا إنه رقم
+            .eq('id', id); 
 
         if (error) {
-            alert("فشل الحذف: " + error.message);
+            alert("فشل الحذف من سوبابيز: " + error.message);
         } else {
-            alert("تم الحذف بنجاح ✅");
+            alert("تم حذف المهمة بنجاح ✅");
             location.reload(); 
         }
     } catch (err) {
