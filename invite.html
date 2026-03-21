@@ -3,51 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دعوة الأصدقاء - MegaTask</title>
+    <title>دعوة الأصدقاء</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { background: #0d0d0d; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .card { background: #161616; padding: 20px; border-radius: 15px; border: 1px solid #333; }
-        .invite-link { background: #000; padding: 15px; border: 1px dashed #00f2ff; border-radius: 10px; word-break: break-all; margin: 20px 0; color: #00f2ff; }
-        .btn { background: #00f2ff; color: #000; border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-bottom: 10px; }
-        .info { font-size: 14px; color: #aaa; margin-top: 10px; }
+        .box { background: #161616; padding: 20px; border-radius: 15px; border: 1px dashed #333; margin-top: 20px; }
+        .link { color: #00f2ff; word-break: break-all; margin: 15px 0; font-size: 14px; }
+        .btn { background: #00f2ff; color: black; border: none; padding: 12px; width: 100%; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>👥 نظام الإحالة</h2>
-        <p>انسخ الرابط وشاركه مع أصدقائك<br>واحصل على <b>100 نقطة</b> عن كل مشترك جديد!</p>
-        
-        <div class="invite-link" id="link-box">جاري تجهيز الرابط...</div>
-        
-        <button class="btn" onclick="copyLink()">نسخ الرابط 📋</button>
-        <button class="btn" style="background: #24A1DE; color: white;" onclick="shareTelegram()">مشاركة عبر تليجرام ✈️</button>
-        
-        <div class="info">⚠️ تُحتسب النقاط فقط عند دخول صديقك للبوت لأول مرة.</div>
-        <br>
-        <a href="#" onclick="history.back()" style="color: #666; text-decoration: none;">← العودة</a>
+    <h2>👥 نظام الإحالة</h2>
+    <p>خد 100 نقطة عن كل واحد يسجل من لينكك!</p>
+
+    <div class="box">
+        <div class="link" id="myLink">جاري التحميل...</div>
+        <button class="btn" onclick="copy()">نسخ الرابط 📋</button>
+        <button class="btn" style="background:#24A1DE; color:white;" onclick="share()">مشاركة في تليجرام ✈️</button>
     </div>
+
+    <button onclick="history.back()" style="background:none; border:none; color:#666; margin-top:20px;">← رجوع</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         const params = new URLSearchParams(window.location.search);
-        const userId = params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "");
+        const userId = params.get('id');
+        
+        // غير "YourBotName" بيوزرنيم بوتك الحقيقي
+        const botLink = `https://t.me/MegaTask1Bot?start=${userId}`;
+        document.getElementById('myLink').innerText = botLink;
 
-        // لينك البوت بتاعك (غيره لليوزر نيم بتاع بوتك)
-        const botUsername = "MegaTask1Bot"; 
-        const inviteLink = `https://t.me/${botUsername}?start=${userId}`;
-
-        document.getElementById('link-box').innerText = inviteLink;
-
-        function copyLink() {
-            navigator.clipboard.writeText(inviteLink);
-            alert("تم نسخ رابط الدعوة!");
+        function copy() {
+            navigator.clipboard.writeText(botLink);
+            alert("تم النسخ!");
         }
 
-        function shareTelegram() {
-            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(inviteLink)}&text=${encodeURIComponent("ادخل سجل في بوت MegaTask واكسب فلوس من المهام! 💰")}`;
-            window.open(shareUrl, '_blank');
+        function share() {
+            const url = `https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent("سجل في بوت MegaTask وجمع نقط وفلوس! 💰")}`;
+            window.open(url, '_blank');
         }
     </script>
 </body>
