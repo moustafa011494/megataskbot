@@ -3,57 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - المهام</title>
+    <title>المهام المتاحة - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root { --neon-purple: #bc13fe; --neon-blue: #00f2ff; --bg-dark: #0d0d0d; }
-        body { background: var(--bg-dark); color: white; font-family: sans-serif; padding: 15px; }
-        
-        .header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-        .back-btn { background: #222; color: white; border: 1px solid #444; padding: 8px 15px; border-radius: 10px; cursor: pointer; text-decoration: none; font-size: 14px; }
-        
-        .task-card {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            padding: 15px;
-            border-radius: 15px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-right: 4px solid var(--neon-blue);
-        }
-        .task-info b { display: block; font-size: 16px; margin-bottom: 5px; }
-        .task-info span { color: var(--neon-blue); font-weight: bold; }
-        
-        .go-btn {
-            background: var(--neon-purple);
-            color: white; border: none; padding: 10px 20px;
-            border-radius: 10px; font-weight: bold; cursor: pointer;
-        }
+        :root { --orange: #ff7e33; --bg: #0b0b13; --card: #151521; }
+        body { background: var(--bg); color: white; font-family: sans-serif; padding: 20px; text-align: center; }
+        .task-card { background: var(--card); border: 1px solid #333; padding: 15px; border-radius: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .task-info { text-align: right; }
+        .task-info b { display: block; color: var(--orange); font-size: 16px; }
+        .task-info span { color: #00ff88; font-size: 13px; }
+        .go-btn { background: var(--orange); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .back-btn { background: none; border: 1px solid #444; color: #888; padding: 10px; width: 100%; border-radius: 10px; margin-top: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <button class="back-btn" onclick="goBack()">← رجوع</button>
-        <h2>📋 المهام المتاحة</h2>
-    </div>
+    <h2 style="color: var(--orange);">📋 المهام المتاحة</h2>
+    <div id="tasks-container">جاري تحميل المهام...</div>
 
-    <div id="tasks-container">جاري تحميل المهام... ⏳</div>
+    <button class="back-btn" onclick="goBack()">← رجوع للرئيسية</button>
 
-        <script>
+    <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        
+
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        // جلب الـ ID من الرابط أو تليجرام وتحويله لنص
         const params = new URLSearchParams(window.location.search);
-        let tid = String(params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : ""));
+        const tid = String(params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : ""));
 
         async function getTasks() {
             const container = document.getElementById('tasks-container');
@@ -65,6 +45,8 @@
             }
 
             container.innerHTML = "";
+            if(tasks.length === 0) container.innerHTML = "لا توجد مهام حالياً.";
+            
             tasks.forEach(task => {
                 container.innerHTML += `
                     <div class="task-card">
@@ -81,45 +63,60 @@
         async function doTask(link, reward) {
             window.open(link, '_blank');
             
-            tg.showConfirm("هل نفذت المهمة؟", async (ok) => {
+            tg.showConfirm("هل نفذت المهمة فعلاً؟", async (ok) => {
                 if (ok && tid) {
                     try {
-                        // 1. جلب رصيد اليوزر الحالي
-                        let { data: userData, error: fetchErr } = await client
+                        // 1. جلب بيانات اليوزر الحالي (بما فيها مين اللي دعاه)
+                        let { data: user, error: userErr } = await client
                             .from('users')
-                            .select('points')
+                            .select('*')
                             .eq('telegram_id', tid)
                             .maybeSingle();
 
-                        if (fetchErr) throw fetchErr;
+                        if (userErr) throw userErr;
 
-                        // لو اليوزر مش موجود (مثلاً أول مرة يدخل)، سجله بـ 0 نقطة
-                        let currentPoints = userData ? userData.points : 0;
-                        if (!userData) {
-                            await client.from('users').insert([{ telegram_id: tid, points: 0, name: tg.initDataUnsafe.user?.first_name || "مستخدم" }]);
+                        // 2. تحديث رصيد اليوزر + زيادة عدد مهامه الكلي
+                        let newPoints = (user ? user.points : 0) + reward;
+                        let newTotalTasks = (user ? user.total_tasks : 0) + 1;
+                        
+                        // تحديث حالة اليوزر (إضافة النقط + جعله "مدعو صالح" لو مش مفعل)
+                        await client.from('users').update({ 
+                            points: newPoints, 
+                            total_tasks: newTotalTasks,
+                            is_active_ref: true // أول مهمة تخليه "صالح" فوراً
+                        }).eq('telegram_id', tid);
+
+                        // 3. 🎁 نظام العمولات (لو اليوزر جاي من طرف حد)
+                        if (user && user.referred_by) {
+                            const commission = Math.floor(reward * 0.10); // 10% عمولة
+                            
+                            // جلب رصيد الشخص "الداعي"
+                            let { data: inviter } = await client
+                                .from('users')
+                                .select('points, total_ref_commission')
+                                .eq('telegram_id', user.referred_by)
+                                .maybeSingle();
+
+                            if (inviter) {
+                                // إضافة العمولة لرصيد الداعي + تحديث إجمالي عمولاته
+                                await client.from('users').update({ 
+                                    points: inviter.points + commission,
+                                    total_ref_commission: (inviter.total_ref_commission || 0) + commission
+                                }).eq('telegram_id', user.referred_by);
+                            }
                         }
 
-                        // 2. تحديث الرصيد (الجمع)
-                        const { error: upErr } = await client
-                            .from('users')
-                            .update({ points: currentPoints + reward })
-                            .eq('telegram_id', tid);
-
-                        if (upErr) throw upErr;
-
-                        tg.showAlert(`✅ مبروك! انضاف لك ${reward} نقطة.`);
+                        tg.showAlert(`✅ عاش يا بطل! انضاف لك ${reward} نقطة.`);
+                        
                     } catch (err) {
                         console.error(err);
-                        tg.showAlert("❌ حدث خطأ أثناء إضافة النقاط.");
+                        tg.showAlert("❌ حدث خطأ أثناء تحديث البيانات.");
                     }
                 }
             });
         }
 
-        function goBack() {
-            window.location.href = `index.html?id=${tid}`;
-        }
-
+        function goBack() { window.location.href = `index.html?id=${tid}`; }
         getTasks();
     </script>
 </body>
