@@ -121,33 +121,34 @@
 
             <script>
     const tg = window.Telegram.WebApp;
-    
-    // تأكيد تشغيل الـ SDK
     tg.ready();
     tg.expand();
 
+    // بيانات سوبابيز
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
     const client = supabase.createClient(S_URL, S_KEY);
 
-    let userId, currentPoints;
+    // متغيرات عالمية عشان الزراير تشوفها
+    let userId = "";
+    let currentPoints = 0;
 
     async function init() {
+        const params = new URLSearchParams(window.location.search);
+        // جلب الـ ID بذكاء
+        userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "");
+
+        if (!userId || userId === "null" || userId === "") {
+            console.error("No User ID found");
+            return;
+        }
+
         try {
-            const params = new URLSearchParams(window.location.search);
-            // جلب الـ ID بـ 3 طرق لضمان الفتح
-            userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "");
-
-            if (!userId || userId === "null") {
-                document.body.innerHTML = "<h2 style='color:white;text-align:center;'>⚠️ يرجى فتح البوت من تليجرام</h2>";
-                return;
-            }
-
             // 1. جلب بيانات اليوزر
             let { data: user, error } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
 
             if (!user) {
-                // 🆕 يوزر جديد - فحص الدعوة
+                // يوزر جديد - تسجيله وفحص الدعوة
                 let referrerId = tg.initDataUnsafe.start_param; 
                 let newUser = { 
                     telegram_id: userId, 
@@ -160,19 +161,17 @@
                     await giveReferralReward(referrerId);
                 }
 
-                const { data: created, error: insErr } = await client.from('users').insert([newUser]).select().single();
+                const { data: created } = await client.from('users').insert([newUser]).select().single();
                 user = created;
             }
 
             if (user) {
                 currentPoints = user.points;
-                document.getElementById('user-points').innerText = currentPoints.toLocaleString() + " نقطة";
+                const pointsElement = document.getElementById('user-points');
+                if(pointsElement) pointsElement.innerText = currentPoints.toLocaleString() + " نقطة";
             }
-
         } catch (err) {
-            console.error("Init Error:", err);
-            // لو حصل أي عطل يفتح برضه بس برسالة تنبيه
-            alert("عطل بسيط في التحميل، جاري المحاولة...");
+            console.error("Database Error:", err);
         }
     }
 
@@ -182,15 +181,28 @@
             if (data) {
                 await client.from('users').update({ points: data.points + 100 }).eq('telegram_id', String(inviterId));
             }
-        } catch (e) { console.log("Referral error ignored"); }
+        } catch (e) { console.error("Referral Reward Error"); }
     }
 
-    function openInvitePage() {
+    // --- وظائف الزراير (تأكد إن الـ onclick في الـ HTML نفس الأسامي دي) ---
+
+    function openTasks() {
+        if(!userId) return alert("انتظر تحميل البيانات...");
+        window.location.href = `tasks.html?id=${userId}`;
+    }
+
+    function openWithdraw() {
+        if(!userId) return alert("انتظر تحميل البيانات...");
+        window.location.href = `withdraw.html?id=${userId}`;
+    }
+
+    function openInvite() {
+        if(!userId) return alert("انتظر تحميل البيانات...");
         window.location.href = `invite.html?id=${userId}`;
     }
 
-    // تشغيل الدالة بعد التأكد من تحميل الصفحة
+    // تشغيل عند التحميل
     window.onload = init;
-</script>
+      </script>
 </body>
 </html>
