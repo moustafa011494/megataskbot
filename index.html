@@ -120,30 +120,35 @@
     </div>
 
             <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+    const tg = window.Telegram.WebApp;
+    
+    // تأكيد تشغيل الـ SDK
+    tg.ready();
+    tg.expand();
 
-        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-        const client = supabase.createClient(S_URL, S_KEY);
+    const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+    const client = supabase.createClient(S_URL, S_KEY);
 
-        let userId, currentPoints;
+    let userId, currentPoints;
 
-        async function init() {
+    async function init() {
+        try {
             const params = new URLSearchParams(window.location.search);
-            userId = String(params.get('id') || (tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : ""));
-            
-            // 💡 جلب معرف الشخص اللي عمل الدعوة (لو موجود)
-            // تليجرام بيمرر الـ start parameter في الـ initDataUnsafe
-            const referrerId = tg.initDataUnsafe.start_param; 
+            // جلب الـ ID بـ 3 طرق لضمان الفتح
+            userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "");
 
-            if (!userId) return;
+            if (!userId || userId === "null") {
+                document.body.innerHTML = "<h2 style='color:white;text-align:center;'>⚠️ يرجى فتح البوت من تليجرام</h2>";
+                return;
+            }
 
             // 1. جلب بيانات اليوزر
             let { data: user, error } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
 
             if (!user) {
-                // 🆕 يوزر جديد! نسجله ونشوف لو جاي من طرف حد
+                // 🆕 يوزر جديد - فحص الدعوة
+                let referrerId = tg.initDataUnsafe.start_param; 
                 let newUser = { 
                     telegram_id: userId, 
                     name: tg.initDataUnsafe.user?.first_name || "مستخدم", 
@@ -151,33 +156,41 @@
                 };
 
                 if (referrerId && referrerId !== userId) {
-                    newUser.referred_by = referrerId;
-                    // 🎁 إعطاء هدية للشخص اللي دعا (100 نقطة)
+                    newUser.referred_by = String(referrerId);
                     await giveReferralReward(referrerId);
                 }
 
-                const { data: created } = await client.from('users').insert([newUser]).select().single();
+                const { data: created, error: insErr } = await client.from('users').insert([newUser]).select().single();
                 user = created;
             }
 
-            currentPoints = user.points;
-            document.getElementById('user-points').innerText = currentPoints.toLocaleString() + " نقطة";
-        }
-
-        async function giveReferralReward(inviterId) {
-            // جلب نقط الشخص اللي دعا وزيادتها
-            const { data } = await client.from('users').select('points').eq('telegram_id', inviterId).maybeSingle();
-            if (data) {
-                await client.from('users').update({ points: data.points + 100 }).eq('telegram_id', inviterId);
+            if (user) {
+                currentPoints = user.points;
+                document.getElementById('user-points').innerText = currentPoints.toLocaleString() + " نقطة";
             }
-        }
 
-        // زرار فتح صفحة الدعوات
-        function openInvitePage() {
-            window.location.href = `invite.html?id=${userId}`;
+        } catch (err) {
+            console.error("Init Error:", err);
+            // لو حصل أي عطل يفتح برضه بس برسالة تنبيه
+            alert("عطل بسيط في التحميل، جاري المحاولة...");
         }
+    }
 
-        init();
-    </script>
+    async function giveReferralReward(inviterId) {
+        try {
+            const { data } = await client.from('users').select('points').eq('telegram_id', String(inviterId)).maybeSingle();
+            if (data) {
+                await client.from('users').update({ points: data.points + 100 }).eq('telegram_id', String(inviterId));
+            }
+        } catch (e) { console.log("Referral error ignored"); }
+    }
+
+    function openInvitePage() {
+        window.location.href = `invite.html?id=${userId}`;
+    }
+
+    // تشغيل الدالة بعد التأكد من تحميل الصفحة
+    window.onload = init;
+</script>
 </body>
 </html>
