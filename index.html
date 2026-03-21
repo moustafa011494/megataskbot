@@ -8,201 +8,118 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        :root {
-            --neon-purple: #bc13fe;
-            --neon-blue: #00f2ff;
-            --bg-dark: #0d0d0d;
-            --card-bg: #1a1a1a;
-        }
+        :root { --neon: #00f2ff; --bg: #0d0d0d; --card: #161616; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; text-align: center; }
+        
+        .header { margin-bottom: 30px; }
+        h1 { color: var(--neon); text-shadow: 0 0 10px var(--neon); font-size: 28px; }
+        
+        .balance-card { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid #333; margin-bottom: 25px; }
+        .balance-title { font-size: 14px; color: #888; margin-bottom: 5px; }
+        .balance-amount { font-size: 32px; font-weight: bold; color: var(--neon); }
 
-        body {
-            background-color: var(--bg-dark);
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+        .menu-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
+        
+        .btn { background: var(--card); color: white; border: 1px solid #333; padding: 20px; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; }
+        .btn:active { transform: scale(0.95); background: #222; }
+        .btn-primary { background: var(--neon); color: black; border: none; }
+        .btn-invite { background: linear-gradient(45deg, #00f2ff, #0072ff); color: white; border: none; }
 
-        .balance-card {
-            background: linear-gradient(135deg, #1a1a1a 0%, #2c004d 100%);
-            padding: 30px 20px;
-            border-radius: 25px;
-            border: 1px solid var(--neon-purple);
-            box-shadow: 0 0 20px rgba(188, 19, 254, 0.5);
-            margin-bottom: 25px;
-            text-align: center;
-            width: calc(100% - 40px);
-            max-width: 400px;
-        }
-
-        .balance-amount {
-            font-size: 50px;
-            font-weight: bold;
-            color: var(--neon-blue);
-            text-shadow: 0 0 15px var(--neon-blue);
-            margin: 10px 0;
-        }
-
-        .user-welcome { color: #aaa; font-size: 14px; }
-
-        .grid-menu {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        /* تعديل الـ CSS عشان الزرار يبقى Clickable */
-        .menu-item {
-            background: var(--card-bg);
-            border: 1px solid #333;
-            padding: 25px 10px;
-            border-radius: 18px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .menu-item:active {
-            transform: scale(0.95);
-            border-color: var(--neon-purple);
-            box-shadow: 0 0 10px var(--neon-purple);
-        }
-
-        .icon { font-size: 30px; }
-        .text { font-weight: bold; font-size: 14px; }
-
-        .border-purple { border-color: var(--neon-purple); }
-        .border-blue { border-color: var(--neon-blue); }
+        .footer { margin-top: 40px; font-size: 12px; color: #444; }
     </style>
 </head>
 <body>
 
+    <div class="header">
+        <h1>🛡️ MegaTask Bot</h1>
+    </div>
+
     <div class="balance-card">
-        <div class="user-welcome">مرحباً، <span id="user-name">...</span> 👋</div>
+        <div class="balance-title">رصيدك الحالي</div>
         <div class="balance-amount" id="user-points">0</div>
-        <div style="font-size: 12px; color: var(--neon-purple);">نقطة ذهبية معتمدة</div>
     </div>
 
-    <div class="grid-menu">
-        <div onclick="navigate('tasks.html')" class="menu-item border-purple">
-            <span class="icon">📋</span>
-            <span class="text">بيدج المهام</span>
-        </div>
-        <div onclick="navigate('deposit.html')" class="menu-item border-blue">
-            <span class="icon">💰</span>
-            <span class="text">الإيداع</span>
-        </div>
-        <div onclick="navigate('withdraw.html')" class="menu-item border-blue">
-            <span class="icon">💸</span>
-            <span class="text">السحب</span>
-        </div>
-        <div onclick="navigate('smm.html')" class="menu-item border-purple">
-            <span class="icon">🚀</span>
-            <span class="text">خدمات SMM</span>
-        </div>
-        <div onclick="navigate('referral.html')" class="menu-item border-purple">
-            <span class="icon">👥</span>
-            <span class="text">الدعوة</span>
-        </div>
-        <div onclick="navigate('support.html')" class="menu-item border-blue">
-            <span class="icon">🛠</span>
-            <span class="text">تواصل معنا</span>
-        </div>
+    <div class="menu-grid">
+        <div class="btn btn-primary" onclick="openTasks()">📝 تنفيذ المهام</div>
+        
+        <div class="btn" onclick="openWithdraw()">💸 سحب الأرباح</div>
+        
+        <div class="btn btn-invite" onclick="openInvite()">👥 ادعُ أصدقاءك (+100)</div>
     </div>
 
-            <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+    <div class="footer">MegaTask System v2.0 - 2026</div>
 
-    // بيانات سوبابيز
-    const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-    const client = supabase.createClient(S_URL, S_KEY);
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
 
-    // متغيرات عالمية عشان الزراير تشوفها
-    let userId = "";
-    let currentPoints = 0;
+        // بيانات سوبابيز (بتاعتك اللي شغالة)
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
 
-    async function init() {
-        const params = new URLSearchParams(window.location.search);
-        // جلب الـ ID بذكاء
-        userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "");
+        let userId = "";
 
-        if (!userId || userId === "null" || userId === "") {
-            console.error("No User ID found");
-            return;
-        }
+        async function init() {
+            const params = new URLSearchParams(window.location.search);
+            userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "");
 
-        try {
-            // 1. جلب بيانات اليوزر
-            let { data: user, error } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+            if (!userId || userId === "null") {
+                document.getElementById('user-points').innerText = "⚠️ افتح من التليجرام";
+                return;
+            }
 
-            if (!user) {
-                // يوزر جديد - تسجيله وفحص الدعوة
-                let referrerId = tg.initDataUnsafe.start_param; 
-                let newUser = { 
-                    telegram_id: userId, 
-                    name: tg.initDataUnsafe.user?.first_name || "مستخدم", 
-                    points: 0 
-                };
+            try {
+                // 1. محاولة جلب اليوزر من القاعدة
+                let { data: user, error } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
 
-                if (referrerId && referrerId !== userId) {
-                    newUser.referred_by = String(referrerId);
-                    await giveReferralReward(referrerId);
+                // 2. لو اليوزر مش موجود (جديد)
+                if (!user) {
+                    const referrerId = tg.initDataUnsafe.start_param; // الـ ID بتاع اللي عمل الدعوة
+                    
+                    let newUser = { 
+                        telegram_id: userId, 
+                        name: tg.initDataUnsafe.user?.first_name || "مستخدم", 
+                        points: 0 
+                    };
+
+                    // لو جاي من لينك دعوة
+                    if (referrerId && referrerId !== userId) {
+                        newUser.referred_by = String(referrerId);
+                        await giveReward(referrerId);
+                    }
+
+                    const { data: created } = await client.from('users').insert([newUser]).select().single();
+                    user = created;
                 }
 
-                const { data: created } = await client.from('users').insert([newUser]).select().single();
-                user = created;
-            }
+                // 3. عرض النقط
+                if (user) {
+                    document.getElementById('user-points').innerText = user.points.toLocaleString();
+                }
 
-            if (user) {
-                currentPoints = user.points;
-                const pointsElement = document.getElementById('user-points');
-                if(pointsElement) pointsElement.innerText = currentPoints.toLocaleString() + " نقطة";
+            } catch (err) {
+                console.error("Error:", err);
             }
-        } catch (err) {
-            console.error("Database Error:", err);
         }
-    }
 
-    async function giveReferralReward(inviterId) {
-        try {
-            const { data } = await client.from('users').select('points').eq('telegram_id', String(inviterId)).maybeSingle();
-            if (data) {
-                await client.from('users').update({ points: data.points + 100 }).eq('telegram_id', String(inviterId));
-            }
-        } catch (e) { console.error("Referral Reward Error"); }
-    }
+        async function giveReward(inviterId) {
+            try {
+                const { data } = await client.from('users').select('points').eq('telegram_id', String(inviterId)).maybeSingle();
+                if (data) {
+                    await client.from('users').update({ points: data.points + 100 }).eq('telegram_id', String(inviterId));
+                }
+            } catch (e) { console.error("Referral Reward Error"); }
+        }
 
-    // --- وظائف الزراير (تأكد إن الـ onclick في الـ HTML نفس الأسامي دي) ---
+        // وظائف التنقل (الزراير)
+        function openTasks() { window.location.href = `tasks.html?id=${userId}`; }
+        function openWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
+        function openInvite() { window.location.href = `invite.html?id=${userId}`; }
 
-    function openTasks() {
-        if(!userId) return alert("انتظر تحميل البيانات...");
-        window.location.href = `tasks.html?id=${userId}`;
-    }
-
-    function openWithdraw() {
-        if(!userId) return alert("انتظر تحميل البيانات...");
-        window.location.href = `withdraw.html?id=${userId}`;
-    }
-
-    function openInvite() {
-        if(!userId) return alert("انتظر تحميل البيانات...");
-        window.location.href = `invite.html?id=${userId}`;
-    }
-
-    // تشغيل عند التحميل
-    window.onload = init;
-      </script>
+        // تشغيل السيستم
+        init();
+    </script>
 </body>
 </html>
