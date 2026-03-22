@@ -7,100 +7,135 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #0b0b13; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .task-card { background: #151521; border: 1px solid #333; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .go-btn { background: #ff7e33; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; }
+        :root { --orange: #ff7e33; --bg: #0b0b13; --card: #151521; }
+        body { background: var(--bg); color: white; font-family: sans-serif; text-align: center; padding: 20px; margin: 0; }
+        .task-card { background: var(--card); border: 1px solid #333; padding: 15px; border-radius: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid var(--orange); }
+        .task-info { text-align: right; }
+        .task-info b { display: block; color: var(--orange); font-size: 16px; }
+        .task-info span { color: #00ff88; font-size: 13px; font-weight: bold; }
+        .go-btn { background: var(--orange); color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .go-btn:active { transform: scale(0.95); background: #e66d2a; }
+        .back-btn { background: none; border: 1px solid #444; color: #888; padding: 12px; width: 100%; border-radius: 10px; margin-top: 20px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h2 style="color: #ff7e33;">📋 المهام المتاحة</h2>
-    <div id="tasks-list">جاري التحميل...</div>
+    <h2 style="color: var(--orange); margin-bottom: 25px;">📋 قائمة المهام</h2>
+    <div id="tasks-container">جاري تحميل المهام...</div>
+
+    <button class="back-btn" onclick="goBack()">← العودة للرئيسية</button>
 
     <script>
         const tg = window.Telegram.WebApp;
+        tg.expand();
+
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "");
+        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
 
-        async function loadTasks() {
-            let { data: tasks } = await client.from('tasks').select('*');
-            const list = document.getElementById('tasks-list');
-            list.innerHTML = "";
-            tasks.forEach(t => {
-                list.innerHTML += `
-                    <div class="task-card">
-                        <div style="text-align:right"><b>${t.title}</b><br><small style="color:#00ff88">+${t.reward} نقطة</small></div>
-                        <button class="go-btn" onclick="completeTask('${t.link}', ${t.reward})">تنفيذ</button>
-                    </div>`;
-            });
+        async function fetchTasks() {
+            const container = document.getElementById('tasks-container');
+            try {
+                let { data: tasks, error } = await client.from('tasks').select('*');
+                if (error) throw error;
+
+                container.innerHTML = "";
+                if (!tasks || tasks.length === 0) {
+                    container.innerHTML = "لا توجد مهام متاحة حالياً.";
+                    return;
+                }
+
+                tasks.forEach(task => {
+                    container.innerHTML += `
+                        <div class="task-card">
+                            <div class="task-info">
+                                <b>${task.title}</b>
+                                <span>+${task.reward} نقطة 💰</span>
+                            </div>
+                            <button class="go-btn" onclick="completeTask('${task.link}', ${task.reward})">تنفيذ</button>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                container.innerHTML = "❌ عطل في تحميل المهام.";
+                console.error(err);
+            }
         }
 
         async function completeTask(link, reward) {
             window.open(link, '_blank');
-            tg.showConfirm("هل نفذت المهمة؟", async (ok) => {
-                if (ok) {
-                    // 1. جلب بيانات اليوزر الحالية
-                    let { data: user } = await client.from('users').select('*').eq('telegram_id', tid).single();
-                    
-                    if (user) {
-                        // 2. إضافة النقط لليوزر وتحديث حالته
-                        const { error: upErr } = await client.from('users').update({
-                            points: user.points + reward,
-                            total_tasks: (user.total_tasks || 0) + 1,
-                            is_active_ref: true
-                        }).eq('telegram_id', tid);
+            
+            tg.showConfirm("هل أتممت المهمة بالفعل؟", async (ok) => {
+                if (ok && tid) {
+                    try {
+                        // 1. جلب بيانات اليوزر الحالي بدقة (بحث نصي)
+                        let { data: user, error: userErr } = await client
+                            .from('users')
+                            .select('*')
+                            .eq('telegram_id', String(tid))
+                            .maybeSingle();
 
-                        if(upErr) return alert("خطأ في إضافة النقاط: " + upErr.message);
+                        if (userErr || !user) {
+                            tg.showAlert("⚠️ خطأ: اليوزر غير مسجل في النظام.");
+                            return;
+                        }
 
-                        // 3. 🎁 إضافة العمولة للداعي (لو موجود)
-                        // ... داخل دالة doTask بعد تحديث نقاط اليوزر الحالي ...
+                        // 2. تحديث بيانات اليوزر الحالي (استخدام Number لضمان الحساب)
+                        const { error: upErr } = await client
+                            .from('users')
+                            .update({
+                                points: Number(user.points || 0) + Number(reward),
+                                total_tasks: (Number(user.total_tasks || 0) + 1),
+                                is_active_ref: true // تحويله لمدعو "صالح" بمجرد أول مهمة
+                            })
+                            .eq('telegram_id', String(tid));
 
-if (user && user.referred_by) {
-    const commission = Math.floor(reward * 0.10); // 10%
-    const inviterId = String(user.referred_by);
+                        if (upErr) throw upErr;
 
-    console.log("برسل عمولة لـ:", inviterId);
+                        // 3. 🎁 إضافة العمولة للداعي (Referral System)
+                        if (user.referred_by && String(user.referred_by) !== "null" && String(user.referred_by) !== "") {
+                            const inviterId = String(user.referred_by).trim();
+                            const commission = Math.floor(Number(reward) * 0.10); // 10%
 
-    // 1. جلب بيانات الداعي (التأكد إنه موجود)
-    const { data: inviter, error: invError } = await client
-        .from('users')
-        .select('points, total_ref_commission, invited_count')
-        .eq('telegram_id', inviterId)
-        .maybeSingle();
+                            // جلب بيانات الداعي
+                            let { data: inviter } = await client
+                                .from('users')
+                                .select('points, total_ref_commission, invited_count')
+                                .eq('telegram_id', inviterId)
+                                .maybeSingle();
 
-    if (inviter) {
-        // 2. تحديث بيانات الداعي (النقط + العمولات + عداد الصحاب)
-        const updateData = {
-            points: (inviter.points || 0) + commission,
-            total_ref_commission: (inviter.total_ref_commission || 0) + commission
-        };
+                            if (inviter) {
+                                // تحديث الداعي (نقاطه + عمولاته + عداده لو اليوزر كان لسه مش اكتف)
+                                let invData = {
+                                    points: Number(inviter.points || 0) + commission,
+                                    total_ref_commission: Number(inviter.total_ref_commission || 0) + commission
+                                };
 
-        // لو دي أول مهمة لليوزر الجديد، نزود عداد "المدعوين" للداعي
-        if (!user.is_active_ref) {
-            updateData.invited_count = (inviter.invited_count || 0) + 1;
-        }
+                                // لو دي أول مرة اليوزر يبقى Active، نزود عداد الأشخاص عند الداعي
+                                if (!user.is_active_ref) {
+                                    invData.invited_count = (Number(inviter.invited_count || 0) + 1);
+                                }
 
-        const { error: finalErr } = await client
-            .from('users')
-            .update(updateData)
-            .eq('telegram_id', inviterId);
+                                await client.from('users').update(invData).eq('telegram_id', inviterId);
+                                console.log("✅ تمت إضافة العمولة للداعي:", inviterId);
+                            }
+                        }
 
-        if (!finalErr) {
-            console.log("✅ العمولة والعداد اتحدثوا!");
-        } else {
-            console.error("❌ فشل تحديث الداعي:", finalErr.message);
-        }
-    } else if (invError) {
-        console.error("❌ خطأ في الوصول للداعي:", invError.message);
-    }
-}
+                        tg.showAlert(`✅ مبروك! حصلت على ${reward} نقطة.`);
+                        
+                    } catch (err) {
+                        console.error("System Error:", err);
+                        tg.showAlert("❌ فشل في تحديث البيانات. حاول لاحقاً.");
+                    }
+                }
             });
         }
-        loadTasks();
+
+        function goBack() { window.location.href = `index.html?id=${tid}`; }
+        fetchTasks();
     </script>
 </body>
 </html>
