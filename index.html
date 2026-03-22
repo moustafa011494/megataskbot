@@ -39,32 +39,53 @@
         let userId = "";
 
         async function init() {
-            const params = new URLSearchParams(window.location.search);
-            userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "");
+    try {
+        const params = new URLSearchParams(window.location.search);
+        // 1. جلب الـ ID الأساسي
+        userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "");
 
-            if (!userId) return;
+        if (!userId || userId === "null") return;
 
-            // جلب البيانات وفحص لو فيه دعوة (Referral)
-            let { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+        // 2. محاولة جلب اليوزر
+        let { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
 
-            if (!user) {
-                const ref = tg.initDataUnsafe.start_param; // الـ ID بتاع اللي دعاك
-                let newUser = { telegram_id: userId, name: tg.initDataUnsafe.user?.first_name || "User", points: 0 };
-                
-                if (ref && ref !== userId) {
-                    newUser.referred_by = String(ref);
-                    // زيادة رصيد الداعي
-                    const { data: inviter } = await client.from('users').select('points').eq('telegram_id', String(ref)).maybeSingle();
-                    if (inviter) {
-                        await client.from('users').update({ points: inviter.points + 100 }).eq('telegram_id', String(ref));
-                    }
-                }
-                const { data: created } = await client.from('users').insert([newUser]).select().single();
-                user = created;
+        if (!user) {
+            // 🆕 يوزر جديد - هنا اللعبة كلها!
+            
+            // جلب كود الإحالة من تليجرام (start_param)
+            let referrerId = tg.initDataUnsafe.start_param; 
+
+            // تأكد إن الرقم نصي ونضيف (تليجرام ساعات بيبعته كـ string)
+            if (referrerId) {
+                referrerId = String(referrerId).replace('ref_', ''); // لو اللينك فيه كلمة ref_ يشيلها
             }
 
+            let newUser = { 
+                telegram_id: userId, 
+                name: tg.initDataUnsafe.user?.first_name || "مستخدم جديد", 
+                points: 0 
+            };
+
+            // لو فيه داعي ومش هو نفسه اليوزر
+            if (referrerId && referrerId !== userId && referrerId !== "undefined") {
+                newUser.referred_by = referrerId;
+                console.log("Found Referrer:", referrerId);
+            }
+
+            const { data: created, error: insErr } = await client.from('users').insert([newUser]).select().single();
+            if (insErr) console.error("Insert Error:", insErr);
+            user = created;
+        }
+
+        if (user) {
             document.getElementById('user-points').innerText = user.points.toLocaleString();
         }
+
+    } catch (err) {
+        console.error("Critical Init Error:", err);
+    }
+}
+
 
         function openTasks() { window.location.href = "tasks.html?id=" + userId; }
         function openWithdraw() { window.location.href = "withdraw.html?id=" + userId; }
