@@ -57,19 +57,47 @@
                         if(upErr) return alert("خطأ في إضافة النقاط: " + upErr.message);
 
                         // 3. 🎁 إضافة العمولة للداعي (لو موجود)
-                        if (user.referred_by) {
-                            const comm = Math.floor(reward * 0.10);
-                            let { data: inviter } = await client.from('users').select('points, total_ref_commission').eq('telegram_id', user.referred_by).maybeSingle();
-                            if (inviter) {
-                                await client.from('users').update({
-                                    points: inviter.points + comm,
-                                    total_ref_commission: (inviter.total_ref_commission || 0) + comm
-                                }).eq('telegram_id', user.referred_by);
-                            }
-                        }
-                        tg.showAlert("✅ مبروك! تم إضافة " + reward + " نقطة لرصيدك.");
-                    }
-                }
+                        // ... داخل دالة doTask بعد تحديث نقاط اليوزر الحالي ...
+
+if (user && user.referred_by) {
+    const commission = Math.floor(reward * 0.10); // 10%
+    const inviterId = String(user.referred_by);
+
+    console.log("برسل عمولة لـ:", inviterId);
+
+    // 1. جلب بيانات الداعي (التأكد إنه موجود)
+    const { data: inviter, error: invError } = await client
+        .from('users')
+        .select('points, total_ref_commission, invited_count')
+        .eq('telegram_id', inviterId)
+        .maybeSingle();
+
+    if (inviter) {
+        // 2. تحديث بيانات الداعي (النقط + العمولات + عداد الصحاب)
+        const updateData = {
+            points: (inviter.points || 0) + commission,
+            total_ref_commission: (inviter.total_ref_commission || 0) + commission
+        };
+
+        // لو دي أول مهمة لليوزر الجديد، نزود عداد "المدعوين" للداعي
+        if (!user.is_active_ref) {
+            updateData.invited_count = (inviter.invited_count || 0) + 1;
+        }
+
+        const { error: finalErr } = await client
+            .from('users')
+            .update(updateData)
+            .eq('telegram_id', inviterId);
+
+        if (!finalErr) {
+            console.log("✅ العمولة والعداد اتحدثوا!");
+        } else {
+            console.error("❌ فشل تحديث الداعي:", finalErr.message);
+        }
+    } else if (invError) {
+        console.error("❌ خطأ في الوصول للداعي:", invError.message);
+    }
+}
             });
         }
         loadTasks();
