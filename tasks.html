@@ -66,73 +66,38 @@
         }
 
         async function completeTask(link, reward) {
-            window.open(link, '_blank');
+    window.open(link, '_blank');
+    
+    tg.showConfirm("هل نفذت المهمة؟", async (ok) => {
+        if (ok) {
+            // 1. تحديث رصيد اليوزر الحالي (مباشرة)
+            const { data: user } = await client.from('users').select('*').eq('telegram_id', String(tid)).single();
             
-            tg.showConfirm("هل أتممت المهمة بالفعل؟", async (ok) => {
-                if (ok && tid) {
-                    try {
-                        // 1. جلب بيانات اليوزر الحالي بدقة (بحث نصي)
-                        let { data: user, error: userErr } = await client
-                            .from('users')
-                            .select('*')
-                            .eq('telegram_id', String(tid))
-                            .maybeSingle();
+            if (user) {
+                // تحديث اليوزر نفسه
+                await client.from('users').update({
+                    points: Number(user.points) + Number(reward),
+                    total_tasks: Number(user.total_tasks || 0) + 1,
+                    is_active_ref: true
+                }).eq('telegram_id', String(tid));
 
-                        if (userErr || !user) {
-                            tg.showAlert("⚠️ خطأ: اليوزر غير مسجل في النظام.");
-                            return;
-                        }
-
-                        // 2. تحديث بيانات اليوزر الحالي (استخدام Number لضمان الحساب)
-                        const { error: upErr } = await client
-                            .from('users')
-                            .update({
-                                points: Number(user.points || 0) + Number(reward),
-                                total_tasks: (Number(user.total_tasks || 0) + 1),
-                                is_active_ref: true // تحويله لمدعو "صالح" بمجرد أول مهمة
-                            })
-                            .eq('telegram_id', String(tid));
-
-                        if (upErr) throw upErr;
-
-                        // 3. 🎁 إضافة العمولة للداعي (Referral System)
-                        if (user.referred_by && String(user.referred_by) !== "null" && String(user.referred_by) !== "") {
-                            const inviterId = String(user.referred_by).trim();
-                            const commission = Math.floor(Number(reward) * 0.10); // 10%
-
-                            // جلب بيانات الداعي
-                            let { data: inviter } = await client
-                                .from('users')
-                                .select('points, total_ref_commission, invited_count')
-                                .eq('telegram_id', inviterId)
-                                .maybeSingle();
-
-                            if (inviter) {
-                                // تحديث الداعي (نقاطه + عمولاته + عداده لو اليوزر كان لسه مش اكتف)
-                                let invData = {
-                                    points: Number(inviter.points || 0) + commission,
-                                    total_ref_commission: Number(inviter.total_ref_commission || 0) + commission
-                                };
-
-                                // لو دي أول مرة اليوزر يبقى Active، نزود عداد الأشخاص عند الداعي
-                                if (!user.is_active_ref) {
-                                    invData.invited_count = (Number(inviter.invited_count || 0) + 1);
-                                }
-
-                                await client.from('users').update(invData).eq('telegram_id', inviterId);
-                                console.log("✅ تمت إضافة العمولة للداعي:", inviterId);
-                            }
-                        }
-
-                        tg.showAlert(`✅ مبروك! حصلت على ${reward} نقطة.`);
-                        
-                    } catch (err) {
-                        console.error("System Error:", err);
-                        tg.showAlert("❌ فشل في تحديث البيانات. حاول لاحقاً.");
+                // 2. تحديث الداعي (العمولة)
+                if (user.referred_by) {
+                    const inviterId = String(user.referred_by);
+                    const { data: inviter } = await client.from('users').select('points, total_ref_commission').eq('telegram_id', inviterId).single();
+                    
+                    if (inviter) {
+                        await client.from('users').update({
+                            points: Number(inviter.points) + Math.floor(reward * 0.10),
+                            total_ref_commission: Number(inviter.total_ref_commission || 0) + Math.floor(reward * 0.10)
+                        }).eq('telegram_id', inviterId);
                     }
                 }
-            });
+                tg.showAlert("✅ مبروك! تم إضافة النقاط.");
+            }
         }
+    });
+}
 
         function goBack() { window.location.href = `index.html?id=${tid}`; }
         fetchTasks();
