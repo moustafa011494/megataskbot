@@ -9,37 +9,36 @@
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
         body { background-color: var(--dark-bg); color: white; font-family: sans-serif; margin: 0; padding: 20px; padding-bottom: 100px; }
-        .profile-header { text-align: center; margin-bottom: 30px; padding-top: 20px; }
-        .avatar-circle { width: 80px; height: 80px; background: linear-gradient(135deg, var(--main-green), #008f47); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: black; font-weight: bold; }
-        .user-name { font-size: 20px; font-weight: bold; }
-        .menu-list { background: var(--card-bg); border-radius: 20px; border: 1px solid #2d333d; overflow: hidden; margin-bottom: 20px; }
-        .menu-item { display: flex; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid #2d333d; color: white; text-decoration: none; }
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
-        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; }
+        .profile-header { text-align: center; margin: 30px 0; }
+        .avatar { width: 80px; height: 80px; background: var(--main-green); border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: black; font-size: 30px; font-weight: bold; }
+        .menu-list { background: var(--card-bg); border-radius: 15px; border: 1px solid #2d333d; margin-bottom: 20px; }
+        .menu-item { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid #2d333d; }
+        .menu-item:last-child { border-bottom: none; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: #1a1d23; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #2d333d; }
+        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
-        .center-nav { background: var(--main-green); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -25px; color: black !important; }
     </style>
 </head>
 <body>
 
     <div class="profile-header">
-        <div class="avatar-circle" id="user-initial">M</div>
-        <div class="user-name" id="display-name">تحميل...</div>
-        <div style="color:var(--text-gray); font-size:12px;" id="display-id">ID: 00000</div>
+        <div class="avatar" id="avatar">U</div>
+        <div id="name" style="font-size: 20px; font-weight: bold;">تحميل...</div>
+        <div id="id-display" style="color: var(--text-gray); font-size: 12px;">ID: 00000</div>
     </div>
 
     <div class="menu-list">
-        <div class="menu-item"><span>💎 النقاط</span><b id="stat-points">0</b></div>
-        <div class="menu-item"><span>🎯 المهام</span><b id="stat-tasks">0</b></div>
-        <div class="menu-item"><span>🤝 العمولات</span><b id="stat-ref">0</b></div>
+        <div class="menu-item"><span>💎 النقاط</span><b id="p">0</b></div>
+        <div class="menu-item"><span>🎯 المهام</span><b id="t">0</b></div>
+        <div class="menu-item"><span>🤝 العمولات</span><b id="r">0</b></div>
     </div>
 
     <nav class="navbar">
-        <a href="#" onclick="goHome()" class="nav-item">🏠<br>الرئيسية</a>
-        <a href="#" onclick="goTasks()" class="nav-item">📋<br>اكسب</a>
-        <a href="#" class="nav-item center-nav">🎮</a>
-        <a href="#" onclick="goInvite()" class="nav-item">👥<br>أجل</a>
-        <a href="#" class="nav-item active">👤<br>أنا</a>
+        <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
+        <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
+        <div class="nav-item" style="background: var(--main-green); width: 40px; height: 40px; border-radius: 50%; color: black; line-height: 40px; margin-top: -20px; font-size: 20px;">🎮</div>
+        <div onclick="goInvite()" class="nav-item">👥<br>أجل</div>
+        <div class="nav-item active">👤<br>أنا</div>
     </nav>
 
     <script>
@@ -48,27 +47,23 @@
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        const tid = new URLSearchParams(window.location.search).get('id') || tg.initDataUnsafe.user?.id;
 
-        async function init() {
-            try {
-                let { data: user } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
-                if (user) {
-                    document.getElementById('display-name').innerText = user.name || "User";
-                    document.getElementById('display-id').innerText = `ID: ${tid}`;
-                    document.getElementById('user-initial').innerText = (user.name || "U").charAt(0);
-                    document.getElementById('stat-points').innerText = user.points || 0;
-                    document.getElementById('stat-tasks').innerText = user.total_tasks || 0;
-                    document.getElementById('stat-ref').innerText = user.total_ref_commission || 0;
-                }
-            } catch(e) { console.error(e); }
+        async function load() {
+            let { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).single();
+            if(u) {
+                document.getElementById('name').innerText = u.name || "User";
+                document.getElementById('id-display').innerText = "ID: " + tid;
+                document.getElementById('avatar').innerText = (u.name || "U")[0].toUpperCase();
+                document.getElementById('p').innerText = u.points || 0;
+                document.getElementById('t').innerText = u.total_tasks || 0;
+                document.getElementById('r').innerText = u.total_ref_commission || 0;
+            }
         }
-
         function goHome() { window.location.href = `index.html?id=${tid}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}`; }
-        init();
+        load();
     </script>
 </body>
 </html>
