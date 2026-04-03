@@ -3,87 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - Hacker Mode</title>
+    <title>MegaTask - Green Elite</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        /* ألوان الهكر الجاحدة */
-        :root { --hacker-green: #00ff41; --dark-bg: #050505; --card-bg: #0a0a0a; }
+        :root {
+            --main-green: #00d26a; /* أخضر نيون هادي */
+            --dark-bg: #0d0f12;
+            --card-bg: #1a1d23;
+            --text-gray: #9ca3af;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            padding-bottom: 80px; /* عشان الشريط السفلي */
+        }
+
+        /* الهيدر العلوي */
+        .header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-badge {
+            background: var(--card-bg);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid #2d333d;
+        }
+
+        /* منطقة الرصيد الكبيرة */
+        .main-balance {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .main-balance span { color: var(--text-gray); font-size: 14px; }
+        .main-balance h1 { 
+            font-size: 42px; 
+            margin: 5px 0; 
+            color: white;
+            text-shadow: 0 0 10px rgba(0, 210, 106, 0.3);
+        }
+
+        .btn-withdraw {
+            background: var(--main-green);
+            color: #000;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* الكروت الصغيرة */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 0 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 15px 10px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #2d333d;
+        }
+        .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; }
+        .stat-card span { font-size: 11px; color: var(--text-gray); }
+
+        /* البونص اليومي */
+        .daily-box {
+            background: var(--card-bg);
+            margin: 0 15px;
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid #2d333d;
+        }
+        .daily-title { display: flex; justify-content: space-between; margin-bottom: 15px; }
         
-        body { 
-            background: var(--dark-bg); 
-            color: var(--hacker-green); 
-            font-family: 'Courier New', Courier, monospace; 
-            margin: 0; padding: 20px; text-align: center;
-            text-transform: uppercase;
+        .claim-btn {
+            background: linear-gradient(90deg, #00d26a, #00964b);
+            color: black;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            margin-top: 15px;
         }
 
-        .header h1 { 
-            font-size: 24px; text-shadow: 0 0 15px var(--hacker-green); 
-            letter-spacing: 3px; border-bottom: 2px solid var(--hacker-green);
-            display: inline-block; padding-bottom: 5px;
+        /* شريط التمرير السفلي */
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: rgba(26, 29, 35, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #2d333d;
+            z-index: 1000;
         }
+        .nav-item {
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 11px;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .nav-item.active { color: var(--main-green); }
+        .nav-item i { display: block; font-size: 20px; margin-bottom: 4px; }
 
-        .balance-box { 
-            background: var(--card-bg); border: 1px solid var(--hacker-green);
-            margin: 30px auto; padding: 25px; border-radius: 5px;
-            box-shadow: inset 0 0 10px rgba(0, 255, 65, 0.2);
-            max-width: 300px;
+        .center-nav {
+            background: var(--main-green);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: -25px;
+            box-shadow: 0 0 15px rgba(0, 210, 106, 0.4);
+            color: black !important;
         }
-
-        .balance-label { font-size: 12px; opacity: 0.7; }
-        .balance-value { 
-            font-size: 38px; font-weight: bold; margin-top: 10px;
-            text-shadow: 0 0 10px var(--hacker-green);
-        }
-
-        .btn-grid { display: grid; grid-template-columns: 1fr; gap: 15px; max-width: 320px; margin: auto; }
-        
-        .hacker-btn {
-            background: transparent; border: 1px solid var(--hacker-green);
-            color: var(--hacker-green); padding: 15px; border-radius: 0;
-            font-size: 16px; font-family: inherit; font-weight: bold;
-            cursor: pointer; position: relative; transition: 0.3s;
-            overflow: hidden;
-        }
-
-        .hacker-btn:active { background: var(--hacker-green); color: black; box-shadow: 0 0 20px var(--hacker-green); }
-        
-        /* تأثير الخطوط المتحركة خلف الزرار */
-        .hacker-btn::before {
-            content: ">>>"; position: absolute; left: 10px; opacity: 0.5;
-        }
-
-        .footer { margin-top: 50px; font-size: 10px; opacity: 0.4; }
-        
-        /* أنيميشن الـ Scanning */
-        .scan-line {
-            position: fixed; top: 0; left: 0; width: 100%; height: 2px;
-            background: rgba(0, 255, 65, 0.1);
-            animation: scan 4s linear infinite; z-index: 999; pointer-events: none;
-        }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
     </style>
 </head>
 <body>
-    <div class="scan-line"></div>
 
     <div class="header">
-        <h1>[ SYSTEM_ACCESS ]</h1>
+        <div class="user-badge">LEVEL 1</div>
+        <div style="color: var(--text-gray); font-size: 12px;">WELCOME BACK</div>
     </div>
 
-    <div class="balance-box">
-        <div class="balance-label">> CURRENT_ASSETS_LOG:</div>
-        <div class="balance-value" id="user-points">00000</div>
+    <div class="main-balance">
+        <span>BALANCE</span>
+        <h1 id="user-points">0</h1>
+        <button class="btn-withdraw">↗ Withdraw</button>
     </div>
 
-    <div class="btn-grid">
-        <button class="hacker-btn" onclick="openTasks()">EXECUTE_TASKS</button>
-        <button class="hacker-btn" onclick="openWithdraw()">WITHDRAW_FUNDS</button>
-        <button class="hacker-btn" onclick="openInvite()" style="border-style: dashed;">RECRUIT_AGENTS</button>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <b id="balance-short">0</b>
+            <span>Balance</span>
+        </div>
+        <div class="stat-card">
+            <b>1d</b>
+            <span>Streak</span>
+        </div>
+        <div class="stat-card">
+            <b id="tasks-done">0</b>
+            <span>Tasks</span>
+        </div>
     </div>
 
-    <div class="footer">ENCRYPTED CONNECTION ESTABLISHED // MEGA_TASK_V3</div>
+    <div class="daily-box">
+        <div class="daily-title">
+            <span>🎁 Daily Rewards</span>
+            <span style="color: var(--main-green);">+25 PAW</span>
+        </div>
+        <button class="claim-btn">📺 Claim Daily Bonus</button>
+    </div>
+
+    <nav class="navbar">
+        <a href="#" class="nav-item active">🏠<br>الرئيسية</a>
+        <a href="tasks.html" class="nav-item">📋<br>اكسب</a>
+        <a href="#" class="nav-item center-nav">🎮</a>
+        <a href="invite.html" class="nav-item">👥<br>أجل</a>
+        <a href="#" class="nav-item">👤<br>أنا</a>
+    </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -102,28 +199,14 @@
             
             if (!userId) return;
 
-            // جلب البيانات مع نظام الإحالة (الـ 10% اللي ظبطناه)
             let { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
 
-            if (!user) {
-                let ref = tg.initDataUnsafe.start_param;
-                if (ref) ref = String(ref).replace('ref_', '');
-
-                let newUser = { telegram_id: userId, name: tg.initDataUnsafe.user?.first_name || "AGENT", points: 0 };
-                if (ref && ref !== userId) newUser.referred_by = ref;
-
-                const { data: created } = await client.from('users').insert([newUser]).select().single();
-                user = created;
-            }
-
             if (user) {
-                document.getElementById('user-points').innerText = user.points.toLocaleString().padStart(5, '0');
+                document.getElementById('user-points').innerText = user.points.toLocaleString();
+                document.getElementById('balance-short').innerText = user.points >= 1000 ? (user.points/1000).toFixed(1) + 'k' : user.points;
+                document.getElementById('tasks-done').innerText = user.total_tasks || 0;
             }
         }
-
-        function openTasks() { window.location.href = `tasks.html?id=${userId}`; }
-        function openWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
-        function openInvite() { window.location.href = `invite.html?id=${userId}`; }
 
         init();
     </script>
