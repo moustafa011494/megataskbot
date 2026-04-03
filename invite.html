@@ -3,98 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الإحالة - MegaTask</title>
+    <title>Invite - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root { --orange: #ff7e33; --bg: #0b0b13; --card: #151521; }
-        body { background: var(--bg); color: white; font-family: sans-serif; padding: 15px; margin: 0; }
-        
-        .invite-header { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #222; margin-bottom: 20px; text-align: center; }
-        .stats-row { display: flex; justify-content: space-around; margin: 15px 0; border-top: 1px solid #222; padding-top: 15px; }
-        .stat-item { text-align: center; }
-        .stat-item span { display: block; font-size: 11px; color: #888; }
-        .stat-item b { color: var(--orange); font-size: 16px; }
+        :root {
+            --main-green: #00d26a;
+            --dark-bg: #0d0f12;
+            --card-bg: #1a1d23;
+            --text-gray: #9ca3af;
+        }
 
-        .link-box { background: #000; padding: 15px; border-radius: 12px; border: 1px solid #222; display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-        .link-text { flex: 1; font-size: 11px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .btn-copy { background: var(--orange); border: none; padding: 8px 15px; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
-        
-        .btn-share { background: linear-gradient(to right, #ff7e33, #ff4500); color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; }
-        
-        .info-box { background: rgba(255, 126, 51, 0.1); border: 1px solid var(--orange); padding: 10px; border-radius: 10px; font-size: 12px; margin-top: 20px; color: var(--orange); text-align: center; }
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0; padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        h2 { text-align: right; margin-bottom: 25px; font-size: 22px; }
+
+        /* كروت الإحصائيات العلوية */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 15px 5px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #2d333d;
+        }
+        .stat-card b { display: block; font-size: 16px; color: var(--main-green); }
+        .stat-card span { font-size: 10px; color: var(--text-gray); }
+
+        /* منطقة الرابط */
+        .invite-box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid #2d333d;
+            text-align: center;
+        }
+        .url-display {
+            background: #000;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            color: var(--text-gray);
+            margin: 15px 0;
+            word-break: break-all;
+            border: 1px dashed #333;
+        }
+        .btn-action {
+            background: var(--main-green);
+            color: black;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        /* شريط التنقل السفلي */
+        .navbar {
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 100%;
+            background: rgba(26, 29, 35, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #2d333d;
+            z-index: 1000;
+        }
+        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; }
+        .nav-item.active { color: var(--main-green); }
+        .center-nav {
+            background: var(--main-green);
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin-top: -25px;
+            box-shadow: 0 0 15px rgba(0, 210, 106, 0.4);
+            color: black !important;
+        }
     </style>
 </head>
 <body>
 
-    <div class="invite-header">
-        <div style="font-size: 18px; font-weight: bold; margin-bottom: 5px;">👥 دعوة الأصدقاء</div>
-        <div style="color: var(--orange); font-size: 13px;">عمولة 10% 💰</div>
-        
-        <div class="stats-row">
-            <div class="stat-item">
-                <span>المدعوون</span>
-                <b id="total-ref">0</b>
-            </div>
-            <div class="stat-item">
-                <span>(صالح)</span>
-                <b id="active-ref" style="color: #00ff88;">0</b>
-            </div>
-            <div class="stat-item">
-                <span>العمولة 💎</span>
-                <b id="total-comm">0.00</b>
-            </div>
-        </div>
+    <h2>👥 دعوة الأصدقاء</h2>
 
-        <div class="link-box">
-            <div class="link-text" id="invite-url">https://t.me/Bot?start=...</div>
-            <button class="btn-copy" onclick="copy()">نسخ</button>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <b id="total-ref">0</b>
+            <span>إجمالي</span>
         </div>
-
-        <button class="btn-share" onclick="share()">📤 مشاركة على تليجرام</button>
+        <div class="stat-card">
+            <b id="active-ref">0</b>
+            <span>نشط</span>
+        </div>
+        <div class="stat-card">
+            <b id="comm-ref">0</b>
+            <span>عمولة 💎</span>
+        </div>
     </div>
 
-    <div class="info-box">
-        💡 ستحصل على عمولة 10% فور قيام صديقك بتنفيذ أي مهمة!
+    <div class="invite-box">
+        <div style="font-size: 14px; margin-bottom: 10px;">انشر الرابط واحصل على 10% عمولة</div>
+        <div class="url-display" id="invite-url">جاري التجهيز...</div>
+        <button class="btn-action" onclick="copyLink()">📋 نسخ الرابط</button>
+        <button class="btn-action" style="background: #1a1d23; color: white; border: 1px solid var(--main-green);" onclick="shareLink()">📤 مشاركة سريعة</button>
     </div>
+
+    <nav class="navbar">
+        <a href="#" onclick="goHome()" class="nav-item">🏠<br>الرئيسية</a>
+        <a href="#" onclick="goTasks()" class="nav-item">📋<br>اكسب</a>
+        <a href="#" class="nav-item center-nav">🎮</a>
+        <a href="#" class="nav-item active">👥<br>أجل</a>
+        <a href="#" class="nav-item">👤<br>أنا</a>
+    </nav>
 
     <script>
+        const tg = window.Telegram.WebApp;
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
-        const tg = window.Telegram.WebApp;
+
+        const params = new URLSearchParams(window.location.search);
+        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        const botUser = "FoxiGrowbot"; // اسم بوتك بدون @
 
         async function init() {
-            const params = new URLSearchParams(window.location.search);
-            const tid = params.get('id');
-            const botUser = "MegaTask1Bot"; // غيره ليوزر بوتك
+            document.getElementById('invite-url').innerText = `https://t.me/${botUser}?start=ref_${tid}`;
 
-            document.getElementById('invite-url').innerText = `https://t.me/${botUser}?start=${tid}`;
+            // جلب البيانات
+            let { data: me } = await client.from('users').select('*').eq('telegram_id', tid).single();
+            if (me) {
+                document.getElementById('comm-ref').innerText = (me.total_ref_commission || 0).toLocaleString();
+                document.getElementById('active-ref').innerText = me.invited_count || 0;
+            }
 
-            // 1. حساب عدد المدعوين (الكلي)
-            let { count: total } = await client.from('users').select('*', { count: 'exact', head: true }).eq('referred_by', String(tid));
-            document.getElementById('total-ref').innerText = total || 0;
-
-            // 2. حساب عدد المدعوين الصالحين (اللي نفذوا مهام)
-            let { count: active } = await client.from('users').select('*', { count: 'exact', head: true }).eq('referred_by', String(tid)).eq('is_active_ref', true);
-            document.getElementById('active-ref').innerText = active || 0;
-
-            // 3. جلب إجمالي العمولات اللي كسبها الشخص ده
-            let { data: me } = await client.from('users').select('total_ref_commission').eq('telegram_id', String(tid)).single();
-            document.getElementById('total-comm').innerText = (me?.total_ref_commission || 0).toLocaleString();
+            // حساب الإجمالي
+            let { count } = await client.from('users').select('*', { count: 'exact', head: true }).eq('referred_by', tid);
+            document.getElementById('total-ref').innerText = count || 0;
         }
 
-        function copy() {
+        function copyLink() {
             const url = document.getElementById('invite-url').innerText;
             navigator.clipboard.writeText(url);
-            tg.showAlert("✅ تم النسخ!");
+            tg.showAlert("✅ تم نسخ الرابط بنجاح!");
         }
 
-        function share() {
+        function shareLink() {
             const url = document.getElementById('invite-url').innerText;
-            const text = encodeURIComponent("سجل في بوت MegaTask واجمع أرباح يومية! 💰");
+            const text = encodeURIComponent("سجل في MegaTask واجمع أرباح يومية! 💰💸");
             window.open(`https://t.me/share/url?url=${url}&text=${text}`);
         }
+
+        function goHome() { window.location.href = `index.html?id=${tid}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
 
         init();
     </script>
