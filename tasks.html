@@ -3,32 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المهام - MegaTask</title>
+    <title>Tasks - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root { --orange: #ff7e33; --bg: #0b0b13; --card: #151521; }
-        body { background: var(--bg); color: white; font-family: sans-serif; text-align: center; padding: 20px; margin: 0; }
-        .task-card { background: var(--card); border: 1px solid #333; padding: 15px; border-radius: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid var(--orange); }
+        :root {
+            --main-green: #00d26a;
+            --dark-bg: #0d0f12;
+            --card-bg: #1a1d23;
+            --text-gray: #9ca3af;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0; padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        h2 { color: white; text-align: right; margin-bottom: 25px; font-size: 22px; }
+
+        /* كروت المهام */
+        .task-card {
+            background: var(--card-bg);
+            border: 1px solid #2d333d;
+            border-radius: 18px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.3s;
+        }
+
         .task-info { text-align: right; }
-        .task-info b { display: block; color: var(--orange); font-size: 16px; }
-        .task-info span { color: #00ff88; font-size: 13px; font-weight: bold; }
-        .go-btn { background: var(--orange); color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .go-btn:active { transform: scale(0.95); background: #e66d2a; }
-        .back-btn { background: none; border: 1px solid #444; color: #888; padding: 12px; width: 100%; border-radius: 10px; margin-top: 20px; cursor: pointer; font-weight: bold; }
+        .task-info b { display: block; font-size: 15px; color: white; margin-bottom: 5px; }
+        .task-info span { color: var(--main-green); font-size: 13px; font-weight: bold; }
+
+        .go-btn {
+            background: var(--main-green);
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* شريط التنقل السفلي (نفس الرئيسية) */
+        .navbar {
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 100%;
+            background: rgba(26, 29, 35, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #2d333d;
+            z-index: 1000;
+        }
+        .nav-item {
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 11px;
+            text-decoration: none;
+        }
+        .nav-item.active { color: var(--main-green); }
+        .center-nav {
+            background: var(--main-green);
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin-top: -25px;
+            box-shadow: 0 0 15px rgba(0, 210, 106, 0.4);
+            color: black !important;
+        }
     </style>
 </head>
 <body>
 
-    <h2 style="color: var(--orange); margin-bottom: 25px;">📋 قائمة المهام</h2>
-    <div id="tasks-container">جاري تحميل المهام...</div>
+    <h2>📋 المهام المتاحة</h2>
+    <div id="tasks-container">جاري تحميل العروض...</div>
 
-    <button class="back-btn" onclick="goBack()">← العودة للرئيسية</button>
+    <nav class="navbar">
+        <a href="#" onclick="goHome()" class="nav-item">🏠<br>الرئيسية</a>
+        <a href="#" class="nav-item active">📋<br>اكسب</a>
+        <a href="#" class="nav-item center-nav">🎮</a>
+        <a href="#" onclick="goInvite()" class="nav-item">👥<br>أجل</a>
+        <a href="#" class="nav-item">👤<br>أنا</a>
+    </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand();
-
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
@@ -37,69 +105,54 @@
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
 
         async function fetchTasks() {
+            let { data: tasks } = await client.from('tasks').select('*');
             const container = document.getElementById('tasks-container');
-            try {
-                let { data: tasks, error } = await client.from('tasks').select('*');
-                if (error) throw error;
-
-                container.innerHTML = "";
-                if (!tasks || tasks.length === 0) {
-                    container.innerHTML = "لا توجد مهام متاحة حالياً.";
-                    return;
-                }
-
-                tasks.forEach(task => {
-                    container.innerHTML += `
-                        <div class="task-card">
-                            <div class="task-info">
-                                <b>${task.title}</b>
-                                <span>+${task.reward} نقطة 💰</span>
-                            </div>
-                            <button class="go-btn" onclick="completeTask('${task.link}', ${task.reward})">تنفيذ</button>
+            container.innerHTML = "";
+            tasks.forEach(t => {
+                container.innerHTML += `
+                    <div class="task-card">
+                        <div class="task-info">
+                            <b>${t.title}</b>
+                            <span>+${t.reward} PAW 💰</span>
                         </div>
-                    `;
-                });
-            } catch (err) {
-                container.innerHTML = "❌ عطل في تحميل المهام.";
-                console.error(err);
-            }
+                        <button class="go-btn" onclick="completeTask('${t.link}', ${t.reward})">تنفيذ</button>
+                    </div>`;
+            });
         }
 
         async function completeTask(link, reward) {
-    window.open(link, '_blank');
-    
-    tg.showConfirm("هل نفذت المهمة؟", async (ok) => {
-        if (ok) {
-            // 1. تحديث رصيد اليوزر الحالي (مباشرة)
-            const { data: user } = await client.from('users').select('*').eq('telegram_id', String(tid)).single();
-            
-            if (user) {
-                // تحديث اليوزر نفسه
-                await client.from('users').update({
-                    points: Number(user.points) + Number(reward),
-                    total_tasks: Number(user.total_tasks || 0) + 1,
-                    is_active_ref: true
-                }).eq('telegram_id', String(tid));
-
-                // 2. تحديث الداعي (العمولة)
-                if (user.referred_by) {
-                    const inviterId = String(user.referred_by);
-                    const { data: inviter } = await client.from('users').select('points, total_ref_commission').eq('telegram_id', inviterId).single();
-                    
-                    if (inviter) {
+            window.open(link, '_blank');
+            tg.showConfirm("هل نفذت المهمة؟", async (ok) => {
+                if (ok && tid) {
+                    let { data: user } = await client.from('users').select('*').eq('telegram_id', tid).single();
+                    if (user) {
+                        // 1. تحديث اليوزر
                         await client.from('users').update({
-                            points: Number(inviter.points) + Math.floor(reward * 0.10),
-                            total_ref_commission: Number(inviter.total_ref_commission || 0) + Math.floor(reward * 0.10)
-                        }).eq('telegram_id', inviterId);
+                            points: Number(user.points) + Number(reward),
+                            total_tasks: Number(user.total_tasks || 0) + 1,
+                            is_active_ref: true
+                        }).eq('telegram_id', tid);
+
+                        // 2. تحديث الداعي (النسبة)
+                        if (user.referred_by) {
+                            const comm = Math.floor(reward * 0.10);
+                            let { data: inviter } = await client.from('users').select('points, total_ref_commission').eq('telegram_id', user.referred_by).maybeSingle();
+                            if (inviter) {
+                                await client.from('users').update({
+                                    points: Number(inviter.points) + comm,
+                                    total_ref_commission: Number(inviter.total_ref_commission || 0) + comm
+                                }).eq('telegram_id', user.referred_by);
+                            }
+                        }
+                        tg.showAlert("✅ مبروك! انضفت النقاط لرصيدك.");
                     }
                 }
-                tg.showAlert("✅ مبروك! تم إضافة النقاط.");
-            }
+            });
         }
-    });
-}
 
-        function goBack() { window.location.href = `index.html?id=${tid}`; }
+        function goHome() { window.location.href = `index.html?id=${tid}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
+        
         fetchTasks();
     </script>
 </body>
