@@ -209,7 +209,26 @@
         }
 
         init();
-        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
+        // دالة التنقل لبروفايل
+function goProfile() {
+    window.location.href = `profile.html?id=${tid}`;
+}
+
+// دالة التنقل للرئيسية
+function goHome() {
+    window.location.href = `index.html?id=${tid}`;
+}
+
+// دالة التنقل للمهام
+function goTasks() {
+    window.location.href = `tasks.html?id=${tid}`;
+}
+
+// دالة التنقل للدعوات
+function goInvite() {
+    window.location.href = `invite.html?id=${tid}`;
+}
+
     </script>
 </body>
 </html>
