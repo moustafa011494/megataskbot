@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - MegaTask</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --main-green: #00d26a;
+            --dark-bg: #0d0f12;
+            --card-bg: #1a1d23;
+            --text-gray: #9ca3af;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0; padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        /* رأس الصفحة (البروفايل) */
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-top: 20px;
+        }
+
+        .avatar-circle {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--main-green), #008f47);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: black;
+            font-weight: bold;
+            box-shadow: 0 0 20px rgba(0, 210, 106, 0.2);
+        }
+
+        .user-name { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+        .user-id { font-size: 12px; color: var(--text-gray); font-family: monospace; }
+
+        /* القائمة الاحترافية */
+        .menu-list {
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid #2d333d;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+            border-bottom: 1px solid #2d333d;
+            text-decoration: none;
+            color: white;
+            transition: 0.2s;
+        }
+
+        .menu-item:last-child { border-bottom: none; }
+        .menu-item:active { background: #252a33; }
+
+        .item-info { display: flex; align-items: center; gap: 12px; }
+        .item-info i { font-size: 18px; color: var(--main-green); }
+        .item-value { color: var(--text-gray); font-size: 14px; }
+
+        /* شريط التنقل السفلي */
+        .navbar {
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 100%;
+            background: rgba(26, 29, 35, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid #2d333d;
+            z-index: 1000;
+        }
+        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; }
+        .nav-item.active { color: var(--main-green); }
+        .center-nav {
+            background: var(--main-green);
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin-top: -25px;
+            box-shadow: 0 0 15px rgba(0, 210, 106, 0.4);
+            color: black !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="profile-header">
+        <div class="avatar-circle" id="user-initial">M</div>
+        <div class="user-name" id="display-name">جاري التحميل...</div>
+        <div class="user-id" id="display-id">ID: 00000000</div>
+    </div>
+
+    <div class="menu-list">
+        <div class="menu-item">
+            <div class="item-info">💎<span>إجمالي النقاط</span></div>
+            <div class="item-value" id="stat-points">0</div>
+        </div>
+        <div class="menu-item">
+            <div class="item-info">🎯<span>مهام مكتملة</span></div>
+            <div class="item-value" id="stat-tasks">0</div>
+        </div>
+        <div class="menu-item">
+            <div class="item-info">🤝<span>أرباح الإحالة</span></div>
+            <div class="item-value" id="stat-ref">0</div>
+        </div>
+    </div>
+
+    <div class="menu-list">
+        <a href="#" class="menu-item" onclick="tg.showAlert('قريباً: نظام المستويات')">
+            <div class="item-info">🏆<span>المستوى الحقيقي</span></div>
+            <div class="item-value" style="color: var(--main-green);">LEVEL 1</div>
+        </a>
+        <a href="https://t.me/MegaTask_Support" class="menu-item">
+            <div class="item-info">🎧<span>الدعم الفني</span></div>
+            <div class="item-value">تواصل معنا</div>
+        </a>
+    </div>
+
+    <nav class="navbar">
+        <a href="#" onclick="goHome()" class="nav-item">🏠<br>الرئيسية</a>
+        <a href="#" onclick="goTasks()" class="nav-item">📋<br>اكسب</a>
+        <a href="#" class="nav-item center-nav">🎮</a>
+        <a href="#" onclick="goInvite()" class="nav-item">👥<br>أجل</a>
+        <a href="#" class="nav-item active">👤<br>أنا</a>
+    </nav>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
+
+        const params = new URLSearchParams(window.location.search);
+        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+
+        async function init() {
+            // جلب البيانات من سوبابيز
+            let { data: user } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
+
+            if (user) {
+                document.getElementById('display-name').innerText = user.name || "مستخدم مجهول";
+                document.getElementById('display-id').innerText = `ID: ${tid}`;
+                document.getElementById('user-initial').innerText = (user.name || "M").charAt(0).toUpperCase();
+                
+                document.getElementById('stat-points').innerText = (user.points || 0).toLocaleString();
+                document.getElementById('stat-tasks').innerText = user.total_tasks || 0;
+                document.getElementById('stat-ref').innerText = (user.total_ref_commission || 0).toLocaleString();
+            } else {
+                // لو مش موجود، نعرض بيانات تليجرام المبدئية
+                document.getElementById('display-name').innerText = tg.initDataUnsafe.user?.first_name || "Guest";
+                document.getElementById('display-id').innerText = `ID: ${tid}`;
+            }
+        }
+
+        function goHome() { window.location.href = `index.html?id=${tid}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
+
+        init();
+    </script>
+</body>
+</html>
