@@ -125,11 +125,11 @@
     </div>
 
     <nav class="navbar">
-        <a href="#" onclick="goHome()" class="nav-item">🏠<br>الرئيسية</a>
-        <a href="#" onclick="goTasks()" class="nav-item">📋<br>اكسب</a>
-        <a href="#" class="nav-item center-nav">🎮</a>
-        <a href="#" class="nav-item active">👥<br>أجل</a>
-        <a href="#" class="nav-item">👤<br>أنا</a>
+     <a href="javascript:void(0)" onclick="goHome()" class="nav-item">🏠<br>الرئيسية</a>
+     <a href="javascript:void(0)" onclick="goTasks()" class="nav-item">📋<br>اكسب</a>
+     <a href="javascript:void(0)" class="nav-item center-nav">🎮</a>
+     <a href="javascript:void(0)" onclick="goInvite()" class="nav-item">👥<br>أجل</a>
+     <a href="javascript:void(0)" onclick="goProfile()" class="nav-item">👤<br>أنا</a>
     </nav>
 
     <script>
@@ -169,8 +169,25 @@
             window.open(`https://t.me/share/url?url=${url}&text=${text}`);
         }
 
-        function goHome() { window.location.href = `index.html?id=${tid}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
+        // دالة التنقل لبروفايل
+function goProfile() {
+    window.location.href = `profile.html?id=${tid}`;
+}
+
+// دالة التنقل للرئيسية
+function goHome() {
+    window.location.href = `index.html?id=${tid}`;
+}
+
+// دالة التنقل للمهام
+function goTasks() {
+    window.location.href = `tasks.html?id=${tid}`;
+}
+
+// دالة التنقل للدعوات
+function goInvite() {
+    window.location.href = `invite.html?id=${tid}`;
+}
 
         init();
     </script>
