@@ -7,141 +7,32 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root {
-            --main-green: #00d26a; /* أخضر نيون هادي */
-            --dark-bg: #0d0f12;
-            --card-bg: #1a1d23;
-            --text-gray: #9ca3af;
-        }
-
-        body {
-            background-color: var(--dark-bg);
-            color: white;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            padding-bottom: 80px; /* عشان الشريط السفلي */
-        }
-
-        /* الهيدر العلوي */
-        .header {
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .user-badge {
-            background: var(--card-bg);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 12px;
-            border: 1px solid #2d333d;
-        }
-
-        /* منطقة الرصيد الكبيرة */
-        .main-balance {
-            text-align: center;
-            margin-bottom: 25px;
-        }
+        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 80px; }
+        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; }
+        .main-balance { text-align: center; margin-bottom: 25px; }
         .main-balance span { color: var(--text-gray); font-size: 14px; }
-        .main-balance h1 { 
-            font-size: 42px; 
-            margin: 5px 0; 
-            color: white;
-            text-shadow: 0 0 10px rgba(0, 210, 106, 0.3);
-        }
-
-        .btn-withdraw {
-            background: var(--main-green);
-            color: #000;
-            border: none;
-            padding: 10px 30px;
-            border-radius: 25px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        /* الكروت الصغيرة */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            padding: 0 15px;
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            background: var(--card-bg);
-            padding: 15px 10px;
-            border-radius: 15px;
-            text-align: center;
-            border: 1px solid #2d333d;
-        }
+        .main-balance h1 { font-size: 42px; margin: 5px 0; color: white; text-shadow: 0 0 10px rgba(0, 210, 106, 0.3); }
+        .btn-withdraw { background: var(--main-green); color: #000; border: none; padding: 10px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; margin-bottom: 20px; }
+        .stat-card { background: var(--card-bg); padding: 15px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
         .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; }
         .stat-card span { font-size: 11px; color: var(--text-gray); }
-
-        /* البونص اليومي */
-        .daily-box {
-            background: var(--card-bg);
-            margin: 0 15px;
-            padding: 20px;
-            border-radius: 20px;
-            border: 1px solid #2d333d;
-        }
+        .daily-box { background: var(--card-bg); margin: 0 15px; padding: 20px; border-radius: 20px; border: 1px solid #2d333d; }
         .daily-title { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        
-        .claim-btn {
-            background: linear-gradient(90deg, #00d26a, #00964b);
-            color: black;
-            border: none;
-            width: 100%;
-            padding: 15px;
-            border-radius: 12px;
-            font-weight: bold;
-            margin-top: 15px;
-        }
-
-        /* شريط التمرير السفلي */
-        .navbar {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: rgba(26, 29, 35, 0.95);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            border-top: 1px solid #2d333d;
-            z-index: 1000;
-        }
-        .nav-item {
-            text-align: center;
-            color: var(--text-gray);
-            font-size: 11px;
-            text-decoration: none;
-            transition: 0.3s;
-        }
+        .claim-btn { background: linear-gradient(90deg, #00d26a, #00964b); color: black; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor: pointer; }
+        .claim-btn:disabled { background: #333; color: #777; cursor: not-allowed; }
+        .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(26, 29, 35, 0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
-        .nav-item i { display: block; font-size: 20px; margin-bottom: 4px; }
-
-        .center-nav {
-            background: var(--main-green);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: -25px;
-            box-shadow: 0 0 15px rgba(0, 210, 106, 0.4);
-            color: black !important;
-        }
+        .center-nav { background: var(--main-green); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -25px; box-shadow: 0 0 15px rgba(0, 210, 106, 0.4); color: black !important; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="user-badge">LEVEL 1</div>
+        <div class="user-badge" id="user-lvl">LEVEL 1</div>
         <div style="color: var(--text-gray); font-size: 12px;">WELCOME BACK</div>
     </div>
 
@@ -149,7 +40,6 @@
         <span>BALANCE</span>
         <h1 id="user-points">0</h1>
         <button class="btn-withdraw" onclick="goWithdraw()">↗ Withdraw</button>
-
     </div>
 
     <div class="stats-grid">
@@ -158,7 +48,7 @@
             <span>Balance</span>
         </div>
         <div class="stat-card">
-            <b>1d</b>
+            <b id="user-streak">0d</b>
             <span>Streak</span>
         </div>
         <div class="stat-card">
@@ -170,70 +60,109 @@
     <div class="daily-box">
         <div class="daily-title">
             <span>🎁 Daily Rewards</span>
-            <span style="color: var(--main-green);">Mega +15</span>
+            <span style="color: var(--main-green);">+15 Mega</span>
         </div>
-        <button class="claim-btn">📺 Claim Daily Bonus</button>
+        <button class="claim-btn" id="claimBtn" onclick="claimDaily()">📺 Claim Daily Bonus</button>
     </div>
 
-        <nav class="navbar">
-        <a href="javascript:void(0)" onclick="goHome()" class="nav-item active">🏠<br>الرئيسية</a>
-        <a href="javascript:void(0)" onclick="goTasks()" class="nav-item">📋<br>اكسب</a>
-        <a href="javascript:void(0)" class="nav-item center-nav">🎮</a>
-        <a href="javascript:void(0)" onclick="goInvite()" class="nav-item">👥<br>أجل</a>
-        <a href="javascript:void(0)" onclick="goProfile()" class="nav-item">👤<br>أنا</a>
+    <nav class="navbar">
+        <div onclick="goHome()" class="nav-item active">🏠<br>الرئيسية</div>
+        <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
+        <div class="nav-item center-nav">🎮</div>
+        <div onclick="goInvite()" class="nav-item">👥<br>أجل</div>
+        <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
     </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         let userId = "";
+        let userData = null;
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
             userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "");
-            
             if (!userId) return;
 
             let { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
 
-            if (user) {
-                document.getElementById('user-points').innerText = user.points.toLocaleString();
-                document.getElementById('balance-short').innerText = user.points >= 1000 ? (user.points/1000).toFixed(1) + 'k' : user.points;
-                document.getElementById('tasks-done').innerText = user.total_tasks || 0;
+            if (!user) {
+                // يوزر جديد - نظام الإحالة اليدوي
+                const refCode = prompt("أهلاً بك! إذا كان لديك كود دعوة (ID الصديق) أدخله هنا، أو اتركه فارغاً:", "");
+                let newUser = { 
+                    telegram_id: userId, 
+                    name: tg.initDataUnsafe.user?.first_name || "AGENT", 
+                    points: 0,
+                    streak: 0,
+                    last_claim: null
+                };
+                if (refCode && refCode.trim() !== "" && refCode !== userId) {
+                    newUser.referred_by = refCode.trim();
+                }
+                const { data } = await client.from('users').insert([newUser]).select().single();
+                user = data;
+            }
+            
+            userData = user;
+            updateUI();
+            checkDailyStatus();
+        }
+
+        function updateUI() {
+            if (!userData) return;
+            document.getElementById('user-points').innerText = userData.points.toLocaleString();
+            document.getElementById('balance-short').innerText = userData.points >= 1000 ? (userData.points/1000).toFixed(1) + 'k' : userData.points;
+            document.getElementById('tasks-done').innerText = userData.total_tasks || 0;
+            document.getElementById('user-streak').innerText = (userData.streak || 0) + "d";
+        }
+
+        function checkDailyStatus() {
+            if (!userData.last_claim) return;
+            const lastDate = new Date(userData.last_claim);
+            const now = new Date();
+            const diffHours = (now - lastDate) / (1000 * 60 * 60);
+
+            if (diffHours < 24) {
+                const btn = document.getElementById('claimBtn');
+                btn.disabled = true;
+                btn.innerText = "Next Claim in " + Math.ceil(24 - diffHours) + "h";
             }
         }
 
-                init();
+        async function claimDaily() {
+            const now = new Date();
+            let newStreak = (userData.streak || 0) + 1;
 
-        // دوال التنقل الموحدة (تم تغيير tid إلى userId)
-        function goProfile() {
-            window.location.href = `profile.html?id=${userId}`;
+            if (userData.last_claim) {
+                const lastDate = new Date(userData.last_claim);
+                const diffHours = (now - lastDate) / (1000 * 60 * 60);
+                if (diffHours > 48) newStreak = 1; // لو غاب يومين الستريك يصفر
+            }
+
+            const { data, error } = await client.from('users').update({
+                points: userData.points + 15,
+                streak: newStreak,
+                last_claim: now.toISOString()
+            }).eq('telegram_id', userId).select().single();
+
+            if (!error) {
+                userData = data;
+                updateUI();
+                checkDailyStatus();
+                tg.showAlert("🎁 مبروك! حصلت على +15 Mega بونص يومي.");
+            }
         }
 
-        function goHome() {
-            window.location.href = `index.html?id=${userId}`;
-        }
+        function goProfile() { window.location.href = `profile.html?id=${userId}`; }
+        function goHome() { window.location.href = `index.html?id=${userId}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
+        function goInvite() { window.location.href = `invite.html?id=${userId}`; }
+        function goWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
 
-        function goTasks() {
-            window.location.href = `tasks.html?id=${userId}`;
-        }
-
-        function goInvite() {
-            window.location.href = `invite.html?id=${userId}`;
-        }
-
-        function goWithdraw() {
-            window.location.href = `withdraw.html?id=${userId}`;
-        }
-
-
-
+        init();
     </script>
 </body>
 </html>
