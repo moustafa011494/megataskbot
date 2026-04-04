@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - Green Elite</title>
+    <title>MegaTask - Ads Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://sad.adsgram.ai/js/adsgram-ad-sdk.js"></script>
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 80px; overflow-x: hidden; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 100px; }
         .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; }
         .main-balance { text-align: center; margin-bottom: 25px; }
@@ -17,19 +18,20 @@
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; margin-bottom: 20px; }
         .stat-card { background: var(--card-bg); padding: 15px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
         .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--main-green); }
-        .daily-box { background: var(--card-bg); margin: 0 15px; padding: 20px; border-radius: 20px; border: 1px solid #2d333d; }
-        .claim-btn { background: var(--main-green); color: black; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor: pointer; transition: 0.3s; }
-        .claim-btn:disabled { background: #222; color: #555; cursor: not-allowed; border: 1px solid #333; }
         
-        /* واجهة التسجيل الاحترافية */
-        #ref-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
-        .modal-content { background: var(--card-bg); padding: 30px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 85%; max-width: 350px; }
-        .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 15px 0; outline: none; font-size: 18px; }
+        /* أزرار الأكشن */
+        .action-box { margin: 0 15px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-action { background: var(--card-bg); color: white; border: 1px solid #333; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; }
+        .btn-ads { background: linear-gradient(90deg, #ff9000, #ff5e00); color: white; border: none; }
 
-        .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(26, 29, 35, 0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        #ref-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card-bg); padding: 30px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 85%; }
+        .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 15px 0; outline: none; }
+
+        .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
-        .center-nav { background: var(--main-green); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -25px; box-shadow: 0 0 15px rgba(0, 210, 106, 0.4); color: black !important; }
+        .center-nav { background: var(--main-green); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -25px; color: black !important; }
     </style>
 </head>
 <body>
@@ -37,10 +39,9 @@
     <div id="ref-modal">
         <div class="modal-content">
             <h2 style="color: var(--main-green); margin: 0;">AGENT REGISTER</h2>
-            <p style="font-size: 13px; color: var(--text-gray); margin-top: 10px;">أدخل كود الدعوة (ID الصديق) إذا وجد</p>
-            <input type="text" id="ref-input" class="modal-input" placeholder="CODE HERE">
-            <button class="claim-btn" onclick="submitRegistration()">ابدأ الآن</button>
-            <button onclick="submitRegistration(true)" style="background: none; border: none; color: #555; margin-top: 10px; cursor: pointer;">تخطي ></button>
+            <input type="text" id="ref-input" class="modal-input" placeholder="CODE HERE (ID)">
+            <button class="btn-withdraw" style="width:100%" onclick="submitRegistration()">ابدأ الآن</button>
+            <button onclick="submitRegistration(true)" style="background: none; border: none; color: #555; margin-top: 10px;">تخطي ></button>
         </div>
     </div>
 
@@ -61,12 +62,9 @@
         <div class="stat-card"><b id="tasks-done">0</b><span>Tasks</span></div>
     </div>
 
-    <div class="daily-box">
-        <div class="daily-title">
-            <span>🎁 Daily Rewards</span>
-            <span style="color: var(--main-green);">+15 Mega</span>
-        </div>
-        <button class="claim-btn" id="claimBtn" onclick="claimDaily()">Claim Daily Bonus</button>
+    <div class="action-box">
+        <div class="btn-action" onclick="claimDaily()" id="claimBtn">🎁 Daily Reward</div>
+        <div class="btn-action btn-ads" onclick="showAd()">📺 Watch & Earn</div>
     </div>
 
     <nav class="navbar">
@@ -83,6 +81,9 @@
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
+        // ربط الإعلانات بالـ Block ID الخاص بك
+        const AdController = window.Adsgram.init({ blockId: "26837" });
+
         let userId = "";
         let userData = null;
 
@@ -92,7 +93,6 @@
             if (!userId) return;
 
             const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-
             if (!user) {
                 document.getElementById('ref-modal').style.display = 'flex';
             } else {
@@ -102,42 +102,36 @@
             }
         }
 
-                        async function submitRegistration(skip = false) {
-            const refCode = document.getElementById('ref-input').value.trim();
-            
-            // هنبعت بس الـ ID والاسم والـ referred_by لو موجود
-            let newUser = { 
-                telegram_id: String(userId), 
-                name: String(tg.initDataUnsafe.user?.first_name || "AGENT"),
-                points: 0
-            };
-
-            // لو اليوزر دخل كود دعوة
-            if (!skip && refCode !== "" && refCode !== String(userId)) {
-                newUser.referred_by = refCode;
-            }
-
+        // دالة عرض الإعلان
+        async function showAd() {
             try {
-                const { data, error } = await client
-                    .from('users')
-                    .insert([newUser])
-                    .select()
-                    .maybeSingle();
-
-                if (error) {
-                    console.error("Supabase Error:", error);
-                    tg.showAlert("❌ خطأ: " + error.message);
+                const result = await AdController.show();
+                if (result.done) {
+                    // إضافة 15 نقطة عند انتهاء الفيديو
+                    const { data, error } = await client.from('users').update({
+                        points: userData.points + 15
+                    }).eq('telegram_id', userId).select().single();
+                    
+                    if (!error) {
+                        userData = data;
+                        updateUI();
+                        tg.showAlert("✅ مبروك! حصلت على 15 نقطة من مشاهدة الإعلان.");
+                    }
                 } else {
-                    userData = data;
-                    document.getElementById('ref-modal').style.display = 'none';
-                    updateUI();
-                    tg.showAlert("✅ تم التسجيل بنجاح!");
+                    tg.showAlert("⚠️ شاهد الفيديو للأخر عشان تاخد النقط.");
                 }
             } catch (err) {
-                tg.showAlert("❌ عطل فني.");
+                tg.showAlert("❌ مفيش إعلانات متاحة دلوقتي، جرب كمان شوية.");
             }
         }
 
+        async function submitRegistration(skip = false) {
+            const refCode = document.getElementById('ref-input').value.trim();
+            let newUser = { telegram_id: userId, name: tg.initDataUnsafe.user?.first_name || "AGENT", points: 0 };
+            if (!skip && refCode !== "" && refCode !== userId) newUser.referred_by = refCode;
+            const { data } = await client.from('users').insert([newUser]).select().single();
+            if (data) { userData = data; document.getElementById('ref-modal').style.display = 'none'; updateUI(); }
+        }
 
         function updateUI() {
             document.getElementById('user-points').innerText = userData.points.toLocaleString();
@@ -150,32 +144,18 @@
             if (!userData.last_claim) return;
             const diff = (new Date() - new Date(userData.last_claim)) / (1000 * 60 * 60);
             if (diff < 24) {
-                const btn = document.getElementById('claimBtn');
-                btn.disabled = true;
-                btn.innerText = `Wait ${Math.ceil(24 - diff)}h`;
+                document.getElementById('claimBtn').style.opacity = "0.5";
+                document.getElementById('claimBtn').innerText = "Wait " + Math.ceil(24-diff) + "h";
             }
         }
 
         async function claimDaily() {
             const now = new Date();
-            let newStreak = (userData.streak || 0) + 1;
-            if (userData.last_claim) {
-                const diffHours = (now - new Date(userData.last_claim)) / (1000 * 60 * 60);
-                if (diffHours > 48) newStreak = 1;
-            }
-
             const { data, error } = await client.from('users').update({
                 points: userData.points + 15,
-                streak: newStreak,
                 last_claim: now.toISOString()
             }).eq('telegram_id', userId).select().single();
-
-            if (!error) {
-                userData = data;
-                updateUI();
-                checkDailyStatus();
-                tg.showAlert("🎁 +15 Mega Added!");
-            }
+            if (!error) { userData = data; updateUI(); checkDailyStatus(); tg.showAlert("🎁 Daily Bonus Claimed!"); }
         }
 
         function goProfile() { window.location.href = `profile.html?id=${userId}`; }
