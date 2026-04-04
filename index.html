@@ -107,26 +107,43 @@
             }
         }
 
+                // تأكد من وضع الـ Block ID الجديد هنا
+        let adBlockId = "26843"; 
+
         async function showAd() {
-            if (!AdController) return tg.showAlert("❌ الإعلانات جاري تحميلها..");
+            // التأكد من أن المكتبة حملت تماماً
+            if (typeof window.Adsgram === 'undefined') {
+                tg.showAlert("❌ عذراً، مكتبة الإعلانات لم تحمل بعد، اعد تحميل الصفحة.");
+                return;
+            }
+
+            // تعريف الكنترولر لحظة الضغط لضمان التحديث
+            const AdController = window.Adsgram.init({ blockId: adBlockId });
             
             try {
-                const result = await AdController.show();
-                if (result.done) {
-                    const { data } = await client.from('users').update({
-                        points: userData.points + 15
-                    }).eq('telegram_id', userId).select().single();
-                    
-                    if (data) {
-                        userData = data;
-                        updateUI();
-                        tg.showAlert("✅ مبروك! +15 نقطة رصيد إعلانات.");
+                tg.showConfirm("هل تريد مشاهدة إعلان للحصول على 15 نقطة؟", async (ok) => {
+                    if (ok) {
+                        const result = await AdController.show();
+                        if (result.done) {
+                            const { data } = await client.from('users').update({
+                                points: userData.points + 15
+                            }).eq('telegram_id', userId).select().single();
+                            
+                            if (data) {
+                                userData = data;
+                                updateUI();
+                                tg.showAlert("✅ مبروك! تم إضافة 15 نقطة.");
+                            }
+                        }
                     }
-                }
+                });
             } catch (err) {
-                tg.showAlert("❌ لا توجد إعلانات حالياً (Status: Declined)");
+                console.error(err);
+                // لو هو Test Platform هيظهر إعلان تجريبي، لو مش شغال هيجيب الرسالة دي
+                tg.showAlert("❌ لا توجد إعلانات متاحة حالياً (Test Mode Active)");
             }
         }
+
 
         async function submitRegistration(skip = false) {
             const refCode = document.getElementById('ref-input').value.trim();
