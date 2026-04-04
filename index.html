@@ -102,22 +102,49 @@
             }
         }
 
-        async function submitRegistration(skip = false) {
+                async function submitRegistration(skip = false) {
             const refCode = document.getElementById('ref-input').value.trim();
+            
+            // البيانات الكاملة لضمان القبول في سوبابيز
             let newUser = { 
-                telegram_id: userId, 
-                name: tg.initDataUnsafe.user?.first_name || "AGENT",
-                points: 0, streak: 0, last_claim: null, total_tasks: 0, invited_count: 0, total_ref_commission: 0, is_active_ref: false
+                telegram_id: String(userId), 
+                name: String(tg.initDataUnsafe.user?.first_name || "AGENT"),
+                points: 0, 
+                streak: 0, 
+                last_claim: null, 
+                total_tasks: 0, 
+                invited_count: 0, 
+                total_ref_commission: 0, 
+                is_active_ref: false
             };
-            if (!skip && refCode !== "" && refCode !== userId) newUser.referred_by = refCode;
 
-            const { data, error } = await client.from('users').insert([newUser]).select().single();
-            if (!error) {
-                userData = data;
-                document.getElementById('ref-modal').style.display = 'none';
-                updateUI();
-            } else { tg.showAlert("Error during registration."); }
+            // لو اليوزر دخل كود (ومش كود نفسه) بنضيفه
+            if (!skip && refCode !== "" && refCode !== String(userId)) {
+                newUser.referred_by = refCode;
+            }
+
+            try {
+                const { data, error } = await client
+                    .from('users')
+                    .insert([newUser])
+                    .select()
+                    .maybeSingle();
+
+                if (error) {
+                    console.error("Supabase Error:", error);
+                    tg.showAlert("❌ خطأ في قاعدة البيانات: " + error.message);
+                } else {
+                    userData = data;
+                    document.getElementById('ref-modal').style.display = 'none';
+                    updateUI();
+                    tg.showAlert("✅ أهلاً بك يا بطل! تم التسجيل.");
+                }
+            } catch (err) {
+                console.error("Fatal Error:", err);
+                tg.showAlert("❌ عطل فني في التسجيل.");
+            }
         }
+
 
         function updateUI() {
             document.getElementById('user-points').innerText = userData.points.toLocaleString();
