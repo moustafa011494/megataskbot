@@ -148,7 +148,7 @@
     <div class="main-balance">
         <span>BALANCE</span>
         <h1 id="user-points">0</h1>
-        <button class="btn-withdraw">↗ Withdraw</button>
+        <button class="btn-withdraw" onclick="goWithdraw()">↗ Withdraw</button>
 
     </div>
 
@@ -227,6 +227,11 @@
         function goInvite() {
             window.location.href = `invite.html?id=${userId}`;
         }
+
+        function goWithdraw() {
+            window.location.href = `withdraw.html?id=${userId}`;
+        }
+
 
 
     </script>
