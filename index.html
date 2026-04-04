@@ -6,7 +6,7 @@
     <title>MegaTask - Stable Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="https://sad.adsgram.ai/js/adsgram-ad-sdk.js" defer></script>
+    <script src="https://sad.adsgram.ai/js/adsgram-ad-sdk.js"></script>
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
         body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 100px; overflow-x: hidden; }
@@ -111,39 +111,38 @@
         let adBlockId = "26843"; 
 
                 async function showAd() {
-            // نتحقق لو المكتبة موجودة، لو مش موجودة نحاول ننادي عليها
-            if (!window.Adsgram) {
-                tg.showAlert("⚠️ المتصفح لسه بيحمل نظام الإعلانات، استنى 3 ثواني وجرب تاني.");
-                return;
-            }
+    // محاولة إجبارية للتعرف على المكتبة
+    const adsgram = window.Adsgram || (window.parent && window.parent.Adsgram);
 
-            // حط هنا الـ Block ID الجديد اللي في الصورة الأخيرة (غالباً هيكون رقم زي 25941 أو رقم البلوك نفسه)
-            const adBlockId = "26843"; 
+    if (!adsgram) {
+        console.error("Adsgram SDK not found");
+        tg.showAlert("❌ نظام الإعلانات لم يستجب. تأكد من تحديث تليجرام أو حاول فتح البوت مرة أخرى.");
+        return;
+    }
 
-            const AdController = window.Adsgram.init({ blockId: adBlockId });
+    // تأكد إن الـ ID هو اللي في الصورة (26837 أو اللي طلعلك في الـ Active unit)
+    const adBlockId = "26837"; 
+    const AdController = adsgram.init({ blockId: adBlockId });
+    
+    try {
+        const result = await AdController.show();
+        if (result.done) {
+            const { data } = await client.from('users').update({
+                points: userData.points + 15
+            }).eq('telegram_id', userId).select().single();
             
-            try {
-                const result = await AdController.show();
-                if (result.done) {
-                    // إضافة النقط في سوبابيز
-                    const { data, error } = await client.from('users').update({
-                        points: userData.points + 15
-                    }).eq('telegram_id', userId).select().single();
-                    
-                    if (!error) {
-                        userData = data;
-                        updateUI();
-                        tg.showAlert("✅ عاش يا بطل! حصلت على 15 نقطة.");
-                    }
-                } else {
-                    tg.showAlert("⚠️ كمل الفيديو للآخر عشان تاخد الجائزة.");
-                }
-            } catch (err) {
-                console.error("AdsGram Error:", err);
-                // لو جاب Error هنا يبقى الـ Block ID فيه مشكلة أو لسه مفعلوش الـ Test Mode
-                tg.showAlert("❌ الإعلان معلق حالياً، جرب كمان شوية.");
+            if (data) {
+                userData = data;
+                updateUI();
+                tg.showAlert("✅ مبروك! حصلت على 15 نقطة.");
             }
         }
+    } catch (err) {
+        console.error(err);
+        tg.showAlert("❌ عذراً، لا توجد إعلانات متاحة حالياً.");
+    }
+}
+
 
 
 
