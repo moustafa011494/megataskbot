@@ -93,9 +93,11 @@
         }
 
         async function requestWithdraw() {
-            const amount = parseInt(document.getElementById('amount').value);
+                async function requestWithdraw() {
+            const amountInput = document.getElementById('amount').value;
             const method = document.getElementById('method').value;
             const wallet = document.getElementById('wallet').value;
+            const amount = parseInt(amountInput);
 
             if (!amount || amount < 5000) {
                 tg.showAlert("⚠️ الحد الأدنى للسحب هو 5000 نقطة.");
@@ -114,22 +116,33 @@
 
             // 1. تسجيل الطلب في جدول withdrawals
             const { error: reqErr } = await client.from('withdrawals').insert([{
-                telegram_id: tid,
-                amount: amount,
-                method: method,
-                wallet_info: wallet
+                telegram_id: String(tid),
+                amount: Number(amount),
+                method: String(method),
+                wallet_info: String(wallet),
+                status: 'Pending'
             }]);
 
             if (!reqErr) {
-                // 2. خصم النقاط من رصيد اليوزر
-                await client.from('users').update({ points: userPoints - amount }).eq('telegram_id', tid);
-                tg.showAlert("✅ تم إرسال طلبك بنجاح! سيتم المراجعة والدفع خلال 24 ساعة.");
-                window.location.reload();
+                // 2. خصم النقاط من رصيد اليوزر في جدول users
+                const { error: updateErr } = await client
+                    .from('users')
+                    .update({ points: Number(userPoints - amount) })
+                    .eq('telegram_id', String(tid));
+
+                if (!updateErr) {
+                    tg.showAlert("✅ تم إرسال طلبك بنجاح! سيتم المراجعة والدفع قريباً.");
+                    window.location.reload();
+                } else {
+                    tg.showAlert("❌ تم تسجيل الطلب ولكن فشل خصم النقاط: " + updateErr.message);
+                }
             } else {
-                tg.showAlert("❌ حدث خطأ، حاول مرة أخرى.");
+                console.error("Withdraw Error:", reqErr);
+                tg.showAlert("❌ خطأ في قاعدة البيانات: " + reqErr.message);
                 document.getElementById('withdrawBtn').disabled = false;
             }
         }
+
 
         function goHome() { window.location.href = `index.html?id=${tid}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
