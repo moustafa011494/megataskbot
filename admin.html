@@ -6,33 +6,30 @@
     <title>MegaTask - لوحة التحكم السرية</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --neon-purple: #bc13fe; --neon-blue: #00f2ff; --bg-dark: #0a0a0a; --card-bg: #161616; }
+        :root { --neon-purple: #bc13fe; --neon-blue: #00f2ff; --bg-dark: #0a0a0a; --card-bg: #161616; --main-green: #00d26a; }
         body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; margin: 0; }
-        h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 30px; }
+        h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 30px; text-align: center; }
         h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; }
         
         .container { max-width: 900px; margin: auto; }
         .card { background: var(--card-bg); border: 1px solid #333; padding: 25px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .task-card { border-top: 4px solid var(--neon-purple); }
-        .withdraw-card { border-top: 4px solid var(--neon-blue); }
+        .withdraw-card { border-top: 4px solid var(--main-green); }
 
-        input { width: 95%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; transition: 0.3s; }
-        input:focus { border-color: var(--neon-purple); outline: none; box-shadow: 0 0 10px var(--neon-purple); }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: var(--neon-purple); box-shadow: 0 0 10px var(--neon-purple); }
         
         button { cursor: pointer; font-weight: bold; transition: 0.3s; border: none; border-radius: 10px; }
         .main-btn { background: var(--neon-purple); color: white; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
-        .main-btn:hover { opacity: 0.8; transform: scale(1.01); }
-
-        .list-container { margin-top: 20px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
+        
+        .list-container { margin-top: 20px; max-height: 500px; overflow-y: auto; }
         .item-row { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; }
         .task-row { border-right-color: var(--neon-purple); }
-        .withdraw-row { border-right-color: var(--neon-blue); }
+        .withdraw-row { border-right-color: var(--main-green); }
         
         .del-btn { background: #ff4d4d; color: white; padding: 8px 15px; }
-        .approve-btn { background: #28a745; color: white; padding: 8px 15px; }
-        .del-btn:hover, .approve-btn:hover { transform: scale(1.1); }
-
-        .info-text { font-size: 14px; color: #aaa; margin-top: 5px; }
+        .approve-btn { background: var(--main-green); color: black; padding: 10px 20px; font-size: 14px; }
+        .info-text { font-size: 13px; color: #aaa; margin-top: 5px; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -42,99 +39,96 @@
 
     <div class="card task-card">
         <h3>➕ إضافة مهمة جديدة</h3>
-        <input type="text" id="task-title" placeholder="عنوان المهمة (مثال: اشترك في القناة)">
-        <input type="text" id="task-link" placeholder="رابط المهمة (https://...)">
-        <input type="number" id="task-reward" placeholder="عدد النقاط الممنوحة">
+        <input type="text" id="task-title" placeholder="عنوان المهمة">
+        <input type="text" id="task-link" placeholder="رابط المهمة (URL)">
+        <input type="number" id="task-reward" placeholder="عدد النقاط">
         <button class="main-btn" onclick="addTask()">حفظ ونشر المهمة ✅</button>
     </div>
 
     <div class="card">
-        <h3>📋 المهام الحالية في البوت</h3>
-        <div id="tasks-list" class="list-container">جاري تحميل المهام...</div>
+        <h3>📋 المهام الحالية</h3>
+        <div id="tasks-list" class="list-container">جاري التحميل...</div>
     </div>
 
     <div class="card withdraw-card">
-        <h3 style="color: var(--neon-blue);">💸 طلبات السحب (قيد الانتظار)</h3>
+        <h3 style="color: var(--main-green);">💸 طلبات السحب (قيد الانتظار)</h3>
         <div id="withdraw-list" class="list-container">جاري فحص الطلبات...</div>
     </div>
 </div>
 
 <script>
-    // بيانات الربط مع سوبابيز
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-    const client = supabase.createClient(S_URL, S_KEY);
+    const { createClient } = supabase;
+    const client = createClient(S_URL, S_KEY);
 
-    // 1. جلب وعرض المهام
+    // 1. جلب المهام
     async function loadTasks() {
         const div = document.getElementById('tasks-list');
-        try {
-            let { data, error } = await client.from('tasks').select('*').order('created_at', { ascending: false });
-            if (error) throw error;
-            div.innerHTML = data.length === 0 ? "📭 لا توجد مهام." : "";
-            data.forEach(t => {
-                div.innerHTML += `
-                    <div class="item-row task-row">
-                        <div>
-                            <b>${t.title}</b><br>
-                            <span class="info-text">💰 ${t.reward} نقطة</span>
-                        </div>
-                        <button class="del-btn" onclick="deleteTask('${t.id}')">حذف 🗑️</button>
-                    </div>`;
-            });
-        } catch (e) { div.innerHTML = "❌ خطأ: " + e.message; }
+        let { data, error } = await client.from('tasks').select('*').order('created_at', { ascending: false });
+        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+        
+        div.innerHTML = data.length === 0 ? "📭 لا توجد مهام." : "";
+        data.forEach(t => {
+            div.innerHTML += `
+                <div class="item-row task-row">
+                    <div>
+                        <b>${t.title}</b><br>
+                        <span class="info-text">💰 ${t.reward} نقطة</span>
+                    </div>
+                    <button class="del-btn" onclick="deleteTask('${t.id}')">حذف 🗑️</button>
+                </div>`;
+        });
     }
 
-    // 2. إضافة مهمة
     async function addTask() {
         const title = document.getElementById('task-title').value;
         const link = document.getElementById('task-link').value;
         const reward = document.getElementById('task-reward').value;
-        if(!title || !link || !reward) return alert("برجاء ملء جميع الخانات!");
+        if(!title || !link || !reward) return alert("امسح الخانات الفارغة!");
 
         const { error } = await client.from('tasks').insert([{ title, link, reward: parseInt(reward) }]);
-        if (error) alert("فشل الإضافة: " + error.message);
-        else { alert("تمت الإضافة بنجاح! 🚀"); location.reload(); }
+        if (error) alert("خطأ: " + error.message);
+        else { alert("تمت الإضافة! 🚀"); location.reload(); }
     }
 
-    // 3. حذف مهمة (UUID)
     async function deleteTask(id) {
-        if (!confirm("هل أنت متأكد من حذف هذه المهمة؟")) return;
-        const { error } = await client.from('tasks').delete().eq('id', id);
-        if (error) alert("فشل الحذف: " + error.message);
-        else { alert("تم الحذف بنجاح! 🗑️"); loadTasks(); }
+        if (!confirm("حذف المهمة؟")) return;
+        await client.from('tasks').delete().eq('id', id);
+        loadTasks();
     }
 
-    // 4. جلب طلبات السحب المعلقة
+    // 2. جلب طلبات السحب (بتعديل العواميد لتناسب الجدول الجديد)
     async function loadWithdrawals() {
         const div = document.getElementById('withdraw-list');
-        try {
-            let { data, error } = await client.from('withdrawals').select('*').eq('status', 'pending');
-            if (error) throw error;
-            div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات سحب حالياً." : "";
-            data.forEach(w => {
-                div.innerHTML += `
-                    <div class="item-row withdraw-row">
-                        <div style="text-align:right">
-                            <b>👤 ${w.user_name}</b> (ID: ${w.user_id})<br>
-                            <span style="color:var(--neon-blue)">💰 المبلغ: ${w.amount}ن</span><br>
-                            <span class="info-text">💳 المحفظة: ${w.wallet_address}</span>
-                        </div>
-                        <button class="approve-btn" onclick="approveWithdraw('${w.id}')">تم التحويل ✅</button>
-                    </div>`;
-            });
-        } catch (e) { div.innerHTML = "❌ خطأ: " + e.message; }
+        // بنفلتر على الـ status اللي قيمتها 'Pending' (لاحظ الحرف الكبير كما في كود السحب)
+        let { data, error } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
+        
+        if (error) { div.innerHTML = "❌ خطأ: " + error.message; return; }
+        
+        div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات سحب حالياً." : "";
+        data.forEach(w => {
+            div.innerHTML += `
+                <div class="item-row withdraw-row">
+                    <div style="text-align:right">
+                        <b>👤 مستخدم ID:</b> <span style="color:var(--neon-blue)">${w.telegram_id}</span><br>
+                        <b>💰 المبلغ:</b> ${w.amount.toLocaleString()} نقطة<br>
+                        <b>🏦 الوسيلة:</b> ${w.method}<br>
+                        <span class="info-text">💳 المحفظة/الرقم: <b>${w.wallet_info}</b></span>
+                    </div>
+                    <button class="approve-btn" onclick="approveWithdraw('${w.id}')">تم التحويل ✅</button>
+                </div>`;
+        });
     }
 
-    // 5. الموافقة على السحب
+    // 3. الموافقة وإغلاق الطلب
     async function approveWithdraw(id) {
-        if(!confirm("هل قمت بتحويل الأموال بالفعل وتريد إغلاق الطلب؟")) return;
-        const { error } = await client.from('withdrawals').update({ status: 'completed' }).eq('id', id);
+        if(!confirm("تأكيد التحويل؟ سيختفي الطلب من القائمة.")) return;
+        const { error } = await client.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
         if (error) alert("فشل التحديث: " + error.message);
-        else { alert("تم تأكيد السحب بنجاح! 💸"); loadWithdrawals(); }
+        else { alert("تم التأكيد! 💸"); loadWithdrawals(); }
     }
 
-    // تشغيل الدوال عند فتح الصفحة
     window.onload = () => {
         loadTasks();
         loadWithdrawals();
