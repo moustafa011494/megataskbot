@@ -6,7 +6,7 @@
     <title>MegaTask - Stable Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="https://sad.adsgram.ai/js/adsgram-ad-sdk.js"></script>
+    <script src="https://sad.adsgram.ai/js/adsgram-ad-sdk.js" defer></script>
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
         body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 100px; overflow-x: hidden; }
@@ -110,39 +110,41 @@
                 // تأكد من وضع الـ Block ID الجديد هنا
         let adBlockId = "26843"; 
 
-        async function showAd() {
-            // التأكد من أن المكتبة حملت تماماً
-            if (typeof window.Adsgram === 'undefined') {
-                tg.showAlert("❌ عذراً، مكتبة الإعلانات لم تحمل بعد، اعد تحميل الصفحة.");
+                async function showAd() {
+            // نتحقق لو المكتبة موجودة، لو مش موجودة نحاول ننادي عليها
+            if (!window.Adsgram) {
+                tg.showAlert("⚠️ المتصفح لسه بيحمل نظام الإعلانات، استنى 3 ثواني وجرب تاني.");
                 return;
             }
 
-            // تعريف الكنترولر لحظة الضغط لضمان التحديث
+            // حط هنا الـ Block ID الجديد اللي في الصورة الأخيرة (غالباً هيكون رقم زي 25941 أو رقم البلوك نفسه)
+            const adBlockId = "26843"; 
+
             const AdController = window.Adsgram.init({ blockId: adBlockId });
             
             try {
-                tg.showConfirm("هل تريد مشاهدة إعلان للحصول على 15 نقطة؟", async (ok) => {
-                    if (ok) {
-                        const result = await AdController.show();
-                        if (result.done) {
-                            const { data } = await client.from('users').update({
-                                points: userData.points + 15
-                            }).eq('telegram_id', userId).select().single();
-                            
-                            if (data) {
-                                userData = data;
-                                updateUI();
-                                tg.showAlert("✅ مبروك! تم إضافة 15 نقطة.");
-                            }
-                        }
+                const result = await AdController.show();
+                if (result.done) {
+                    // إضافة النقط في سوبابيز
+                    const { data, error } = await client.from('users').update({
+                        points: userData.points + 15
+                    }).eq('telegram_id', userId).select().single();
+                    
+                    if (!error) {
+                        userData = data;
+                        updateUI();
+                        tg.showAlert("✅ عاش يا بطل! حصلت على 15 نقطة.");
                     }
-                });
+                } else {
+                    tg.showAlert("⚠️ كمل الفيديو للآخر عشان تاخد الجائزة.");
+                }
             } catch (err) {
-                console.error(err);
-                // لو هو Test Platform هيظهر إعلان تجريبي، لو مش شغال هيجيب الرسالة دي
-                tg.showAlert("❌ لا توجد إعلانات متاحة حالياً (Test Mode Active)");
+                console.error("AdsGram Error:", err);
+                // لو جاب Error هنا يبقى الـ Block ID فيه مشكلة أو لسه مفعلوش الـ Test Mode
+                tg.showAlert("❌ الإعلان معلق حالياً، جرب كمان شوية.");
             }
         }
+
 
 
         async function submitRegistration(skip = false) {
