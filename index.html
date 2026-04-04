@@ -8,21 +8,24 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 80px; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 80px; overflow-x: hidden; }
         .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; }
         .main-balance { text-align: center; margin-bottom: 25px; }
-        .main-balance span { color: var(--text-gray); font-size: 14px; }
         .main-balance h1 { font-size: 42px; margin: 5px 0; color: white; text-shadow: 0 0 10px rgba(0, 210, 106, 0.3); }
         .btn-withdraw { background: var(--main-green); color: #000; border: none; padding: 10px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; }
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; margin-bottom: 20px; }
         .stat-card { background: var(--card-bg); padding: 15px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
-        .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; }
-        .stat-card span { font-size: 11px; color: var(--text-gray); }
+        .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--main-green); }
         .daily-box { background: var(--card-bg); margin: 0 15px; padding: 20px; border-radius: 20px; border: 1px solid #2d333d; }
-        .daily-title { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .claim-btn { background: linear-gradient(90deg, #00d26a, #00964b); color: black; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-        .claim-btn:disabled { background: #333; color: #777; cursor: not-allowed; }
+        .claim-btn { background: var(--main-green); color: black; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor: pointer; transition: 0.3s; }
+        .claim-btn:disabled { background: #222; color: #555; cursor: not-allowed; border: 1px solid #333; }
+        
+        /* واجهة التسجيل الاحترافية */
+        #ref-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
+        .modal-content { background: var(--card-bg); padding: 30px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 85%; max-width: 350px; }
+        .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 15px 0; outline: none; font-size: 18px; }
+
         .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(26, 29, 35, 0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
@@ -31,8 +34,18 @@
 </head>
 <body>
 
+    <div id="ref-modal">
+        <div class="modal-content">
+            <h2 style="color: var(--main-green); margin: 0;">AGENT REGISTER</h2>
+            <p style="font-size: 13px; color: var(--text-gray); margin-top: 10px;">أدخل كود الدعوة (ID الصديق) إذا وجد</p>
+            <input type="text" id="ref-input" class="modal-input" placeholder="CODE HERE">
+            <button class="claim-btn" onclick="submitRegistration()">ابدأ الآن</button>
+            <button onclick="submitRegistration(true)" style="background: none; border: none; color: #555; margin-top: 10px; cursor: pointer;">تخطي ></button>
+        </div>
+    </div>
+
     <div class="header">
-        <div class="user-badge" id="user-lvl">LEVEL 1</div>
+        <div class="user-badge">LEVEL 1</div>
         <div style="color: var(--text-gray); font-size: 12px;">WELCOME BACK</div>
     </div>
 
@@ -43,18 +56,9 @@
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card">
-            <b id="balance-short">0</b>
-            <span>Balance</span>
-        </div>
-        <div class="stat-card">
-            <b id="user-streak">0d</b>
-            <span>Streak</span>
-        </div>
-        <div class="stat-card">
-            <b id="tasks-done">0</b>
-            <span>Tasks</span>
-        </div>
+        <div class="stat-card"><b id="balance-short">0</b><span>Balance</span></div>
+        <div class="stat-card"><b id="user-streak">0d</b><span>Streak</span></div>
+        <div class="stat-card"><b id="tasks-done">0</b><span>Tasks</span></div>
     </div>
 
     <div class="daily-box">
@@ -62,7 +66,7 @@
             <span>🎁 Daily Rewards</span>
             <span style="color: var(--main-green);">+15 Mega</span>
         </div>
-        <button class="claim-btn" id="claimBtn" onclick="claimDaily()">📺 Claim Daily Bonus</button>
+        <button class="claim-btn" id="claimBtn" onclick="claimDaily()">Claim Daily Bonus</button>
     </div>
 
     <nav class="navbar">
@@ -84,35 +88,38 @@
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
-            userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "");
+            userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
             if (!userId) return;
 
-            let { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+            const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
 
             if (!user) {
-                // يوزر جديد - نظام الإحالة اليدوي
-                const refCode = prompt("أهلاً بك! إذا كان لديك كود دعوة (ID الصديق) أدخله هنا، أو اتركه فارغاً:", "");
-                let newUser = { 
-                    telegram_id: userId, 
-                    name: tg.initDataUnsafe.user?.first_name || "AGENT", 
-                    points: 0,
-                    streak: 0,
-                    last_claim: null
-                };
-                if (refCode && refCode.trim() !== "" && refCode !== userId) {
-                    newUser.referred_by = refCode.trim();
-                }
-                const { data } = await client.from('users').insert([newUser]).select().single();
-                user = data;
+                document.getElementById('ref-modal').style.display = 'flex';
+            } else {
+                userData = user;
+                updateUI();
+                checkDailyStatus();
             }
-            
-            userData = user;
-            updateUI();
-            checkDailyStatus();
+        }
+
+        async function submitRegistration(skip = false) {
+            const refCode = document.getElementById('ref-input').value.trim();
+            let newUser = { 
+                telegram_id: userId, 
+                name: tg.initDataUnsafe.user?.first_name || "AGENT",
+                points: 0, streak: 0, last_claim: null, total_tasks: 0, invited_count: 0, total_ref_commission: 0, is_active_ref: false
+            };
+            if (!skip && refCode !== "" && refCode !== userId) newUser.referred_by = refCode;
+
+            const { data, error } = await client.from('users').insert([newUser]).select().single();
+            if (!error) {
+                userData = data;
+                document.getElementById('ref-modal').style.display = 'none';
+                updateUI();
+            } else { tg.showAlert("Error during registration."); }
         }
 
         function updateUI() {
-            if (!userData) return;
             document.getElementById('user-points').innerText = userData.points.toLocaleString();
             document.getElementById('balance-short').innerText = userData.points >= 1000 ? (userData.points/1000).toFixed(1) + 'k' : userData.points;
             document.getElementById('tasks-done').innerText = userData.total_tasks || 0;
@@ -121,25 +128,20 @@
 
         function checkDailyStatus() {
             if (!userData.last_claim) return;
-            const lastDate = new Date(userData.last_claim);
-            const now = new Date();
-            const diffHours = (now - lastDate) / (1000 * 60 * 60);
-
-            if (diffHours < 24) {
+            const diff = (new Date() - new Date(userData.last_claim)) / (1000 * 60 * 60);
+            if (diff < 24) {
                 const btn = document.getElementById('claimBtn');
                 btn.disabled = true;
-                btn.innerText = "Next Claim in " + Math.ceil(24 - diffHours) + "h";
+                btn.innerText = `Wait ${Math.ceil(24 - diff)}h`;
             }
         }
 
         async function claimDaily() {
             const now = new Date();
             let newStreak = (userData.streak || 0) + 1;
-
             if (userData.last_claim) {
-                const lastDate = new Date(userData.last_claim);
-                const diffHours = (now - lastDate) / (1000 * 60 * 60);
-                if (diffHours > 48) newStreak = 1; // لو غاب يومين الستريك يصفر
+                const diffHours = (now - new Date(userData.last_claim)) / (1000 * 60 * 60);
+                if (diffHours > 48) newStreak = 1;
             }
 
             const { data, error } = await client.from('users').update({
@@ -152,7 +154,7 @@
                 userData = data;
                 updateUI();
                 checkDailyStatus();
-                tg.showAlert("🎁 مبروك! حصلت على +15 Mega بونص يومي.");
+                tg.showAlert("🎁 +15 Mega Added!");
             }
         }
 
