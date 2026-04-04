@@ -24,7 +24,6 @@
 
         h2 { text-align: right; margin-bottom: 25px; font-size: 22px; }
 
-        /* كروت الإحصائيات العلوية */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -41,7 +40,6 @@
         .stat-card b { display: block; font-size: 16px; color: var(--main-green); }
         .stat-card span { font-size: 10px; color: var(--text-gray); }
 
-        /* منطقة الرابط */
         .invite-box {
             background: var(--card-bg);
             padding: 20px;
@@ -49,16 +47,21 @@
             border: 1px solid #2d333d;
             text-align: center;
         }
-        .url-display {
+
+        /* ستايل كود الدعوة الجديد */
+        .promo-code-v2 {
             background: #000;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 11px;
-            color: var(--text-gray);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 28px;
+            color: var(--main-green);
             margin: 15px 0;
-            word-break: break-all;
-            border: 1px dashed #333;
+            font-family: monospace;
+            letter-spacing: 4px;
+            border: 1px dashed var(--main-green);
+            font-weight: bold;
         }
+
         .btn-action {
             background: var(--main-green);
             color: black;
@@ -72,7 +75,6 @@
             cursor: pointer;
         }
 
-        /* شريط التنقل السفلي */
         .navbar {
             position: fixed;
             bottom: 0; left: 0;
@@ -85,7 +87,7 @@
             border-top: 1px solid #2d333d;
             z-index: 1000;
         }
-        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; }
+        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
         .center-nav {
             background: var(--main-green);
@@ -118,18 +120,21 @@
     </div>
 
     <div class="invite-box">
-        <div style="font-size: 14px; margin-bottom: 10px;">انشر الرابط واحصل على 10% عمولة</div>
-        <div class="url-display" id="invite-url">جاري التجهيز...</div>
-        <button class="btn-action" onclick="copyLink()">📋 نسخ الرابط</button>
-        <button class="btn-action" style="background: #1a1d23; color: white; border: 1px solid var(--main-green);" onclick="shareLink()">📤 مشاركة سريعة</button>
+        <div style="font-size: 14px; margin-bottom: 5px; color: white;">كود الدعوة الخاص بك:</div>
+        <div class="promo-code-v2" id="promo-display">------</div>
+        
+        <button class="btn-action" onclick="copyPromo()">📋 نسخ الكود</button>
+        
+        <div style="font-size: 11px; color: var(--text-gray); margin: 15px 0 10px;">أو شارك الرابط المباشر:</div>
+        <button class="btn-action" style="background: #1a1d23; color: white; border: 1px solid var(--main-green);" onclick="shareLink()">📤 مشاركة الرابط</button>
     </div>
 
     <nav class="navbar">
-     <a href="javascript:void(0)" onclick="goHome()" class="nav-item">🏠<br>الرئيسية</a>
-     <a href="javascript:void(0)" onclick="goTasks()" class="nav-item">📋<br>اكسب</a>
-     <a href="javascript:void(0)" class="nav-item center-nav">🎮</a>
-     <a href="javascript:void(0)" onclick="goInvite()" class="nav-item">👥<br>أجل</a>
-     <a href="javascript:void(0)" onclick="goProfile()" class="nav-item">👤<br>أنا</a>
+        <a href="javascript:void(0)" onclick="goHome()" class="nav-item">🏠<br>الرئيسية</a>
+        <a href="javascript:void(0)" onclick="goTasks()" class="nav-item">📋<br>اكسب</a>
+        <a href="javascript:void(0)" class="nav-item center-nav">🎮</a>
+        <a href="javascript:void(0)" onclick="goInvite()" class="nav-item active">👥<br>أجل</a>
+        <a href="javascript:void(0)" onclick="goProfile()" class="nav-item">👤<br>أنا</a>
     </nav>
 
     <script>
@@ -140,54 +145,40 @@
 
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-        const botUser = "FoxiGrowbot"; // اسم بوتك بدون @
+        const botUser = "FoxiGrowbot"; 
 
         async function init() {
-            document.getElementById('invite-url').innerText = `https://t.me/${botUser}?start=ref_${tid}`;
+            // عرض الكود (الـ ID) لليوزر
+            document.getElementById('promo-display').innerText = tid;
 
-            // جلب البيانات
+            // جلب البيانات من سوبابيز
             let { data: me } = await client.from('users').select('*').eq('telegram_id', tid).single();
             if (me) {
                 document.getElementById('comm-ref').innerText = (me.total_ref_commission || 0).toLocaleString();
                 document.getElementById('active-ref').innerText = me.invited_count || 0;
             }
 
-            // حساب الإجمالي
+            // حساب الإجمالي (الأشخاص اللي مسجلين بالكود ده)
             let { count } = await client.from('users').select('*', { count: 'exact', head: true }).eq('referred_by', tid);
             document.getElementById('total-ref').innerText = count || 0;
         }
 
-        function copyLink() {
-            const url = document.getElementById('invite-url').innerText;
-            navigator.clipboard.writeText(url);
-            tg.showAlert("✅ تم نسخ الرابط بنجاح!");
+        function copyPromo() {
+            navigator.clipboard.writeText(tid);
+            tg.showAlert("✅ تم نسخ كود الدعوة!");
         }
 
         function shareLink() {
-            const url = document.getElementById('invite-url').innerText;
-            const text = encodeURIComponent("سجل في MegaTask واجمع أرباح يومية! 💰💸");
+            const url = `https://t.me/${botUser}?start=ref_${tid}`;
+            const text = encodeURIComponent("سجل في MegaTask واستخدم كود الدعوة الخاص بي: " + tid);
             window.open(`https://t.me/share/url?url=${url}&text=${text}`);
         }
 
-        // دالة التنقل لبروفايل
-function goProfile() {
-    window.location.href = `profile.html?id=${tid}`;
-}
-
-// دالة التنقل للرئيسية
-function goHome() {
-    window.location.href = `index.html?id=${tid}`;
-}
-
-// دالة التنقل للمهام
-function goTasks() {
-    window.location.href = `tasks.html?id=${tid}`;
-}
-
-// دالة التنقل للدعوات
-function goInvite() {
-    window.location.href = `invite.html?id=${tid}`;
-}
+        // دوال التنقل
+        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
+        function goHome() { window.location.href = `index.html?id=${tid}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
 
         init();
     </script>
