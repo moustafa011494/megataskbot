@@ -24,7 +24,6 @@
 
         h2 { color: white; text-align: right; margin-bottom: 25px; font-size: 22px; }
 
-        /* كروت المهام */
         .task-card {
             background: var(--card-bg);
             border: 1px solid #2d333d;
@@ -51,7 +50,6 @@
             cursor: pointer;
         }
 
-        /* شريط التنقل السفلي (نفس الرئيسية) */
         .navbar {
             position: fixed;
             bottom: 0; left: 0;
@@ -69,6 +67,7 @@
             color: var(--text-gray);
             font-size: 11px;
             text-decoration: none;
+            cursor: pointer;
         }
         .nav-item.active { color: var(--main-green); }
         .center-nav {
@@ -87,14 +86,13 @@
     <h2>📋 المهام المتاحة</h2>
     <div id="tasks-container">جاري تحميل العروض...</div>
 
-      <nav class="navbar">
-        <a href="javascript:void(0)" onclick="goHome()" class="nav-item active">🏠<br>الرئيسية</a>
-        <a href="javascript:void(0)" onclick="goTasks()" class="nav-item">📋<br>اكسب</a>
+    <nav class="navbar">
+        <a href="javascript:void(0)" onclick="goHome()" class="nav-item">🏠<br>الرئيسية</a>
+        <a href="javascript:void(0)" onclick="goTasks()" class="nav-item active">📋<br>اكسب</a>
         <a href="javascript:void(0)" class="nav-item center-nav">🎮</a>
         <a href="javascript:void(0)" onclick="goInvite()" class="nav-item">👥<br>أجل</a>
         <a href="javascript:void(0)" onclick="goProfile()" class="nav-item">👤<br>أنا</a>
-      </nav>
-
+    </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -109,16 +107,18 @@
             let { data: tasks } = await client.from('tasks').select('*');
             const container = document.getElementById('tasks-container');
             container.innerHTML = "";
-            tasks.forEach(t => {
-                container.innerHTML += `
-                    <div class="task-card">
-                        <div class="task-info">
-                            <b>${t.title}</b>
-                            <span>+${t.reward} Mega 💰</span>
-                        </div>
-                        <button class="go-btn" onclick="completeTask('${t.link}', ${t.reward})">تنفيذ</button>
-                    </div>`;
-            });
+            if(tasks) {
+                tasks.forEach(t => {
+                    container.innerHTML += `
+                        <div class="task-card">
+                            <div class="task-info">
+                                <b>${t.title}</b>
+                                <span>+${t.reward} Mega 💰</span>
+                            </div>
+                            <button class="go-btn" onclick="completeTask('${t.link}', ${t.reward})">تنفيذ</button>
+                        </div>`;
+                });
+            }
         }
 
         async function completeTask(link, reward) {
@@ -127,21 +127,19 @@
                 if (ok && tid) {
                     let { data: user } = await client.from('users').select('*').eq('telegram_id', tid).single();
                     if (user) {
-                        // 1. تحديث اليوزر
                         await client.from('users').update({
                             points: Number(user.points) + Number(reward),
                             total_tasks: Number(user.total_tasks || 0) + 1,
                             is_active_ref: true
                         }).eq('telegram_id', tid);
 
-                        // 2. تحديث الداعي (النسبة)
                         if (user.referred_by) {
                             const comm = Math.floor(reward * 0.10);
                             let { data: inviter } = await client.from('users').select('points, total_ref_commission').eq('telegram_id', user.referred_by).maybeSingle();
                             if (inviter) {
                                 await client.from('users').update({
                                     points: Number(inviter.points) + comm,
-                                    total_ref_commission: Number(inviter.total_ref_commission || 0) + comm
+                                    total_ref_commission: (Number(inviter.total_ref_commission || 0) + comm)
                                 }).eq('telegram_id', user.referred_by);
                             }
                         }
@@ -151,25 +149,10 @@
             });
         }
 
-         init();
-
-        // دوال التنقل الموحدة (تم تغيير tid إلى userId)
-        function goProfile() {
-            window.location.href = `profile.html?id=${userId}`;
-        }
-
-        function goHome() {
-            window.location.href = `index.html?id=${userId}`;
-        }
-
-        function goTasks() {
-            window.location.href = `tasks.html?id=${userId}`;
-        }
-
-        function goInvite() {
-            window.location.href = `invite.html?id=${userId}`;
-        }
-
+        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
+        function goHome() { window.location.href = `index.html?id=${tid}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
 
         fetchTasks();
     </script>
