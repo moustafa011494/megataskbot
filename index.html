@@ -174,12 +174,12 @@
         <button class="claim-btn">📺 Claim Daily Bonus</button>
     </div>
 
-    <nav class="navbar">
-        <a href="#" class="nav-item active">🏠<br>الرئيسية</a>
-        <a href="tasks.html" class="nav-item">📋<br>اكسب</a>
-        <a href="#" class="nav-item center-nav">🎮</a>
-        <a href="invite.html" class="nav-item">👥<br>أجل</a>
-        <a href="#" class="nav-item">👤<br>أنا</a>
+        <nav class="navbar">
+        <a href="javascript:void(0)" onclick="goHome()" class="nav-item active">🏠<br>الرئيسية</a>
+        <a href="javascript:void(0)" onclick="goTasks()" class="nav-item">📋<br>اكسب</a>
+        <a href="javascript:void(0)" class="nav-item center-nav">🎮</a>
+        <a href="javascript:void(0)" onclick="goInvite()" class="nav-item">👥<br>أجل</a>
+        <a href="javascript:void(0)" onclick="goProfile()" class="nav-item">👤<br>أنا</a>
     </nav>
 
     <script>
@@ -208,26 +208,25 @@
             }
         }
 
-        init();
-        // دالة التنقل لبروفايل
-function goProfile() {
-    window.location.href = `profile.html?id=${tid}`;
-}
+                init();
 
-// دالة التنقل للرئيسية
-function goHome() {
-    window.location.href = `index.html?id=${tid}`;
-}
+        // دوال التنقل الموحدة (تم تغيير tid إلى userId)
+        function goProfile() {
+            window.location.href = `profile.html?id=${userId}`;
+        }
 
-// دالة التنقل للمهام
-function goTasks() {
-    window.location.href = `tasks.html?id=${tid}`;
-}
+        function goHome() {
+            window.location.href = `index.html?id=${userId}`;
+        }
 
-// دالة التنقل للدعوات
-function goInvite() {
-    window.location.href = `invite.html?id=${tid}`;
-}
+        function goTasks() {
+            window.location.href = `tasks.html?id=${userId}`;
+        }
+
+        function goInvite() {
+            window.location.href = `invite.html?id=${userId}`;
+        }
+
 
     </script>
 </body>
