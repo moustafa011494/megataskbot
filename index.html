@@ -102,23 +102,17 @@
             }
         }
 
-                async function submitRegistration(skip = false) {
+                        async function submitRegistration(skip = false) {
             const refCode = document.getElementById('ref-input').value.trim();
             
-            // البيانات الكاملة لضمان القبول في سوبابيز
+            // هنبعت بس الـ ID والاسم والـ referred_by لو موجود
             let newUser = { 
                 telegram_id: String(userId), 
                 name: String(tg.initDataUnsafe.user?.first_name || "AGENT"),
-                points: 0, 
-                streak: 0, 
-                last_claim: null, 
-                total_tasks: 0, 
-                invited_count: 0, 
-                total_ref_commission: 0, 
-                is_active_ref: false
+                points: 0
             };
 
-            // لو اليوزر دخل كود (ومش كود نفسه) بنضيفه
+            // لو اليوزر دخل كود دعوة
             if (!skip && refCode !== "" && refCode !== String(userId)) {
                 newUser.referred_by = refCode;
             }
@@ -132,16 +126,15 @@
 
                 if (error) {
                     console.error("Supabase Error:", error);
-                    tg.showAlert("❌ خطأ في قاعدة البيانات: " + error.message);
+                    tg.showAlert("❌ خطأ: " + error.message);
                 } else {
                     userData = data;
                     document.getElementById('ref-modal').style.display = 'none';
                     updateUI();
-                    tg.showAlert("✅ أهلاً بك يا بطل! تم التسجيل.");
+                    tg.showAlert("✅ تم التسجيل بنجاح!");
                 }
             } catch (err) {
-                console.error("Fatal Error:", err);
-                tg.showAlert("❌ عطل فني في التسجيل.");
+                tg.showAlert("❌ عطل فني.");
             }
         }
 
