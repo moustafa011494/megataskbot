@@ -9,30 +9,16 @@
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
         body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; padding-bottom: 100px; }
-        
         .balance-card { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #2d333d; text-align: center; margin-bottom: 25px; }
-        .balance-card span { color: var(--text-gray); font-size: 14px; }
         .balance-card h2 { color: var(--main-green); font-size: 32px; margin: 10px 0; }
-
         .input-group { margin-bottom: 20px; text-align: right; }
         .input-group label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-gray); }
-        
-        select, input {
-            width: 100%; background: #000; border: 1px solid #2d333d; padding: 15px;
-            border-radius: 12px; color: white; font-size: 16px; box-sizing: border-box; outline: none;
-        }
-        select:focus, input:focus { border-color: var(--main-green); }
-
-        .withdraw-btn {
-            background: var(--main-green); color: black; border: none; width: 100%;
-            padding: 18px; border-radius: 15px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px;
-        }
-        .withdraw-btn:disabled { background: #1e3a2b; color: #555; cursor: not-allowed; }
-
-        /* شريط التنقل السفلي */
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); backdrop-filter: blur(10px); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        select, input { width: 100%; background: #000; border: 1px solid #2d333d; padding: 15px; border-radius: 12px; color: white; box-sizing: border-box; outline: none; }
+        .withdraw-btn { background: var(--main-green); color: black; border: none; width: 100%; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; }
+        .withdraw-btn:disabled { background: #333; color: #666; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
-        .center-nav { background: var(--main-green); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -25px; color: black !important; }
+        .center-nav { background: var(--main-green); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -20px; color: black !important; }
     </style>
 </head>
 <body>
@@ -41,8 +27,8 @@
 
     <div class="balance-card">
         <span>رصيدك الحالي</span>
-        <h2 id="current-points">0</h2>
-        <small style="color: var(--text-gray);">الحد الأدنى للسحب: 5000 نقطة</small>
+        <h2 id="current-points">Loading...</h2>
+        <small style="color: var(--text-gray);">الحد الأدنى: 5,000 نقطة</small>
     </div>
 
     <div class="input-group">
@@ -55,16 +41,16 @@
     </div>
 
     <div class="input-group">
-        <label>المبلغ المراد سحبه (نقطة)</label>
-        <input type="number" id="amount" placeholder="مثال: 5000">
+        <label>المبلغ (نقطة)</label>
+        <input type="number" id="amount" placeholder="5000">
     </div>
 
     <div class="input-group">
-        <label>بيانات المحفظة / الرقم</label>
-        <input type="text" id="wallet" placeholder="ادخل الرقم أو المعرف هنا">
+        <label>الرقم / المعرف</label>
+        <input type="text" id="wallet" placeholder="مثلاً: 010xxxxxxxx">
     </div>
 
-    <button class="withdraw-btn" id="withdrawBtn" onclick="requestWithdraw()">إرسال طلب السحب ↗</button>
+    <button class="withdraw-btn" id="withdrawBtn" onclick="processWithdraw()">إرسال الطلب ↗</button>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
@@ -82,67 +68,49 @@
 
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-        let userPoints = 0;
+        let userBalance = 0;
 
         async function init() {
-            let { data: user } = await client.from('users').select('points').eq('telegram_id', tid).single();
-            if (user) {
-                userPoints = user.points;
-                document.getElementById('current-points').innerText = userPoints.toLocaleString();
+            if(!tid) { document.getElementById('current-points').innerText = "Error ID"; return; }
+            
+            const { data, error } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
+            if (data) {
+                userBalance = data.points;
+                document.getElementById('current-points').innerText = userBalance.toLocaleString();
+            } else {
+                document.getElementById('current-points').innerText = "0";
             }
         }
 
-        async function requestWithdraw() {
-                async function requestWithdraw() {
-            const amountInput = document.getElementById('amount').value;
+        async function processWithdraw() {
+            const amount = parseInt(document.getElementById('amount').value);
             const method = document.getElementById('method').value;
             const wallet = document.getElementById('wallet').value;
-            const amount = parseInt(amountInput);
+            const btn = document.getElementById('withdrawBtn');
 
-            if (!amount || amount < 5000) {
-                tg.showAlert("⚠️ الحد الأدنى للسحب هو 5000 نقطة.");
-                return;
-            }
-            if (amount > userPoints) {
-                tg.showAlert("❌ رصيدك غير كافٍ.");
-                return;
-            }
-            if (!wallet) {
-                tg.showAlert("⚠️ من فضلك ادخل بيانات المحفظة.");
-                return;
-            }
+            if (isNaN(amount) || amount < 5000) return tg.showAlert("❌ الحد الأدنى 5000 نقطة");
+            if (amount > userBalance) return tg.showAlert("❌ رصيدك لا يكفي");
+            if (!wallet) return tg.showAlert("⚠️ ادخل بيانات المحفظة");
 
-            document.getElementById('withdrawBtn').disabled = true;
+            btn.disabled = true;
+            btn.innerText = "جاري الإرسال...";
 
-            // 1. تسجيل الطلب في جدول withdrawals
-            const { error: reqErr } = await client.from('withdrawals').insert([{
-                telegram_id: String(tid),
-                amount: Number(amount),
-                method: String(method),
-                wallet_info: String(wallet),
-                status: 'Pending'
+            // تسجيل السحب
+            const { error: err1 } = await client.from('withdrawals').insert([{
+                telegram_id: tid, amount: amount, method: method, wallet_info: wallet, status: 'Pending'
             }]);
 
-            if (!reqErr) {
-                // 2. خصم النقاط من رصيد اليوزر في جدول users
-                const { error: updateErr } = await client
-                    .from('users')
-                    .update({ points: Number(userPoints - amount) })
-                    .eq('telegram_id', String(tid));
-
-                if (!updateErr) {
-                    tg.showAlert("✅ تم إرسال طلبك بنجاح! سيتم المراجعة والدفع قريباً.");
-                    window.location.reload();
-                } else {
-                    tg.showAlert("❌ تم تسجيل الطلب ولكن فشل خصم النقاط: " + updateErr.message);
-                }
+            if (!err1) {
+                // خصم النقط
+                await client.from('users').update({ points: userBalance - amount }).eq('telegram_id', tid);
+                tg.showAlert("✅ طلبك قيد المراجعة!");
+                window.location.href = `index.html?id=${tid}`;
             } else {
-                console.error("Withdraw Error:", reqErr);
-                tg.showAlert("❌ خطأ في قاعدة البيانات: " + reqErr.message);
-                document.getElementById('withdrawBtn').disabled = false;
+                tg.showAlert("❌ خطأ: " + err1.message);
+                btn.disabled = false;
+                btn.innerText = "إرسال الطلب ↗";
             }
         }
-
 
         function goHome() { window.location.href = `index.html?id=${tid}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
