@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - Ads Edition</title>
+    <title>MegaTask - Stable Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://sad.adsgram.ai/js/adsgram-ad-sdk.js"></script>
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 100px; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 100px; overflow-x: hidden; }
         .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; }
         .main-balance { text-align: center; margin-bottom: 25px; }
@@ -19,11 +19,12 @@
         .stat-card { background: var(--card-bg); padding: 15px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
         .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--main-green); }
         
-        /* أزرار الأكشن */
+        /* الأزرار الجديدة */
         .action-box { margin: 0 15px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-action { background: var(--card-bg); color: white; border: 1px solid #333; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; }
-        .btn-ads { background: linear-gradient(90deg, #ff9000, #ff5e00); color: white; border: none; }
+        .btn-action { background: var(--card-bg); color: white; border: 1px solid #333; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 13px; }
+        .btn-ads { background: linear-gradient(90deg, #ff9000, #ff5e00); color: white; border: none; box-shadow: 0 4px 15px rgba(255, 94, 0, 0.3); }
 
+        /* المودال */
         #ref-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
         .modal-content { background: var(--card-bg); padding: 30px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 85%; }
         .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 15px 0; outline: none; }
@@ -39,14 +40,14 @@
     <div id="ref-modal">
         <div class="modal-content">
             <h2 style="color: var(--main-green); margin: 0;">AGENT REGISTER</h2>
-            <input type="text" id="ref-input" class="modal-input" placeholder="CODE HERE (ID)">
+            <input type="text" id="ref-input" class="modal-input" placeholder="ENTER CODE (ID)">
             <button class="btn-withdraw" style="width:100%" onclick="submitRegistration()">ابدأ الآن</button>
             <button onclick="submitRegistration(true)" style="background: none; border: none; color: #555; margin-top: 10px;">تخطي ></button>
         </div>
     </div>
 
     <div class="header">
-        <div class="user-badge">LEVEL 1</div>
+        <div class="user-badge" id="user-lvl">LEVEL 1</div>
         <div style="color: var(--text-gray); font-size: 12px;">WELCOME BACK</div>
     </div>
 
@@ -81,12 +82,14 @@
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        // ربط الإعلانات بالـ Block ID الخاص بك
-        const AdController = window.Adsgram.init({ blockId: "26843" });
-
-
         let userId = "";
         let userData = null;
+        let AdController = null;
+
+        // تهيئة الإعلانات بذكاء لتجنب التعليق
+        if (window.Adsgram) {
+            AdController = window.Adsgram.init({ blockId: "26843" });
+        }
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
@@ -94,6 +97,7 @@
             if (!userId) return;
 
             const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+            
             if (!user) {
                 document.getElementById('ref-modal').style.display = 'flex';
             } else {
@@ -103,50 +107,54 @@
             }
         }
 
-        // دالة عرض الإعلان
         async function showAd() {
+            if (!AdController) return tg.showAlert("❌ الإعلانات جاري تحميلها..");
+            
             try {
                 const result = await AdController.show();
                 if (result.done) {
-                    // إضافة 15 نقطة عند انتهاء الفيديو
-                    const { data, error } = await client.from('users').update({
+                    const { data } = await client.from('users').update({
                         points: userData.points + 15
                     }).eq('telegram_id', userId).select().single();
                     
-                    if (!error) {
+                    if (data) {
                         userData = data;
                         updateUI();
-                        tg.showAlert("✅ مبروك! حصلت على 15 نقطة من مشاهدة الإعلان.");
+                        tg.showAlert("✅ مبروك! +15 نقطة رصيد إعلانات.");
                     }
-                } else {
-                    tg.showAlert("⚠️ شاهد الفيديو للأخر عشان تاخد النقط.");
                 }
             } catch (err) {
-                tg.showAlert("❌ مفيش إعلانات متاحة دلوقتي، جرب كمان شوية.");
+                tg.showAlert("❌ لا توجد إعلانات حالياً (Status: Declined)");
             }
         }
 
         async function submitRegistration(skip = false) {
             const refCode = document.getElementById('ref-input').value.trim();
-            let newUser = { telegram_id: userId, name: tg.initDataUnsafe.user?.first_name || "AGENT", points: 0 };
+            let newUser = { telegram_id: userId, name: tg.initDataUnsafe.user?.first_name || "AGENT", points: 0, streak: 0 };
             if (!skip && refCode !== "" && refCode !== userId) newUser.referred_by = refCode;
-            const { data } = await client.from('users').insert([newUser]).select().single();
-            if (data) { userData = data; document.getElementById('ref-modal').style.display = 'none'; updateUI(); }
+            
+            const { data, error } = await client.from('users').insert([newUser]).select().single();
+            if (!error) {
+                userData = data;
+                document.getElementById('ref-modal').style.display = 'none';
+                updateUI();
+            }
         }
 
         function updateUI() {
             document.getElementById('user-points').innerText = userData.points.toLocaleString();
             document.getElementById('balance-short').innerText = userData.points >= 1000 ? (userData.points/1000).toFixed(1) + 'k' : userData.points;
-            document.getElementById('tasks-done').innerText = userData.total_tasks || 0;
             document.getElementById('user-streak').innerText = (userData.streak || 0) + "d";
+            document.getElementById('tasks-done').innerText = userData.total_tasks || 0;
         }
 
         function checkDailyStatus() {
             if (!userData.last_claim) return;
             const diff = (new Date() - new Date(userData.last_claim)) / (1000 * 60 * 60);
             if (diff < 24) {
-                document.getElementById('claimBtn').style.opacity = "0.5";
-                document.getElementById('claimBtn').innerText = "Wait " + Math.ceil(24-diff) + "h";
+                const btn = document.getElementById('claimBtn');
+                btn.style.opacity = "0.5";
+                btn.innerText = "Next in " + Math.ceil(24-diff) + "h";
             }
         }
 
@@ -156,13 +164,19 @@
                 points: userData.points + 15,
                 last_claim: now.toISOString()
             }).eq('telegram_id', userId).select().single();
-            if (!error) { userData = data; updateUI(); checkDailyStatus(); tg.showAlert("🎁 Daily Bonus Claimed!"); }
+            
+            if (!error) {
+                userData = data;
+                updateUI();
+                checkDailyStatus();
+                tg.showAlert("🎁 تم الحصول على المكافأة اليومية!");
+            }
         }
 
-        function goProfile() { window.location.href = `profile.html?id=${userId}`; }
         function goHome() { window.location.href = `index.html?id=${userId}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
         function goInvite() { window.location.href = `invite.html?id=${userId}`; }
+        function goProfile() { window.location.href = `profile.html?id=${userId}`; }
         function goWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
 
         init();
