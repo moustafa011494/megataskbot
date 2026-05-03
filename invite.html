@@ -3,59 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invite - MegaTask</title>
+    <title>Invite & Earn - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; padding-bottom: 100px; }
-        h2 { text-align: right; margin-bottom: 25px; font-size: 22px; }
-
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-card { background: var(--card-bg); padding: 15px 5px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
-        .stat-card b { display: block; font-size: 16px; color: var(--main-green); }
-        .stat-card span { font-size: 10px; color: var(--text-gray); }
-
-        .invite-box { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #2d333d; text-align: center; margin-bottom: 15px; }
-        .promo-code-v2 { background: #000; padding: 10px; border-radius: 12px; font-size: 24px; color: var(--main-green); margin: 10px 0; font-family: monospace; border: 1px dashed var(--main-green); font-weight: bold; }
-
-        /* ستايل قسم إدخال الكود الجديد */
-        #register-section { background: rgba(0, 210, 106, 0.05); border: 1px solid var(--main-green); padding: 20px; border-radius: 20px; margin-bottom: 20px; display: none; }
-        .input-ref { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin-bottom: 10px; outline: none; font-weight: bold; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 100px; }
         
-        .btn-action { background: var(--main-green); color: black; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 15px; margin-bottom: 10px; cursor: pointer; }
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; }
-        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
+        /* القسم العلوي - إجمالي العائد بالأخضر */
+        .total-earnings { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #2d333d; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.05); }
+        .total-earnings h3 { margin: 0; font-size: 14px; color: var(--text-gray); }
+        .total-earnings .amount { font-size: 32px; font-weight: bold; color: var(--main-green); margin: 10px 0; text-shadow: 0 0 10px rgba(0, 210, 106, 0.2); }
+        
+        /* قسم تسجيل الكود */
+        #register-section { background: rgba(0, 210, 106, 0.05); border: 1px dashed var(--main-green); padding: 15px; border-radius: 15px; margin-bottom: 15px; display: none; text-align: center; }
+        .input-ref { width: 85%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); border-radius: 10px; text-align: center; margin-bottom: 10px; outline: none; font-weight: bold; }
+
+        /* صندوق الدعوة */
+        .invite-card { background: var(--card-bg); border-radius: 20px; padding: 15px; border: 1px solid #2d333d; margin-bottom: 15px; }
+        .link-box { background: #000; border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #333; margin-top: 10px; }
+        .link-box span { font-size: 11px; color: var(--text-gray); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
+        .btn-green { background: var(--main-green); color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-green:active { transform: scale(0.95); }
+
+        /* شبكة الإحصائيات */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+        .stat-box { background: var(--card-bg); padding: 12px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
+        .stat-box b { display: block; font-size: 18px; color: var(--main-green); }
+        .stat-box span { font-size: 10px; color: var(--text-gray); }
+
+        /* التبويبات (Tabs) */
+        .tabs { display: flex; background: #000; border-radius: 12px; padding: 5px; margin-bottom: 15px; border: 1px solid #222; }
+        .tab { flex: 1; text-align: center; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 13px; color: var(--text-gray); }
+        .tab.active { background: var(--main-green); color: black; font-weight: bold; }
+
+        /* الجداول */
+        .list-container { display: none; }
+        .list-container.active { display: block; }
+        .item-row { display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); padding: 12px 15px; border-radius: 15px; margin-bottom: 8px; border: 1px solid #2d333d; }
+        .rank-circle { width: 30px; height: 30px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 1px solid var(--main-green); color: var(--main-green); }
+        .user-info { flex: 1; text-align: right; padding-right: 15px; }
+        .user-info b { font-size: 14px; }
+        .user-info small { color: var(--text-gray); display: block; font-size: 10px; }
+
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
     </style>
 </head>
 <body>
 
-    <h2>👥 دعوة الأصدقاء</h2>
+    <div class="total-earnings">
+        <h3>إجمالي العائد من الدعوات 💎</h3>
+        <div class="amount" id="total-comm">0</div>
+        <small style="color: var(--text-gray);">نقاط مكتسبة من الأصدقاء</small>
+    </div>
 
     <div id="register-section">
-        <div style="font-size: 14px; margin-bottom: 10px; color: var(--main-green);">لديك كود دعوة؟ ضعه هنا واكسب نقاط ترحيبية!</div>
-        <input type="number" id="input-promo" class="input-ref" placeholder="ادخل كود الصديق">
-        <button class="btn-action" onclick="submitInvite()">تفعيل الكود ✅</button>
+        <input type="number" id="input-promo" class="input-ref" placeholder="ادخل كود صديقك">
+        <button class="btn-green" style="width: 85%;" onclick="submitInvite()">تفعيل الكود ✅</button>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card"><b id="total-ref">0</b><span>إجمالي</span></div>
-        <div class="stat-card"><b id="active-ref">0</b><span>نشط</span></div>
-        <div class="stat-card"><b id="comm-ref">0</b><span>عمولة 💎</span></div>
+        <div class="stat-box"><b id="my-rank">#--</b><span>تصنيفي</span></div>
+        <div class="stat-box"><b id="total-ref">0</b><span>المدعوين</span></div>
+        <div class="stat-box"><b id="valid-ref">0</b><span>صالحين</span></div>
     </div>
 
-    <div class="invite-box">
-        <div style="font-size: 14px; margin-bottom: 5px;">كود الدعوة الخاص بك:</div>
-        <div class="promo-code-v2" id="promo-display">------</div>
-        <button class="btn-action" onclick="copyPromo()">📋 نسخ الكود</button>
-        <button class="btn-action" style="background: #1a1d23; color: white; border: 1px solid var(--main-green);" onclick="shareLink()">📤 مشاركة الرابط</button>
+    <div class="invite-card">
+        <span style="font-size: 12px; color: var(--text-gray);">رابط الدعوة الخاص بك</span>
+        <div class="link-box">
+            <span id="ref-url">https://t.me/MegaTaskBot?start=...</span>
+            <button class="btn-green" style="padding: 5px 12px; font-size: 12px;" onclick="copyLink()">نسخ</button>
+        </div>
+        <button class="btn-green" style="width: 100%; margin-top: 10px; background: none; border: 1px solid var(--main-green); color: var(--main-green);" onclick="shareLink()">مشاركة الرابط 📤</button>
     </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('history', this)">دعواتي 👥</div>
+        <div class="tab" onclick="switchTab('leaderboard', this)">المتصدرين 🏆</div>
+    </div>
+
+    <div id="history" class="list-container active"></div>
+    <div id="leaderboard" class="list-container"></div>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
         <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
-        <div onclick="goInvite()" class="nav-item active">👥<br>أجل</div>
+        <div onclick="goInvite()" class="nav-item active">👥<br>أصدقاء</div>
         <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
     </nav>
 
@@ -67,65 +102,92 @@
 
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-        const botUser = "MegaTask1Bot"; 
+        const botUser = "MegaTask1Bot";
         let myData = null;
 
         async function init() {
-            document.getElementById('promo-display').innerText = tid;
-            
-            // جلب بياناتي
+            const url = `https://t.me/${botUser}?start=${tid}`;
+            document.getElementById('ref-url').innerText = url;
+
             let { data: user } = await client.from('users').select('*').eq('telegram_id', tid).single();
             if (user) {
                 myData = user;
-                document.getElementById('comm-ref').innerText = (user.total_ref_commission || 0).toLocaleString();
-                document.getElementById('active-ref').innerText = user.invited_count || 0;
-
-                // لو المستخدم ملوش "referred_by" (يعني مسجلش كود حد قبل كدة) يظهر القسم
-                if (!user.referred_by) {
-                    document.getElementById('register-section').style.display = 'block';
-                }
+                document.getElementById('total-comm').innerText = (user.total_ref_commission || 0).toLocaleString();
+                document.getElementById('valid-ref').innerText = user.invited_count || 0;
+                if (!user.referred_by) document.getElementById('register-section').style.display = 'block';
+                loadMyInvites();
+                loadLeaderboard();
+                calculateRank();
             }
+        }
 
-            let { count } = await client.from('users').select('*', { count: 'exact', head: true }).eq('referred_by', tid);
-            document.getElementById('total-ref').innerText = count || 0;
+        async function loadMyInvites() {
+            const { data } = await client.from('users').select('name, points').eq('referred_by', tid);
+            const container = document.getElementById('history');
+            container.innerHTML = (data && data.length) ? '' : '<p style="text-align:center; font-size:12px; color:gray; margin-top:20px;">لا يوجد مدعوين حتى الآن</p>';
+            data?.forEach(u => {
+                container.innerHTML += `
+                    <div class="item-row">
+                        <div class="user-info">
+                            <b>${u.name}</b>
+                            <small>العائد من الدعوة: +200 💎</small>
+                        </div>
+                        <div style="color: var(--main-green); font-weight:bold;">+200</div>
+                    </div>`;
+            });
+            document.getElementById('total-ref').innerText = data?.length || 0;
+        }
+
+        async function loadLeaderboard() {
+            const { data } = await client.from('users').select('name, invited_count').order('invited_count', { ascending: false }).limit(10);
+            const container = document.getElementById('leaderboard');
+            container.innerHTML = '';
+            data?.forEach((u, i) => {
+                container.innerHTML += `
+                    <div class="item-row">
+                        <div class="rank-circle">${i+1}</div>
+                        <div class="user-info">
+                            <b>${u.name}</b>
+                            <small>دعا ${u.invited_count || 0} صديق</small>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        async function calculateRank() {
+            const { count } = await client.from('users').select('*', { count: 'exact', head: true }).gt('invited_count', myData.invited_count || 0);
+            document.getElementById('my-rank').innerText = `#${(count || 0) + 1}`;
+        }
+
+        function switchTab(id, el) {
+            document.querySelectorAll('.list-container').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            el.classList.add('active');
         }
 
         async function submitInvite() {
             const refCode = document.getElementById('input-promo').value.trim();
-            
-            if (!refCode || refCode === tid) {
-                return tg.showAlert("❌ كود غير صالح!");
-            }
-
-            // 1. التأكد إن الكود موجود أصلاً في القاعدة
+            if (!refCode || refCode === tid) return tg.showAlert("❌ كود غير صالح!");
             let { data: inviter } = await client.from('users').select('*').eq('telegram_id', refCode).single();
-            
-            if (!inviter) {
-                return tg.showAlert("❌ هذا الكود غير موجود!");
-            }
+            if (!inviter) return tg.showAlert("❌ هذا الكود غير موجود!");
 
-            // 2. تحديث بيانات المستخدم الحالي (أنا)
-            const { error: updateError } = await client.from('users')
-                .update({ referred_by: refCode, points: myData.points + 100 }) // مكافأة ترحيبية 100 نقطة
-                .eq('telegram_id', tid);
-
-            if (!updateError) {
-                // 3. إضافة نقاط للشخص القديم (صاحب الكود)
-                await client.from('users')
-                    .update({ points: inviter.points + 200, invited_count: (inviter.invited_count || 0) + 1 })
-                    .eq('telegram_id', refCode);
-
-                tg.showAlert("✅ تم تفعيل الكود وحصلت على 100 نقطة!");
-                document.getElementById('register-section').style.display = 'none'; // إخفاء القسم فوراً
-                location.reload(); 
+            const { error } = await client.from('users').update({ referred_by: refCode, points: myData.points + 100 }).eq('telegram_id', tid);
+            if (!error) {
+                await client.from('users').update({ 
+                    points: inviter.points + 200, 
+                    invited_count: (inviter.invited_count || 0) + 1, 
+                    total_ref_commission: (inviter.total_ref_commission || 0) + 200 
+                }).eq('telegram_id', refCode);
+                tg.showAlert("✅ تم التفعيل بنجاح!");
+                location.reload();
             }
         }
 
-        function copyPromo() { navigator.clipboard.writeText(tid); tg.showAlert("✅ تم نسخ الكود!"); }
+        function copyLink() { navigator.clipboard.writeText(document.getElementById('ref-url').innerText); tg.showAlert("✅ تم نسخ الرابط!"); }
         function shareLink() {
-            const url = `https://t.me/${botUser}?start=${tid}`;
-            const text = encodeURIComponent("سجل في MegaTask واكسب نقاط حقيقية! 🚀");
-            window.open(`https://t.me/share/url?url=${url}&text=${text}`);
+            const url = document.getElementById('ref-url').innerText;
+            window.open(`https://t.me/share/url?url=${url}&text=${encodeURIComponent("سجل في MegaTask واكسب نقاط حقيقية! 🚀")}`);
         }
 
         function goHome() { window.location.href = `index.html?id=${tid}`; }
