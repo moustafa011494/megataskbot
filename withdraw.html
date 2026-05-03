@@ -9,16 +9,17 @@
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
         body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; padding-bottom: 100px; }
-        .balance-card { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #2d333d; text-align: center; margin-bottom: 25px; }
+        .balance-card { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #2d333d; text-align: center; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
         .balance-card h2 { color: var(--main-green); font-size: 32px; margin: 10px 0; }
         .input-group { margin-bottom: 20px; text-align: right; }
         .input-group label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-gray); }
-        select, input { width: 100%; background: #000; border: 1px solid #2d333d; padding: 15px; border-radius: 12px; color: white; box-sizing: border-box; outline: none; }
-        .withdraw-btn { background: var(--main-green); color: black; border: none; width: 100%; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; }
-        .withdraw-btn:disabled { background: #333; color: #666; }
+        select, input { width: 100%; background: #000; border: 1px solid #2d333d; padding: 15px; border-radius: 12px; color: white; box-sizing: border-box; outline: none; transition: 0.3s; }
+        select:focus, input:focus { border-color: var(--main-green); }
+        .withdraw-btn { background: var(--main-green); color: black; border: none; width: 100%; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 5px 15px rgba(0, 210, 106, 0.3); }
+        .withdraw-btn:disabled { background: #333; color: #666; box-shadow: none; }
+        .info-box { background: rgba(0, 210, 106, 0.1); border: 1px dashed var(--main-green); padding: 10px; border-radius: 10px; font-size: 12px; margin-bottom: 20px; color: #00d26a; text-align: center; }
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
-        .center-nav { background: var(--main-green); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -20px; color: black !important; }
     </style>
 </head>
 <body>
@@ -27,36 +28,37 @@
 
     <div class="balance-card">
         <span>رصيدك الحالي</span>
-        <h2 id="current-points">Loading...</h2>
-        <small style="color: var(--text-gray);">الحد الأدنى: 5,000 نقطة</small>
+        <h2 id="current-points">جاري التحميل...</h2>
+        <div class="info-box">كل 20,000 نقطة تعادل 1 دولار 💵</div>
+        <small style="color: var(--text-gray);">الحد الأدنى للسحب: 20,000 نقطة</small>
     </div>
 
     <div class="input-group">
         <label>وسيلة السحب</label>
         <select id="method">
-            <option value="Vodafone Cash">Vodafone Cash 🇪🇬</option>
+            <option value="Vodafone Cash">فودافون كاش (مصر) 🇪🇬</option>
             <option value="Binance Pay">Binance Pay (USDT) 🌐</option>
-            <option value="Gift Cards">Google Play / Free Fire 🎁</option>
+            <option value="InstaPay">InstaPay (Egypt) 🏦</option>
+            <option value="Payer">Payer Account 💳</option>
         </select>
     </div>
 
     <div class="input-group">
-        <label>المبلغ (نقطة)</label>
-        <input type="number" id="amount" placeholder="5000">
+        <label>المبلغ المطلوب سحبه (بالنقاط)</label>
+        <input type="number" id="amount" placeholder="مثلاً: 20000" min="20000">
     </div>
 
     <div class="input-group">
-        <label>الرقم / المعرف</label>
-        <input type="text" id="wallet" placeholder="مثلاً: 010xxxxxxxx">
+        <label>بيانات الاستلام (رقم الهاتف أو الـ ID)</label>
+        <input type="text" id="wallet" placeholder="010xxxxxxx / ID">
     </div>
 
-    <button class="withdraw-btn" id="withdrawBtn" onclick="processWithdraw()">إرسال الطلب ↗</button>
+    <button class="withdraw-btn" id="withdrawBtn" onclick="processWithdraw()">تأكيد طلب السحب ↗</button>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
         <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
-        <div class="nav-item center-nav">🎮</div>
-        <div onclick="goInvite()" class="nav-item">👥<br>أجل</div>
+        <div onclick="goInvite()" class="nav-item">👥<br>أصدقاء</div>
         <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
     </nav>
 
@@ -72,13 +74,10 @@
 
         async function init() {
             if(!tid) { document.getElementById('current-points').innerText = "Error ID"; return; }
-            
-            const { data, error } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
+            const { data } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
             if (data) {
                 userBalance = data.points;
-                document.getElementById('current-points').innerText = userBalance.toLocaleString();
-            } else {
-                document.getElementById('current-points').innerText = "0";
+                document.getElementById('current-points').innerText = userBalance.toLocaleString() + " نقطة";
             }
         }
 
@@ -88,27 +87,25 @@
             const wallet = document.getElementById('wallet').value;
             const btn = document.getElementById('withdrawBtn');
 
-            if (isNaN(amount) || amount < 5000) return tg.showAlert("❌ الحد الأدنى 5000 نقطة");
-            if (amount > userBalance) return tg.showAlert("❌ رصيدك لا يكفي");
-            if (!wallet) return tg.showAlert("⚠️ ادخل بيانات المحفظة");
+            if (isNaN(amount) || amount < 20000) return tg.showAlert("❌ الحد الأدنى للسحب هو 20,000 نقطة");
+            if (amount > userBalance) return tg.showAlert("❌ عذراً، رصيدك غير كافٍ لهذا المبلغ");
+            if (!wallet) return tg.showAlert("⚠️ يرجى إدخال بيانات محفظتك أو رقمك");
 
             btn.disabled = true;
-            btn.innerText = "جاري الإرسال...";
+            btn.innerText = "جاري المعالجة...";
 
-            // تسجيل السحب
             const { error: err1 } = await client.from('withdrawals').insert([{
                 telegram_id: tid, amount: amount, method: method, wallet_info: wallet, status: 'Pending'
             }]);
 
             if (!err1) {
-                // خصم النقط
                 await client.from('users').update({ points: userBalance - amount }).eq('telegram_id', tid);
-                tg.showAlert("✅ طلبك قيد المراجعة!");
-                window.location.href = `index.html?id=${tid}`;
+                tg.showAlert("✅ تم إرسال طلبك بنجاح! سيتم التحقق والدفع خلال 24 ساعة.");
+                goHome();
             } else {
-                tg.showAlert("❌ خطأ: " + err1.message);
+                tg.showAlert("❌ فشل الطلب: " + err1.message);
                 btn.disabled = false;
-                btn.innerText = "إرسال الطلب ↗";
+                btn.innerText = "تأكيد طلب السحب ↗";
             }
         }
 
