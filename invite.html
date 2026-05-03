@@ -122,21 +122,42 @@
         }
 
         async function loadMyInvites() {
-            const { data } = await client.from('users').select('name, points').eq('referred_by', tid);
-            const container = document.getElementById('history');
-            container.innerHTML = (data && data.length) ? '' : '<p style="text-align:center; font-size:12px; color:gray; margin-top:20px;">لا يوجد مدعوين حتى الآن</p>';
-            data?.forEach(u => {
-                container.innerHTML += `
-                    <div class="item-row">
-                        <div class="user-info">
-                            <b>${u.name}</b>
-                            <small>العائد من الدعوة: +200 💎</small>
-                        </div>
-                        <div style="color: var(--main-green); font-weight:bold;">+200</div>
-                    </div>`;
-            });
-            document.getElementById('total-ref').innerText = data?.length || 0;
-        }
+    // جلب قائمة المستخدمين اللي سجلوا بكودك
+    const { data, error } = await client
+        .from('users')
+        .select('name, points')
+        .eq('referred_by', tid);
+
+    const container = document.getElementById('history');
+    
+    if (error) {
+        console.error("Error fetching invites:", error);
+        return;
+    }
+
+    // تنظيف الحاوية قبل الإضافة
+    container.innerHTML = (data && data.length) ? '' : '<p style="text-align:center; font-size:12px; color:gray; margin-top:20px;">لا يوجد مدعوين حتى الآن</p>';
+
+    // حساب وعرض العائد لكل مستخدم
+    data?.forEach(u => {
+        // هنا بنفترض إن العائد الثابت هو 200 نقطة لكل إحالة
+        // لو حبيت تغيرها مستقبلاً، غير الرقم ده بس
+        const bonusPerFriend = 200; 
+
+        container.innerHTML += `
+            <div class="item-row">
+                <div style="color: var(--main-green); font-weight:bold; font-size: 16px;">+${bonusPerFriend}</div>
+                <div class="user-info">
+                    <b style="color: white;">${u.name}</b>
+                    <small style="color: var(--text-gray);">العائد من الدعوة: +${bonusPerFriend} 💎</small>
+                </div>
+            </div>`;
+    });
+
+    // تحديث عداد المدعوين في الإحصائيات
+    document.getElementById('total-ref').innerText = data?.length || 0;
+}
+
 
         async function loadLeaderboard() {
             const { data } = await client.from('users').select('name, invited_count').order('invited_count', { ascending: false }).limit(10);
