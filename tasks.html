@@ -122,32 +122,41 @@
         }
 
         async function completeTask(link, reward) {
-            window.open(link, '_blank');
-            tg.showConfirm("هل نفذت المهمة؟", async (ok) => {
-                if (ok && tid) {
-                    let { data: user } = await client.from('users').select('*').eq('telegram_id', tid).single();
-                    if (user) {
-                        await client.from('users').update({
-                            points: Number(user.points) + Number(reward),
-                            total_tasks: Number(user.total_tasks || 0) + 1,
-                            is_active_ref: true
-                        }).eq('telegram_id', tid);
+    window.open(link, '_blank');
+    tg.showConfirm("هل نفذت المهمة؟", async (ok) => {
+        if (ok && tid) {
+            // 1. جلب بيانات المستخدم اللي عمل المهمة
+            let { data: user } = await client.from('users').select('*').eq('telegram_id', tid).single();
+            
+            if (user) {
+                // 2. تحديث رصيد المستخدم (النقاط + الرصيد التاريخي total_earned)
+                await client.from('users').update({
+                    points: Number(user.points) + Number(reward),
+                    total_earned: Number(user.total_earned || 0) + Number(reward), // التعديل المهم هنا
+                    total_tasks: Number(user.total_tasks || 0) + 1,
+                    is_active_ref: true
+                }).eq('telegram_id', tid);
 
-                        if (user.referred_by) {
-                            const comm = Math.floor(reward * 0.10);
-                            let { data: inviter } = await client.from('users').select('points, total_ref_commission').eq('telegram_id', user.referred_by).maybeSingle();
-                            if (inviter) {
-                                await client.from('users').update({
-                                    points: Number(inviter.points) + comm,
-                                    total_ref_commission: (Number(inviter.total_ref_commission || 0) + comm)
-                                }).eq('telegram_id', user.referred_by);
-                            }
-                        }
-                        tg.showAlert("✅ مبروك! انضفت النقاط لرصيدك.");
+                // 3. نظام العمولات (الـ 10%)
+                if (user.referred_by) {
+                    const comm = Math.floor(reward * 0.10);
+                    let { data: inviter } = await client.from('users').select('points, total_ref_commission').eq('telegram_id', user.referred_by).maybeSingle();
+                    
+                    if (inviter) {
+                        await client.from('users').update({
+                            points: Number(inviter.points) + comm,
+                            total_ref_commission: (Number(inviter.total_ref_commission || 0) + comm)
+                        }).eq('telegram_id', user.referred_by);
                     }
                 }
-            });
+                tg.showAlert("✅ مبروك! انضفت النقاط لرصيدك وعمولة صديقك.");
+                // تحديث الـ UI لو موجودة دالة التحديث في الصفحة
+                if(typeof updateUI === 'function') updateUI();
+            }
         }
+    });
+}
+
 
         function goProfile() { window.location.href = `profile.html?id=${tid}`; }
         function goHome() { window.location.href = `index.html?id=${tid}`; }
