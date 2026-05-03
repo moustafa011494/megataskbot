@@ -122,41 +122,43 @@
         }
 
         async function loadMyInvites() {
-    // جلب قائمة المستخدمين اللي سجلوا بكودك
+    // جلب المدعوين مع قراءة نقاطهم (عشان نحسب الـ 10% منها)
     const { data, error } = await client
         .from('users')
-        .select('name, points')
+        .select('name, points') 
         .eq('referred_by', tid);
 
     const container = document.getElementById('history');
-    
-    if (error) {
-        console.error("Error fetching invites:", error);
-        return;
-    }
+    let totalCommissionSum = 0; // متغير عشان يجمع العائد الكلي
 
-    // تنظيف الحاوية قبل الإضافة
+    if (error) return console.error(error);
+
     container.innerHTML = (data && data.length) ? '' : '<p style="text-align:center; font-size:12px; color:gray; margin-top:20px;">لا يوجد مدعوين حتى الآن</p>';
 
-    // حساب وعرض العائد لكل مستخدم
     data?.forEach(u => {
-        // هنا بنفترض إن العائد الثابت هو 200 نقطة لكل إحالة
-        // لو حبيت تغيرها مستقبلاً، غير الرقم ده بس
-        const bonusPerFriend = 200; 
+        // حساب الـ 10% من نقاط المستخدم الجديد
+        // ملاحظة: لو إنت مخزن العمولة في عمود تاني استبدل (u.points * 0.1) باسم العمود
+        const commissionFromThisFriend = Math.floor(u.points * 0.1); 
+        totalCommissionSum += commissionFromThisFriend;
 
         container.innerHTML += `
-            <div class="item-row">
-                <div style="color: var(--main-green); font-weight:bold; font-size: 16px;">+${bonusPerFriend}</div>
-                <div class="user-info">
+            <div class="item-row" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="color: var(--main-green); font-weight:bold; font-size: 16px;">+${commissionFromThisFriend.toLocaleString()}</div>
+                
+                <div class="user-info" style="text-align: right;">
                     <b style="color: white;">${u.name}</b>
-                    <small style="color: var(--text-gray);">العائد من الدعوة: +${bonusPerFriend} 💎</small>
+                    <small style="color: var(--text-gray);">عمولة 10% من أرباحه 💎</small>
                 </div>
             </div>`;
     });
 
-    // تحديث عداد المدعوين في الإحصائيات
+    // تحديث "إجمالي العائد" اللي فوق بالجمع الحقيقي لكل العمولات
+    document.getElementById('total-comm').innerText = totalCommissionSum.toLocaleString();
+    
+    // تحديث عدد المدعوين
     document.getElementById('total-ref').innerText = data?.length || 0;
 }
+
 
 
         async function loadLeaderboard() {
