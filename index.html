@@ -100,7 +100,6 @@
             }
         }
 
-        // --- دالة إعلانات Monetag الجديدة ---
         function showAd() {
             if (typeof show_10959333 === 'function') {
                 show_10959333().then(() => {
@@ -115,8 +114,10 @@
         }
 
         async function giveReward() {
+            // تحديث الرصيد الحالي + إجمالي الأرباح لضمان بقاء عمولة الإحالة
             const { data, error } = await client.from('users').update({
-                points: userData.points + 10
+                points: userData.points + 10,
+                total_earned: (userData.total_earned || 0) + 10
             }).eq('telegram_id', userId).select().single();
             
             if (!error && data) {
@@ -126,14 +127,15 @@
             }
         }
 
-        // إعلان تلقائي في الخلفية لزيادة أرباحك
-        if (typeof show_10959333 === 'function') {
-            show_10959333({ type: 'inApp', inAppSettings: { frequency: 2, capping: 0.1, interval: 30, timeout: 5 } });
-        }
-
         async function submitRegistration(skip = false) {
             const refCode = document.getElementById('ref-input').value.trim();
-            let newUser = { telegram_id: userId, name: tg.initDataUnsafe.user?.first_name || "AGENT", points: 0, streak: 0 };
+            let newUser = { 
+                telegram_id: userId, 
+                name: tg.initDataUnsafe.user?.first_name || "AGENT", 
+                points: 0, 
+                total_earned: 0, // تصفير العداد التاريخي للجديد
+                streak: 0 
+            };
             if (!skip && refCode !== "" && refCode !== userId) newUser.referred_by = refCode;
             
             const { data, error } = await client.from('users').insert([newUser]).select().single();
@@ -165,6 +167,7 @@
             const now = new Date();
             const { data, error } = await client.from('users').update({
                 points: userData.points + 15,
+                total_earned: (userData.total_earned || 0) + 15,
                 last_claim: now.toISOString()
             }).eq('telegram_id', userId).select().single();
             
