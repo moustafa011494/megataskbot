@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - Stable Edition</title>
+    <title>MegaTask - Monetag Edition</title>
+    
+    <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="https://sad.adsgram.ai/js/adsgram-ad-sdk.js"></script>
+    
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
         body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 100px; overflow-x: hidden; }
@@ -18,21 +21,16 @@
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; margin-bottom: 20px; }
         .stat-card { background: var(--card-bg); padding: 15px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
         .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--main-green); }
-        
-        /* الأزرار الجديدة */
         .action-box { margin: 0 15px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .btn-action { background: var(--card-bg); color: white; border: 1px solid #333; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 13px; }
-        .btn-ads { background: linear-gradient(90deg, #ff9000, #ff5e00); color: white; border: none; box-shadow: 0 4px 15px rgba(255, 94, 0, 0.3); }
-
-        /* المودال */
+        .btn-ads { background: linear-gradient(90deg, #00d26a, #009e4f); color: black; border: none; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.3); }
+        .btn-offers { background: #ff0055; color: white; grid-column: span 2; border: none; }
         #ref-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
         .modal-content { background: var(--card-bg); padding: 30px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 85%; }
         .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 15px 0; outline: none; }
-
         .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
-        .center-nav { background: var(--main-green); width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: -25px; color: black !important; }
     </style>
 </head>
 <body>
@@ -66,30 +64,25 @@
     <div class="action-box">
         <div class="btn-action" onclick="claimDaily()" id="claimBtn">🎁 Daily Reward</div>
         <div class="btn-action btn-ads" onclick="showAd()">📺 Watch & Earn</div>
+        <div class="btn-action btn-offers" onclick="goOffers()">🔥 عروض CPA (نقاط عالية)</div>
     </div>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item active">🏠<br>الرئيسية</div>
         <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
-        <div class="nav-item center-nav">🎮</div>
         <div onclick="goInvite()" class="nav-item">👥<br>أجل</div>
         <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
     </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
+        tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         let userId = "";
         let userData = null;
-        let AdController = null;
-
-        // تهيئة الإعلانات بذكاء لتجنب التعليق
-        if (window.Adsgram) {
-            AdController = window.Adsgram.init({ blockId: "26843" });
-        }
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
@@ -107,44 +100,36 @@
             }
         }
 
-                // تأكد من وضع الـ Block ID الجديد هنا
-        let adBlockId = "26843"; 
-
-                async function showAd() {
-    // محاولة إجبارية للتعرف على المكتبة
-    const adsgram = window.Adsgram || (window.parent && window.parent.Adsgram);
-
-    if (!adsgram) {
-        console.error("Adsgram SDK not found");
-        tg.showAlert("❌ نظام الإعلانات لم يستجب. تأكد من تحديث تليجرام أو حاول فتح البوت مرة أخرى.");
-        return;
-    }
-
-    // تأكد إن الـ ID هو اللي في الصورة (26837 أو اللي طلعلك في الـ Active unit)
-    const adBlockId = "26837"; 
-    const AdController = adsgram.init({ blockId: adBlockId });
-    
-    try {
-        const result = await AdController.show();
-        if (result.done) {
-            const { data } = await client.from('users').update({
-                points: userData.points + 15
-            }).eq('telegram_id', userId).select().single();
-            
-            if (data) {
-                userData = data;
-                updateUI();
-                tg.showAlert("✅ مبروك! حصلت على 15 نقطة.");
+        // --- دالة إعلانات Monetag الجديدة ---
+        function showAd() {
+            if (typeof show_10959333 === 'function') {
+                show_10959333().then(() => {
+                    giveReward();
+                }).catch((err) => {
+                    console.error("Ad Error:", err);
+                    tg.showAlert("❌ عذراً، لا توجد إعلانات متاحة حالياً.");
+                });
+            } else {
+                tg.showAlert("⏳ جاري تحميل نظام الإعلانات...");
             }
         }
-    } catch (err) {
-        console.error(err);
-        tg.showAlert("❌ عذراً، لا توجد إعلانات متاحة حالياً.");
-    }
-}
 
+        async function giveReward() {
+            const { data, error } = await client.from('users').update({
+                points: userData.points + 20
+            }).eq('telegram_id', userId).select().single();
+            
+            if (!error && data) {
+                userData = data;
+                updateUI();
+                tg.showAlert("✅ مبروك! حصلت على 20 نقطة.");
+            }
+        }
 
-
+        // إعلان تلقائي في الخلفية لزيادة أرباحك
+        if (typeof show_10959333 === 'function') {
+            show_10959333({ type: 'inApp', inAppSettings: { frequency: 2, capping: 0.1, interval: 30, timeout: 5 } });
+        }
 
         async function submitRegistration(skip = false) {
             const refCode = document.getElementById('ref-input').value.trim();
@@ -196,6 +181,7 @@
         function goInvite() { window.location.href = `invite.html?id=${userId}`; }
         function goProfile() { window.location.href = `profile.html?id=${userId}`; }
         function goWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
+        function goOffers() { window.location.href = `offers.html?id=${userId}`; }
 
         init();
     </script>
