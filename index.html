@@ -116,13 +116,13 @@
 
         async function giveReward() {
             const { data, error } = await client.from('users').update({
-                points: userData.points + 20
+                points: userData.points + 10
             }).eq('telegram_id', userId).select().single();
             
             if (!error && data) {
                 userData = data;
                 updateUI();
-                tg.showAlert("✅ مبروك! حصلت على 20 نقطة.");
+                tg.showAlert("✅ مبروك! حصلت على 10 نقطة.");
             }
         }
 
