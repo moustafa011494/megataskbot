@@ -122,23 +122,23 @@
         }
 
         async function loadMyInvites() {
-    // جلب المدعوين مع قراءة نقاطهم (عشان نحسب الـ 10% منها)
+    // جلب المدعوين مع قراءة "إجمالي ما كسبوه" وليس رصيدهم الحالي
     const { data, error } = await client
         .from('users')
-        .select('name, points') 
+        .select('name, total_earned') // استخدمنا total_earned هنا
         .eq('referred_by', tid);
 
     const container = document.getElementById('history');
-    let totalCommissionSum = 0; // متغير عشان يجمع العائد الكلي
+    let totalCommissionSum = 0;
 
     if (error) return console.error(error);
 
     container.innerHTML = (data && data.length) ? '' : '<p style="text-align:center; font-size:12px; color:gray; margin-top:20px;">لا يوجد مدعوين حتى الآن</p>';
 
     data?.forEach(u => {
-        // حساب الـ 10% من نقاط المستخدم الجديد
-        // ملاحظة: لو إنت مخزن العمولة في عمود تاني استبدل (u.points * 0.1) باسم العمود
-        const commissionFromThisFriend = Math.floor(u.points * 0.1); 
+        // الحسبة بناءً على الإجمالي التاريخي للمستخدم
+        const earned = u.total_earned || 0; 
+        const commissionFromThisFriend = Math.floor(earned * 0.1); 
         totalCommissionSum += commissionFromThisFriend;
 
         container.innerHTML += `
@@ -147,19 +147,15 @@
                 
                 <div class="user-info" style="text-align: right;">
                     <b style="color: white;">${u.name}</b>
-                    <small style="color: var(--text-gray);">عمولة 10% من أرباحه 💎</small>
+                    <small style="color: var(--text-gray);">عمولة 10% (دائمة) 💎</small>
                 </div>
             </div>`;
     });
 
-    // تحديث "إجمالي العائد" اللي فوق بالجمع الحقيقي لكل العمولات
+    // تحديث إجمالي العائد فوق
     document.getElementById('total-comm').innerText = totalCommissionSum.toLocaleString();
-    
-    // تحديث عدد المدعوين
     document.getElementById('total-ref').innerText = data?.length || 0;
 }
-
-
 
         async function loadLeaderboard() {
             const { data } = await client.from('users').select('name, invited_count').order('invited_count', { ascending: false }).limit(10);
