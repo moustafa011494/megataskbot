@@ -12,7 +12,7 @@
     
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 100px; overflow-x: hidden; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 120px; overflow-x: hidden; }
         .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; }
         .main-balance { text-align: center; margin-bottom: 25px; }
@@ -21,13 +21,23 @@
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; margin-bottom: 20px; }
         .stat-card { background: var(--card-bg); padding: 15px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
         .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--main-green); }
+        
         .action-box { margin: 0 15px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .btn-action { background: var(--card-bg); color: white; border: 1px solid #333; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 13px; }
         .btn-ads { background: linear-gradient(90deg, #00d26a, #009e4f); color: black; border: none; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.3); }
         .btn-offers { background: #ff0055; color: white; grid-column: span 2; border: none; }
+
+        /* ستايل شبكة الخدمات الجديدة */
+        .services-section { padding: 0 15px; margin-top: 25px; }
+        .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .btn-service { background: var(--card-bg); border: 1px solid #2d333d; padding: 15px 5px; border-radius: 15px; text-align: center; font-size: 11px; cursor: pointer; transition: 0.3s; }
+        .btn-service:active { transform: scale(0.95); background: #222; }
+        .btn-service span { font-size: 22px; display: block; margin-bottom: 8px; }
+
         #ref-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
         .modal-content { background: var(--card-bg); padding: 30px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 85%; }
         .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 15px 0; outline: none; }
+        
         .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
@@ -65,6 +75,30 @@
         <div class="btn-action" onclick="claimDaily()" id="claimBtn">🎁 Daily Reward</div>
         <div class="btn-action btn-ads" onclick="showAd()">📺 Watch & Earn</div>
         <div class="btn-action btn-offers" onclick="goOffers()">🔥 عروض CPA (نقاط عالية)</div>
+    </div>
+
+    <div class="services-section">
+        <h3 style="font-size: 14px; color: var(--text-gray); margin: 0;">خدمات MegaTask 🛠️</h3>
+        <div class="services-grid">
+            <div class="btn-service" onclick="goSocial()">
+                <span>📥</span>تحميل وسائط
+            </div>
+            <div class="btn-service" onclick="goMethods()">
+                <span>🔓</span>ميثودات
+            </div>
+            <div class="btn-service" onclick="goDevTools()">
+                <span>👨‍💻</span>أدوات المطور
+            </div>
+            <div class="btn-service" onclick="goTempMail()">
+                <span>📧</span>بريد مؤقت
+            </div>
+            <div class="btn-service" onclick="goVirtualNumbers()">
+                <span>📱</span>أرقام وهمية
+            </div>
+            <div class="btn-service" style="opacity: 0.5;">
+                <span>🎯</span>قريباً
+            </div>
+        </div>
     </div>
 
     <nav class="navbar">
@@ -114,10 +148,10 @@
         }
 
         async function giveReward() {
-            // تحديث الرصيد الحالي + إجمالي الأرباح لضمان بقاء عمولة الإحالة
+            const currentTotal = userData.total_earned || 0;
             const { data, error } = await client.from('users').update({
                 points: userData.points + 10,
-                total_earned: (userData.total_earned || 0) + 10
+                total_earned: currentTotal + 10
             }).eq('telegram_id', userId).select().single();
             
             if (!error && data) {
@@ -133,7 +167,7 @@
                 telegram_id: userId, 
                 name: tg.initDataUnsafe.user?.first_name || "AGENT", 
                 points: 0, 
-                total_earned: 0, // تصفير العداد التاريخي للجديد
+                total_earned: 0, 
                 streak: 0 
             };
             if (!skip && refCode !== "" && refCode !== userId) newUser.referred_by = refCode;
@@ -179,12 +213,19 @@
             }
         }
 
+        // دوال التنقل للصفحات الجديدة
         function goHome() { window.location.href = `index.html?id=${userId}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
         function goInvite() { window.location.href = `invite.html?id=${userId}`; }
         function goProfile() { window.location.href = `profile.html?id=${userId}`; }
         function goWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
         function goOffers() { window.location.href = `offers.html?id=${userId}`; }
+        
+        function goSocial() { window.location.href = `social.html?id=${userId}`; }
+        function goMethods() { window.location.href = `methods.html?id=${userId}`; }
+        function goDevTools() { window.location.href = `devtools.html?id=${userId}`; }
+        function goTempMail() { window.location.href = `tempmail.html?id=${userId}`; }
+        function goVirtualNumbers() { window.location.href = `numbers.html?id=${userId}`; }
 
         init();
     </script>
