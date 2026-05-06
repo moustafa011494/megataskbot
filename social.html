@@ -3,69 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - Coming Soon</title>
+    <title>Social Downloader - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { 
-            background-color: var(--dark-bg); 
-            color: white; 
-            font-family: 'Segoe UI', sans-serif; 
-            margin: 0; 
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; padding-bottom: 100px; text-align: center; }
+        
+        .header { margin-bottom: 30px; }
+        .header h2 { color: var(--main-green); margin-bottom: 5px; }
+        
+        .input-box { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #2d333d; box-shadow: 0 0 15px rgba(0, 210, 106, 0.05); }
+        .input-box input { width: 90%; background: #000; border: 1px solid #333; padding: 15px; color: white; border-radius: 12px; outline: none; margin-bottom: 15px; text-align: center; }
+        
+        .btn-download { background: var(--main-green); color: black; border: none; width: 100%; padding: 15px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-download:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* تأثير النيون للتحميل */
-        .loader {
-            width: 80px;
-            height: 80px;
-            border: 4px solid #1a1d23;
-            border-top: 4px solid var(--main-green);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            box-shadow: 0 0 15px rgba(0, 210, 106, 0.2);
-            margin-bottom: 20px;
-        }
-
+        #result-box { display: none; margin-top: 25px; background: var(--card-bg); padding: 15px; border-radius: 20px; border: 1px solid var(--main-green); }
+        .video-preview { width: 100%; border-radius: 12px; margin-bottom: 10px; }
+        
+        .loader { display: none; margin: 20px auto; width: 30px; height: 30px; border: 3px solid #333; border-top: 3px solid var(--main-green); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .content h1 { font-size: 28px; margin: 10px 0; color: var(--main-green); text-shadow: 0 0 10px rgba(0, 210, 106, 0.3); }
-        .content p { color: var(--text-gray); font-size: 14px; padding: 0 40px; line-height: 1.6; }
-
-        .btn-back {
-            margin-top: 30px;
-            background: transparent;
-            border: 1px solid var(--main-green);
-            color: var(--main-green);
-            padding: 12px 30px;
-            border-radius: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .btn-back:active { background: var(--main-green); color: black; }
+        .btn-back { position: fixed; top: 15px; right: 15px; background: none; border: 1px solid #333; color: white; padding: 5px 15px; border-radius: 10px; font-size: 12px; }
     </style>
 </head>
 <body>
 
-    <div class="loader"></div>
+    <button class="btn-back" onclick="goHome()">رجوع ↩️</button>
 
-    <div class="content">
-        <h1>Coming Soon..</h1>
-        <p>هذه الخدمة قيد التطوير حالياً ضمن تحديثات MegaTask القادمة. سيتم تفعيلها تلقائياً فور انتهاء البرمجة.</p>
+    <div class="header">
+        <h2>تحميل الوسائط 📥</h2>
+        <p style="font-size: 12px; color: var(--text-gray);">حمل من تيك توك، إنستجرام، يوتيوب بدون علامة مائية</p>
     </div>
 
-    <button class="btn-back" onclick="goHome()">العودة للرئيسية</button>
+    <div class="input-box">
+        <input type="text" id="video-url" placeholder="ضع رابط الفيديو هنا..">
+        <button class="btn-download" id="fetch-btn" onclick="fetchVideo()">فحص الرابط واستخراج الفيديو</button>
+        <div class="loader" id="loader"></div>
+    </div>
+
+    <div id="result-box">
+        <p id="video-title" style="font-size: 14px; margin-bottom: 15px;"></p>
+        <button class="btn-download" id="dl-link" onclick="startDownload()">تحميل الآن مباشر 🚀</button>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         const params = new URLSearchParams(window.location.search);
         const userId = params.get('id');
+        let currentDownloadUrl = "";
+
+        async function fetchVideo() {
+            const url = document.getElementById('video-url').value.trim();
+            if (!url) return tg.showAlert("❌ من فضلك ضع الرابط أولاً!");
+
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('fetch-btn').disabled = true;
+            document.getElementById('result-box').style.display = 'none';
+
+            try {
+                // استخدام API خارجي مجاني (Cobalt أو مشابه)
+                const response = await fetch('https://api.cobalt.tools/api/json', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        vQuality: "720"
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.url) {
+                    currentDownloadUrl = data.url;
+                    document.getElementById('result-box').style.display = 'block';
+                    document.getElementById('video-title').innerText = "✅ تم العثور على الفيديو بنجاح!";
+                } else {
+                    tg.showAlert("❌ لم نتمكن من جلب الرابط، تأكد من صحته.");
+                }
+            } catch (error) {
+                console.error(error);
+                tg.showAlert("⚠️ حدث خطأ في السيرفر، جرب مرة أخرى.");
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('fetch-btn').disabled = false;
+            }
+        }
+
+        function startDownload() {
+            if (currentDownloadUrl) {
+                window.open(currentDownloadUrl, '_blank');
+            }
+        }
 
         function goHome() {
             window.location.href = `index.html?id=${userId}`;
