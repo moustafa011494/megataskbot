@@ -13,11 +13,14 @@
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
         body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 120px; overflow-x: hidden; }
+        
         .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; }
+        
         .main-balance { text-align: center; margin-bottom: 25px; }
         .main-balance h1 { font-size: 42px; margin: 5px 0; color: white; text-shadow: 0 0 10px rgba(0, 210, 106, 0.3); }
         .btn-withdraw { background: var(--main-green); color: #000; border: none; padding: 10px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; }
+        
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; margin-bottom: 20px; }
         .stat-card { background: var(--card-bg); padding: 15px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
         .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--main-green); }
@@ -27,12 +30,28 @@
         .btn-ads { background: linear-gradient(90deg, #00d26a, #009e4f); color: black; border: none; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.3); }
         .btn-offers { background: #ff0055; color: white; grid-column: span 2; border: none; }
 
-        /* ستايل شبكة الخدمات الجديدة */
-        .services-section { padding: 0 15px; margin-top: 25px; }
-        .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
-        .btn-service { background: var(--card-bg); border: 1px solid #2d333d; padding: 15px 5px; border-radius: 15px; text-align: center; font-size: 11px; cursor: pointer; transition: 0.3s; }
-        .btn-service:active { transform: scale(0.95); background: #222; }
-        .btn-service span { font-size: 22px; display: block; margin-bottom: 8px; }
+        /* ستايل خدمات MegaTask المطور (Neon & Large) */
+        .services-section { padding: 0 15px; margin-top: 25px; text-align: right; }
+        .service-title { color: var(--main-green); font-size: 14px; margin: 0 0 15px 0; border-right: 3px solid var(--main-green); padding-right: 10px; }
+        .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn-service { 
+            background: #16191e; 
+            border: 1px solid #2d333d; 
+            padding: 25px 10px; 
+            border-radius: 20px; 
+            text-align: center; 
+            font-size: 13px; 
+            font-weight: bold;
+            cursor: pointer; 
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px rgba(0, 210, 106, 0.05);
+        }
+        .btn-service:active { 
+            transform: scale(0.95); 
+            border-color: var(--main-green);
+            box-shadow: 0 0 15px rgba(0, 210, 106, 0.2); 
+        }
+        .btn-service span { font-size: 32px; display: block; margin-bottom: 12px; filter: drop-shadow(0 0 5px rgba(0, 210, 106, 0.1)); }
 
         #ref-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
         .modal-content { background: var(--card-bg); padding: 30px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 85%; }
@@ -78,13 +97,13 @@
     </div>
 
     <div class="services-section">
-        <h3 style="font-size: 14px; color: var(--text-gray); margin: 0;">خدمات MegaTask 🛠️</h3>
+        <h3 class="service-title">الخدمات الذكية 🛠️</h3>
         <div class="services-grid">
             <div class="btn-service" onclick="goSocial()">
-                <span>📥</span>تحميل وسائط
+                <span>📥</span>تحميل الوسائط
             </div>
             <div class="btn-service" onclick="goMethods()">
-                <span>🔓</span>ميثودات
+                <span>🔓</span>قسم الميثودات
             </div>
             <div class="btn-service" onclick="goDevTools()">
                 <span>👨‍💻</span>أدوات المطور
@@ -95,8 +114,8 @@
             <div class="btn-service" onclick="goVirtualNumbers()">
                 <span>📱</span>أرقام وهمية
             </div>
-            <div class="btn-service" style="opacity: 0.5;">
-                <span>🎯</span>قريباً
+            <div class="btn-service" style="opacity: 0.6; border-style: dashed;">
+                <span>🎯</span>قريباً..
             </div>
         </div>
     </div>
@@ -213,7 +232,7 @@
             }
         }
 
-        // دوال التنقل للصفحات الجديدة
+        // دوال التنقل
         function goHome() { window.location.href = `index.html?id=${userId}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
         function goInvite() { window.location.href = `invite.html?id=${userId}`; }
