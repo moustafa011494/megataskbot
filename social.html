@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - Media Downloader</title>
+    <title>MegaTask - Media Downloader Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
@@ -30,7 +30,6 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         .btn-back { position: fixed; top: 15px; right: 15px; background: rgba(255,255,255,0.05); border: 1px solid #333; color: white; padding: 5px 15px; border-radius: 10px; font-size: 12px; }
-        .footer-note { margin-top: 20px; font-size: 11px; color: var(--text-gray); line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -39,7 +38,7 @@
 
     <div class="header">
         <h2>تحميل الوسائط 📥</h2>
-        <p style="font-size: 12px; color: var(--text-gray);">حمّل فيديوهاتك وصوتياتك المفضلة بضغطة واحدة</p>
+        <p style="font-size: 12px; color: var(--text-gray);">التحميل المستقر والسريع من منصات السوشيال ميديا</p>
     </div>
 
     <div class="input-box">
@@ -54,11 +53,10 @@
                 </select>
             </div>
             <div class="option-item">
-                <label>الجودة (Quality)</label>
+                <label>الجودة المستهدفة</label>
                 <select id="video-quality">
-                    <option value="720">720p (HD)</option>
-                    <option value="1080">1080p (FHD)</option>
-                    <option value="480">480p (SD)</option>
+                    <option value="high">أعلى جودة متاحة</option>
+                    <option value="medium">جودة متوسطة (توفير)</option>
                 </select>
             </div>
         </div>
@@ -68,13 +66,8 @@
     </div>
 
     <div id="result-box">
-        <p style="color: var(--main-green); font-weight: bold; margin-bottom: 15px;">✅ تم تجهيز الرابط بنجاح!</p>
-        <button class="btn-download" style="background: white;" id="final-link">اضغط هنا لبدء التحميل الفوري ⬇️</button>
-    </div>
-
-    <div class="footer-note">
-        * يتم التحميل سيرفرات معالجة سريعة تدعم كافة المنصات.<br>
-        * في حال لم يبدأ التحميل، تأكد أن حساب الفيديو ليس خاصاً (Private).
+        <p style="color: var(--main-green); font-weight: bold; margin-bottom: 15px;">✅ جاهز للتحميل الفوري!</p>
+        <button class="btn-download" style="background: white;" id="final-link">اضغط هنا لبدء الحفظ ⬇️</button>
     </div>
 
     <script>
@@ -85,7 +78,6 @@
         async function handleDownload() {
             const url = document.getElementById('video-url').value.trim();
             const mode = document.getElementById('download-mode').value;
-            const quality = document.getElementById('video-quality').value;
 
             if (!url) return tg.showAlert("❌ من فضلك ضع الرابط أولاً!");
 
@@ -93,42 +85,45 @@
             document.getElementById('fetch-btn').disabled = true;
             document.getElementById('result-box').style.display = 'none';
 
-            try {
-                // استخدام الـ API المفتوح التابع لـ اللينكات العامة المستقرة
-                // ده سيرفر All-in-One Downloader سريع جداً
-                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://api.tikwm.com/api/?url=' + url)}`);
-                
-                if (!response.ok) throw new Error();
-                
-                const wrapper = await response.json();
-                const data = JSON.parse(wrapper.contents);
+            // بيانات الـ API الاحترافي (حط المفتاح بتاعك هنا)
+            const apiKey = "حط_مفتاح_RAPIDAPI_بتاعك_هنا"; 
+            const apiHost = "social-media-video-downloader.p.rapidapi.com";
 
-                // فحص داتا التيك توك كمثال أساسي سريع
+            try {
+                const response = await fetch(`https://${apiHost}/api/v1/downloader?url=${encodeURIComponent(url)}`, {
+                    method: "GET",
+                    headers: {
+                        "X-RapidAPI-Key": apiKey,
+                        "X-RapidAPI-Box": apiHost
+                    }
+                });
+
+                const data = await response.json();
+
+                // قراءة روابط التحميل الاحترافية بناءً على نوع الملف المطلوب
                 if (data && data.data) {
-                    let downloadUrl = mode === "audio" ? data.data.music : data.data.play;
+                    let downloadUrl = "";
                     
-                    document.getElementById('result-box').style.display = 'block';
-                    document.getElementById('final-link').onclick = function() {
-                        tg.openLink(downloadUrl);
-                    };
-                } else {
-                    // لو مش تيك توك، بنحول على السيرفر العام الاحتياطي المباشر
-                    let fallbackUrl = `https://api.vkrdown.com/api/index.php?url=${encodeURIComponent(url)}`;
-                    const fbResponse = await fetch(fallbackUrl);
-                    const fbData = await fbResponse.json();
-                    
-                    if (fbData && fbData.data && fbData.data.url) {
+                    if (mode === "audio" && data.data.audio) {
+                        downloadUrl = data.data.audio;
+                    } else {
+                        downloadUrl = data.data.video || data.data.links[0].url;
+                    }
+
+                    if (downloadUrl) {
                         document.getElementById('result-box').style.display = 'block';
                         document.getElementById('final-link').onclick = function() {
-                            tg.openLink(fbData.data.url);
+                            tg.openLink(downloadUrl);
                         };
                     } else {
-                        tg.showAlert("⚠️ هذا الرابط غير مدعوم حالياً على السيرفر المجاني.");
+                        tg.showAlert("⚠️ لم نجد رابط مناسب لهذه الصيغة.");
                     }
+                } else {
+                    tg.showAlert("❌ الرابط غير مدعوم أو الحساب صاحبه عامله خاص (Private).");
                 }
             } catch (err) {
                 console.error(err);
-                tg.showAlert("❌ حدث خطأ في معالجة الرابط، جرب مرة أخرى.");
+                tg.showAlert("❌ حدث خطأ في الشبكة، تأكد من إعدادات المفتاح.");
             } finally {
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('fetch-btn').disabled = false;
