@@ -95,7 +95,6 @@
             transform: scale(0.98);
         }
 
-        /* جاري التحميل */
         .loader {
             display: none;
             text-align: center;
@@ -104,7 +103,6 @@
             color: var(--main-green);
         }
 
-        /* قسم النتيجة */
         .result-card {
             display: none;
             margin-top: 24px;
@@ -223,14 +221,16 @@
                 return;
             }
 
-            // إعادة تعيين الواجهة
             loader.style.display = 'block';
             errorMsg.style.display = 'none';
             resultCard.style.display = 'none';
             resLinks.innerHTML = '';
 
-            const apiUrl = 'https://social-download-all-in-one.p.rapidapi.com/v1/social/autolink';
+            const targetUrl = 'https://social-download-all-in-one.p.rapidapi.com/v1/social/autolink';
             
+            // استخدام بروكسي allorigins لتخطي حظر تليجرام لـ CORS
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+
             const options = {
                 method: 'POST',
                 headers: {
@@ -242,21 +242,30 @@
             };
 
             try {
-                const response = await fetch(apiUrl, options);
-                if (!response.ok) throw new Error('API Request Failed');
+                // إرسال الطلب من خلال البروكسي
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        method: 'POST',
+                        headers: options.headers,
+                        body: options.body
+                    })
+                });
+
+                if (!response.ok) throw new Error('Proxy Request Failed');
                 
-                const data = await response.json();
+                const wrapper = await response.json();
+                // فك تشفير البيانات القادمة من البروكسي
+                const data = JSON.parse(wrapper.contents);
 
                 if (data.error === false && data.medias && data.medias.length > 0) {
-                    // تحديث العنوان والصورة المصغرة
                     document.getElementById('resThumbnail').src = data.thumbnail || 'https://via.placeholder.com/150';
                     document.getElementById('resTitle').innerText = data.title || 'فيديو من وسائل التواصل الاجتماعي';
 
-                    // إنشاء أزرار التحميل تلقائياً
                     data.medias.forEach(media => {
                         const btn = document.createElement('a');
                         
-                        // تخصيص النص بناءً على الجودة والنوع
                         if (media.type === 'audio') {
                             btn.className = 'dl-btn audio';
                             btn.innerText = `🎵 تحميل الصوت (${media.extension.toUpperCase()})`;
@@ -266,7 +275,6 @@
                             btn.innerText = `🎥 تحميل الفيديو - ${qualityText}`;
                         }
                         
-                        // التعديل السحري: استخدام دالة التليجرام لفتح اللينكات بأمان منعاً لتهنيج البوت
                         btn.onclick = function(e) {
                             e.preventDefault();
                             tg.openLink(media.url);
@@ -275,7 +283,6 @@
                         resLinks.appendChild(btn);
                     });
 
-                    // إظهار النتيجة وإخفاء التحميل
                     loader.style.display = 'none';
                     resultCard.style.display = 'block';
                 } else {
@@ -293,6 +300,5 @@
             window.location.href = `index.html?id=${userId}`;
         }
     </script>
-
 </body>
 </html>
