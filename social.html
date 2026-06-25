@@ -221,72 +221,56 @@
                 return;
             }
 
+            // إعادة تعيين الواجهة
             loader.style.display = 'block';
             errorMsg.style.display = 'none';
             resultCard.style.display = 'none';
             resLinks.innerHTML = '';
 
-            const targetUrl = 'https://social-download-all-in-one.p.rapidapi.com/v1/social/autolink';
-            
-            // استخدام بروكسي allorigins لتخطي حظر تليجرام لـ CORS
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-
-            const options = {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-rapidapi-host': 'social-download-all-in-one.p.rapidapi.com',
-                    'x-rapidapi-key': '29f8c3b79amshc7b9755d426320dp1b94fajsn62b1821d47db'
-                },
-                body: JSON.stringify({ url: videoUrl })
-            };
+            // استخدام API السريع المفتوح
+            const apiUrl = `https://api.tikwm.com/api/?url=${encodeURIComponent(videoUrl)}`;
 
             try {
-                // إرسال الطلب من خلال البروكسي
-                const response = await fetch(proxyUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        method: 'POST',
-                        headers: options.headers,
-                        body: options.body
-                    })
-                });
-
-                if (!response.ok) throw new Error('Proxy Request Failed');
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('API Request Failed');
                 
-                const wrapper = await response.json();
-                // فك تشفير البيانات القادمة من البروكسي
-                const data = JSON.parse(wrapper.contents);
+                const json = await response.json();
 
-                if (data.error === false && data.medias && data.medias.length > 0) {
-                    document.getElementById('resThumbnail').src = data.thumbnail || 'https://via.placeholder.com/150';
-                    document.getElementById('resTitle').innerText = data.title || 'فيديو من وسائل التواصل الاجتماعي';
+                if (json.code === 0 && json.data) {
+                    const data = json.data;
+                    
+                    // تحديث الواجهة بالبيانات القادمة
+                    document.getElementById('resThumbnail').src = data.cover || 'https://via.placeholder.com/150';
+                    document.getElementById('resTitle').innerText = data.title || 'فيديو مستخرج';
 
-                    data.medias.forEach(media => {
-                        const btn = document.createElement('a');
-                        
-                        if (media.type === 'audio') {
-                            btn.className = 'dl-btn audio';
-                            btn.innerText = `🎵 تحميل الصوت (${media.extension.toUpperCase()})`;
-                        } else {
-                            btn.className = 'dl-btn';
-                            let qualityText = media.quality.replace('_', ' ').toUpperCase();
-                            btn.innerText = `🎥 تحميل الفيديو - ${qualityText}`;
-                        }
-                        
-                        btn.onclick = function(e) {
+                    // 1. زرار تحميل الفيديو بدون علامة مائية
+                    if (data.play) {
+                        const btnVideo = document.createElement('a');
+                        btnVideo.className = 'dl-btn';
+                        btnVideo.innerText = "🎥 تحميل الفيديو بدون علامة مائية";
+                        btnVideo.onclick = function(e) {
                             e.preventDefault();
-                            tg.openLink(media.url);
+                            tg.openLink(data.play);
                         };
-                        
-                        resLinks.appendChild(btn);
-                    });
+                        resLinks.appendChild(btnVideo);
+                    }
+
+                    // 2. زرار تحميل الصوت MP3 لو متاح
+                    if (data.music) {
+                        const btnAudio = document.createElement('a');
+                        btnAudio.className = 'dl-btn audio';
+                        btnAudio.innerText = "🎵 تحميل الصوت (MP3)";
+                        btnAudio.onclick = function(e) {
+                            e.preventDefault();
+                            tg.openLink(data.music);
+                        };
+                        resLinks.appendChild(btnAudio);
+                    }
 
                     loader.style.display = 'none';
                     resultCard.style.display = 'block';
                 } else {
-                    throw new Error('No media found');
+                    throw new Error('No media found from this link');
                 }
 
             } catch (error) {
