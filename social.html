@@ -79,6 +79,31 @@
             border-color: var(--main-green);
         }
 
+        label {
+            font-size: 13px;
+            color: var(--text-gray);
+            margin-bottom: -5px;
+            text-align: right;
+            display: block;
+            padding-right: 5px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            background: #11141a;
+            border: 1px solid #2d333d;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            direction: rtl;
+        }
+
+        select:focus {
+            border-color: var(--main-green);
+        }
+
         button {
             background-color: var(--main-green);
             color: black;
@@ -89,6 +114,7 @@
             border-radius: 12px;
             cursor: pointer;
             transition: 0.2s;
+            margin-top: 5px;
         }
 
         button:active {
@@ -116,27 +142,33 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .thumbnail {
+        .media-icon-box {
             width: 100%;
-            border-radius: 12px;
-            margin-bottom: 12px;
-            object-fit: cover;
-            max-height: 220px;
-            border: 1px solid #333;
+            background: linear-gradient(135deg, #1e222b, #11141a);
+            border: 1px dashed var(--main-green);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            font-size: 40px;
+            margin-bottom: 15px;
         }
 
         .video-title {
             font-size: 15px;
             font-weight: 600;
-            margin-bottom: 15px;
-            text-align: right;
+            margin-bottom: 20px;
+            text-align: center;
             color: #eee;
+            line-height: 1.6;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 8px;
         }
 
         .download-links {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .dl-btn {
@@ -145,17 +177,19 @@
             background-color: var(--main-green);
             color: black;
             text-decoration: none;
-            padding: 12px;
+            padding: 14px;
             border-radius: 10px;
             font-size: 14px;
             font-weight: bold;
             transition: 0.2s;
             cursor: pointer;
+            border: none;
+            width: 100%;
         }
 
-        .dl-btn.audio {
-            background-color: white;
-            color: black;
+        .dl-btn.share-bot {
+            background-color: #0088cc;
+            color: white;
         }
 
         .error-msg {
@@ -164,6 +198,7 @@
             margin-top: 15px;
             display: none;
             font-size: 14px;
+            line-height: 1.5;
         }
 
         .btn-back {
@@ -186,20 +221,37 @@
     <button class="btn-back" onclick="goHome()">رجوع ↩️</button>
 
     <div class="container">
-        <h1>تحميل الوسائط 📥</h1>
-        <p class="subtitle">قم بتحميل الفيديوهات من تيك توك، ريلز والمنصات الأخرى</p>
+        <h1>تحميل الوسائط Pro 📥</h1>
+        <p class="subtitle">يوتيوب، تيك توك، ريلز، إنستجرام والمنصات العالمية</p>
 
         <div class="input-group">
             <input type="url" id="videoUrl" placeholder="أدخل أو الصق رابط الفيديو هنا..." required>
-            <button id="downloadBtn">جلب روابط التحميل ⚡</button>
+            
+            <label>نوع الملف المخرج:</label>
+            <select id="downloadMode" onchange="toggleQualitySelect()">
+                <option value="video" selected>🎥 فيديو شامل (Video)</option>
+                <option value="audio">🎵 صوت فقط (Audio MP3)</option>
+            </select>
+
+            <div id="qualityGroup">
+                <label>الجودة المستهدفة:</label>
+                <select id="videoQuality">
+                    <option value="max">🔥 أعلى جودة متاحة (Max)</option>
+                    <option value="1080">📺 جودة عالية 1080p</option>
+                    <option value="720" selected>⚡ جودة قياسية 720p</option>
+                    <option value="480">📱 جودة منخفضة 480p</option>
+                </select>
+            </div>
+
+            <button id="downloadBtn">جلب روابط التحميل الذكية ⚡</button>
         </div>
 
-        <div class="loader" id="loader">جاري المعالجة... يرجى الانتظار.</div>
-        <div class="error-msg" id="errorMsg">حدث خطأ ما! يرجى التحقق من الرابط والمحاولة مرة أخرى.</div>
+        <div class="loader" id="loader">⏳ جاري معالجة الرابط عبر الخادم السريع... يرجى الانتظار.</div>
+        <div class="error-msg" id="errorMsg">❌ حدث خطأ ما! تأكد من أن الرابط صحيح وعام وليس لحساب خاص، ثم حاول مرة أخرى.</div>
 
         <div class="result-card" id="resultCard">
-            <img src="" alt="Thumbnail" class="thumbnail" id="resThumbnail">
-            <div class="video-title" id="resTitle">عنوان الفيديو</div>
+            <div class="media-icon-box" id="mediaIcon">🎬</div>
+            <div class="video-title" id="resTitle">عنوان الفيديو المستخرج</div>
             <div class="download-links" id="resLinks"></div>
         </div>
     </div>
@@ -209,68 +261,91 @@
         const params = new URLSearchParams(window.location.search);
         const userId = params.get('id');
 
+        function toggleQualitySelect() {
+            const mode = document.getElementById('downloadMode').value;
+            document.getElementById('qualityGroup').style.display = mode === 'audio' ? 'none' : 'block';
+        }
+
         document.getElementById('downloadBtn').addEventListener('click', async () => {
-            const videoUrl = document.getElementById('videoUrl').value.trim();
+            let videoUrl = document.getElementById('videoUrl').value.trim();
+            const mode = document.getElementById('downloadMode').value;
+            const quality = document.getElementById('videoQuality').value;
+            
             const loader = document.getElementById('loader');
             const errorMsg = document.getElementById('errorMsg');
             const resultCard = document.getElementById('resultCard');
             const resLinks = document.getElementById('resLinks');
+
+            // إزالة السلاش الزائدة من بداية الرابط إن وجدت تلقائياً لحماية المدخلات
+            if (videoUrl.startsWith('/')) {
+                videoUrl = videoUrl.substring(1).trim();
+            }
 
             if (!videoUrl) {
                 tg.showAlert('❌ الرجاء إدخال رابط صحيح أولاً!');
                 return;
             }
 
-            // إعادة تعيين الواجهة
+            // إعادة تهيئة الواجهة
             loader.style.display = 'block';
             errorMsg.style.display = 'none';
             resultCard.style.display = 'none';
             resLinks.innerHTML = '';
 
-            // استخدام API السريع المفتوح
-            const apiUrl = `https://api.tikwm.com/api/?url=${encodeURIComponent(videoUrl)}`;
-
             try {
-                const response = await fetch(apiUrl);
-                if (!response.ok) throw new Error('API Request Failed');
-                
-                const json = await response.json();
+                // الاتصال بـ Cobalt API العالمي مباشرة من جهاز المستخدم لتخطي البروكسي
+                const response = await fetch('https://api.cobalt.tools/api/json', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        url: videoUrl,
+                        downloadMode: mode,
+                        videoQuality: quality,
+                        audioFormat: 'mp3',
+                        filenamePattern: 'basic'
+                    })
+                });
 
-                if (json.code === 0 && json.data) {
-                    const data = json.data;
-                    
-                    // تحديث الواجهة بالبيانات القادمة
-                    document.getElementById('resThumbnail').src = data.cover || 'https://via.placeholder.com/150';
-                    document.getElementById('resTitle').innerText = data.title || 'فيديو مستخرج';
+                if (!response.ok) throw new Error('Cobalt API Failed');
+                const data = await response.json();
 
-                    // 1. زرار تحميل الفيديو بدون علامة مائية
-                    if (data.play) {
-                        const btnVideo = document.createElement('a');
-                        btnVideo.className = 'dl-btn';
-                        btnVideo.innerText = "🎥 تحميل الفيديو بدون علامة مائية";
-                        btnVideo.onclick = function(e) {
-                            e.preventDefault();
-                            tg.openLink(data.play);
-                        };
-                        resLinks.appendChild(btnVideo);
-                    }
+                if (data.status === 'stream' || data.url) {
+                    const finalUrl = data.url;
+                    const videoTitle = data.text || 'ملف ميديا جاهز للتحميل';
 
-                    // 2. زرار تحميل الصوت MP3 لو متاح
-                    if (data.music) {
-                        const btnAudio = document.createElement('a');
-                        btnAudio.className = 'dl-btn audio';
-                        btnAudio.innerText = "🎵 تحميل الصوت (MP3)";
-                        btnAudio.onclick = function(e) {
-                            e.preventDefault();
-                            tg.openLink(data.music);
-                        };
-                        resLinks.appendChild(btnAudio);
-                    }
+                    // تغيير الأيقونة بناءً على نوع التحميل
+                    document.getElementById('mediaIcon').innerText = mode === 'audio' ? '🎵' : '🎥';
+                    document.getElementById('resTitle').innerText = videoTitle;
+
+                    // 1. إنشاء زر التحميل الفوري في المتصفح الحالي
+                    const btnDirect = document.createElement('button');
+                    btnDirect.className = 'dl-btn';
+                    btnDirect.innerText = "📥 بدء التحميل الفوري على جهازك";
+                    btnDirect.onclick = function() {
+                        tg.openLink(finalUrl);
+                    };
+                    resLinks.appendChild(btnDirect);
+
+                    // 2. إنشاء زر لإرسال الرابط إلى شات البوت تلقائياً كـ Inline Button
+                    const btnShareBot = document.createElement('button');
+                    btnShareBot.className = 'dl-btn share-bot';
+                    btnShareBot.innerText = "💬 إرسال الرابط إلى شات البوت";
+                    btnShareBot.onclick = function() {
+                        tg.sendData(JSON.stringify({
+                            action: "share_download_link",
+                            download_url: finalUrl,
+                            title: videoTitle
+                        }));
+                    };
+                    resLinks.appendChild(btnShareBot);
 
                     loader.style.display = 'none';
                     resultCard.style.display = 'block';
                 } else {
-                    throw new Error('No media found from this link');
+                    throw new Error('No stream url found');
                 }
 
             } catch (error) {
