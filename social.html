@@ -276,7 +276,7 @@
             const resultCard = document.getElementById('resultCard');
             const resLinks = document.getElementById('resLinks');
 
-            // إزالة السلاش الزائدة من بداية الرابط إن وجدت تلقائياً لحماية المدخلات
+            // إزالة السلاش الزائدة تلقائياً لحماية المدخلات
             if (videoUrl.startsWith('/')) {
                 videoUrl = videoUrl.substring(1).trim();
             }
@@ -293,7 +293,7 @@
             resLinks.innerHTML = '';
 
             try {
-                // الاتصال بـ Cobalt API العالمي مباشرة من جهاز المستخدم لتخطي البروكسي
+                // تعديل الباراميترز لتتوافق 100% مع خادم Cobalt الجديد
                 const response = await fetch('https://api.cobalt.tools/api/json', {
                     method: 'POST',
                     headers: {
@@ -302,8 +302,8 @@
                     },
                     body: JSON.stringify({
                         url: videoUrl,
-                        downloadMode: mode,
                         videoQuality: quality,
+                        isAudioOnly: (mode === 'audio'), // تم تعديلها هنا للإصلاح الجذري
                         audioFormat: 'mp3',
                         filenamePattern: 'basic'
                     })
@@ -316,11 +316,10 @@
                     const finalUrl = data.url;
                     const videoTitle = data.text || 'ملف ميديا جاهز للتحميل';
 
-                    // تغيير الأيقونة بناءً على نوع التحميل
                     document.getElementById('mediaIcon').innerText = mode === 'audio' ? '🎵' : '🎥';
                     document.getElementById('resTitle').innerText = videoTitle;
 
-                    // 1. إنشاء زر التحميل الفوري في المتصفح الحالي
+                    // 1. زر التحميل الفوري للموبايل
                     const btnDirect = document.createElement('button');
                     btnDirect.className = 'dl-btn';
                     btnDirect.innerText = "📥 بدء التحميل الفوري على جهازك";
@@ -329,7 +328,7 @@
                     };
                     resLinks.appendChild(btnDirect);
 
-                    // 2. إنشاء زر لإرسال الرابط إلى شات البوت تلقائياً كـ Inline Button
+                    // 2. زر إرسال الرابط إلى البوت
                     const btnShareBot = document.createElement('button');
                     btnShareBot.className = 'dl-btn share-bot';
                     btnShareBot.innerText = "💬 إرسال الرابط إلى شات البوت";
