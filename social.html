@@ -250,7 +250,7 @@
             <button id="downloadBtn">جلب روابط التحميل الذكية ⚡</button>
         </div>
 
-        <div class="loader" id="loader">⏳ جاري المعالجة والتحقق الذكي... يرجى الانتظار.</div>
+        <div class="loader" id="loader">⏳ جاري المعالجة والتحقق المباشر من السيرفرات...</div>
         <div class="error-msg" id="errorMsg">حدث خطأ ما!</div>
 
         <div class="result-card" id="resultCard">
@@ -265,11 +265,11 @@
         const params = new URLSearchParams(window.location.search);
         const userId = params.get('id');
 
-        // قائمة أقوى وأحدث السيرفرات العالمية لـ Cobalt v10 كاحتياط متبادل
+        // مصفوفة أقوى سيرفرات مجتمعية لـ Cobalt v11 المفتوحة ومباشرة بدون تعقيد البروكسي
         const cobaltInstances = [
-            'https://api.cobalt.tools',
             'https://cobalt.ion.tw',
-            'https://cobalt.shinchon.store'
+            'https://cobalt.shinchon.store',
+            'https://cobalt.moe'
         ];
 
         function toggleQualitySelect() {
@@ -287,7 +287,7 @@
             const resultCard = document.getElementById('resultCard');
             const resLinks = document.getElementById('resLinks');
 
-            // تنظيف وإزالة أي سلاشات مائلة زيادة تلقائياً فوراً
+            // تنظيف وإزالة السلاشات المائلة والزيادات فوراً
             videoUrl = videoUrl.replace(/^\/+/, '').trim();
 
             if (!videoUrl) {
@@ -300,10 +300,10 @@
             resultCard.style.display = 'none';
             resLinks.innerHTML = '';
 
+            // صياغة الـ Payload النظيف والصافي جداً لمنع كود 400
             const requestBody = {
                 url: videoUrl,
-                downloadMode: mode === 'audio' ? 'audio' : 'auto',
-                filenameStyle: 'basic'
+                downloadMode: mode === 'audio' ? 'audio' : 'auto'
             };
 
             if (mode === 'video' && quality !== 'max') {
@@ -313,15 +313,14 @@
             let success = false;
             let finalErrorLog = '';
 
-            // اللوب الذكي: تجربة السيرفرات بالترتيب تلقائياً في حالة تعثر أي سيرفر
+            // حلقة الدوران الذكية على السيرفرات مباشرة
             for (let i = 0; i < cobaltInstances.length; i++) {
                 const currentApi = cobaltInstances[i];
                 try {
-                    loader.innerText = `⏳ جاري المحاولة عبر السيرفر الذكي (${i + 1}/${cobaltInstances.length})...`;
+                    loader.innerText = `⏳ جاري الاتصال المباشر بالسيرفر السريع (${i + 1}/${cobaltInstances.length})...`;
                     
-                    const proxyUrl = 'https://corsproxy.io/?url=' + encodeURIComponent(currentApi);
-
-                    const response = await fetch(proxyUrl, {
+                    // اتصال مباشر وصافي 100% بدون كوبري الـ corsproxy لتفادي حظر 530
+                    const response = await fetch(currentApi, {
                         method: 'POST',
                         headers: {
                             'Accept': 'application/json',
@@ -331,7 +330,7 @@
                     });
 
                     if (!response.ok) {
-                        throw new Error(`السيرفر ${i+1} رد بكود: ${response.status}`);
+                        throw new Error(`كود: ${response.status}`);
                     }
                     
                     const data = await response.json();
@@ -343,7 +342,7 @@
                         document.getElementById('mediaIcon').innerText = mode === 'audio' ? '🎵' : '🎥';
                         document.getElementById('resTitle').innerText = videoTitle;
 
-                        // 1. زر التحميل الفوري للموبايل
+                        // 1. زر التحميل المباشر للجهاز عبر سرعة نت اليوزر
                         const btnDirect = document.createElement('button');
                         btnDirect.className = 'dl-btn';
                         btnDirect.innerText = "📥 بدء التحميل الفوري على جهازك";
@@ -352,7 +351,7 @@
                         };
                         resLinks.appendChild(btnDirect);
 
-                        // 2. زر إرسال الرابط للبوت
+                        // 2. زر إرسال الرابط للبوت كـ Inline Button شغال مع سيرفر Flask
                         const btnShareBot = document.createElement('button');
                         btnShareBot.className = 'dl-btn share-bot';
                         btnShareBot.innerText = "💬 إرسال الرابط إلى شات البوت";
@@ -368,17 +367,35 @@
                         loader.style.display = 'none';
                         resultCard.style.display = 'block';
                         success = true;
-                        break; // الخروج فوراً عند النجاح
+                        break;
+                    } else if (data.status === 'picker') {
+                        // دعم ألبومات تيك توك والصور المتعددة (v11)
+                        const finalUrl = data.picker[0].url;
+                        const videoTitle = 'ألبوم وسائط مستخرج';
+                        
+                        document.getElementById('mediaIcon').innerText = '📸';
+                        document.getElementById('resTitle').innerText = videoTitle;
+                        
+                        const btnDirect = document.createElement('button');
+                        btnDirect.className = 'dl-btn';
+                        btnDirect.innerText = "📥 تحميل أول عنصر من الألبوم فورا";
+                        btnDirect.onclick = function() { tg.openLink(finalUrl); };
+                        resLinks.appendChild(btnDirect);
+                        
+                        loader.style.display = 'none';
+                        resultCard.style.display = 'block';
+                        success = true;
+                        break;
                     }
                 } catch (err) {
-                    console.warn(`سيرفر ${currentApi} واجه مشكلة:`, err.message);
+                    console.warn(`سيرفر ${currentApi} تعثر:`, err.message);
                     finalErrorLog += `[سيرفر ${i+1}]: ${err.message}<br>`;
                 }
             }
 
             if (!success) {
                 loader.style.display = 'none';
-                errorMsg.innerHTML = `⚠️ **فشل جلب الرابط من جميع السيرفرات المتاحة**<br><div style='text-align:left; font-size:11px; margin-top:5px; color:#aaa;'>${finalErrorLog}</div>`;
+                errorMsg.innerHTML = `⚠️ **فشل استخراج الروابط من كافة السيرفرات**<br><div style='text-align:left; font-size:11px; margin-top:5px; color:#aaa;'>${finalErrorLog}</div>`;
                 errorMsg.style.display = 'block';
             }
         });
