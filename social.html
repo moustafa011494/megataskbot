@@ -280,7 +280,7 @@
             const resultCard = document.getElementById('resultCard');
             const resLinks = document.getElementById('resLinks');
 
-            // إزالة السلاشات المائلة والمسافات العشوائية من البداية أوتوماتيكياً
+            // تنظيف وإزالة السلاشات المائلة التلقائية والمسافات لحماية المدخلات
             videoUrl = videoUrl.replace(/^\/+/, '').trim();
 
             if (!videoUrl) {
@@ -294,20 +294,23 @@
             resultCard.style.display = 'none';
             resLinks.innerHTML = '';
 
-            // بناء الـ Payload النظيف والمتوافق مع التحديث الأخير لـ Cobalt
+            // بناء الـ Payload النظيف المتوافق مع خادم Cobalt
             const requestBody = {
                 url: videoUrl,
                 isAudioOnly: (mode === 'audio'),
                 filenamePattern: 'basic'
             };
 
-            // نرسل الجودة فقط في حالة الفيديو ولم يتم اختيار Max
             if (mode === 'video' && quality !== 'max') {
                 requestBody.videoQuality = quality;
             }
 
             try {
-                const response = await fetch('https://api.cobalt.tools/api/json', {
+                // الكوبري السحري: إرسال الطلب من خلال CORS Proxy لتخطي قيود حماية تليجرام والمتصفح
+                const targetApi = 'https://api.cobalt.tools/api/json';
+                const proxyUrl = 'https://corsproxy.io/?url=' + encodeURIComponent(targetApi);
+
+                const response = await fetch(proxyUrl, {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
@@ -339,7 +342,7 @@
                     };
                     resLinks.appendChild(btnDirect);
 
-                    // 2. زر إرسال الرابط إلى البوت
+                    // 2. زر إرسال الرابط إلى البوت كـ Inline Button
                     const btnShareBot = document.createElement('button');
                     btnShareBot.className = 'dl-btn share-bot';
                     btnShareBot.innerText = "💬 إرسال الرابط إلى شات البوت";
@@ -361,7 +364,6 @@
             } catch (error) {
                 console.error(error);
                 loader.style.display = 'none';
-                // إظهار نص الخطأ الفعلي والدقيق لحل اللغز
                 errorMsg.innerHTML = `⚠️ **فشل جلب الرابط**<br>السبب: ${error.message}`;
                 errorMsg.style.display = 'block';
             }
