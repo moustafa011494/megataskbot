@@ -250,7 +250,7 @@
             <button id="downloadBtn">جلب روابط التحميل الذكية ⚡</button>
         </div>
 
-        <div class="loader" id="loader">⏳ جاري معالجة الرابط عبر الخادم السريع... يرجى الانتظار.</div>
+        <div class="loader" id="loader">⏳ جاري معالجة الرابط عبر الخادم السريع v10... يرجى الانتظار.</div>
         <div class="error-msg" id="errorMsg">حدث خطأ ما!</div>
 
         <div class="result-card" id="resultCard">
@@ -280,7 +280,7 @@
             const resultCard = document.getElementById('resultCard');
             const resLinks = document.getElementById('resLinks');
 
-            // تنظيف وإزالة السلاشات المائلة التلقائية والمسافات لحماية المدخلات
+            // تنظيف أي سلاشات مائلة أو مسافات في بداية الرابط لحماية المدخلات
             videoUrl = videoUrl.replace(/^\/+/, '').trim();
 
             if (!videoUrl) {
@@ -294,20 +294,21 @@
             resultCard.style.display = 'none';
             resLinks.innerHTML = '';
 
-            // بناء الـ Payload النظيف المتوافق مع خادم Cobalt
+            // بناء الـ Payload النظيف المتوافق مع خادم Cobalt v10 الحديثة بالكامل
             const requestBody = {
                 url: videoUrl,
-                isAudioOnly: (mode === 'audio'),
-                filenamePattern: 'basic'
+                downloadMode: mode === 'audio' ? 'audio' : 'auto', // تحديث متغير v10
+                filenameStyle: 'basic'
             };
 
+            // نرسل الجودة فقط في حالة الفيديو ولم يتم اختيار Max
             if (mode === 'video' && quality !== 'max') {
                 requestBody.videoQuality = quality;
             }
 
             try {
-                // الكوبري السحري: إرسال الطلب من خلال CORS Proxy لتخطي قيود حماية تليجرام والمتصفح
-                const targetApi = 'https://api.cobalt.tools/api/json';
+                // استهداف السيرفر الرسمي والفعال حالياً لـ Cobalt v10 (المسار الرئيسي مباشرة)
+                const targetApi = 'https://co.wuk.sh/';
                 const proxyUrl = 'https://corsproxy.io/?url=' + encodeURIComponent(targetApi);
 
                 const response = await fetch(proxyUrl, {
@@ -326,7 +327,8 @@
                 
                 const data = await response.json();
 
-                if (data.status === 'stream' || data.url) {
+                // التوافق مع صيغة رد الـ v10
+                if (data.status === 'stream' || data.status === 'redirect' || data.url) {
                     const finalUrl = data.url;
                     const videoTitle = data.text || 'ملف ميديا جاهز للتحميل';
 
@@ -342,7 +344,7 @@
                     };
                     resLinks.appendChild(btnDirect);
 
-                    // 2. زر إرسال الرابط إلى البوت كـ Inline Button
+                    // 2. زر إرسال الرابط إلى البوت كـ Inline Button شغال مع كود البايثون المستقر
                     const btnShareBot = document.createElement('button');
                     btnShareBot.className = 'dl-btn share-bot';
                     btnShareBot.innerText = "💬 إرسال الرابط إلى شات البوت";
