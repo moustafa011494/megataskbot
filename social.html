@@ -226,7 +226,7 @@
 
     <div class="container">
         <h1>تحميل الوسائط Pro 📥</h1>
-        <p class="subtitle">يوتيوب، تيك توك، ريلز، إنستجرام والمنصات العالمية</p>
+        <p class="subtitle">تيك توك، يوتيوب، ريلز، إنستجرام والمنصات العالمية</p>
 
         <div class="input-group">
             <input type="url" id="videoUrl" placeholder="أدخل أو الصق رابط الفيديو هنا..." required>
@@ -250,7 +250,7 @@
             <button id="downloadBtn">جلب روابط التحميل الذكية ⚡</button>
         </div>
 
-        <div class="loader" id="loader">⏳ جاري المعالجة والتحقق المباشر من السيرفرات...</div>
+        <div class="loader" id="loader">⏳ جاري فحص الرابط وتفعيل مصفوفة المحركات...</div>
         <div class="error-msg" id="errorMsg">حدث خطأ ما!</div>
 
         <div class="result-card" id="resultCard">
@@ -264,13 +264,6 @@
         const tg = window.Telegram.WebApp;
         const params = new URLSearchParams(window.location.search);
         const userId = params.get('id');
-
-        // مصفوفة أقوى سيرفرات مجتمعية لـ Cobalt v11 المفتوحة ومباشرة بدون تعقيد البروكسي
-        const cobaltInstances = [
-            'https://cobalt.ion.tw',
-            'https://cobalt.shinchon.store',
-            'https://cobalt.moe'
-        ];
 
         function toggleQualitySelect() {
             const mode = document.getElementById('downloadMode').value;
@@ -287,7 +280,7 @@
             const resultCard = document.getElementById('resultCard');
             const resLinks = document.getElementById('resLinks');
 
-            // تنظيف وإزالة السلاشات المائلة والزيادات فوراً
+            // تنظيف الرابط تماماً من أي علامات مائلة زائدة
             videoUrl = videoUrl.replace(/^\/+/, '').trim();
 
             if (!videoUrl) {
@@ -300,102 +293,123 @@
             resultCard.style.display = 'none';
             resLinks.innerHTML = '';
 
-            // صياغة الـ Payload النظيف والصافي جداً لمنع كود 400
-            const requestBody = {
+            // كود الإعداد النظيف لـ Cobalt
+            const cobaltBody = {
                 url: videoUrl,
-                downloadMode: mode === 'audio' ? 'audio' : 'auto'
+                downloadMode: mode === 'audio' ? 'audio' : 'auto',
+                filenameStyle: 'basic'
             };
-
             if (mode === 'video' && quality !== 'max') {
-                requestBody.videoQuality = quality;
+                cobaltBody.videoQuality = quality;
             }
 
-            let success = false;
-            let finalErrorLog = '';
+            // مصفوفة ذكية لخلط محركات مختلفة تماماً (تيك ووم + كوبالت)
+            const processors = [];
 
-            // حلقة الدوران الذكية على السيرفرات مباشرة
-            for (let i = 0; i < cobaltInstances.length; i++) {
-                const currentApi = cobaltInstances[i];
-                try {
-                    loader.innerText = `⏳ جاري الاتصال المباشر بالسيرفر السريع (${i + 1}/${cobaltInstances.length})...`;
-                    
-                    // اتصال مباشر وصافي 100% بدون كوبري الـ corsproxy لتفادي حظر 530
-                    const response = await fetch(currentApi, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(requestBody)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`كود: ${response.status}`);
+            // 1. لو الرابط تيك توك، نضع محرك TikWm كأولوية قصوى لأنه مستقر جداً وخالي من الـ CORS
+            if (videoUrl.includes('tiktok.com')) {
+                processors.push({
+                    name: "محرك تيك توك العالمي المستقر (TikWm)",
+                    action: async () => {
+                        const tikResponse = await fetch(`https://api.tikwm.com/api/?url=${encodeURIComponent(videoUrl)}`);
+                        if (!tikResponse.ok) throw new Error(`كود: ${tikResponse.status}`);
+                        const json = await tikResponse.json();
+                        if (json.code === 0 && json.data) {
+                            return {
+                                url: mode === 'audio' ? json.data.music : json.data.play,
+                                title: json.data.title || 'فيديو تيك توك جاهز'
+                            };
+                        }
+                        throw new Error(json.msg || 'لم يتم العثور على ميديا في الرابط');
                     }
-                    
-                    const data = await response.json();
+                });
+            }
 
-                    if (data.status === 'stream' || data.status === 'redirect' || data.url) {
-                        const finalUrl = data.url;
-                        const videoTitle = data.text || 'ملف ميديا جاهز للتحميل';
+            // 2. محرك Cobalt الاحتياطي الأول (Ion) اتصال مباشر صافي بدون وسيط
+            processors.push({
+                name: "محرك كوانتم المباشر الأول (Cobalt-Ion)",
+                action: async () => {
+                    const res = await fetch('https://cobalt.ion.tw', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                        body: JSON.stringify(cobaltBody)
+                    });
+                    if (!res.ok) throw new Error(`كود: ${res.status}`);
+                    const data = await res.json();
+                    if (data.url || data.status === 'stream' || data.status === 'redirect') {
+                        return { url: data.url, title: data.text || 'ملف ميديا مستخرج بنجاح' };
+                    }
+                    throw new Error('السيرفر لم يرجع رابط صريح');
+                }
+            });
 
-                        document.getElementById('mediaIcon').innerText = mode === 'audio' ? '🎵' : '🎥';
-                        document.getElementById('resTitle').innerText = videoTitle;
+            // 3. محرك Cobalt الاحتياطي الثاني (Shinchon)
+            processors.push({
+                name: "محرك كوانتم المباشر الثاني (Cobalt-Shin)",
+                action: async () => {
+                    const res = await fetch('https://cobalt.shinchon.store', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                        body: JSON.stringify(cobaltBody)
+                    });
+                    if (!res.ok) throw new Error(`كود: ${res.status}`);
+                    const data = await res.json();
+                    if (data.url || data.status === 'stream' || data.status === 'redirect') {
+                        return { url: data.url, title: data.text || 'ملف ميديا مستخرج بنجاح' };
+                    }
+                    throw new Error('السيرفر لم يرجع رابط صريح');
+                }
+            });
 
-                        // 1. زر التحميل المباشر للجهاز عبر سرعة نت اليوزر
-                        const btnDirect = document.createElement('button');
-                        btnDirect.className = 'dl-btn';
-                        btnDirect.innerText = "📥 بدء التحميل الفوري على جهازك";
-                        btnDirect.onclick = function() {
-                            tg.openLink(finalUrl);
-                        };
-                        resLinks.appendChild(btnDirect);
+            let successResult = null;
+            let errorLogs = '';
 
-                        // 2. زر إرسال الرابط للبوت كـ Inline Button شغال مع سيرفر Flask
-                        const btnShareBot = document.createElement('button');
-                        btnShareBot.className = 'dl-btn share-bot';
-                        btnShareBot.innerText = "💬 إرسال الرابط إلى شات البوت";
-                        btnShareBot.onclick = function() {
-                            tg.sendData(JSON.stringify({
-                                action: "share_download_link",
-                                download_url: finalUrl,
-                                title: videoTitle
-                            }));
-                        };
-                        resLinks.appendChild(btnShareBot);
-
-                        loader.style.display = 'none';
-                        resultCard.style.display = 'block';
-                        success = true;
-                        break;
-                    } else if (data.status === 'picker') {
-                        // دعم ألبومات تيك توك والصور المتعددة (v11)
-                        const finalUrl = data.picker[0].url;
-                        const videoTitle = 'ألبوم وسائط مستخرج';
-                        
-                        document.getElementById('mediaIcon').innerText = '📸';
-                        document.getElementById('resTitle').innerText = videoTitle;
-                        
-                        const btnDirect = document.createElement('button');
-                        btnDirect.className = 'dl-btn';
-                        btnDirect.innerText = "📥 تحميل أول عنصر من الألبوم فورا";
-                        btnDirect.onclick = function() { tg.openLink(finalUrl); };
-                        resLinks.appendChild(btnDirect);
-                        
-                        loader.style.display = 'none';
-                        resultCard.style.display = 'block';
-                        success = true;
-                        break;
+            // الدوران الأوتوماتيكي والتبديل الذاتي الفوري بين المحركات
+            for (let i = 0; i < processors.length; i++) {
+                const currentProcessor = processors[i];
+                try {
+                    loader.innerHTML = `⏳ جاري المحاولة عبر:<br><span style='color: #fff;'>${currentProcessor.name}</span>...`;
+                    const resData = await currentProcessor.action();
+                    if (resData && resData.url) {
+                        successResult = resData;
+                        break; // خروج فوراً عند نجاح أي محرك
                     }
                 } catch (err) {
-                    console.warn(`سيرفر ${currentApi} تعثر:`, err.message);
-                    finalErrorLog += `[سيرفر ${i+1}]: ${err.message}<br>`;
+                    console.warn(`${currentProcessor.name} فشل:`, err.message);
+                    errorLogs += `• [${currentProcessor.name}]: ${err.message}<br>`;
                 }
             }
 
-            if (!success) {
+            // عرض النتائج بناءً على نجاح أو فشل المصفوفة كاملة
+            if (successResult) {
+                document.getElementById('mediaIcon').innerText = mode === 'audio' ? '🎵' : '🎥';
+                document.getElementById('resTitle').innerText = successResult.title;
+
+                // 1. زر التحميل الفوري للموبايل
+                const btnDirect = document.createElement('button');
+                btnDirect.className = 'dl-btn';
+                btnDirect.innerText = "📥 بدء التحميل الفوري على جهازك";
+                btnDirect.onclick = function() { tg.openLink(successResult.url); };
+                resLinks.appendChild(btnDirect);
+
+                // 2. زر إرسال الرابط للبوت
+                const btnShareBot = document.createElement('button');
+                btnShareBot.className = 'dl-btn share-bot';
+                btnShareBot.innerText = "💬 إرسال الرابط إلى شات البوت";
+                btnShareBot.onclick = function() {
+                    tg.sendData(JSON.stringify({
+                        action: "share_download_link",
+                        download_url: successResult.url,
+                        title: successResult.title
+                    }));
+                };
+                resLinks.appendChild(btnShareBot);
+
                 loader.style.display = 'none';
-                errorMsg.innerHTML = `⚠️ **فشل استخراج الروابط من كافة السيرفرات**<br><div style='text-align:left; font-size:11px; margin-top:5px; color:#aaa;'>${finalErrorLog}</div>`;
+                resultCard.style.display = 'block';
+            } else {
+                loader.style.display = 'none';
+                errorMsg.innerHTML = `⚠️ **فشلت مصفوفة المحركات بالكامل في استخراج الرابط**<br><div style='text-align:right; font-size:11px; margin-top:8px; color:#aaa; line-height:1.5;'>التفاصيل البنائية:<br>${errorLogs}</div>`;
                 errorMsg.style.display = 'block';
             }
         });
