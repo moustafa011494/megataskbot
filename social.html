@@ -250,7 +250,7 @@
             <button id="downloadBtn">جلب روابط التحميل الذكية ⚡</button>
         </div>
 
-        <div class="loader" id="loader">⏳ جاري معالجة الرابط عبر الخادم السريع v10... يرجى الانتظار.</div>
+        <div class="loader" id="loader">⏳ جاري المعالجة والتحقق الذكي... يرجى الانتظار.</div>
         <div class="error-msg" id="errorMsg">حدث خطأ ما!</div>
 
         <div class="result-card" id="resultCard">
@@ -264,6 +264,13 @@
         const tg = window.Telegram.WebApp;
         const params = new URLSearchParams(window.location.search);
         const userId = params.get('id');
+
+        // قائمة أقوى وأحدث السيرفرات العالمية لـ Cobalt v10 كاحتياط متبادل
+        const cobaltInstances = [
+            'https://api.cobalt.tools',
+            'https://cobalt.ion.tw',
+            'https://cobalt.shinchon.store'
+        ];
 
         function toggleQualitySelect() {
             const mode = document.getElementById('downloadMode').value;
@@ -280,7 +287,7 @@
             const resultCard = document.getElementById('resultCard');
             const resLinks = document.getElementById('resLinks');
 
-            // تنظيف أي سلاشات مائلة أو مسافات في بداية الرابط لحماية المدخلات
+            // تنظيف وإزالة أي سلاشات مائلة زيادة تلقائياً فوراً
             videoUrl = videoUrl.replace(/^\/+/, '').trim();
 
             if (!videoUrl) {
@@ -288,85 +295,90 @@
                 return;
             }
 
-            // إعادة تهيئة الواجهة
             loader.style.display = 'block';
             errorMsg.style.display = 'none';
             resultCard.style.display = 'none';
             resLinks.innerHTML = '';
 
-            // بناء الـ Payload النظيف المتوافق مع خادم Cobalt v10 الحديثة بالكامل
             const requestBody = {
                 url: videoUrl,
-                downloadMode: mode === 'audio' ? 'audio' : 'auto', // تحديث متغير v10
+                downloadMode: mode === 'audio' ? 'audio' : 'auto',
                 filenameStyle: 'basic'
             };
 
-            // نرسل الجودة فقط في حالة الفيديو ولم يتم اختيار Max
             if (mode === 'video' && quality !== 'max') {
                 requestBody.videoQuality = quality;
             }
 
-            try {
-                // استهداف السيرفر الرسمي والفعال حالياً لـ Cobalt v10 (المسار الرئيسي مباشرة)
-                const targetApi = 'https://co.wuk.sh/';
-                const proxyUrl = 'https://corsproxy.io/?url=' + encodeURIComponent(targetApi);
+            let success = false;
+            let finalErrorLog = '';
 
-                const response = await fetch(proxyUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestBody)
-                });
+            // اللوب الذكي: تجربة السيرفرات بالترتيب تلقائياً في حالة تعثر أي سيرفر
+            for (let i = 0; i < cobaltInstances.length; i++) {
+                const currentApi = cobaltInstances[i];
+                try {
+                    loader.innerText = `⏳ جاري المحاولة عبر السيرفر الذكي (${i + 1}/${cobaltInstances.length})...`;
+                    
+                    const proxyUrl = 'https://corsproxy.io/?url=' + encodeURIComponent(currentApi);
 
-                if (!response.ok) {
-                    const errText = await response.text().catch(() => "Unknown");
-                    throw new Error(`كود الاستجابة: ${response.status} - التفاصيل: ${errText}`);
+                    const response = await fetch(proxyUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`السيرفر ${i+1} رد بكود: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+
+                    if (data.status === 'stream' || data.status === 'redirect' || data.url) {
+                        const finalUrl = data.url;
+                        const videoTitle = data.text || 'ملف ميديا جاهز للتحميل';
+
+                        document.getElementById('mediaIcon').innerText = mode === 'audio' ? '🎵' : '🎥';
+                        document.getElementById('resTitle').innerText = videoTitle;
+
+                        // 1. زر التحميل الفوري للموبايل
+                        const btnDirect = document.createElement('button');
+                        btnDirect.className = 'dl-btn';
+                        btnDirect.innerText = "📥 بدء التحميل الفوري على جهازك";
+                        btnDirect.onclick = function() {
+                            tg.openLink(finalUrl);
+                        };
+                        resLinks.appendChild(btnDirect);
+
+                        // 2. زر إرسال الرابط للبوت
+                        const btnShareBot = document.createElement('button');
+                        btnShareBot.className = 'dl-btn share-bot';
+                        btnShareBot.innerText = "💬 إرسال الرابط إلى شات البوت";
+                        btnShareBot.onclick = function() {
+                            tg.sendData(JSON.stringify({
+                                action: "share_download_link",
+                                download_url: finalUrl,
+                                title: videoTitle
+                            }));
+                        };
+                        resLinks.appendChild(btnShareBot);
+
+                        loader.style.display = 'none';
+                        resultCard.style.display = 'block';
+                        success = true;
+                        break; // الخروج فوراً عند النجاح
+                    }
+                } catch (err) {
+                    console.warn(`سيرفر ${currentApi} واجه مشكلة:`, err.message);
+                    finalErrorLog += `[سيرفر ${i+1}]: ${err.message}<br>`;
                 }
-                
-                const data = await response.json();
+            }
 
-                // التوافق مع صيغة رد الـ v10
-                if (data.status === 'stream' || data.status === 'redirect' || data.url) {
-                    const finalUrl = data.url;
-                    const videoTitle = data.text || 'ملف ميديا جاهز للتحميل';
-
-                    document.getElementById('mediaIcon').innerText = mode === 'audio' ? '🎵' : '🎥';
-                    document.getElementById('resTitle').innerText = videoTitle;
-
-                    // 1. زر التحميل الفوري للموبايل
-                    const btnDirect = document.createElement('button');
-                    btnDirect.className = 'dl-btn';
-                    btnDirect.innerText = "📥 بدء التحميل الفوري على جهازك";
-                    btnDirect.onclick = function() {
-                        tg.openLink(finalUrl);
-                    };
-                    resLinks.appendChild(btnDirect);
-
-                    // 2. زر إرسال الرابط إلى البوت كـ Inline Button شغال مع كود البايثون المستقر
-                    const btnShareBot = document.createElement('button');
-                    btnShareBot.className = 'dl-btn share-bot';
-                    btnShareBot.innerText = "💬 إرسال الرابط إلى شات البوت";
-                    btnShareBot.onclick = function() {
-                        tg.sendData(JSON.stringify({
-                            action: "share_download_link",
-                            download_url: finalUrl,
-                            title: videoTitle
-                        }));
-                    };
-                    resLinks.appendChild(btnShareBot);
-
-                    loader.style.display = 'none';
-                    resultCard.style.display = 'block';
-                } else {
-                    throw new Error(data.error || 'لم يتم العثور على روابط ميديا مباشرة في رد السيرفر.');
-                }
-
-            } catch (error) {
-                console.error(error);
+            if (!success) {
                 loader.style.display = 'none';
-                errorMsg.innerHTML = `⚠️ **فشل جلب الرابط**<br>السبب: ${error.message}`;
+                errorMsg.innerHTML = `⚠️ **فشل جلب الرابط من جميع السيرفرات المتاحة**<br><div style='text-align:left; font-size:11px; margin-top:5px; color:#aaa;'>${finalErrorLog}</div>`;
                 errorMsg.style.display = 'block';
             }
         });
