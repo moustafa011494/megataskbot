@@ -197,8 +197,12 @@
             text-align: center;
             margin-top: 15px;
             display: none;
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: 13px;
+            line-height: 1.6;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
         .btn-back {
@@ -247,7 +251,7 @@
         </div>
 
         <div class="loader" id="loader">⏳ جاري معالجة الرابط عبر الخادم السريع... يرجى الانتظار.</div>
-        <div class="error-msg" id="errorMsg">❌ حدث خطأ ما! تأكد من أن الرابط صحيح وعام وليس لحساب خاص، ثم حاول مرة أخرى.</div>
+        <div class="error-msg" id="errorMsg">حدث خطأ ما!</div>
 
         <div class="result-card" id="resultCard">
             <div class="media-icon-box" id="mediaIcon">🎬</div>
@@ -276,10 +280,8 @@
             const resultCard = document.getElementById('resultCard');
             const resLinks = document.getElementById('resLinks');
 
-            // إزالة السلاش الزائدة تلقائياً لحماية المدخلات
-            if (videoUrl.startsWith('/')) {
-                videoUrl = videoUrl.substring(1).trim();
-            }
+            // إزالة السلاشات المائلة والمسافات العشوائية من البداية أوتوماتيكياً
+            videoUrl = videoUrl.replace(/^\/+/, '').trim();
 
             if (!videoUrl) {
                 tg.showAlert('❌ الرجاء إدخال رابط صحيح أولاً!');
@@ -292,24 +294,33 @@
             resultCard.style.display = 'none';
             resLinks.innerHTML = '';
 
+            // بناء الـ Payload النظيف والمتوافق مع التحديث الأخير لـ Cobalt
+            const requestBody = {
+                url: videoUrl,
+                isAudioOnly: (mode === 'audio'),
+                filenamePattern: 'basic'
+            };
+
+            // نرسل الجودة فقط في حالة الفيديو ولم يتم اختيار Max
+            if (mode === 'video' && quality !== 'max') {
+                requestBody.videoQuality = quality;
+            }
+
             try {
-                // تعديل الباراميترز لتتوافق 100% مع خادم Cobalt الجديد
                 const response = await fetch('https://api.cobalt.tools/api/json', {
                     method: 'POST',
                     headers: {
                         'Accept': 'application/json',
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        url: videoUrl,
-                        videoQuality: quality,
-                        isAudioOnly: (mode === 'audio'), // تم تعديلها هنا للإصلاح الجذري
-                        audioFormat: 'mp3',
-                        filenamePattern: 'basic'
-                    })
+                    body: JSON.stringify(requestBody)
                 });
 
-                if (!response.ok) throw new Error('Cobalt API Failed');
+                if (!response.ok) {
+                    const errText = await response.text().catch(() => "Unknown");
+                    throw new Error(`كود الاستجابة: ${response.status} - التفاصيل: ${errText}`);
+                }
+                
                 const data = await response.json();
 
                 if (data.status === 'stream' || data.url) {
@@ -344,12 +355,14 @@
                     loader.style.display = 'none';
                     resultCard.style.display = 'block';
                 } else {
-                    throw new Error('No stream url found');
+                    throw new Error(data.error || 'لم يتم العثور على روابط ميديا مباشرة في رد السيرفر.');
                 }
 
             } catch (error) {
                 console.error(error);
                 loader.style.display = 'none';
+                // إظهار نص الخطأ الفعلي والدقيق لحل اللغز
+                errorMsg.innerHTML = `⚠️ **فشل جلب الرابط**<br>السبب: ${error.message}`;
                 errorMsg.style.display = 'block';
             }
         });
