@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - Media Downloader Pro</title>
+    <title>MegaTask - Media Request</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -17,7 +17,7 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
         }
 
         body {
@@ -28,7 +28,6 @@
             align-items: center;
             min-height: 100vh;
             padding: 20px;
-            padding-top: 60px;
         }
 
         .container {
@@ -43,10 +42,9 @@
 
         h1 {
             text-align: center;
-            font-size: 24px;
+            font-size: 22px;
             margin-bottom: 8px;
             color: var(--main-green);
-            text-shadow: 0 0 10px rgba(0, 210, 106, 0.2);
         }
 
         p.subtitle {
@@ -71,7 +69,6 @@
             font-size: 14px;
             outline: none;
             color: white;
-            transition: border-color 0.2s;
             text-align: center;
         }
 
@@ -84,7 +81,6 @@
             color: var(--text-gray);
             margin-bottom: -5px;
             text-align: right;
-            display: block;
             padding-right: 5px;
         }
 
@@ -100,10 +96,6 @@
             direction: rtl;
         }
 
-        select:focus {
-            border-color: var(--main-green);
-        }
-
         button {
             background-color: var(--main-green);
             color: black;
@@ -114,95 +106,11 @@
             border-radius: 12px;
             cursor: pointer;
             transition: 0.2s;
-            margin-top: 5px;
+            margin-top: 10px;
         }
 
         button:active {
             transform: scale(0.98);
-        }
-
-        .loader {
-            display: none;
-            text-align: center;
-            margin: 20px 0;
-            font-weight: 500;
-            color: var(--main-green);
-        }
-
-        .result-card {
-            display: none;
-            margin-top: 24px;
-            border-top: 1px solid #2d333d;
-            padding-top: 20px;
-            animation: fadeIn 0.4s ease-in-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .media-icon-box {
-            width: 100%;
-            background: linear-gradient(135deg, #1e222b, #11141a);
-            border: 1px dashed var(--main-green);
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            font-size: 40px;
-            margin-bottom: 15px;
-        }
-
-        .video-title {
-            font-size: 15px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            text-align: center;
-            color: #eee;
-            line-height: 1.6;
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 8px;
-        }
-
-        .download-links {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .dl-btn {
-            display: block;
-            text-align: center;
-            background-color: var(--main-green);
-            color: black;
-            text-decoration: none;
-            padding: 14px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: bold;
-            transition: 0.2s;
-            cursor: pointer;
-            border: none;
-            width: 100%;
-        }
-
-        .dl-btn.share-bot {
-            background-color: #0088cc;
-            color: white;
-        }
-
-        .error-msg {
-            color: #ef4444;
-            text-align: center;
-            margin-top: 15px;
-            display: none;
-            font-size: 13px;
-            line-height: 1.6;
-            background: rgba(239, 68, 68, 0.1);
-            padding: 12px;
-            border-radius: 10px;
-            border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
         .btn-back {
@@ -215,7 +123,6 @@
             padding: 5px 15px;
             border-radius: 10px;
             font-size: 12px;
-            z-index: 100;
             cursor: pointer;
         }
     </style>
@@ -225,43 +132,35 @@
     <button class="btn-back" onclick="goHome()">رجوع ↩️</button>
 
     <div class="container">
-        <h1>تحميل الوسائط Pro 📥</h1>
-        <p class="subtitle">تيك توك، يوتيوب، ريلز، إنستجرام والمنصات العالمية</p>
+        <h1>التحميل السحابي المباشر ⚡</h1>
+        <p class="subtitle">أرسل الطلب للبوت واستلم ملفك فوراً في الشات</p>
 
         <div class="input-group">
-            <input type="url" id="videoUrl" placeholder="أدخل أو الصق رابط الفيديو هنا..." required>
+            <input type="url" id="videoUrl" placeholder="الصق رابط الفيديو أو الريل هنا..." required>
             
-            <label>نوع الملف المخرج:</label>
+            <label>نوع الملف المطلوب:</label>
             <select id="downloadMode" onchange="toggleQualitySelect()">
                 <option value="video" selected>🎥 فيديو شامل (Video)</option>
                 <option value="audio">🎵 صوت فقط (Audio MP3)</option>
             </select>
 
             <div id="qualityGroup">
-                <label>الجودة المستهدفة:</label>
+                <label>الجودة:</label>
                 <select id="videoQuality">
                     <option value="max">🔥 أعلى جودة متاحة (Max)</option>
-                    <option value="1080">📺 جودة عالية 1080p</option>
-                    <option value="720" selected>⚡ جودة قياسية 720p</option>
-                    <option value="480">📱 جودة منخفضة 480p</option>
+                    <option value="1080">📺 1080p</option>
+                    <option value="720" selected>⚡ 720p</option>
+                    <option value="480">📱 480p</option>
                 </select>
             </div>
 
-            <button id="downloadBtn">جلب روابط التحميل الذكية ⚡</button>
-        </div>
-
-        <div class="loader" id="loader">⏳ جاري فحص الرابط وتفعيل مصفوفة المحركات...</div>
-        <div class="error-msg" id="errorMsg">حدث خطأ ما!</div>
-
-        <div class="result-card" id="resultCard">
-            <div class="media-icon-box" id="mediaIcon">🎬</div>
-            <div class="video-title" id="resTitle">عنوان الفيديو المستخرج</div>
-            <div class="download-links" id="resLinks"></div>
+            <button id="sendToBotBtn">🚀 إرسال الطلب للبوت وبدء التحميل</button>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
+        tg.expand();
         const params = new URLSearchParams(window.location.search);
         const userId = params.get('id');
 
@@ -270,148 +169,29 @@
             document.getElementById('qualityGroup').style.display = mode === 'audio' ? 'none' : 'block';
         }
 
-        document.getElementById('downloadBtn').addEventListener('click', async () => {
+        document.getElementById('sendToBotBtn').addEventListener('click', () => {
             let videoUrl = document.getElementById('videoUrl').value.trim();
             const mode = document.getElementById('downloadMode').value;
             const quality = document.getElementById('videoQuality').value;
-            
-            const loader = document.getElementById('loader');
-            const errorMsg = document.getElementById('errorMsg');
-            const resultCard = document.getElementById('resultCard');
-            const resLinks = document.getElementById('resLinks');
 
-            // تنظيف الرابط تماماً من أي علامات مائلة زائدة
+            // تنظيف الرابط
             videoUrl = videoUrl.replace(/^\/+/, '').trim();
 
             if (!videoUrl) {
-                tg.showAlert('❌ الرجاء إدخال رابط صحيح أولاً!');
+                tg.showAlert('❌ من فضلك حط رابط صحيح الأول!');
                 return;
             }
 
-            loader.style.display = 'block';
-            errorMsg.style.display = 'none';
-            resultCard.style.display = 'none';
-            resLinks.innerHTML = '';
-
-            // كود الإعداد النظيف لـ Cobalt
-            const cobaltBody = {
+            // إرسال البيانات كـ JSON للبوت لإشعال حدث web_app_data
+            tg.sendData(JSON.stringify({
+                action: "download_media",
                 url: videoUrl,
-                downloadMode: mode === 'audio' ? 'audio' : 'auto',
-                filenameStyle: 'basic'
-            };
-            if (mode === 'video' && quality !== 'max') {
-                cobaltBody.videoQuality = quality;
-            }
+                mode: mode,
+                quality: quality
+            }));
 
-            // مصفوفة ذكية لخلط محركات مختلفة تماماً (تيك ووم + كوبالت)
-            const processors = [];
-
-            // 1. لو الرابط تيك توك، نضع محرك TikWm كأولوية قصوى لأنه مستقر جداً وخالي من الـ CORS
-            if (videoUrl.includes('tiktok.com')) {
-                processors.push({
-                    name: "محرك تيك توك العالمي المستقر (TikWm)",
-                    action: async () => {
-                        const tikResponse = await fetch(`https://api.tikwm.com/api/?url=${encodeURIComponent(videoUrl)}`);
-                        if (!tikResponse.ok) throw new Error(`كود: ${tikResponse.status}`);
-                        const json = await tikResponse.json();
-                        if (json.code === 0 && json.data) {
-                            return {
-                                url: mode === 'audio' ? json.data.music : json.data.play,
-                                title: json.data.title || 'فيديو تيك توك جاهز'
-                            };
-                        }
-                        throw new Error(json.msg || 'لم يتم العثور على ميديا في الرابط');
-                    }
-                });
-            }
-
-            // 2. محرك Cobalt الاحتياطي الأول (Ion) اتصال مباشر صافي بدون وسيط
-            processors.push({
-                name: "محرك كوانتم المباشر الأول (Cobalt-Ion)",
-                action: async () => {
-                    const res = await fetch('https://cobalt.ion.tw', {
-                        method: 'POST',
-                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                        body: JSON.stringify(cobaltBody)
-                    });
-                    if (!res.ok) throw new Error(`كود: ${res.status}`);
-                    const data = await res.json();
-                    if (data.url || data.status === 'stream' || data.status === 'redirect') {
-                        return { url: data.url, title: data.text || 'ملف ميديا مستخرج بنجاح' };
-                    }
-                    throw new Error('السيرفر لم يرجع رابط صريح');
-                }
-            });
-
-            // 3. محرك Cobalt الاحتياطي الثاني (Shinchon)
-            processors.push({
-                name: "محرك كوانتم المباشر الثاني (Cobalt-Shin)",
-                action: async () => {
-                    const res = await fetch('https://cobalt.shinchon.store', {
-                        method: 'POST',
-                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-                        body: JSON.stringify(cobaltBody)
-                    });
-                    if (!res.ok) throw new Error(`كود: ${res.status}`);
-                    const data = await res.json();
-                    if (data.url || data.status === 'stream' || data.status === 'redirect') {
-                        return { url: data.url, title: data.text || 'ملف ميديا مستخرج بنجاح' };
-                    }
-                    throw new Error('السيرفر لم يرجع رابط صريح');
-                }
-            });
-
-            let successResult = null;
-            let errorLogs = '';
-
-            // الدوران الأوتوماتيكي والتبديل الذاتي الفوري بين المحركات
-            for (let i = 0; i < processors.length; i++) {
-                const currentProcessor = processors[i];
-                try {
-                    loader.innerHTML = `⏳ جاري المحاولة عبر:<br><span style='color: #fff;'>${currentProcessor.name}</span>...`;
-                    const resData = await currentProcessor.action();
-                    if (resData && resData.url) {
-                        successResult = resData;
-                        break; // خروج فوراً عند نجاح أي محرك
-                    }
-                } catch (err) {
-                    console.warn(`${currentProcessor.name} فشل:`, err.message);
-                    errorLogs += `• [${currentProcessor.name}]: ${err.message}<br>`;
-                }
-            }
-
-            // عرض النتائج بناءً على نجاح أو فشل المصفوفة كاملة
-            if (successResult) {
-                document.getElementById('mediaIcon').innerText = mode === 'audio' ? '🎵' : '🎥';
-                document.getElementById('resTitle').innerText = successResult.title;
-
-                // 1. زر التحميل الفوري للموبايل
-                const btnDirect = document.createElement('button');
-                btnDirect.className = 'dl-btn';
-                btnDirect.innerText = "📥 بدء التحميل الفوري على جهازك";
-                btnDirect.onclick = function() { tg.openLink(successResult.url); };
-                resLinks.appendChild(btnDirect);
-
-                // 2. زر إرسال الرابط للبوت
-                const btnShareBot = document.createElement('button');
-                btnShareBot.className = 'dl-btn share-bot';
-                btnShareBot.innerText = "💬 إرسال الرابط إلى شات البوت";
-                btnShareBot.onclick = function() {
-                    tg.sendData(JSON.stringify({
-                        action: "share_download_link",
-                        download_url: successResult.url,
-                        title: successResult.title
-                    }));
-                };
-                resLinks.appendChild(btnShareBot);
-
-                loader.style.display = 'none';
-                resultCard.style.display = 'block';
-            } else {
-                loader.style.display = 'none';
-                errorMsg.innerHTML = `⚠️ **فشلت مصفوفة المحركات بالكامل في استخراج الرابط**<br><div style='text-align:right; font-size:11px; margin-top:8px; color:#aaa; line-height:1.5;'>التفاصيل البنائية:<br>${errorLogs}</div>`;
-                errorMsg.style.display = 'block';
-            }
+            // قفل الميني أب فوراً عشان اليوزر يشوف الشات
+            tg.close();
         });
 
         function goHome() {
@@ -419,4 +199,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
