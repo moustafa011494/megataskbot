@@ -29,7 +29,7 @@
         .btn-green { background: var(--main-green); color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-green:active { transform: scale(0.95); }
 
-        /* زر جمع الأرباح المضاف بجوار كل صديق */
+        /* زر جمع أرباح المهام */
         .btn-claim {
             background: var(--main-green);
             color: #000;
@@ -80,9 +80,9 @@
 <body>
 
     <div class="total-earnings">
-        <h3>إجمالي العائد من الدعوات 💎</h3>
+        <h3>إجمالي العائد من المهام 💎</h3>
         <div class="amount" id="total-comm">0</div>
-        <small style="color: var(--text-gray);">نقاط مكتسبة من الأصدقاء</small>
+        <small style="color: var(--text-gray);">10% عمولة من مهام الأصدقاء فقط</small>
     </div>
 
     <div id="register-section">
@@ -150,9 +150,10 @@
         }
 
         async function loadMyInvites() {
+            // جلب المستخدمين المدعوين مع سحب أرباح المهام فقط
             const { data, error } = await client
                 .from('users')
-                .select('telegram_id, name, total_earned')
+                .select('*')
                 .eq('referred_by', tid);
 
             const container = document.getElementById('history');
@@ -165,8 +166,9 @@
             const claimedMap = JSON.parse(localStorage.getItem(`claimed_refs_${tid}`) || "{}");
 
             data?.forEach(u => {
-                const earned = u.total_earned || 0; 
-                const commissionFromThisFriend = Math.floor(earned * 0.1); 
+                // الحسبة فقط على أرباح المهام (task_earnings) وتجاهل الهدية اليومية وبونص الدعوات
+                const taskEarnings = Number(u.task_earnings || 0);
+                const commissionFromThisFriend = Math.floor(taskEarnings * 0.1); 
                 totalCommissionSum += commissionFromThisFriend;
 
                 const friendId = String(u.telegram_id || u.name);
@@ -191,7 +193,7 @@
                         
                         <div class="user-info" style="text-align: right; flex: 1;">
                             <b style="color: white; font-size: 14px;">${u.name}</b>
-                            <small style="color: var(--text-gray);">عمولة 10% (دائمة) 💎</small>
+                            <small style="color: var(--text-gray);">أرباح مهامه: ${taskEarnings.toLocaleString()} (عمولتك 10%) 💎</small>
                         </div>
                     </div>`;
             });
@@ -201,10 +203,10 @@
         }
 
         function alertNoPoints(friendName) {
-            tg.showAlert(`ℹ️ صديقك (${friendName}) لم يحقق أرباحاً بعد (أرباحه 0 نقطة).\nعندما يشاهد إعلانات أو ينجز مهام، ستظهر لك عمولتك 10% هنا لتجمعها فوراً!`);
+            tg.showAlert(`ℹ️ صديقك (${friendName}) لم ينجز أي مهام حتى الآن.\nتُحتسب لك عمولة 10% تلقائياً فقط من النقاط التي يكتسبها صديقك من تنفيذ المهام.`);
         }
 
-        // جمع النقاط وحفظها في رصيد المستخدم الأساسي في Supabase
+        // جمع النقاط الناتجة عن مهام الصديق وإضافتها لرصيدك
         async function claimFromFriend(friendId, friendName, amount, btn) {
             if (!myData || amount <= 0) return;
 
@@ -231,7 +233,7 @@
                 btn.className = "btn-claim claimed";
                 btn.innerText = "تم الجمع ✅";
 
-                tg.showAlert(`🎉 مبروك! تم جمع +${amount} نقطة بنجاح من الصديق (${friendName}) وإضافتها لرصيدك الرئيسي!`);
+                tg.showAlert(`🎉 مبروك! تم جمع +${amount} نقطة من مهام صديقك (${friendName}) وإضافتها لرصيدك الرئيسي!`);
             } else {
                 btn.disabled = false;
                 btn.innerText = `📥 جمع +${amount}`;
@@ -291,7 +293,6 @@
             window.open(`https://t.me/share/url?url=${url}&text=${encodeURIComponent("سجل في MegaTask واكسب نقاط حقيقية! 🚀")}`);
         }
 
-        // دوال تنقل مجهزة بمانع كاش لضمان تحديث الواجهات فورياً
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
         function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
