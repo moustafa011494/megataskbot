@@ -17,7 +17,7 @@
         .header h2 { margin: 0; font-size: 22px; color: var(--main-green); }
         .header p { margin: 5px 0 0; font-size: 13px; color: var(--text-gray); }
 
-        /* صندوق الإيميل المولد */
+        /* صندوق الإيميل */
         .email-box { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.05); }
         .email-display { background: #000; border: 1px solid #333; border-radius: 12px; padding: 12px 10px; font-size: 14px; color: var(--main-green); font-weight: bold; margin: 10px 0 15px; word-break: break-all; user-select: all; }
         
@@ -26,10 +26,10 @@
         .btn:active { transform: scale(0.96); }
         .btn-secondary { background: #252932; color: white; border: 1px solid #333842; }
 
-        /* صندوق الوارد */
+        /* شريط صندوق الوارد */
         .inbox-header { display: flex; justify-content: space-between; align-items: center; margin: 25px 5px 12px; }
         .inbox-header h3 { margin: 0; font-size: 16px; color: white; }
-        .auto-refresh { font-size: 11px; color: var(--text-gray); }
+        .btn-refresh-manual { background: none; border: 1px solid #333842; color: var(--main-green); font-size: 11px; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
         .messages-list { display: flex; flex-direction: column; gap: 10px; }
         .msg-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 15px; padding: 15px; cursor: pointer; transition: 0.2s; text-align: right; }
@@ -72,14 +72,14 @@
 
     <div class="inbox-header">
         <h3>صندوق الوارد (الواردات) 📥</h3>
-        <span class="auto-refresh" id="refresh-status">تحديث تلقائي مستمر ⚡</span>
+        <button class="btn-refresh-manual" onclick="manualRefresh()">🔄 تحديث الآن</button>
     </div>
 
     <div id="messages-container" class="messages-list">
-        <div class="empty-inbox">⏳ بانتظار وصول رسائل أو أكواد التفعيل...</div>
+        <div id="empty-inbox-msg" class="empty-inbox">⏳ بانتظار وصول رسائل أو أكواد التفعيل...</div>
     </div>
 
-    <!-- نافذة قراءة محتوى الرسالة -->
+    <!-- نافذة قراءة الرسالة -->
     <div id="mail-modal">
         <div class="modal-body">
             <h4 class="modal-title" id="m-subject">الموضوع</h4>
@@ -106,11 +106,14 @@
         let currentAccount = null;
         let pollTimer = null;
         let isFetching = false;
-        let inboxCache = [];
-        let lastRenderedSignature = "";
+        let storedMessages = {};
+
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
 
         async function initMail() {
-            const savedData = localStorage.getItem('temp_mail_stable_v4');
+            const savedData = localStorage.getItem('temp_mail_account_v5');
             if (savedData) {
                 try {
                     currentAccount = JSON.parse(savedData);
@@ -124,36 +127,30 @@
             }
 
             if (pollTimer) clearInterval(pollTimer);
-            pollTimer = setInterval(fetchMessages, 3500);
+            pollTimer = setInterval(fetchMessages, 6000);
         }
 
-        // نافذة التأكيد قبل إنشاء بريد جديد
         function confirmNewEmail() {
-            const warningMsg = "⚠️ هل أنت متأكد من إنشاء بريد جديد؟\n\nسيتم حذف البريد الحالي وصندوق الرسائل الواردة نهائياً ولن تتمكن من استرجاعهما.";
-
+            const warningMsg = "⚠️ هل أنت متأكد من إنشاء بريد جديد؟\n\nسيتم حذف البريد الحالي وصندوق الرسائل الواردة نهائياً.";
             if (tg.showConfirm) {
                 tg.showConfirm(warningMsg, (confirmed) => {
-                    if (confirmed) {
-                        generateNewEmail();
-                    }
+                    if (confirmed) generateNewEmail();
                 });
             } else {
-                if (confirm(warningMsg)) {
-                    generateNewEmail();
-                }
+                if (confirm(warningMsg)) generateNewEmail();
             }
         }
 
-        // توليد بريد جديد
         async function generateNewEmail() {
             const display = document.getElementById('active-email');
             display.innerText = "⏳ جاري توليد بريد جديد...";
-            inboxCache = [];
-            lastRenderedSignature = "";
-            document.getElementById('messages-container').innerHTML = 
-                '<div class="empty-inbox">⏳ بانتظار وصول رسائل أو أكواد التفعيل...</div>';
 
-            // 1. محرك DropMail GraphQL
+            // تفريغ الرسائل عند طلب إيميل جديد فقط
+            storedMessages = {};
+            const container = document.getElementById('messages-container');
+            container.innerHTML = '<div id="empty-inbox-msg" class="empty-inbox">⏳ بانتظار وصول رسائل أو أكواد التفعيل...</div>';
+
+            // 1. تجربة DropMail
             try {
                 const res = await fetch("https://dropmail.me/api/graphql/web-test-20140228", {
                     method: "POST",
@@ -172,17 +169,17 @@
                             id: sess.id,
                             address: sess.addresses[0].address
                         };
-                        localStorage.setItem('temp_mail_stable_v4', JSON.stringify(currentAccount));
+                        localStorage.setItem('temp_mail_account_v5', JSON.stringify(currentAccount));
                         display.innerText = currentAccount.address;
                         tg.showAlert("✅ تم إنشاء بريد مؤقت جديد بنجاح!");
                         return;
                     }
                 }
             } catch (err1) {
-                console.warn("DropMail unavailable, switching to Guerrilla Mail...", err1);
+                console.warn("DropMail fallback trigger:", err1);
             }
 
-            // 2. محرك Guerrilla Mail REST API
+            // 2. بديل Guerrilla Mail
             try {
                 const res = await fetch("https://api.guerrillamail.com/ajax.php?f=get_email_address");
                 if (res.ok) {
@@ -193,20 +190,26 @@
                             token: data.sid_token,
                             address: data.email_addr
                         };
-                        localStorage.setItem('temp_mail_stable_v4', JSON.stringify(currentAccount));
+                        localStorage.setItem('temp_mail_account_v5', JSON.stringify(currentAccount));
                         display.innerText = currentAccount.address;
                         tg.showAlert("✅ تم إنشاء بريد مؤقت جديد بنجاح!");
                         return;
                     }
                 }
             } catch (err2) {
-                console.error("Guerrilla Mail error:", err2);
+                console.error("Guerrilla fallback error:", err2);
             }
 
             display.innerText = "❌ تعذر الاتصال، اضغط (إيميل جديد) للمحاولة";
         }
 
-        // فحص صندوق الوارد
+        async function manualRefresh() {
+            const btn = document.querySelector('.btn-refresh-manual');
+            btn.innerText = "⏳ جاري الفحص...";
+            await fetchMessages();
+            setTimeout(() => { btn.innerText = "🔄 تحديث الآن"; }, 800);
+        }
+
         async function fetchMessages() {
             if (!currentAccount || !currentAccount.address || isFetching) return;
             isFetching = true;
@@ -228,13 +231,13 @@
                             id: String(m.id),
                             from: m.fromAddr,
                             subject: m.headerSubject || "(بدون عنوان)",
-                            snippet: m.text ? m.text.slice(0, 75) : "اضغط لقراءة الرسالة...",
+                            snippet: m.text ? m.text.slice(0, 80) : "اضغط لقراءة الرسالة...",
                             date: new Date(m.receivedAt * 1000 || m.receivedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
                             fullDate: new Date(m.receivedAt * 1000 || m.receivedAt).toLocaleString('ar-EG'),
                             html: m.html,
                             text: m.text
                         }));
-                        updateInbox(formatted);
+                        displayMessages(formatted);
                     }
                 } else if (currentAccount.provider === "guerrilla") {
                     const res = await fetch(`https://api.guerrillamail.com/ajax.php?f=get_email_list&offset=0&sid_token=${currentAccount.token}`);
@@ -251,59 +254,60 @@
                             html: null,
                             text: null
                         }));
-                        updateInbox(formatted);
+                        displayMessages(formatted);
                     }
                 }
             } catch (e) {
-                console.warn("Poll warning:", e);
+                console.warn("Fetch poll error:", e);
             } finally {
                 isFetching = false;
             }
         }
 
-        // تحديث الصندوق الذكي بدون وميض
-        function updateInbox(incomingList) {
-            if (incomingList && incomingList.length > 0) {
-                incomingList.forEach(incoming => {
-                    const idx = inboxCache.findIndex(m => m.id === incoming.id);
-                    if (idx === -1) {
-                        inboxCache.unshift(incoming);
-                    } else {
-                        inboxCache[idx] = Object.assign(inboxCache[idx], incoming);
-                    }
-                });
-            }
-
-            const currentSignature = inboxCache.map(m => m.id).join("|");
-            if (currentSignature === lastRenderedSignature) {
-                return;
-            }
-            lastRenderedSignature = currentSignature;
-
+        // دالة العرض الذكية: لا تمسح ولا تعدل أي عنصر موجود بالفعل
+        function displayMessages(incomingList) {
             const container = document.getElementById('messages-container');
-            if (inboxCache.length === 0) {
-                container.innerHTML = '<div class="empty-inbox">⏳ بانتظار وصول رسائل أو أكواد التفعيل...</div>';
+            const emptyBox = document.getElementById('empty-inbox-msg');
+
+            if (!incomingList || incomingList.length === 0) {
+                if (container.querySelectorAll('.msg-card').length === 0 && emptyBox) {
+                    emptyBox.style.display = 'block';
+                }
                 return;
             }
 
-            container.innerHTML = "";
-            inboxCache.forEach(msg => {
-                container.innerHTML += `
-                    <div class="msg-card" onclick="openMessage('${msg.id}')">
-                        <div class="msg-sender">
-                            <span>${msg.from}</span>
-                            <span class="msg-date">${msg.date}</span>
-                        </div>
-                        <div class="msg-subject">✉️ <b>${msg.subject}</b></div>
-                        <div class="msg-snippet">${msg.snippet}</div>
+            if (emptyBox) {
+                emptyBox.style.display = 'none';
+            }
+
+            incomingList.forEach(msg => {
+                const cardId = `msg-card-${msg.id}`;
+                storedMessages[String(msg.id)] = msg;
+
+                // إذا كانت الرسالة موجودة بالفعل على الشاشة لا نلمسها نهائياً
+                if (document.getElementById(cardId)) {
+                    return;
+                }
+
+                // إضافة الرسالة الجديدة في أول القائمة
+                const card = document.createElement('div');
+                card.id = cardId;
+                card.className = 'msg-card';
+                card.onclick = () => openMessage(msg.id);
+                card.innerHTML = `
+                    <div class="msg-sender">
+                        <span>${escapeHtml(msg.from)}</span>
+                        <span class="msg-date">${escapeHtml(msg.date)}</span>
                     </div>
+                    <div class="msg-subject">✉️ <b>${escapeHtml(msg.subject)}</b></div>
+                    <div class="msg-snippet">${escapeHtml(msg.snippet)}</div>
                 `;
+                container.prepend(card);
             });
         }
 
-        // فتح وعرض تفاصيل الرسالة
         async function openMessage(msgId) {
-            const msg = inboxCache.find(m => m.id === String(msgId));
+            const msg = storedMessages[String(msgId)];
             if (!msg) return;
 
             document.getElementById('m-subject').innerText = msg.subject;
@@ -343,7 +347,6 @@
             tg.showAlert("✅ تم نسخ الإيميل المؤقت للحافظة بنجاح!");
         }
 
-        // دوال التنقل
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
