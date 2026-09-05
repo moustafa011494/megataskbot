@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MegaTask - مشاهدة الإعلان</title>
+    
+    <!-- كود إعلانات Monetag الخاص بك -->
+    <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <style>
+        :root {
+            --main-green: #00d26a;
+            --dark-bg: #0d0f12;
+            --card-bg: #1a1d23;
+            --text-gray: #9ca3af;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+        .ad-card {
+            background: var(--card-bg);
+            border: 1px solid #2d333d;
+            border-radius: 25px;
+            padding: 35px 25px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 0 25px rgba(0, 210, 106, 0.1);
+        }
+        .icon { font-size: 55px; margin-bottom: 15px; }
+        h2 { color: var(--main-green); margin-bottom: 10px; font-size: 22px; }
+        p { color: var(--text-gray); font-size: 13px; line-height: 1.6; margin-bottom: 25px; }
+        .btn-ad {
+            background: var(--main-green);
+            color: black;
+            border: none;
+            padding: 16px 25px;
+            border-radius: 14px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .btn-ad:active { transform: scale(0.97); }
+        .status { margin-top: 15px; font-size: 13px; color: #ffc107; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="ad-card">
+        <div class="icon">🎁</div>
+        <h2>فك قفل التحميل</h2>
+        <p>شاهد إعلاناً قصيراً لفك تشفير المحتوى ودعم استمرار سيرفرات التحميل المجانية، وسيتم إرسال الملف لشات البوت فوراً.</p>
+        
+        <button class="btn-ad" id="adBtn" onclick="triggerAd()">📺 بدء مشاهدة الإعلان الآن</button>
+        <div class="status" id="statusMsg">جاري تشغيل الإعلان...</div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const params = new URLSearchParams(window.location.search);
+        const sessionId = params.get('session') || "";
+        const mode = params.get('mode') || "normal";
+
+        function triggerAd() {
+            const statusMsg = document.getElementById('statusMsg');
+            const adBtn = document.getElementById('adBtn');
+            
+            statusMsg.style.display = "block";
+            adBtn.disabled = true;
+            adBtn.style.opacity = "0.5";
+
+            if (typeof show_10959333 === 'function') {
+                show_10959333().then(() => {
+                    statusMsg.innerText = "✅ تم التحقق بنجاح! جاري إرسال الإشارة للبوت...";
+                    
+                    // إرسال تأكيد مشاهدة الإعلان للبوت
+                    tg.sendData(JSON.stringify({
+                        action: "ad_reward_complete",
+                        session_id: sessionId,
+                        mode: mode
+                    }));
+
+                    // استدعاء احتياطي لـ Flask
+                    fetch(`https://moustafa011494.pythonanywhere.com/api/ad_done?session=${sessionId}&mode=${mode}`).catch(() => {});
+                    
+                    setTimeout(() => tg.close(), 1000);
+                }).catch((err) => {
+                    console.error("Ad error:", err);
+                    statusMsg.innerText = "⚠️ تعذر تشغيل الإعلان، جاري تحويلك للتحميل المباشر...";
+                    tg.sendData(JSON.stringify({
+                        action: "ad_reward_complete",
+                        session_id: sessionId,
+                        mode: mode
+                    }));
+                    setTimeout(() => tg.close(), 1200);
+                });
+            } else {
+                statusMsg.innerText = "⚠️ نظام الإعلانات قيد التحديث، جاري بدء التنزيل...";
+                tg.sendData(JSON.stringify({
+                    action: "ad_reward_complete",
+                    session_id: sessionId,
+                    mode: mode
+                }));
+                setTimeout(() => tg.close(), 1200);
+            }
+        }
+    </script>
+</body>
+</html>
