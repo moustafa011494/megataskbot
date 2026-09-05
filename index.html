@@ -26,10 +26,20 @@
         .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--main-green); }
         
         .action-box { margin: 0 15px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-action { background: var(--card-bg); color: white; border: 1px solid #333; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 13px; }
+        .btn-action { background: var(--card-bg); color: white; border: 1px solid #333; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 13px; transition: 0.2s; }
+        .btn-action:active { transform: scale(0.97); }
         .btn-ads { background: linear-gradient(90deg, #00d26a, #009e4f); color: black; border: none; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.3); }
-        .btn-offers { background: #ff0055; color: white; grid-column: span 2; border: none; }
+        
+        /* زر عروض CPA بنمط قريباً */
+        .btn-offers { 
+            background: rgba(255, 0, 85, 0.08); 
+            color: #ff4d79; 
+            grid-column: span 2; 
+            border: 1px dashed #ff0055; 
+            opacity: 0.75;
+        }
 
+        /* ستايل خدمات MegaTask المطور */
         .services-section { padding: 0 15px; margin-top: 25px; text-align: right; }
         .service-title { color: var(--main-green); font-size: 14px; margin: 0 0 15px 0; border-right: 3px solid var(--main-green); padding-right: 10px; }
         .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -92,7 +102,7 @@
     <div class="action-box">
         <div class="btn-action" onclick="claimDaily()" id="claimBtn">🎁 Daily Reward</div>
         <div class="btn-action btn-ads" onclick="showAd()">📺 Watch & Earn</div>
-        <div class="btn-action btn-offers" onclick="goOffers()">🔥 عروض CPA (نقاط عالية)</div>
+        <div class="btn-action btn-offers" onclick="showSoon('عروض CPA')">🎯 عروض CPA (قريباً..)</div>
     </div>
 
     <div class="services-section">
@@ -113,7 +123,7 @@
             <div class="btn-service" onclick="goVirtualNumbers()">
                 <span>📱</span>أرقام وهمية
             </div>
-            <div class="btn-service" style="opacity: 0.6; border-style: dashed;">
+            <div class="btn-service" onclick="showSoon('الخدمة الإضافية')" style="opacity: 0.6; border-style: dashed;">
                 <span>🎯</span>قريباً..
             </div>
         </div>
@@ -135,6 +145,7 @@
 
         let userId = "";
         let userData = null;
+        let countdownTimer = null;
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
@@ -148,7 +159,7 @@
             } else {
                 userData = user;
                 updateUI();
-                checkDailyStatus();
+                startDailyCountdown();
             }
         }
 
@@ -195,48 +206,122 @@
                 userData = data;
                 document.getElementById('ref-modal').style.display = 'none';
                 updateUI();
+                startDailyCountdown();
             }
         }
 
         function updateUI() {
-            document.getElementById('user-points').innerText = userData.points.toLocaleString();
-            document.getElementById('balance-short').innerText = userData.points >= 1000 ? (userData.points/1000).toFixed(1) + 'k' : userData.points;
+            document.getElementById('user-points').innerText = (userData.points || 0).toLocaleString();
+            document.getElementById('balance-short').innerText = userData.points >= 1000 ? (userData.points/1000).toFixed(1) + 'k' : (userData.points || 0);
             document.getElementById('user-streak').innerText = (userData.streak || 0) + "d";
             document.getElementById('tasks-done').innerText = userData.total_tasks || 0;
         }
 
-        function checkDailyStatus() {
-            if (!userData.last_claim) return;
-            const diff = (new Date() - new Date(userData.last_claim)) / (1000 * 60 * 60);
-            if (diff < 24) {
-                const btn = document.getElementById('claimBtn');
+        // فحص هل المستخدم استلم هدية اليوم
+        function hasClaimedToday(lastClaimIso) {
+            if (!lastClaimIso) return false;
+            const lastClaimDate = new Date(lastClaimIso);
+            const now = new Date();
+            return lastClaimDate.getFullYear() === now.getFullYear() &&
+                   lastClaimDate.getMonth() === now.getMonth() &&
+                   lastClaimDate.getDate() === now.getDate();
+        }
+
+        // حساب الستريك الجديد (لو كان أمس يزيد 1، لو تخطى يوم يعود لـ 1)
+        function calculateNewStreak(lastClaimIso, currentStreak) {
+            if (!lastClaimIso) return 1;
+            const lastClaimDate = new Date(lastClaimIso);
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            const isYesterday = lastClaimDate.getFullYear() === yesterday.getFullYear() &&
+                                lastClaimDate.getMonth() === yesterday.getMonth() &&
+                                lastClaimDate.getDate() === yesterday.getDate();
+
+            return isYesterday ? (currentStreak || 0) + 1 : 1;
+        }
+
+        // حساب الوقت المتبقي لمنتصف الليل (12:00 AM) لبداية اليوم الجديد
+        function getMidnightCountdown() {
+            const now = new Date();
+            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+            const diffMs = tomorrow - now;
+            
+            const hours = Math.floor(diffMs / (1000 * 60 * 60));
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+            return {
+                diffMs,
+                text: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+            };
+        }
+
+        // تشغيل عداد الوقت الحي على الزر
+        function startDailyCountdown() {
+            if (countdownTimer) clearInterval(countdownTimer);
+            updateDailyButton();
+            countdownTimer = setInterval(updateDailyButton, 1000);
+        }
+
+        function updateDailyButton() {
+            const btn = document.getElementById('claimBtn');
+            if (!userData) return;
+
+            if (hasClaimedToday(userData.last_claim)) {
+                const { text } = getMidnightCountdown();
                 btn.style.opacity = "0.5";
-                btn.innerText = "Next in " + Math.ceil(24-diff) + "h";
+                btn.style.pointerEvents = "none";
+                btn.innerText = `⏳ متاح بعد ${text}`;
+            } else {
+                btn.style.opacity = "1";
+                btn.style.pointerEvents = "auto";
+                const potentialStreak = calculateNewStreak(userData.last_claim, userData.streak || 0);
+                const potentialReward = 15 + (potentialStreak * 5);
+                btn.innerText = `🎁 مكافأة اليوم (+${potentialReward})`;
             }
         }
 
+        // تنفيذ استلام المكافأة مع زيادة الستريك والنقاط التصاعدية
         async function claimDaily() {
+            if (!userData) return;
+            if (hasClaimedToday(userData.last_claim)) {
+                tg.showAlert("⏳ استلمت مكافأة اليوم بالفعل! سيبدأ اليوم الجديد الساعة 12 منتصف الليل.");
+                return;
+            }
+
             const now = new Date();
+            const newStreak = calculateNewStreak(userData.last_claim, userData.streak || 0);
+            // معادلة المكافأة التصاعدية: 15 نقطة أساسية + 5 لكل يوم ستريك
+            const rewardPoints = 15 + (newStreak * 5);
+
             const { data, error } = await client.from('users').update({
-                points: userData.points + 15,
-                total_earned: (userData.total_earned || 0) + 15,
+                points: (userData.points || 0) + rewardPoints,
+                total_earned: (userData.total_earned || 0) + rewardPoints,
+                streak: newStreak,
                 last_claim: now.toISOString()
             }).eq('telegram_id', userId).select().single();
-            
-            if (!error) {
+
+            if (!error && data) {
                 userData = data;
                 updateUI();
-                checkDailyStatus();
-                tg.showAlert("🎁 تم الحصول على المكافأة اليومية!");
+                startDailyCountdown();
+                tg.showAlert(`🔥 عاش يا بطل!\nزدت في الستريك لليوم (${newStreak} أيام) وحصلت على ${rewardPoints} نقطة!`);
+            } else {
+                tg.showAlert("❌ حدث خطأ أثناء استلام المكافأة، يرجى المحاولة لاحقاً.");
             }
         }
 
+        function showSoon(sectionName) {
+            tg.showAlert(`🎯 قسم ${sectionName} قيد التجهيز والتطوير حالياً وسيتوفر قريباً بأعلى مكافآت!`);
+        }
+
+        // دوال التنقل
         function goHome() { window.location.href = `index.html?id=${userId}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
         function goInvite() { window.location.href = `invite.html?id=${userId}`; }
         function goProfile() { window.location.href = `profile.html?id=${userId}`; }
         function goWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
-        function goOffers() { window.location.href = `offers.html?id=${userId}`; }
         
         function goSocial() { window.location.href = `social.html?id=${userId}`; }
         function goMethods() { window.location.href = `methods.html?id=${userId}`; }
