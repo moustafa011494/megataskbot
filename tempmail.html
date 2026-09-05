@@ -60,7 +60,7 @@
 
     <div class="email-box">
         <span style="font-size: 12px; color: var(--text-gray);">عنوان البريد النشط الخاص بك:</span>
-        <div class="email-display" id="active-email">جاري إنشاء بريد...</div>
+        <div class="email-display" id="active-email">⏳ جاري الاتصال وتوليد البريد...</div>
         
         <div class="actions-grid">
             <button class="btn" onclick="copyEmail()">📋 نسخ الإيميل</button>
@@ -70,11 +70,11 @@
 
     <div class="inbox-header">
         <h3>صندوق الوارد (الواردات) 📥</h3>
-        <span class="auto-refresh" id="refresh-status">تحديث تلقائي كل 5 ثوانٍ</span>
+        <span class="auto-refresh" id="refresh-status">تحديث تلقائي مستمر ⚡</span>
     </div>
 
     <div id="messages-container" class="messages-list">
-        <div class="empty-inbox">⏳ بانتظار استلام أول رسالة أو كود تفعيل...</div>
+        <div class="empty-inbox">⏳ بانتظار وصول رسائل أو أكواد التفعيل...</div>
     </div>
 
     <!-- نافذة قراءة الرسالة -->
@@ -101,108 +101,143 @@
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
 
-        let currentLogin = "";
-        let currentDomain = "";
-        let pollInterval = null;
+        let currentAccount = null;
+        let pollTimer = null;
 
-        // تهيئة البريد: استرجاع الإيميل الحالي إن وجد أو توليد إيميل جديد
         async function initMail() {
-            const savedMail = localStorage.getItem('temp_mail_address');
-            if (savedMail && savedMail.includes('@')) {
-                const parts = savedMail.split('@');
-                currentLogin = parts[0];
-                currentDomain = parts[1];
-                document.getElementById('active-email').innerText = savedMail;
-                fetchMessages();
+            const savedData = localStorage.getItem('temp_mail_account');
+            if (savedData) {
+                try {
+                    currentAccount = JSON.parse(savedData);
+                    document.getElementById('active-email').innerText = currentAccount.address;
+                    fetchMessages();
+                } catch (e) {
+                    await generateNewEmail();
+                }
             } else {
                 await generateNewEmail();
             }
 
-            // فحص البريد تلقائياً كل 5 ثوانٍ
-            if (pollInterval) clearInterval(pollInterval);
-            pollInterval = setInterval(fetchMessages, 5000);
+            if (pollTimer) clearInterval(pollTimer);
+            pollTimer = setInterval(fetchMessages, 5000);
         }
 
-        // توليد بريد مؤقت جديد من السيرفر
         async function generateNewEmail() {
-            document.getElementById('active-email').innerText = "جاري إنشاء إيميل جديد...";
-            try {
-                const res = await fetch("https://www.1secmail.com/api/v1/?action=genRandomMailbox&count=1");
-                const data = await res.json();
-                if (data && data.length > 0) {
-                    const fullMail = data[0];
-                    const parts = fullMail.split('@');
-                    currentLogin = parts[0];
-                    currentDomain = parts[1];
+            const display = document.getElementById('active-email');
+            display.innerText = "⏳ جاري توليد بريد جديد...";
 
-                    localStorage.setItem('temp_mail_address', fullMail);
-                    document.getElementById('active-email').innerText = fullMail;
-                    
-                    document.getElementById('messages-container').innerHTML = 
-                        '<div class="empty-inbox">📬 تم تجهيز البريد بنجاح! في انتظار وصول الرسائل...</div>';
+            try {
+                // 1. جلب النطاقات المتاحة
+                const domainsRes = await fetch("https://api.mail.tm/domains");
+                const domainsData = await domainsRes.json();
+                const domainList = domainsData['hydra:member'];
+
+                if (!domainList || domainList.length === 0) {
+                    throw new Error("لا توجد نطاقات متاحة");
+                }
+
+                const domain = domainList[0].domain;
+                const randomUser = "mt_" + Math.random().toString(36).substring(2, 8) + Date.now().toString(36).slice(-3);
+                const address = `${randomUser}@${domain}`;
+                const password = "Pass_" + Math.random().toString(36).substring(2, 10);
+
+                // 2. إنشاء الحساب
+                const createRes = await fetch("https://api.mail.tm/accounts", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ address, password })
+                });
+
+                if (!createRes.ok) throw new Error("تعذر إنشاء الحساب");
+
+                // 3. الحصول على رمز المصادقة (Token)
+                const tokenRes = await fetch("https://api.mail.tm/token", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ address, password })
+                });
+
+                const tokenData = await tokenRes.json();
+                currentAccount = {
+                    address: address,
+                    token: tokenData.token
+                };
+
+                localStorage.setItem('temp_mail_account', JSON.stringify(currentAccount));
+                display.innerText = address;
+                
+                document.getElementById('messages-container').innerHTML = 
+                    '<div class="empty-inbox">📬 البريد جاهز بنجاح! في انتظار وصول أول رسالة...</div>';
+
+            } catch (err) {
+                console.error("Mail.tm generation error:", err);
+                display.innerText = "❌ حدث خطأ، اضغط على (إيميل جديد) لإعادة المحاولة";
+            }
+        }
+
+        async function fetchMessages() {
+            if (!currentAccount || !currentAccount.token) return;
+
+            try {
+                const res = await fetch("https://api.mail.tm/messages", {
+                    headers: { "Authorization": `Bearer ${currentAccount.token}` }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    renderMessages(data['hydra:member'] || []);
                 }
             } catch (err) {
-                document.getElementById('active-email').innerText = "حدث خطأ في الاتصال، اضغط إعادة المحاولة";
+                console.warn("Error checking messages:", err);
             }
         }
 
-        // جلب الرسائل الواردة
-        async function fetchMessages() {
-            if (!currentLogin || !currentDomain) return;
-
-            try {
-                const res = await fetch(`https://www.1secmail.com/api/v1/?action=getMessages&login=${currentLogin}&domain=${currentDomain}`);
-                const messages = await res.json();
-                renderMessages(messages);
-            } catch (err) {
-                console.warn("Error fetching inbox:", err);
-            }
-        }
-
-        // عرض قائمة الرسائل
         function renderMessages(messages) {
             const container = document.getElementById('messages-container');
 
             if (!messages || messages.length === 0) {
-                container.innerHTML = '<div class="empty-inbox">⏳ الصندوق فارغ حالياً، في انتظار وصول أي رسالة أو كود...</div>';
+                container.innerHTML = '<div class="empty-inbox">⏳ الصندوق فارغ حالياً، بانتظار استلام كود التفعيل أو الرسالة...</div>';
                 return;
             }
 
             container.innerHTML = "";
             messages.forEach(msg => {
+                const sender = msg.from ? (msg.from.name || msg.from.address) : "مرسل مجهول";
+                const timeStr = new Date(msg.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
                 container.innerHTML += `
-                    <div class="msg-card" onclick="openMessage(${msg.id})">
+                    <div class="msg-card" onclick="openMessage('${msg.id}')">
                         <div class="msg-sender">
-                            <span>${msg.from}</span>
-                            <span class="msg-date">${msg.date.split(" ")[1] || msg.date}</span>
+                            <span>${sender}</span>
+                            <span class="msg-date">${timeStr}</span>
                         </div>
                         <div class="msg-subject">✉️ <b>${msg.subject || "(بدون عنوان)"}</b></div>
-                        <div class="msg-snippet">اضغط هنا لفتح الرسالة وقراءة الكود بالكامل...</div>
+                        <div class="msg-snippet">${msg.intro || "اضغط لعرض الرسالة وقراءة الكود بالكامل..."}</div>
                     </div>
                 `;
             });
         }
 
-        // فتح وقراءة محتوى الرسالة
-        async function openMessage(mailId) {
+        async function openMessage(msgId) {
             try {
-                const res = await fetch(`https://www.1secmail.com/api/v1/?action=readMessage&login=${currentLogin}&domain=${currentDomain}&id=${mailId}`);
-                const full = await res.json();
+                const res = await fetch(`https://api.mail.tm/messages/${msgId}`, {
+                    headers: { "Authorization": `Bearer ${currentAccount.token}` }
+                });
 
+                const full = await res.json();
                 document.getElementById('m-subject').innerText = full.subject || "بدون عنوان";
-                document.getElementById('m-meta').innerText = `من: ${full.from} | التاريخ: ${full.date}`;
-                
-                // عرض محتوى الرسالة كنص أو كـ HTML
+                document.getElementById('m-meta').innerText = `من: ${full.from.address} | التاريخ: ${new Date(full.createdAt).toLocaleString('ar-EG')}`;
+
                 const bodyContainer = document.getElementById('m-body');
-                if (full.htmlBody) {
-                    bodyContainer.innerHTML = full.htmlBody;
+                if (full.html && full.html.length > 0) {
+                    bodyContainer.innerHTML = full.html.join('');
                 } else {
-                    bodyContainer.innerText = full.textBody || "الرسالة فارغة";
+                    bodyContainer.innerText = full.text || "الرسالة لا تحتوي على نص.";
                 }
 
                 document.getElementById('mail-modal').style.display = 'flex';
             } catch (err) {
-                tg.showAlert("❌ تعذر قراءة الرسالة، يرجى المحاولة ثانية.");
+                tg.showAlert("❌ تعذر فتح الرسالة، يرجى المحاولة مرة أخرى.");
             }
         }
 
@@ -214,10 +249,9 @@
             const email = document.getElementById('active-email').innerText;
             if (!email.includes('@')) return;
             navigator.clipboard.writeText(email);
-            tg.showAlert("✅ تم نسخ الإيميل المؤقت للحافظة!");
+            tg.showAlert("✅ تم نسخ الإيميل المؤقت بنجاح!");
         }
 
-        // دوال التنقل
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
