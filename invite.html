@@ -18,9 +18,9 @@
         .total-earnings h3 { margin: 0; font-size: 14px; color: var(--text-gray); }
         .total-earnings .amount { font-size: 32px; font-weight: bold; color: var(--main-green); margin: 10px 0; text-shadow: 0 0 10px rgba(0, 210, 106, 0.2); }
         
-        /* قسم تسجيل الكود */
+        /* قسم تسجيل الكود أو الرابط */
         #register-section { background: rgba(0, 210, 106, 0.05); border: 1px dashed var(--main-green); padding: 15px; border-radius: 15px; margin-bottom: 15px; display: none; text-align: center; }
-        .input-ref { width: 85%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); border-radius: 10px; text-align: center; margin-bottom: 10px; outline: none; font-weight: bold; }
+        .input-ref { width: 90%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); border-radius: 10px; text-align: center; margin-bottom: 10px; outline: none; font-size: 13px; font-weight: bold; }
 
         /* صندوق الدعوة */
         .invite-card { background: var(--card-bg); border-radius: 20px; padding: 15px; border: 1px solid #2d333d; margin-bottom: 15px; }
@@ -86,8 +86,8 @@
     </div>
 
     <div id="register-section">
-        <input type="number" id="input-promo" class="input-ref" placeholder="ادخل كود صديقك">
-        <button class="btn-green" style="width: 85%;" onclick="submitInvite()">تفعيل الكود ✅</button>
+        <input type="text" id="input-promo" class="input-ref" placeholder="الصق كود الدعوة أو رابط الصديق هنا">
+        <button class="btn-green" style="width: 90%;" onclick="submitInvite()">تفعيل الكود ✅</button>
     </div>
 
     <div class="stats-grid">
@@ -99,7 +99,7 @@
     <div class="invite-card">
         <span style="font-size: 12px; color: var(--text-gray);">رابط الدعوة الخاص بك</span>
         <div class="link-box">
-            <span id="ref-url">https://t.me/MegaTaskBot?start=...</span>
+            <span id="ref-url">https://t.me/MegaTask1Bot?start=...</span>
             <button class="btn-green" style="padding: 5px 12px; font-size: 12px;" onclick="copyLink()">نسخ</button>
         </div>
         <button class="btn-green" style="width: 100%; margin-top: 10px; background: none; border: 1px solid var(--main-green); color: var(--main-green);" onclick="shareLink()">مشاركة الرابط 📤</button>
@@ -126,6 +126,7 @@
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const BOT_TOKEN = "8487785406:AAHLd5lakTZH1xv1Kbc5-BktFNEHNV8AYck";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
@@ -133,11 +134,41 @@
         const botUser = "MegaTask1Bot";
         let myData = null;
 
+        // دالة إرسال إشعار مباشر في شات تيليجرام
+        async function sendTelegramMessage(chatId, text) {
+            try {
+                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: text,
+                        parse_mode: 'Markdown'
+                    })
+                });
+            } catch (err) {
+                console.error("Telegram notify error:", err);
+            }
+        }
+
+        // دالة استخراج الآيدي الذكي من الروابط أو الأكواد المباشرة
+        function extractRefCode(raw) {
+            if (!raw) return "";
+            raw = String(raw).trim();
+            // لو تم لصق رابط يحتوي على start= أو id=
+            const matchParam = raw.match(/(?:start|id)=([a-zA-Z0-9_-]+)/i);
+            if (matchParam && matchParam[1]) return matchParam[1].trim();
+            // استخراج الأرقام الطويلة (Telegram ID)
+            const matchDigits = raw.match(/\d{5,16}/);
+            if (matchDigits) return matchDigits[0];
+            return raw.replace(/[^\w-]/g, "");
+        }
+
         async function init() {
             const url = `https://t.me/${botUser}?start=${tid}`;
             document.getElementById('ref-url').innerText = url;
 
-            let { data: user } = await client.from('users').select('*').eq('telegram_id', tid).single();
+            let { data: user } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
             if (user) {
                 myData = user;
                 document.getElementById('total-comm').innerText = (user.total_ref_commission || 0).toLocaleString();
@@ -150,7 +181,6 @@
         }
 
         async function loadMyInvites() {
-            // جلب المستخدمين المدعوين مع سحب أرباح المهام فقط
             const { data, error } = await client
                 .from('users')
                 .select('*')
@@ -166,7 +196,6 @@
             const claimedMap = JSON.parse(localStorage.getItem(`claimed_refs_${tid}`) || "{}");
 
             data?.forEach(u => {
-                // الحسبة فقط على أرباح المهام (task_earnings) وتجاهل الهدية اليومية وبونص الدعوات
                 const taskEarnings = Number(u.task_earnings || 0);
                 const commissionFromThisFriend = Math.floor(taskEarnings * 0.1); 
                 totalCommissionSum += commissionFromThisFriend;
@@ -203,10 +232,9 @@
         }
 
         function alertNoPoints(friendName) {
-            tg.showAlert(`ℹ️ صديقك (${friendName}) لم ينجز أي مهام حتى الآن.\nتُحتسب لك عمولة 10% تلقائياً فقط من النقاط التي يكتسبها صديقك من تنفيذ المهام.`);
+            tg.showAlert(`ℹ️ صديقك (${friendName}) لم ينجز أي مهام بعد.\nعمولتك 10% تُحتسب فقط من النقاط التي يكتسبها من تنفيذ المهام.`);
         }
 
-        // جمع النقاط الناتجة عن مهام الصديق وإضافتها لرصيدك
         async function claimFromFriend(friendId, friendName, amount, btn) {
             if (!myData || amount <= 0) return;
 
@@ -269,21 +297,63 @@
             el.classList.add('active');
         }
 
+        // تفعيل الكود مع استخراج الآيدي الذكي وإرسال الإشعارات للطرفين
         async function submitInvite() {
-            const refCode = document.getElementById('input-promo').value.trim();
-            if (!refCode || refCode === tid) return tg.showAlert("❌ كود غير صالح!");
-            let { data: inviter } = await client.from('users').select('*').eq('telegram_id', refCode).single();
-            if (!inviter) return tg.showAlert("❌ هذا الكود غير موجود!");
+            const rawValue = document.getElementById('input-promo').value.trim();
+            const refCode = extractRefCode(rawValue);
 
-            const { error } = await client.from('users').update({ referred_by: refCode, points: myData.points + 100 }).eq('telegram_id', tid);
+            if (!refCode || refCode === tid) return tg.showAlert("❌ كود أو رابط غير صالح!");
+
+            let { data: inviter } = await client.from('users').select('*').eq('telegram_id', refCode).maybeSingle();
+            if (!inviter) return tg.showAlert("❌ هذا الكود / المستخدم غير مسجل بالنظام!");
+
+            const newPointsForMe = (myData.points || 0) + 100;
+            const newTotalForMe = (myData.total_earned || 0) + 100;
+
+            const { error } = await client.from('users').update({ 
+                referred_by: refCode, 
+                points: newPointsForMe,
+                total_earned: newTotalForMe
+            }).eq('telegram_id', tid);
+
             if (!error) {
+                // تحديث بيانات صاحب الدعوة
+                const inviterPoints = (inviter.points || 0) + 200;
+                const inviterTotal = (inviter.total_earned || 0) + 200;
+                const inviterCount = (inviter.invited_count || 0) + 1;
+                const inviterComm = (inviter.total_ref_commission || 0) + 200;
+
                 await client.from('users').update({ 
-                    points: inviter.points + 200, 
-                    invited_count: (inviter.invited_count || 0) + 1, 
-                    total_ref_commission: (inviter.total_ref_commission || 0) + 200 
+                    points: inviterPoints, 
+                    total_earned: inviterTotal,
+                    invited_count: inviterCount, 
+                    total_ref_commission: inviterComm 
                 }).eq('telegram_id', refCode);
-                tg.showAlert("✅ تم التفعيل بنجاح!");
+
+                const myName = myData.name || "مستخدم جديد";
+                const inviterName = inviter.name || "صديقك";
+
+                // 1. إرسال إشعار لصاحب الدعوة في شات البوت
+                const msgForInviter = 
+                    `🎉 *مستخدم جديد انضم من خلالك!*\n` +
+                    `━━━━━━━━━━━━━━━\n` +
+                    `👤 *الصديق:* ${myName}\n` +
+                    `🎁 *المكافأة:* +200 نقطة تمت إضافتها لرصيدك الآن!\n` +
+                    `💎 *العمولة:* ستحصل تلقائياً على 10% من جميع أرباح مهامه مستقبلاً.`;
+                sendTelegramMessage(refCode, msgForInviter);
+
+                // 2. إرسال إشعار للمستخدم الجديد في شات البوت
+                const msgForNewUser = 
+                    `🎉 *تم تفعيل كود الدعوة بنجاح!*\n` +
+                    `━━━━━━━━━━━━━━━\n` +
+                    `👤 *تمت دعوتك بواسطة:* ${inviterName}\n` +
+                    `🎁 *هدية التسجيل:* مبروك! حصلت على +100 نقطة في رصيدك الرئيسي.`;
+                sendTelegramMessage(tid, msgForNewUser);
+
+                tg.showAlert("✅ تم تفعيل الدعوة بنجاح وحصلت على +100 نقطة!");
                 location.reload();
+            } else {
+                tg.showAlert("❌ حدث خطأ أثناء تفعيل الكود، يرجى المحاولة لاحقاً.");
             }
         }
 
