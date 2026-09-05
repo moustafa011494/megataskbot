@@ -3,73 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - Coming Soon</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>Temp Mail - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { 
-            background-color: var(--dark-bg); 
-            color: white; 
-            font-family: 'Segoe UI', sans-serif; 
-            margin: 0; 
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
+        * { box-sizing: border-box; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 110px; }
+        
+        .header { text-align: center; padding: 10px 0 20px; }
+        .header h2 { margin: 0; font-size: 22px; color: var(--main-green); }
+        .header p { margin: 5px 0 0; font-size: 13px; color: var(--text-gray); }
 
-        /* تأثير النيون للتحميل */
-        .loader {
-            width: 80px;
-            height: 80px;
-            border: 4px solid #1a1d23;
-            border-top: 4px solid var(--main-green);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            box-shadow: 0 0 15px rgba(0, 210, 106, 0.2);
-            margin-bottom: 20px;
-        }
+        /* صندوق الإيميل المولد */
+        .email-box { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 15px; }
+        .email-display { background: #000; border: 1px solid #333; border-radius: 12px; padding: 12px 10px; font-size: 14px; color: var(--main-green); font-weight: bold; margin: 10px 0 15px; word-break: break-all; user-select: all; }
+        
+        .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn { background: var(--main-green); color: black; border: none; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn:active { transform: scale(0.96); }
+        .btn-secondary { background: #252932; color: white; border: 1px solid #333842; }
 
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* صندوق الوارد */
+        .inbox-header { display: flex; justify-content: space-between; align-items: center; margin: 25px 5px 12px; }
+        .inbox-header h3 { margin: 0; font-size: 16px; color: white; }
+        .auto-refresh { font-size: 11px; color: var(--text-gray); }
 
-        .content h1 { font-size: 28px; margin: 10px 0; color: var(--main-green); text-shadow: 0 0 10px rgba(0, 210, 106, 0.3); }
-        .content p { color: var(--text-gray); font-size: 14px; padding: 0 40px; line-height: 1.6; }
+        .messages-list { display: flex; flex-direction: column; gap: 10px; }
+        .msg-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 15px; padding: 15px; cursor: pointer; transition: 0.2s; }
+        .msg-card:active { border-color: var(--main-green); }
+        .msg-sender { font-size: 13px; font-weight: bold; color: var(--main-green); margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .msg-date { font-size: 10px; color: var(--text-gray); font-weight: normal; }
+        .msg-subject { font-size: 13px; color: white; margin-bottom: 4px; }
+        .msg-snippet { font-size: 11px; color: var(--text-gray); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        .btn-back {
-            margin-top: 30px;
-            background: transparent;
-            border: 1px solid var(--main-green);
-            color: var(--main-green);
-            padding: 12px 30px;
-            border-radius: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .btn-back:active { background: var(--main-green); color: black; }
+        .empty-inbox { text-align: center; padding: 40px 15px; color: var(--text-gray); font-size: 13px; line-height: 1.6; }
+
+        /* نافذة قراءة الرسالة */
+        #mail-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
+        .modal-body { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; width: 100%; max-height: 80vh; overflow-y: auto; text-align: right; }
+        .modal-title { font-size: 16px; color: var(--main-green); margin-bottom: 8px; }
+        .modal-meta { font-size: 11px; color: var(--text-gray); border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-content { font-size: 13px; line-height: 1.7; color: #ddd; word-break: break-word; }
+
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; cursor: pointer; text-decoration: none; }
+        .nav-item.active { color: var(--main-green); }
     </style>
 </head>
 <body>
 
-    <div class="loader"></div>
-
-    <div class="content">
-        <h1>Coming Soon..</h1>
-        <p>هذه الخدمة قيد التطوير حالياً ضمن تحديثات MegaTask القادمة. سيتم تفعيلها تلقائياً فور انتهاء البرمجة.</p>
+    <div class="header">
+        <h2>البريد المؤقت 📧</h2>
+        <p>أنشئ بريداً مؤقتاً لاستقبال رسائل وأكواد التفعيل فوراً</p>
     </div>
 
-    <button class="btn-back" onclick="goHome()">العودة للرئيسية</button>
+    <div class="email-box">
+        <span style="font-size: 12px; color: var(--text-gray);">عنوان البريد النشط الخاص بك:</span>
+        <div class="email-display" id="active-email">جاري إنشاء بريد...</div>
+        
+        <div class="actions-grid">
+            <button class="btn" onclick="copyEmail()">📋 نسخ الإيميل</button>
+            <button class="btn btn-secondary" onclick="generateNewEmail()">🔄 إيميل جديد</button>
+        </div>
+    </div>
+
+    <div class="inbox-header">
+        <h3>صندوق الوارد (الواردات) 📥</h3>
+        <span class="auto-refresh" id="refresh-status">تحديث تلقائي كل 5 ثوانٍ</span>
+    </div>
+
+    <div id="messages-container" class="messages-list">
+        <div class="empty-inbox">⏳ بانتظار استلام أول رسالة أو كود تفعيل...</div>
+    </div>
+
+    <!-- نافذة قراءة الرسالة -->
+    <div id="mail-modal">
+        <div class="modal-body">
+            <h4 class="modal-title" id="m-subject">الموضوع</h4>
+            <div class="modal-meta" id="m-meta">من: ...</div>
+            <div class="modal-content" id="m-body">المحتوى...</div>
+            <button class="btn" style="width: 100%; margin-top: 20px;" onclick="closeModal()">إغلاق النافذة</button>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
+        <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
+        <div onclick="goInvite()" class="nav-item">👥<br>أصدقاء</div>
+        <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
+    </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
-        const params = new URLSearchParams(window.location.search);
-        const userId = params.get('id');
+        tg.expand();
 
-        function goHome() {
-            window.location.href = `index.html?id=${userId}`;
+        const params = new URLSearchParams(window.location.search);
+        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+
+        let currentLogin = "";
+        let currentDomain = "";
+        let pollInterval = null;
+
+        // تهيئة البريد: استرجاع الإيميل الحالي إن وجد أو توليد إيميل جديد
+        async function initMail() {
+            const savedMail = localStorage.getItem('temp_mail_address');
+            if (savedMail && savedMail.includes('@')) {
+                const parts = savedMail.split('@');
+                currentLogin = parts[0];
+                currentDomain = parts[1];
+                document.getElementById('active-email').innerText = savedMail;
+                fetchMessages();
+            } else {
+                await generateNewEmail();
+            }
+
+            // فحص البريد تلقائياً كل 5 ثوانٍ
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(fetchMessages, 5000);
         }
+
+        // توليد بريد مؤقت جديد من السيرفر
+        async function generateNewEmail() {
+            document.getElementById('active-email').innerText = "جاري إنشاء إيميل جديد...";
+            try {
+                const res = await fetch("https://www.1secmail.com/api/v1/?action=genRandomMailbox&count=1");
+                const data = await res.json();
+                if (data && data.length > 0) {
+                    const fullMail = data[0];
+                    const parts = fullMail.split('@');
+                    currentLogin = parts[0];
+                    currentDomain = parts[1];
+
+                    localStorage.setItem('temp_mail_address', fullMail);
+                    document.getElementById('active-email').innerText = fullMail;
+                    
+                    document.getElementById('messages-container').innerHTML = 
+                        '<div class="empty-inbox">📬 تم تجهيز البريد بنجاح! في انتظار وصول الرسائل...</div>';
+                }
+            } catch (err) {
+                document.getElementById('active-email').innerText = "حدث خطأ في الاتصال، اضغط إعادة المحاولة";
+            }
+        }
+
+        // جلب الرسائل الواردة
+        async function fetchMessages() {
+            if (!currentLogin || !currentDomain) return;
+
+            try {
+                const res = await fetch(`https://www.1secmail.com/api/v1/?action=getMessages&login=${currentLogin}&domain=${currentDomain}`);
+                const messages = await res.json();
+                renderMessages(messages);
+            } catch (err) {
+                console.warn("Error fetching inbox:", err);
+            }
+        }
+
+        // عرض قائمة الرسائل
+        function renderMessages(messages) {
+            const container = document.getElementById('messages-container');
+
+            if (!messages || messages.length === 0) {
+                container.innerHTML = '<div class="empty-inbox">⏳ الصندوق فارغ حالياً، في انتظار وصول أي رسالة أو كود...</div>';
+                return;
+            }
+
+            container.innerHTML = "";
+            messages.forEach(msg => {
+                container.innerHTML += `
+                    <div class="msg-card" onclick="openMessage(${msg.id})">
+                        <div class="msg-sender">
+                            <span>${msg.from}</span>
+                            <span class="msg-date">${msg.date.split(" ")[1] || msg.date}</span>
+                        </div>
+                        <div class="msg-subject">✉️ <b>${msg.subject || "(بدون عنوان)"}</b></div>
+                        <div class="msg-snippet">اضغط هنا لفتح الرسالة وقراءة الكود بالكامل...</div>
+                    </div>
+                `;
+            });
+        }
+
+        // فتح وقراءة محتوى الرسالة
+        async function openMessage(mailId) {
+            try {
+                const res = await fetch(`https://www.1secmail.com/api/v1/?action=readMessage&login=${currentLogin}&domain=${currentDomain}&id=${mailId}`);
+                const full = await res.json();
+
+                document.getElementById('m-subject').innerText = full.subject || "بدون عنوان";
+                document.getElementById('m-meta').innerText = `من: ${full.from} | التاريخ: ${full.date}`;
+                
+                // عرض محتوى الرسالة كنص أو كـ HTML
+                const bodyContainer = document.getElementById('m-body');
+                if (full.htmlBody) {
+                    bodyContainer.innerHTML = full.htmlBody;
+                } else {
+                    bodyContainer.innerText = full.textBody || "الرسالة فارغة";
+                }
+
+                document.getElementById('mail-modal').style.display = 'flex';
+            } catch (err) {
+                tg.showAlert("❌ تعذر قراءة الرسالة، يرجى المحاولة ثانية.");
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('mail-modal').style.display = 'none';
+        }
+
+        function copyEmail() {
+            const email = document.getElementById('active-email').innerText;
+            if (!email.includes('@')) return;
+            navigator.clipboard.writeText(email);
+            tg.showAlert("✅ تم نسخ الإيميل المؤقت للحافظة!");
+        }
+
+        // دوال التنقل
+        function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
+
+        initMail();
     </script>
 </body>
 </html>
