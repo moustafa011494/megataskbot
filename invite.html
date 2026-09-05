@@ -26,6 +26,28 @@
         .btn-green { background: var(--main-green); color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-green:active { transform: scale(0.95); }
 
+        /* زر جمع الأرباح المضاف */
+        .btn-claim {
+            background: var(--main-green);
+            color: #000;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .btn-claim:active { transform: scale(0.95); }
+        .btn-claim.claimed {
+            background: #252932;
+            color: var(--text-gray);
+            cursor: not-allowed;
+            border: 1px solid #333842;
+            font-weight: normal;
+        }
+
         /* شبكة الإحصائيات */
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
         .stat-box { background: var(--card-bg); padding: 12px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
@@ -122,40 +144,92 @@
         }
 
         async function loadMyInvites() {
-    // جلب المدعوين مع قراءة "إجمالي ما كسبوه" وليس رصيدهم الحالي
-    const { data, error } = await client
-        .from('users')
-        .select('name, total_earned') // استخدمنا total_earned هنا
-        .eq('referred_by', tid);
+            const { data, error } = await client
+                .from('users')
+                .select('telegram_id, name, total_earned')
+                .eq('referred_by', tid);
 
-    const container = document.getElementById('history');
-    let totalCommissionSum = 0;
+            const container = document.getElementById('history');
+            let totalCommissionSum = 0;
 
-    if (error) return console.error(error);
+            if (error) return console.error(error);
 
-    container.innerHTML = (data && data.length) ? '' : '<p style="text-align:center; font-size:12px; color:gray; margin-top:20px;">لا يوجد مدعوين حتى الآن</p>';
+            container.innerHTML = (data && data.length) ? '' : '<p style="text-align:center; font-size:12px; color:gray; margin-top:20px;">لا يوجد مدعوين حتى الآن</p>';
 
-    data?.forEach(u => {
-        // الحسبة بناءً على الإجمالي التاريخي للمستخدم
-        const earned = u.total_earned || 0; 
-        const commissionFromThisFriend = Math.floor(earned * 0.1); 
-        totalCommissionSum += commissionFromThisFriend;
+            // قراءة المبالغ التي تم جمعها مسبقاً لكل صديق
+            const claimedMap = JSON.parse(localStorage.getItem(`claimed_refs_${tid}`) || "{}");
 
-        container.innerHTML += `
-            <div class="item-row" style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="color: var(--main-green); font-weight:bold; font-size: 16px;">+${commissionFromThisFriend.toLocaleString()}</div>
+            data?.forEach(u => {
+                const earned = u.total_earned || 0; 
+                const commissionFromThisFriend = Math.floor(earned * 0.1); 
+                totalCommissionSum += commissionFromThisFriend;
+
+                const friendId = String(u.telegram_id);
+                const alreadyClaimed = claimedMap[friendId] || 0;
+                const claimable = Math.max(0, commissionFromThisFriend - alreadyClaimed);
+
+                let actionButtonHtml = '';
+                if (commissionFromThisFriend === 0) {
+                    actionButtonHtml = `<button class="btn-claim claimed" disabled>0 نقطة</button>`;
+                } else if (claimable > 0) {
+                    actionButtonHtml = `<button class="btn-claim" onclick="claimFromFriend('${friendId}', ${claimable}, this)">جمع +${claimable}</button>`;
+                } else {
+                    actionButtonHtml = `<button class="btn-claim claimed" disabled>تم الجمع ✅</button>`;
+                }
+
+                container.innerHTML += `
+                    <div class="item-row" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            ${actionButtonHtml}
+                        </div>
+                        
+                        <div class="user-info" style="text-align: right; flex: 1;">
+                            <b style="color: white;">${u.name}</b>
+                            <small style="color: var(--text-gray);">العمولة الكلية: +${commissionFromThisFriend.toLocaleString()} (10%) 💎</small>
+                        </div>
+                    </div>`;
+            });
+
+            document.getElementById('total-comm').innerText = totalCommissionSum.toLocaleString();
+            document.getElementById('total-ref').innerText = data?.length || 0;
+        }
+
+        // دالة جمع النقاط وإضافتها لرصيد المستخدم في قاعدة البيانات
+        async function claimFromFriend(friendId, amount, btn) {
+            if (!myData || amount <= 0) return;
+
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري الجمع...";
+
+            const newPoints = (myData.points || 0) + amount;
+            const newTotalEarned = (myData.total_earned || 0) + amount;
+            const newTotalComm = (myData.total_ref_commission || 0) + amount;
+
+            const { data, error } = await client.from('users').update({
+                points: newPoints,
+                total_earned: newTotalEarned,
+                total_ref_commission: newTotalComm
+            }).eq('telegram_id', tid).select().single();
+
+            if (!error && data) {
+                myData = data;
+
+                // تحديث سجل الأرباح المجمعة
+                let claimedMap = JSON.parse(localStorage.getItem(`claimed_refs_${tid}`) || "{}");
+                claimedMap[friendId] = (claimedMap[friendId] || 0) + amount;
+                localStorage.setItem(`claimed_refs_${tid}`, JSON.stringify(claimedMap));
+
+                tg.showAlert(`🎉 مبروك! تم جمع +${amount} نقطة بنجاح وإضافتها إلى رصيدك الرئيسي.`);
                 
-                <div class="user-info" style="text-align: right;">
-                    <b style="color: white;">${u.name}</b>
-                    <small style="color: var(--text-gray);">عمولة 10% (دائمة) 💎</small>
-                </div>
-            </div>`;
-    });
-
-    // تحديث إجمالي العائد فوق
-    document.getElementById('total-comm').innerText = totalCommissionSum.toLocaleString();
-    document.getElementById('total-ref').innerText = data?.length || 0;
-}
+                btn.className = "btn-claim claimed";
+                btn.innerText = "تم الجمع ✅";
+            } else {
+                console.error(error);
+                btn.disabled = false;
+                btn.innerText = `جمع +${amount}`;
+                tg.showAlert("❌ حدث خطأ أثناء إضافة النقاط، يرجى المحاولة مرة أخرى.");
+            }
+        }
 
         async function loadLeaderboard() {
             const { data } = await client.from('users').select('name, invited_count').order('invited_count', { ascending: false }).limit(10);
