@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Temp Mail - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
@@ -16,7 +18,7 @@
         .header p { margin: 5px 0 0; font-size: 13px; color: var(--text-gray); }
 
         /* صندوق الإيميل المولد */
-        .email-box { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 15px; }
+        .email-box { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.05); }
         .email-display { background: #000; border: 1px solid #333; border-radius: 12px; padding: 12px 10px; font-size: 14px; color: var(--main-green); font-weight: bold; margin: 10px 0 15px; word-break: break-all; user-select: all; }
         
         .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -30,7 +32,7 @@
         .auto-refresh { font-size: 11px; color: var(--text-gray); }
 
         .messages-list { display: flex; flex-direction: column; gap: 10px; }
-        .msg-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 15px; padding: 15px; cursor: pointer; transition: 0.2s; }
+        .msg-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 15px; padding: 15px; cursor: pointer; transition: 0.2s; text-align: right; }
         .msg-card:active { border-color: var(--main-green); }
         .msg-sender { font-size: 13px; font-weight: bold; color: var(--main-green); margin-bottom: 4px; display: flex; justify-content: space-between; }
         .msg-date { font-size: 10px; color: var(--text-gray); font-weight: normal; }
@@ -77,7 +79,7 @@
         <div class="empty-inbox">⏳ بانتظار وصول رسائل أو أكواد التفعيل...</div>
     </div>
 
-    <!-- نافذة قراءة الرسالة -->
+    <!-- نافذة قراءة محتوى الرسالة -->
     <div id="mail-modal">
         <div class="modal-body">
             <h4 class="modal-title" id="m-subject">الموضوع</h4>
@@ -103,9 +105,10 @@
 
         let currentAccount = null;
         let pollTimer = null;
+        let storedMessages = {};
 
         async function initMail() {
-            const savedData = localStorage.getItem('temp_mail_account');
+            const savedData = localStorage.getItem('temp_mail_engine_v3');
             if (savedData) {
                 try {
                     currentAccount = JSON.parse(savedData);
@@ -119,126 +122,179 @@
             }
 
             if (pollTimer) clearInterval(pollTimer);
-            pollTimer = setInterval(fetchMessages, 5000);
+            pollTimer = setInterval(fetchMessages, 4000);
         }
 
+        // توليد بريد جديد مع محرك مزدوج (DropMail + Guerrilla)
         async function generateNewEmail() {
             const display = document.getElementById('active-email');
             display.innerText = "⏳ جاري توليد بريد جديد...";
 
+            // 1. المحرك الأساسي: DropMail GraphQL
             try {
-                // 1. جلب النطاقات المتاحة
-                const domainsRes = await fetch("https://api.mail.tm/domains");
-                const domainsData = await domainsRes.json();
-                const domainList = domainsData['hydra:member'];
-
-                if (!domainList || domainList.length === 0) {
-                    throw new Error("لا توجد نطاقات متاحة");
-                }
-
-                const domain = domainList[0].domain;
-                const randomUser = "mt_" + Math.random().toString(36).substring(2, 8) + Date.now().toString(36).slice(-3);
-                const address = `${randomUser}@${domain}`;
-                const password = "Pass_" + Math.random().toString(36).substring(2, 10);
-
-                // 2. إنشاء الحساب
-                const createRes = await fetch("https://api.mail.tm/accounts", {
+                const res = await fetch("https://dropmail.me/api/graphql/web-test-20140228", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ address, password })
-                });
-
-                if (!createRes.ok) throw new Error("تعذر إنشاء الحساب");
-
-                // 3. الحصول على رمز المصادقة (Token)
-                const tokenRes = await fetch("https://api.mail.tm/token", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ address, password })
-                });
-
-                const tokenData = await tokenRes.json();
-                currentAccount = {
-                    address: address,
-                    token: tokenData.token
-                };
-
-                localStorage.setItem('temp_mail_account', JSON.stringify(currentAccount));
-                display.innerText = address;
-                
-                document.getElementById('messages-container').innerHTML = 
-                    '<div class="empty-inbox">📬 البريد جاهز بنجاح! في انتظار وصول أول رسالة...</div>';
-
-            } catch (err) {
-                console.error("Mail.tm generation error:", err);
-                display.innerText = "❌ حدث خطأ، اضغط على (إيميل جديد) لإعادة المحاولة";
-            }
-        }
-
-        async function fetchMessages() {
-            if (!currentAccount || !currentAccount.token) return;
-
-            try {
-                const res = await fetch("https://api.mail.tm/messages", {
-                    headers: { "Authorization": `Bearer ${currentAccount.token}` }
+                    body: JSON.stringify({
+                        query: "mutation { introduceSession { id, addresses { address } } }"
+                    })
                 });
 
                 if (res.ok) {
-                    const data = await res.json();
-                    renderMessages(data['hydra:member'] || []);
+                    const json = await res.json();
+                    const sess = json.data?.introduceSession;
+                    if (sess && sess.addresses && sess.addresses.length > 0) {
+                        currentAccount = {
+                            provider: "dropmail",
+                            id: sess.id,
+                            address: sess.addresses[0].address
+                        };
+                        localStorage.setItem('temp_mail_engine_v3', JSON.stringify(currentAccount));
+                        display.innerText = currentAccount.address;
+                        document.getElementById('messages-container').innerHTML = 
+                            '<div class="empty-inbox">📬 البريد جاهز بنجاح! بانتظار وصول رسائل أو أكواد التفعيل...</div>';
+                        return;
+                    }
                 }
-            } catch (err) {
-                console.warn("Error checking messages:", err);
+            } catch (err1) {
+                console.warn("Dropmail primary failed, switching to Guerrilla Mail fallback...", err1);
+            }
+
+            // 2. المحرك الاحتياطي: Guerrilla Mail REST API
+            try {
+                const res = await fetch("https://api.guerrillamail.com/ajax.php?f=get_email_address");
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.email_addr) {
+                        currentAccount = {
+                            provider: "guerrilla",
+                            token: data.sid_token,
+                            address: data.email_addr
+                        };
+                        localStorage.setItem('temp_mail_engine_v3', JSON.stringify(currentAccount));
+                        display.innerText = currentAccount.address;
+                        document.getElementById('messages-container').innerHTML = 
+                            '<div class="empty-inbox">📬 البريد جاهز بنجاح! بانتظار وصول رسائل أو أكواد التفعيل...</div>';
+                        return;
+                    }
+                }
+            } catch (err2) {
+                console.error("Guerrilla Mail fallback error:", err2);
+            }
+
+            display.innerText = "❌ تعذر الاتصال، اضغط (إيميل جديد) للمحاولة";
+        }
+
+        // فحص صندوق الوارد
+        async function fetchMessages() {
+            if (!currentAccount || !currentAccount.address) return;
+
+            if (currentAccount.provider === "dropmail") {
+                try {
+                    const res = await fetch("https://dropmail.me/api/graphql/web-test-20140228", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            query: `query { session(id: "${currentAccount.id}") { mails { id, fromAddr, headerSubject, text, html, receivedAt } } }`
+                        })
+                    });
+
+                    if (res.ok) {
+                        const json = await res.json();
+                        const mails = json.data?.session?.mails || [];
+                        const formatted = mails.map(m => ({
+                            id: m.id,
+                            from: m.fromAddr,
+                            subject: m.headerSubject || "(بدون عنوان)",
+                            snippet: m.text ? m.text.slice(0, 80) : "اضغط لعرض الرسالة...",
+                            date: new Date(m.receivedAt * 1000 || m.receivedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+                            fullDate: new Date(m.receivedAt * 1000 || m.receivedAt).toLocaleString('ar-EG'),
+                            html: m.html,
+                            text: m.text
+                        }));
+                        renderMessages(formatted);
+                    }
+                } catch (e) {
+                    console.warn("Dropmail poll error:", e);
+                }
+            } else if (currentAccount.provider === "guerrilla") {
+                try {
+                    const res = await fetch(`https://api.guerrillamail.com/ajax.php?f=check_email&seq=0&sid_token=${currentAccount.token}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        const list = (data.list || []).filter(m => !String(m.mail_from).includes("guerrillamail.com"));
+                        const formatted = list.map(m => ({
+                            id: m.mail_id,
+                            from: m.mail_from,
+                            subject: m.mail_subject || "(بدون عنوان)",
+                            snippet: m.mail_excerpt || "اضغط لعرض الرسالة...",
+                            date: m.mail_date || "الآن",
+                            fullDate: m.mail_date || "الآن",
+                            html: null,
+                            text: null
+                        }));
+                        renderMessages(formatted);
+                    }
+                } catch (e) {
+                    console.warn("Guerrilla poll error:", e);
+                }
             }
         }
 
+        // رسم الرسائل داخل الصفحة
         function renderMessages(messages) {
             const container = document.getElementById('messages-container');
 
             if (!messages || messages.length === 0) {
-                container.innerHTML = '<div class="empty-inbox">⏳ الصندوق فارغ حالياً، بانتظار استلام كود التفعيل أو الرسالة...</div>';
+                container.innerHTML = '<div class="empty-inbox">⏳ الصندوق فارغ حالياً، بانتظار وصول رسائل أو أكواد التفعيل...</div>';
                 return;
             }
 
             container.innerHTML = "";
             messages.forEach(msg => {
-                const sender = msg.from ? (msg.from.name || msg.from.address) : "مرسل مجهول";
-                const timeStr = new Date(msg.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-
+                storedMessages[String(msg.id)] = msg;
                 container.innerHTML += `
                     <div class="msg-card" onclick="openMessage('${msg.id}')">
                         <div class="msg-sender">
-                            <span>${sender}</span>
-                            <span class="msg-date">${timeStr}</span>
+                            <span>${msg.from}</span>
+                            <span class="msg-date">${msg.date}</span>
                         </div>
-                        <div class="msg-subject">✉️ <b>${msg.subject || "(بدون عنوان)"}</b></div>
-                        <div class="msg-snippet">${msg.intro || "اضغط لعرض الرسالة وقراءة الكود بالكامل..."}</div>
+                        <div class="msg-subject">✉️ <b>${msg.subject}</b></div>
+                        <div class="msg-snippet">${msg.snippet}</div>
                     </div>
                 `;
             });
         }
 
+        // فتح الرسالة وعرض محتواها
         async function openMessage(msgId) {
-            try {
-                const res = await fetch(`https://api.mail.tm/messages/${msgId}`, {
-                    headers: { "Authorization": `Bearer ${currentAccount.token}` }
-                });
+            const msg = storedMessages[String(msgId)];
+            if (!msg) return;
 
-                const full = await res.json();
-                document.getElementById('m-subject').innerText = full.subject || "بدون عنوان";
-                document.getElementById('m-meta').innerText = `من: ${full.from.address} | التاريخ: ${new Date(full.createdAt).toLocaleString('ar-EG')}`;
+            document.getElementById('m-subject').innerText = msg.subject;
+            document.getElementById('m-meta').innerText = `من: ${msg.from} | التاريخ: ${msg.fullDate}`;
+            const bodyContainer = document.getElementById('m-body');
 
-                const bodyContainer = document.getElementById('m-body');
-                if (full.html && full.html.length > 0) {
-                    bodyContainer.innerHTML = full.html.join('');
-                } else {
-                    bodyContainer.innerText = full.text || "الرسالة لا تحتوي على نص.";
-                }
-
+            if (msg.html) {
+                bodyContainer.innerHTML = msg.html;
+            } else if (msg.text) {
+                bodyContainer.innerText = msg.text;
+            } else if (currentAccount.provider === "guerrilla") {
+                bodyContainer.innerText = "⏳ جاري قراءة محتوى الرسالة...";
                 document.getElementById('mail-modal').style.display = 'flex';
-            } catch (err) {
-                tg.showAlert("❌ تعذر فتح الرسالة، يرجى المحاولة مرة أخرى.");
+                try {
+                    const res = await fetch(`https://api.guerrillamail.com/ajax.php?f=fetch_email&email_id=${msgId}&sid_token=${currentAccount.token}`);
+                    const full = await res.json();
+                    bodyContainer.innerHTML = full.mail_body || "الرسالة فارغة";
+                } catch (err) {
+                    bodyContainer.innerText = "❌ تعذر تحميل الرسالة.";
+                }
+                return;
+            } else {
+                bodyContainer.innerText = "الرسالة لا تحتوي على نص.";
             }
+
+            document.getElementById('mail-modal').style.display = 'flex';
         }
 
         function closeModal() {
@@ -249,9 +305,10 @@
             const email = document.getElementById('active-email').innerText;
             if (!email.includes('@')) return;
             navigator.clipboard.writeText(email);
-            tg.showAlert("✅ تم نسخ الإيميل المؤقت بنجاح!");
+            tg.showAlert("✅ تم نسخ الإيميل المؤقت للحافظة بنجاح!");
         }
 
+        // دوال التنقل
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
