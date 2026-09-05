@@ -35,7 +35,8 @@
         .btn-task:active { transform: scale(0.95); }
         .btn-task.done { background: #252932; color: var(--text-gray); cursor: not-allowed; border: 1px solid #333842; }
 
-        .loading-box { text-align: center; padding: 40px 0; color: var(--text-gray); font-size: 14px; }
+        .status-box { text-align: center; padding: 40px 15px; color: var(--text-gray); font-size: 14px; line-height: 1.6; }
+        .btn-retry { margin-top: 15px; background: #222; border: 1px solid var(--main-green); color: var(--main-green); padding: 8px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
 
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; cursor: pointer; text-decoration: none; }
@@ -45,8 +46,8 @@
 <body>
 
     <div class="header">
-        <h2>مركز المهام اليومية 📋</h2>
-        <p>أكمل المهام السريعة واكسب نقاطاً تُضاف لرصيدك فوراً</p>
+        <h2>مركز المهام 📋</h2>
+        <p>أكمل المهام المتاحة واكسب نقاطاً تُضاف لرصيدك فوراً</p>
     </div>
 
     <div class="stats-bar">
@@ -65,7 +66,7 @@
     </div>
 
     <div id="tasks-list" class="tasks-container">
-        <div class="loading-box">⏳ جاري تحميل المهام...</div>
+        <div class="status-box">⏳ جاري جلب المهام من الخادم...</div>
     </div>
 
     <nav class="navbar">
@@ -87,28 +88,20 @@
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
         let userData = null;
 
-        // قائمة مهام جاهزة وثابتة تعمل تلقائياً دون الحاجة لإنشاء جدول خاص
-        const DEFAULT_TASKS = [
-            { id: "task_tg_channel", title: "الانضمام لقناة المنصة الرسمية", icon: "📢", reward: 100, url: "https://t.me/MegaTask1Bot" },
-            { id: "task_join_chat", title: "الانضمام لمجموعة المناقشات", icon: "💬", reward: 75, url: "https://t.me/MegaTask1Bot" },
-            { id: "task_follow_news", title: "متابعة أخبار التحديثات الجديدة", icon: "🔥", reward: 50, url: "https://t.me/MegaTask1Bot" },
-            { id: "task_try_downloader", title: "تجربة بوت تحميل الفيديوهات", icon: "⚡", reward: 50, url: "https://t.me/MegaTask1Bot" }
-        ];
-
         async function init() {
             if (!tid) {
-                document.getElementById('tasks-list').innerHTML = '<div class="loading-box">❌ لم يتم العثور على معرّف الحساب، افتح الصفحة من البوت.</div>';
+                document.getElementById('tasks-list').innerHTML = '<div class="status-box">❌ لم يتم التعرف على حسابك، يرجى فتح الصفحة من داخل البوت.</div>';
                 return;
             }
 
             try {
-                const { data: user, error } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
+                const { data: user } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
                 if (user) {
                     userData = user;
                     updateUI();
                 }
             } catch (e) {
-                console.warn("Supabase user fetch fallback:", e);
+                console.error("User fetch error:", e);
             }
 
             loadTasks();
@@ -122,96 +115,156 @@
 
         async function loadTasks() {
             const container = document.getElementById('tasks-list');
-            const completedMap = JSON.parse(localStorage.getItem(`completed_tasks_${tid}`) || "{}");
-            
-            let countDone = 0;
-            container.innerHTML = "";
 
-            DEFAULT_TASKS.forEach(task => {
-                const isDone = completedMap[task.id] === true;
-                if (isDone) countDone++;
+            try {
+                // جلب المهام الحقيقية المضافة من لوحة التحكم من جدول tasks
+                const { data: tasks, error } = await client
+                    .from('tasks')
+                    .select('*')
+                    .order('id', { ascending: false });
 
-                const btnHtml = isDone 
-                    ? `<button class="btn-task done" disabled>منجز ✅</button>`
-                    : `<button class="btn-task" onclick="startTask('${task.id}', '${task.url}', ${task.reward}, this)">تنفيذ</button>`;
+                if (error) {
+                    console.error("Supabase tasks error:", error);
+                    container.innerHTML = `
+                        <div class="status-box">
+                            ⚠️ تعذر تحميل المهام من قاعدة البيانات.<br>
+                            <small style="color: #666;">${error.message || ''}</small><br>
+                            <button class="btn-retry" onclick="loadTasks()">إعادة المحاولة 🔄</button>
+                        </div>`;
+                    return;
+                }
 
-                container.innerHTML += `
-                    <div class="task-card">
-                        <div class="task-info">
-                            <div class="task-icon">${task.icon}</div>
-                            <div class="task-details">
-                                <b>${task.title}</b>
-                                <span>+${task.reward} نقطة</span>
+                if (!tasks || tasks.length === 0) {
+                    container.innerHTML = `
+                        <div class="status-box">
+                            🎯 لا توجد مهام جديدة متاحة حالياً.<br>
+                            تابعنا وسيتم إضافة مهام يومية جديدة قريباً!
+                        </div>`;
+                    document.getElementById('completed-count').innerText = "0/0";
+                    return;
+                }
+
+                // جلب المهام المنجزة من قاعدة البيانات أو التخزين المحلي
+                const completedMap = JSON.parse(localStorage.getItem(`completed_tasks_${tid}`) || "{}");
+
+                container.innerHTML = "";
+                let countDone = 0;
+
+                tasks.forEach(task => {
+                    const taskId = String(task.id);
+                    const taskTitle = task.title || task.name || "مهمة سريعة";
+                    const taskReward = Number(task.reward || task.points || 50);
+                    const taskUrl = task.url || task.link || "#";
+                    const taskIcon = task.icon || "🎯";
+
+                    const isDone = completedMap[taskId] === true;
+                    if (isDone) countDone++;
+
+                    const btnHtml = isDone 
+                        ? `<button class="btn-task done" disabled>منجز ✅</button>`
+                        : `<button class="btn-task" onclick="startTask('${taskId}', '${taskUrl}', ${taskReward}, this)">تنفيذ</button>`;
+
+                    container.innerHTML += `
+                        <div class="task-card">
+                            <div class="task-info">
+                                <div class="task-icon">${taskIcon}</div>
+                                <div class="task-details">
+                                    <b>${taskTitle}</b>
+                                    <span>+${taskReward.toLocaleString()} نقطة</span>
+                                </div>
                             </div>
+                            ${btnHtml}
                         </div>
-                        ${btnHtml}
-                    </div>
-                `;
-            });
+                    `;
+                });
 
-            document.getElementById('completed-count').innerText = `${countDone}/${DEFAULT_TASKS.length}`;
+                document.getElementById('completed-count').innerText = `${countDone}/${tasks.length}`;
+
+            } catch (err) {
+                console.error("Tasks load exception:", err);
+                container.innerHTML = `
+                    <div class="status-box">
+                        ❌ حدث خطأ في الاتصال بالخادم.<br>
+                        <button class="btn-retry" onclick="loadTasks()">إعادة المحاولة 🔄</button>
+                    </div>`;
+            }
         }
 
-        // بدء تنفيذ المهمة والتحقق منها
+        // بدء تنفيذ المهمة
         function startTask(taskId, url, reward, btn) {
             btn.disabled = true;
             btn.innerText = "⏳ تحقق...";
 
-            // فتح رابط المهمة
-            if (url.startsWith("https://t.me")) {
-                tg.openTelegramLink(url);
-            } else {
-                tg.openLink(url);
+            if (url && url !== "#") {
+                if (url.startsWith("https://t.me") || url.startsWith("tg://")) {
+                    tg.openTelegramLink(url);
+                } else {
+                    tg.openLink(url);
+                }
             }
 
-            // فحص بعد 5 ثوانٍ لإتاحة وقت الانضمام ثم احتساب النقاط
+            // مهلة تحقق ذكية (5 ثوانٍ) لإتاحة الانضمام أو إتمام الخطوة
             setTimeout(() => {
                 claimTaskReward(taskId, reward, btn);
             }, 5000);
         }
 
-        // احتساب نقاط المهمة وتحديث task_earnings لنسبة الـ 10%
+        // صرف المكافأة وتحديث رصيد المهام task_earnings
         async function claimTaskReward(taskId, reward, btn) {
-            const currentPoints = Number(userData?.points || 0);
-            const currentTotal = Number(userData?.total_earned || 0);
-            const currentTaskEarnings = Number(userData?.task_earnings || 0);
-            const currentTotalTasks = Number(userData?.total_tasks || 0);
+            try {
+                // جلب أحدث رصيد للمستخدم لضمان دقة العمليات الحسابية
+                const { data: freshUser } = await client.from('users').select('*').eq('telegram_id', tid).single();
+                const user = freshUser || userData;
 
-            const newPoints = currentPoints + reward;
-            const newTotal = currentTotal + reward;
-            const newTaskEarnings = currentTaskEarnings + reward;
-            const newTotalTasks = currentTotalTasks + 1;
+                const curPoints = Number(user?.points || 0);
+                const curTotal = Number(user?.total_earned || 0);
+                const curTaskEarnings = Number(user?.task_earnings || 0);
+                const curTasksCount = Number(user?.total_tasks || 0);
 
-            const { data, error } = await client.from('users').update({
-                points: newPoints,
-                total_earned: newTotal,
-                task_earnings: newTaskEarnings,
-                total_tasks: newTotalTasks
-            }).eq('telegram_id', tid).select().single();
+                const newPoints = curPoints + reward;
+                const newTotal = curTotal + reward;
+                const newTaskEarnings = curTaskEarnings + reward;
+                const newTasksCount = curTasksCount + 1;
 
-            if (!error && data) {
-                userData = data;
-                updateUI();
+                const { data, error } = await client.from('users').update({
+                    points: newPoints,
+                    total_earned: newTotal,
+                    task_earnings: newTaskEarnings,
+                    total_tasks: newTasksCount
+                }).eq('telegram_id', tid).select().single();
 
-                // حفظ إتمام المهمة
-                let completedMap = JSON.parse(localStorage.getItem(`completed_tasks_${tid}`) || "{}");
-                completedMap[taskId] = true;
-                localStorage.setItem(`completed_tasks_${tid}`, JSON.stringify(completedMap));
+                if (!error && data) {
+                    userData = data;
+                    updateUI();
 
-                btn.className = "btn-task done";
-                btn.innerText = "منجز ✅";
+                    // حفظ المهمة كـ "منجزة"
+                    let completedMap = JSON.parse(localStorage.getItem(`completed_tasks_${tid}`) || "{}");
+                    completedMap[taskId] = true;
+                    localStorage.setItem(`completed_tasks_${tid}`, JSON.stringify(completedMap));
 
-                const completedCount = Object.keys(completedMap).length;
-                document.getElementById('completed-count').innerText = `${completedCount}/${DEFAULT_TASKS.length}`;
+                    btn.className = "btn-task done";
+                    btn.innerText = "منجز ✅";
 
-                tg.showAlert(`🎉 أحسنت! تم إنجاز المهمة وحصلت على +${reward} نقطة بنجاح.`);
-            } else {
+                    // تحديث عداد المهام المنجزة بالأعلى
+                    const totalCards = document.querySelectorAll('.task-card').length;
+                    const doneCards = document.querySelectorAll('.btn-task.done').length;
+                    document.getElementById('completed-count').innerText = `${doneCards}/${totalCards}`;
+
+                    tg.showAlert(`🎉 كفو! تم إنجاز المهمة وإضافة +${reward.toLocaleString()} نقطة إلى رصيدك بنجاح!`);
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = "تنفيذ";
+                    tg.showAlert("❌ تعذر حفظ المكافأة في السيرفر، يرجى المحاولة مرة أخرى.");
+                }
+            } catch (e) {
+                console.error("Claim error:", e);
                 btn.disabled = false;
                 btn.innerText = "تنفيذ";
-                tg.showAlert("❌ تعذر تأكيد النقاط، يرجى إعادة المحاولة.");
+                tg.showAlert("❌ حدث خطأ أثناء الاتصال بالخادم.");
             }
         }
 
+        // دوال التنقل
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
