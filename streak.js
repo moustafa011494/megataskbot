@@ -1,5 +1,5 @@
 /**
- * MegaTask - Streak & Lucky Wheel Module (Fixed & Debugged)
+ * MegaTask - Streak & Lucky Wheel Module (Auto-Create User & Monetag Integrated)
  * Zone ID: 10959333
  */
 const StreakManager = (function() {
@@ -127,7 +127,35 @@ const StreakManager = (function() {
         }
     }
 
-    // تشغيل إعلان Monetag والتأكد من نجاحه
+    // جلب أو إنشاء المستخدم تلقائياً في السيرفر لمنع أي خطأ
+    async function getOrCreateUser() {
+        if (!_tid || _tid === "test_user") {
+            const fallbackId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "123456789");
+            _tid = fallbackId;
+        }
+
+        let { data: userCurrent } = await _client
+            .from('users')
+            .select('*')
+            .eq('telegram_id', _tid)
+            .maybeSingle();
+
+        if (!userCurrent) {
+            // إنشاء الحساب تلقائياً لو مش موجود
+            const { data: newUser, error: insErr } = await _client
+                .from('users')
+                .insert([{ telegram_id: _tid, points: 0, streak: 1 }])
+                .select()
+                .single();
+
+            if (!insErr && newUser) {
+                userCurrent = newUser;
+            }
+        }
+        return userCurrent;
+    }
+
+    // تشغيل إعلان Monetag
     function triggerAdFlow(actionType, domElements) {
         _pendingAction = actionType;
 
@@ -137,7 +165,6 @@ const StreakManager = (function() {
         }
 
         show_10959333().then(async () => {
-            // بعد مشاهدة الإعلان بنجاح تامة
             if (_pendingAction === 'streak') {
                 await executeStreakClaim(domElements);
             } else if (_pendingAction === 'wheel') {
@@ -152,19 +179,9 @@ const StreakManager = (function() {
 
     async function executeStreakClaim(domElements) {
         try {
-            if (!_tid || _tid === "test_user") {
-                window.Telegram?.WebApp?.showAlert("⚠️ يرجى فتح البوت من داخل تيليجرام لتسجيل النقاط.");
-                return;
-            }
-
-            const { data: userCurrent, error: fetchErr } = await _client
-                .from('users')
-                .select('*')
-                .eq('telegram_id', _tid)
-                .single();
-
-            if (fetchErr || !userCurrent) {
-                window.Telegram?.WebApp?.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
+            const userCurrent = await getOrCreateUser();
+            if (!userCurrent) {
+                window.Telegram?.WebApp?.showAlert("❌ تعذر إنشاء أو جلب حسابك من السيرفر.");
                 return;
             }
 
@@ -203,7 +220,7 @@ const StreakManager = (function() {
                 renderUI(domElements);
                 window.Telegram?.WebApp?.showAlert(`🎉 مبروك! استلمت +5 نقاط.\n🔥 الستريك: ${newStreak} أيام متتالية!`);
             } else {
-                window.Telegram?.WebApp?.showAlert("❌ حدث خطأ أثناء تحديث النقاط في السيرفر: " + (updateErr?.message || ""));
+                window.Telegram?.WebApp?.showAlert("❌ خطأ أثناء تحديث النقاط: " + (updateErr?.message || ""));
             }
         } catch (e) {
             console.error("Streak save error:", e);
@@ -305,19 +322,9 @@ const StreakManager = (function() {
         const msg = document.getElementById('wheel-result-msg');
 
         try {
-            if (!_tid || _tid === "test_user") {
-                window.Telegram?.WebApp?.showAlert("⚠️ يرجى فتح البوت من داخل تيليجرام لتسجيل جائزة العجلة.");
-                return;
-            }
-
-            const { data: userCurrent, error: fetchErr } = await _client
-                .from('users')
-                .select('points')
-                .eq('telegram_id', _tid)
-                .single();
-
-            if (fetchErr || !userCurrent) {
-                window.Telegram?.WebApp?.showAlert("❌ تعذر العثور على حسابك لتسجيل جائزة العجلة.");
+            const userCurrent = await getOrCreateUser();
+            if (!userCurrent) {
+                window.Telegram?.WebApp?.showAlert("❌ تعذر حفظ جائزة العجلة، حسابك غير موجود.");
                 return;
             }
 
@@ -339,7 +346,7 @@ const StreakManager = (function() {
                 if (typeof _onUpdate === 'function') _onUpdate(updated);
                 renderUI(domElements);
             } else {
-                window.Telegram?.WebApp?.showAlert("❌ حدث خطأ أثناء حفظ جائزة العجلة بالسيرفر.");
+                window.Telegram?.WebApp?.showAlert("❌ خطأ أثناء حفظ جائزة العجلة: " + (updateErr?.message || ""));
             }
 
             if (prize.value > 0) {
