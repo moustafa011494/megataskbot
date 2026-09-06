@@ -95,7 +95,7 @@
         .stat-val { font-size: 16px; font-weight: bold; color: var(--main-green); margin-bottom: 3px; }
         .stat-lbl { font-size: 11px; color: var(--text-gray); }
 
-        /* بطاقة الستريك العريضة بالتأثيرات */
+        /* بطاقة الستريك العريضة */
         .streak-fullwidth-card {
             width: 100%;
             background: linear-gradient(145deg, #1a202a, #101318);
@@ -463,31 +463,40 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-        let userData = { telegram_id: tid || "test_user", points: 0, streak: 1 };
+        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim() || "123456789";
+        let userData = { telegram_id: tid, points: 0, streak: 1 };
 
         async function init() {
             try {
-                if (tid) {
-                    const { data: user } = await client
-                        .from('users')
-                        .select('*')
-                        .eq('telegram_id', tid)
-                        .maybeSingle();
+                // جلب المستخدم أو إنشاؤه تلقائياً لو مش موجود لضمان ظهور الرصيد فوراً
+                let { data: user, error } = await client
+                    .from('users')
+                    .select('*')
+                    .eq('telegram_id', tid)
+                    .maybeSingle();
 
-                    if (user) {
-                        userData = user;
-                    }
+                if (!user) {
+                    const { data: newUser } = await client
+                        .from('users')
+                        .insert([{ telegram_id: tid, points: 0, streak: 1 }])
+                        .select()
+                        .single();
+                    if (newUser) user = newUser;
+                }
+
+                if (user) {
+                    userData = user;
                 }
             } catch (err) {
-                console.error("Fetch user error:", err);
+                console.error("Init user error:", err);
             }
 
-            // تشغيل الـ StreakManager فوراً لضمان تفاعل الزراير
             updateUI();
+
+            // تشغيل مدير الستريك والعجلة
             StreakManager.init(
                 client, 
-                tid || "test_user", 
+                tid, 
                 userData, 
                 {
                     claimBtn: document.getElementById('btn-streak-claim'),
