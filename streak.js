@@ -1,5 +1,5 @@
 /**
- * MegaTask - Streak & Lucky Wheel Module (Monetag Integrated)
+ * MegaTask - Streak & Lucky Wheel Module (Fixed & Debugged)
  * Zone ID: 10959333
  */
 const StreakManager = (function() {
@@ -8,12 +8,9 @@ const StreakManager = (function() {
     let _onUpdate = null;
     let _userData = null;
     let _timerInterval = null;
-    let _pendingAction = null; // 'streak' أو 'wheel'
-    let _adTimer = null;
+    let _pendingAction = null;
 
-    const AD_STAY_SECONDS = 15;
-
-    // جوائز عجلة الحظ (أقصى سقف 25 نقطة)
+    // جوائز عجلة الحظ (الحد الأقصى 25 نقطة)
     const WHEEL_SECTORS = [
         { label: "5 نقطة", value: 5, color: "#161920", text: "#00d26a" },
         { label: "10 نقطة", value: 10, color: "#1e232d", text: "#00d26a" },
@@ -70,24 +67,18 @@ const StreakManager = (function() {
         _timerInterval = setInterval(tick, 1000);
     }
 
-    // تطبيق التأثيرات والتوهج على بطاقة الستريك حسب التقدم
     function applyStreakVisualEffects(streakVal, cardElement) {
         if (!cardElement) return;
-        
-        // إزالة التأثيرات القديمة
         cardElement.style.boxShadow = "0 4px 15px rgba(0, 0, 0, 0.25)";
         cardElement.style.border = "1px solid #2d333f";
 
         if (streakVal >= 3 && streakVal < 7) {
-            // مستوى متقدم: توهج أخضر خفيف
             cardElement.style.border = "1px solid #00d26a66";
             cardElement.style.boxShadow = "0 0 18px rgba(0, 210, 106, 0.15)";
         } else if (streakVal >= 7 && streakVal < 15) {
-            // مستوى احترافي: توهج ذهبي
             cardElement.style.border = "1px solid #ffaa0088";
             cardElement.style.boxShadow = "0 0 22px rgba(255, 170, 0, 0.25)";
         } else if (streakVal >= 15) {
-            // مستوى أسطوري: إطار وتوهج ناري متحرك
             cardElement.style.border = "2px solid #ff3b5c";
             cardElement.style.boxShadow = "0 0 30px rgba(255, 59, 92, 0.35)";
         }
@@ -106,7 +97,6 @@ const StreakManager = (function() {
             domElements.streakCounter.innerText = `${currentStreak} يوم`;
         }
 
-        // تطبيق تأثيرات الستريك على البطاقة
         const cardBox = document.querySelector('.streak-fullwidth-card');
         applyStreakVisualEffects(currentStreak, cardBox);
 
@@ -137,16 +127,17 @@ const StreakManager = (function() {
         }
     }
 
-    // إطلاق الإعلان عبر Monetag
+    // تشغيل إعلان Monetag والتأكد من نجاحه
     function triggerAdFlow(actionType, domElements) {
         _pendingAction = actionType;
 
         if (typeof show_10959333 !== 'function') {
-            window.Telegram?.WebApp?.showAlert("⚠️ جاري تحميل الإعلان، يرجى المحاولة بعد لحظة...");
+            window.Telegram?.WebApp?.showAlert("⚠️ نظام الإعلانات لم يتم تحميله بعد، يرجى إعادة تحميل الصفحة.");
             return;
         }
 
         show_10959333().then(async () => {
+            // بعد مشاهدة الإعلان بنجاح تامة
             if (_pendingAction === 'streak') {
                 await executeStreakClaim(domElements);
             } else if (_pendingAction === 'wheel') {
@@ -161,34 +152,62 @@ const StreakManager = (function() {
 
     async function executeStreakClaim(domElements) {
         try {
-            const { data: userCurrent } = await _client.from('users').select('*').eq('telegram_id', _tid).single();
-            const now = new Date();
+            if (!_tid || _tid === "test_user") {
+                window.Telegram?.WebApp?.showAlert("⚠️ يرجى فتح البوت من داخل تيليجرام لتسجيل النقاط.");
+                return;
+            }
 
+            const { data: userCurrent, error: fetchErr } = await _client
+                .from('users')
+                .select('*')
+                .eq('telegram_id', _tid)
+                .single();
+
+            if (fetchErr || !userCurrent) {
+                window.Telegram?.WebApp?.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
+                return;
+            }
+
+            const now = new Date();
             let newStreak = 1;
+
             if (userCurrent.last_daily_claim) {
                 const last = new Date(userCurrent.last_daily_claim);
+                if (isSameDay(last, now)) {
+                    window.Telegram?.WebApp?.showAlert("⛔ لقد استلمت مكافأة الستريك اليوم بالفعل!");
+                    renderUI(domElements);
+                    return;
+                }
                 if (isYesterday(last, now)) {
                     newStreak = (userCurrent.streak || 0) + 1;
                 }
             }
 
-            const updatedPoints = (userCurrent.points || 0) + 5; // 5 نقاط للستريك
+            const updatedPoints = (userCurrent.points || 0) + 5;
             const nowIso = now.toISOString();
 
-            const { data: saved, error } = await _client.from('users').update({
-                points: updatedPoints,
-                streak: newStreak,
-                last_daily_claim: nowIso
-            }).eq('telegram_id', _tid).select().single();
+            const { data: saved, error: updateErr } = await _client
+                .from('users')
+                .update({
+                    points: updatedPoints,
+                    streak: newStreak,
+                    last_daily_claim: nowIso
+                })
+                .eq('telegram_id', _tid)
+                .select()
+                .single();
 
-            if (!error && saved) {
+            if (!updateErr && saved) {
                 _userData = saved;
                 if (typeof _onUpdate === 'function') _onUpdate(saved);
                 renderUI(domElements);
-                window.Telegram?.WebApp?.showAlert(`🎉 مبروك! شاهدت الإعلان واستلمت +5 نقاط.\n🔥 الستريك: ${newStreak} أيام متتالية!`);
+                window.Telegram?.WebApp?.showAlert(`🎉 مبروك! استلمت +5 نقاط.\n🔥 الستريك: ${newStreak} أيام متتالية!`);
+            } else {
+                window.Telegram?.WebApp?.showAlert("❌ حدث خطأ أثناء تحديث النقاط في السيرفر: " + (updateErr?.message || ""));
             }
         } catch (e) {
             console.error("Streak save error:", e);
+            window.Telegram?.WebApp?.showAlert("❌ حدث خطأ غير متوقع أثناء حفظ المكافأة.");
         }
     }
 
@@ -286,19 +305,41 @@ const StreakManager = (function() {
         const msg = document.getElementById('wheel-result-msg');
 
         try {
-            const { data: userCurrent } = await _client.from('users').select('points').eq('telegram_id', _tid).single();
+            if (!_tid || _tid === "test_user") {
+                window.Telegram?.WebApp?.showAlert("⚠️ يرجى فتح البوت من داخل تيليجرام لتسجيل جائزة العجلة.");
+                return;
+            }
+
+            const { data: userCurrent, error: fetchErr } = await _client
+                .from('users')
+                .select('points')
+                .eq('telegram_id', _tid)
+                .single();
+
+            if (fetchErr || !userCurrent) {
+                window.Telegram?.WebApp?.showAlert("❌ تعذر العثور على حسابك لتسجيل جائزة العجلة.");
+                return;
+            }
+
             const newPoints = (userCurrent.points || 0) + prize.value;
             const nowIso = new Date().toISOString();
 
-            const { data: updated } = await _client.from('users').update({
-                points: newPoints,
-                last_wheel_spin: nowIso
-            }).eq('telegram_id', _tid).select().single();
+            const { data: updated, error: updateErr } = await _client
+                .from('users')
+                .update({
+                    points: newPoints,
+                    last_wheel_spin: nowIso
+                })
+                .eq('telegram_id', _tid)
+                .select()
+                .single();
 
-            if (updated) {
+            if (!updateErr && updated) {
                 _userData = updated;
                 if (typeof _onUpdate === 'function') _onUpdate(updated);
                 renderUI(domElements);
+            } else {
+                window.Telegram?.WebApp?.showAlert("❌ حدث خطأ أثناء حفظ جائزة العجلة بالسيرفر.");
             }
 
             if (prize.value > 0) {
@@ -309,6 +350,7 @@ const StreakManager = (function() {
 
         } catch (e) {
             console.error("Save wheel error:", e);
+            window.Telegram?.WebApp?.showAlert("❌ حدث خطأ غير متوقع أثناء معالجة الجائزة.");
         }
     }
 
