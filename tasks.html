@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Tasks Market - MegaTask</title>
+    <title>Tasks & Ads - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
@@ -23,15 +23,39 @@
         .stat-item b { display: block; font-size: 18px; color: var(--main-green); }
         .stat-item span { font-size: 11px; color: var(--text-gray); }
 
-        /* بطاقة مشاهدة الإعلان */
-        .ad-card { background: linear-gradient(145deg, #1f242c, #13171e); border: 1px solid #00d26a55; border-radius: 18px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.08); }
-        .ad-header { display: flex; align-items: center; gap: 12px; }
-        .ad-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(0, 210, 106, 0.12); border: 1px solid var(--main-green); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
-        .ad-details b { display: block; font-size: 14px; color: white; margin-bottom: 2px; }
-        .ad-details span { font-size: 11px; color: var(--main-green); font-weight: bold; }
-        .btn-ad { background: var(--main-green); color: black; border: none; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s; text-align: center; }
-        .btn-ad:disabled { background: #252932; color: #777; border: 1px solid #333842; cursor: not-allowed; }
-        .ad-timer-text { font-size: 11px; color: #ffaa00; text-align: center; font-weight: bold; }
+        /* تنبيه إجباري للتفاعل مع الإعلانات */
+        .ad-interaction-alert {
+            background: rgba(255, 170, 0, 0.08);
+            border: 1px dashed #ffaa00;
+            border-radius: 14px;
+            padding: 12px;
+            margin-bottom: 14px;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #ffcc66;
+        }
+        .ad-interaction-alert b { color: #ffaa00; display: block; margin-bottom: 3px; }
+
+        /* شبكة الإعلانات (زرين بشرح منفصل) */
+        .ads-section { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+        .ad-box {
+            background: linear-gradient(145deg, #1d222b, #13161c);
+            border: 1px solid #2d333d;
+            border-radius: 18px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .ad-box-top { display: flex; align-items: center; gap: 12px; }
+        .ad-box-icon { width: 44px; height: 44px; border-radius: 12px; background: #11141a; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .ad-box-info b { display: block; font-size: 14px; color: white; margin-bottom: 2px; }
+        .ad-box-info span { font-size: 11px; color: var(--main-green); font-weight: bold; }
+        .ad-box-desc { font-size: 11px; color: var(--text-gray); line-height: 1.5; background: #0c0e12; padding: 8px 10px; border-radius: 10px; }
+        
+        .btn-ad-trigger { background: var(--main-green); color: black; border: none; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s; text-align: center; }
+        .btn-ad-trigger:disabled { background: #22262f; color: #777; border: 1px solid #333842; cursor: not-allowed; }
+        .ad-timer-badge { font-size: 11px; color: #ffaa00; text-align: center; font-weight: bold; }
 
         .btn-create-task { background: linear-gradient(135deg, #00d26a, #009e4f); color: #000; border: none; width: 100%; padding: 14px; border-radius: 15px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); }
         .btn-create-task:active { transform: scale(0.98); }
@@ -93,7 +117,6 @@
         .btn-confirm { background: var(--main-green); color: black; }
         .btn-cancel { background: #252932; color: white; }
 
-        /* مراجعة الإثباتات */
         .sub-review-card { background: #11141a; border: 1px solid #2d333d; border-radius: 14px; padding: 12px; margin-bottom: 15px; }
         .sub-thumb-container { position: relative; width: 100%; border-radius: 8px; overflow: hidden; margin: 8px 0; border: 1px solid #333; cursor: zoom-in; }
         .sub-thumb-container img { width: 100%; max-height: 180px; object-fit: cover; display: block; }
@@ -103,7 +126,6 @@
         .btn-accept { background: var(--main-green); color: black; border: none; padding: 9px; border-radius: 8px; font-weight: bold; flex: 1; cursor: pointer; }
         .btn-reject { background: #ff3b30; color: white; border: none; padding: 9px; border-radius: 8px; font-weight: bold; flex: 1; cursor: pointer; }
 
-        /* عارض الصور المتقدم */
         #lightbox-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); z-index: 100000; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px; }
         .lightbox-toolbar { width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
         .lightbox-controls { display: flex; gap: 10px; }
@@ -122,8 +144,8 @@
 <body>
 
     <div class="header">
-        <h2>سوق المهام وتبادل القنوات 📋</h2>
-        <p>نفّذ مهام السوشيال ميديا واكسب نقاطاً، أو روّج لحساباتك فوراً</p>
+        <h2>مركز المهام والإعلانات 📋</h2>
+        <p>شاهد الإعلانات، تصفح المواقع، أو نفّذ مهام الأعضاء لكسب النقاط</p>
     </div>
 
     <div class="stats-bar">
@@ -141,19 +163,51 @@
         </div>
     </div>
 
-    <!-- بطاقة مشاهدة إعلان OnClick الذكية -->
-    <div class="ad-card" id="ad-box">
-        <div class="ad-header">
-            <div class="ad-icon">🎁</div>
-            <div class="ad-details">
-                <b>مكافأة الإعلانات الفورية</b>
-                <span>احصل على +25 نقطة كل 5 دقائق</span>
+    <!-- تنبيه التفاعل الإجباري -->
+    <div class="ad-interaction-alert">
+        <b>⚠️ شرط أساسي لاحتساب النقاط:</b>
+        يجب البقاء والتفاعل مع صفحة الإعلان أو الموقع المعلن (تصفح أو نقر داخلي بسيط) لضمان اعتماد النقاط ومنع حظر حسابك بتهمة الزيارات الوهمية!
+    </div>
+
+    <!-- قسم الإعلانات المزدوج مع الشرح -->
+    <div class="ads-section">
+        
+        <!-- النوع 1: مشاهدة إعلان فقط -->
+        <div class="ad-box">
+            <div class="ad-box-top">
+                <div class="ad-box-icon">📺</div>
+                <div class="ad-box-info">
+                    <b>مشاهدة إعلان سريع (Watch Ad)</b>
+                    <span>+20 نقطة • متاح كل 5 دقائق</span>
+                </div>
             </div>
+            <div class="ad-box-desc">
+                💡 <b>الشرح:</b> يفتح هذا الزر إعلاناً مباشراً أو فيديو قصير فقط دون الحاجة لتسجيل أو إجراءات مطولة.
+            </div>
+            <button id="btn-ad-watch" class="btn-ad-trigger" onclick="triggerAd('watch')">
+                📺 مشاهدة الإعلان الآن (+20 نقطة)
+            </button>
+            <div id="timer-ad-watch" class="ad-timer-badge" style="display: none;"></div>
         </div>
-        <button id="btn-watch-ad" class="btn-ad" onclick="startAdProcess()">
-            🚀 فتح الإعلان (+25 نقطة)
-        </button>
-        <div id="ad-timer-text" class="ad-timer-text" style="display: none;"></div>
+
+        <!-- النوع 2: زيارة مواقع وتصفح إعلانات OnClick -->
+        <div class="ad-box">
+            <div class="ad-box-top">
+                <div class="ad-box-icon">🌐</div>
+                <div class="ad-box-info">
+                    <b>زيارة مواقع المعلنين (Web Traffic & OnClick)</b>
+                    <span>+30 نقطة • متاح كل 5 دقائق</span>
+                </div>
+            </div>
+            <div class="ad-box-desc">
+                💡 <b>الشرح:</b> يفتح موقعاً إلكترونياً أو رابطاً ترويجياً؛ يتطلب منك تصفح الصفحة والبقاء بها لمدة 15 ثانية لاحتساب الزيارة كاملة.
+            </div>
+            <button id="btn-ad-onclick" class="btn-ad-trigger" onclick="triggerAd('onclick')">
+                🌐 تصفح وزيارة الموقع المعلن (+30 نقطة)
+            </button>
+            <div id="timer-ad-onclick" class="ad-timer-badge" style="display: none;"></div>
+        </div>
+
     </div>
 
     <button class="btn-create-task" onclick="openPlatformSelectModal()">
@@ -164,17 +218,17 @@
         <div class="status-box">⏳ جاري جلب المهام النشطة...</div>
     </div>
 
-    <!-- نافذة فحص وتأكيد البقاء في الإعلان لمنع الزيارات الوهمية -->
+    <!-- نافذة فحص الزيارة ومنع الزيارات الوهمية -->
     <div id="ad-verify-modal" class="modal-overlay">
         <div class="modal-body" style="text-align: center;">
-            <h3 style="color: var(--main-green); margin-top: 0;">⏳ جاري التحقق من الزيارة</h3>
-            <p style="font-size: 13px; color: #ccc; line-height: 1.6;">
+            <h3 style="color: var(--main-green); margin-top: 0;">⏳ التحقق والتفاعل مع الإعلان</h3>
+            <p id="ad-modal-instruction" style="font-size: 13px; color: #ccc; line-height: 1.6;">
                 تم فتح صفحة الإعلان في نافذة جديدة.<br>
-                تصفح الصفحة وانتظر انتهاء العداد لضمان احتساب النقاط وتجنب حظر حسابك.
+                تصفح الصفحة وانتظر انتهاء العداد لضمان احتساب النقاط بنجاح.
             </p>
             <div id="ad-countdown-circle" style="font-size: 38px; font-weight: bold; color: #ffaa00; margin: 15px 0;">15</div>
-            <button id="btn-claim-ad" class="btn-confirm" style="width: 100%; opacity: 0.5;" disabled onclick="claimAdReward()">
-                انتظر اكتمال العداد...
+            <button id="btn-claim-ad" class="btn-confirm" style="width: 100%; opacity: 0.5;" disabled onclick="claimCurrentAd()">
+                انتظر انتهاء العداد...
             </button>
         </div>
     </div>
@@ -360,12 +414,12 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         // ==========================================
-        // إعدادات إعلانات OnClick / Direct Link
+        // إعدادات الإعلانات والـ 5 دقائق
         // ==========================================
-        const AD_REWARD_POINTS = 25; // عدد النقاط الممنوحة
-        const AD_COOLDOWN_SECONDS = 300; // 5 دقائق (300 ثانية)
-        const AD_MANDATORY_STAY_SECONDS = 15; // ثواني الانتظار لمنع الزيارات الوهمية
-        const AD_DIRECT_LINK = "https://otootooph.net/4/8916601"; // ضع رابط إعلان OnClick / Direct Link الخاص بك هنا
+        const AD_COOLDOWN_SECONDS = 300; // 5 دقائق كاملة (300 ثانية)
+        const AD_STAY_SECONDS = 15; // 15 ثانية تفاعل إجباري لمنع الزيارات الوهمية
+        const AD_LINK_WATCH = "https://otootooph.net/4/8916601"; 
+        const AD_LINK_ONCLICK = "https://otootooph.net/4/8916601"; 
 
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
@@ -375,8 +429,11 @@
         let taskLogoBase64 = "";
         let proofBase64Image = "";
         let currentZoom = 1;
-        let adCooldownInterval = null;
-        let verifyCountdownTimer = null;
+        
+        let currentAdType = "watch";
+        let adCountdownTimer = null;
+        let watchTimerInterval = null;
+        let onclickTimerInterval = null;
 
         const PLATFORM_CONFIG = {
             telegram: { title: "📢 ترويج قناة / جروب تيليجرام", icon: "📢", lblLink: "معرف القناة أو الرابط:", phLink: "@MyChannel أو https://t.me/...", showAdminAlert: true },
@@ -402,7 +459,7 @@
                 if (user) {
                     userData = user;
                     updateUI();
-                    checkAdCooldown();
+                    checkAdsCooldown();
                 }
             } catch (e) {
                 console.error("User fetch error:", e);
@@ -419,152 +476,178 @@
         }
 
         // ==========================================
-        // إدارة وتأكيد إعلانات OnClick
+        // منطق الـ 5 دقائق وفحص الإعلانات المزدوج
         // ==========================================
-        function checkAdCooldown() {
-            if (!userData || !userData.last_ad_watched_at) {
-                enableAdButton();
-                return;
-            }
+        function checkAdsCooldown() {
+            if (!userData) return;
 
-            const lastWatched = new Date(userData.last_ad_watched_at).getTime();
-            const now = Date.now();
-            const elapsed = Math.floor((now - lastWatched) / 1000);
-
-            if (elapsed < AD_COOLDOWN_SECONDS) {
-                startCooldownTimer(AD_COOLDOWN_SECONDS - elapsed);
+            // 1. فحص زر مشاهدة الإعلان
+            if (userData.last_ad_watched_at) {
+                const elapsedWatch = Math.floor((Date.now() - new Date(userData.last_ad_watched_at).getTime()) / 1000);
+                if (elapsedWatch >= 0 && elapsedWatch < AD_COOLDOWN_SECONDS) {
+                    startSpecificAdTimer('watch', AD_COOLDOWN_SECONDS - elapsedWatch);
+                } else {
+                    enableAdBtn('watch');
+                }
             } else {
-                enableAdButton();
+                enableAdBtn('watch');
+            }
+
+            // 2. فحص زر زيارة المواقع OnClick
+            if (userData.last_onclick_watched_at) {
+                const elapsedClick = Math.floor((Date.now() - new Date(userData.last_onclick_watched_at).getTime()) / 1000);
+                if (elapsedClick >= 0 && elapsedClick < AD_COOLDOWN_SECONDS) {
+                    startSpecificAdTimer('onclick', AD_COOLDOWN_SECONDS - elapsedClick);
+                } else {
+                    enableAdBtn('onclick');
+                }
+            } else {
+                enableAdBtn('onclick');
             }
         }
 
-        function enableAdButton() {
-            const btn = document.getElementById('btn-watch-ad');
-            const timerText = document.getElementById('ad-timer-text');
+        function enableAdBtn(type) {
+            const btn = document.getElementById(`btn-ad-${type}`);
+            const badge = document.getElementById(`timer-ad-${type}`);
             btn.disabled = false;
-            btn.innerText = `🚀 فتح الإعلان (+${AD_REWARD_POINTS} نقطة)`;
-            timerText.style.display = 'none';
-            if (adCooldownInterval) clearInterval(adCooldownInterval);
+            btn.innerText = type === 'watch' ? "📺 مشاهدة الإعلان الآن (+20 نقطة)" : "🌐 تصفح وزيارة الموقع المعلن (+30 نقطة)";
+            badge.style.display = 'none';
         }
 
-        function startCooldownTimer(remaining) {
-            const btn = document.getElementById('btn-watch-ad');
-            const timerText = document.getElementById('ad-timer-text');
+        function startSpecificAdTimer(type, remaining) {
+            const btn = document.getElementById(`btn-ad-${type}`);
+            const badge = document.getElementById(`timer-ad-${type}`);
             btn.disabled = true;
-            timerText.style.display = 'block';
+            badge.style.display = 'block';
 
-            if (adCooldownInterval) clearInterval(adCooldownInterval);
+            let timerVar = (type === 'watch') ? watchTimerInterval : onclickTimerInterval;
+            if (timerVar) clearInterval(timerVar);
 
-            function updateTimer() {
+            function tick() {
                 if (remaining <= 0) {
-                    clearInterval(adCooldownInterval);
-                    enableAdButton();
+                    clearInterval(timerVar);
+                    enableAdBtn(type);
                     return;
                 }
 
                 const mins = Math.floor(remaining / 60);
                 const secs = remaining % 60;
-                const fmt = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                const fmt = `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
 
-                btn.innerText = `⏳ متاح بعد (${fmt})`;
-                timerText.innerText = `⚠️ يمكنك فتح الإعلان التالي بعد انقضاء المهلة`;
+                btn.innerText = type === 'watch' ? "مشاهدة إعلان 📺" : "زيارة وتصفح 🌐";
+                badge.innerText = `⏳ متاح بعد (${fmt})`;
                 remaining--;
             }
 
-            updateTimer();
-            adCooldownInterval = setInterval(updateTimer, 1000);
+            tick();
+            if (type === 'watch') {
+                watchTimerInterval = setInterval(tick, 1000);
+            } else {
+                onclickTimerInterval = setInterval(tick, 1000);
+            }
         }
 
-        function startAdProcess() {
-            // فتح رابط الإعلان في نافذة منبثقة/متصفح
+        function triggerAd(type) {
+            currentAdType = type;
+            const targetUrl = (type === 'watch') ? AD_LINK_WATCH : AD_LINK_ONCLICK;
+            
             if (window.Telegram?.WebApp) {
-                tg.openLink(AD_DIRECT_LINK);
+                tg.openLink(targetUrl);
             } else {
-                window.open(AD_DIRECT_LINK, '_blank');
+                window.open(targetUrl, '_blank');
             }
 
-            // تفعيل نافذة عداد التحقق لمنع الزيارات الوهمية
             const modal = document.getElementById('ad-verify-modal');
             const claimBtn = document.getElementById('btn-claim-ad');
             const counter = document.getElementById('ad-countdown-circle');
+            const instr = document.getElementById('ad-modal-instruction');
+
+            instr.innerHTML = (type === 'watch')
+                ? "تم فتح الإعلان في صفحة جديدة.<br>شاهد وتفاعل لعدة ثوانٍ لضمان وصول النقاط لحسابك."
+                : "تم فتح الموقع المعلن في صفحة جديدة.<br><b>تصفح الصفحة وانقر بداخلها</b> لضمان احتساب الزيارة وتفادي حظر حسابك.";
 
             modal.style.display = 'flex';
             claimBtn.disabled = true;
             claimBtn.style.opacity = '0.5';
-            claimBtn.innerText = "انتظر اكتمال العداد...";
+            claimBtn.innerText = "انتظر انتهاء العداد والتفاعل...";
 
-            let stayLeft = AD_MANDATORY_STAY_SECONDS;
+            let stayLeft = AD_STAY_SECONDS;
             counter.innerText = stayLeft;
 
-            if (verifyCountdownTimer) clearInterval(verifyCountdownTimer);
+            if (adCountdownTimer) clearInterval(adCountdownTimer);
 
-            verifyCountdownTimer = setInterval(() => {
+            adCountdownTimer = setInterval(() => {
                 stayLeft--;
                 counter.innerText = stayLeft;
 
                 if (stayLeft <= 0) {
-                    clearInterval(verifyCountdownTimer);
+                    clearInterval(adCountdownTimer);
                     counter.innerText = "✅";
                     claimBtn.disabled = false;
                     claimBtn.style.opacity = '1';
-                    claimBtn.innerText = `🎁 استلام +${AD_REWARD_POINTS} نقطة الآن`;
+                    const rewardAmt = (type === 'watch') ? 20 : 30;
+                    claimBtn.innerText = `🎁 استلام +${rewardAmt} نقطة الآن`;
                 }
             }, 1000);
         }
 
-        async function claimAdReward() {
+        async function claimCurrentAd() {
             const claimBtn = document.getElementById('btn-claim-ad');
             claimBtn.disabled = true;
-            claimBtn.innerText = "⏳ جاري إضافة النقاط...";
+            claimBtn.innerText = "⏳ جاري التأكيد وإضافة النقاط...";
+
+            const isWatch = (currentAdType === 'watch');
+            const rewardPoints = isWatch ? 20 : 30;
+            const dbField = isWatch ? 'last_ad_watched_at' : 'last_onclick_watched_at';
 
             try {
-                // فحص الخادم المباشر للتأكد من انقضاء الـ 5 دقائق وعدم التلاعب
+                // فحص توقيت السيرفر
                 const { data: currentUser, error: fetchErr } = await client
                     .from('users')
-                    .select('points, last_ad_watched_at')
+                    .select(`points, ${dbField}`)
                     .eq('telegram_id', tid)
                     .single();
 
                 if (fetchErr || !currentUser) throw new Error("تعذر جلب البيانات");
 
-                if (currentUser.last_ad_watched_at) {
-                    const diff = (Date.now() - new Date(currentUser.last_ad_watched_at).getTime()) / 1000;
-                    if (diff < AD_COOLDOWN_SECONDS) {
+                const lastRecorded = currentUser[dbField];
+                if (lastRecorded) {
+                    const diff = (Date.now() - new Date(lastRecorded).getTime()) / 1000;
+                    if (diff >= 0 && diff < AD_COOLDOWN_SECONDS) {
                         document.getElementById('ad-verify-modal').style.display = 'none';
-                        tg.showAlert("⛔ عذراً! لم تنقضِ مهلة الـ 5 دقائق بعد.");
-                        checkAdCooldown();
+                        tg.showAlert("⛔ لم تنقضِ مهلة الـ 5 دقائق الخاصة بهذا الإعلان بعد!");
+                        checkAdsCooldown();
                         return;
                     }
                 }
 
                 const nowIso = new Date().toISOString();
-                const updatedPoints = (currentUser.points || 0) + AD_REWARD_POINTS;
+                const updatedPoints = (currentUser.points || 0) + rewardPoints;
+                
+                const updatePayload = { points: updatedPoints };
+                updatePayload[dbField] = nowIso;
 
-                const { error: updateErr } = await client.from('users').update({
-                    points: updatedPoints,
-                    last_ad_watched_at: nowIso
-                }).eq('telegram_id', tid);
-
+                const { error: updateErr } = await client.from('users').update(updatePayload).eq('telegram_id', tid);
                 if (updateErr) throw updateErr;
 
                 userData.points = updatedPoints;
-                userData.last_ad_watched_at = nowIso;
+                userData[dbField] = nowIso;
                 updateUI();
 
                 document.getElementById('ad-verify-modal').style.display = 'none';
-                tg.showAlert(`🎉 تم تأكيد الزيارة وإضافة +${AD_REWARD_POINTS} نقطة بنجاح!`);
-                startCooldownTimer(AD_COOLDOWN_SECONDS);
+                tg.showAlert(`🎉 تم تأكيد التفاعل بنجاح وحصلت على +${rewardPoints} نقطة!`);
+                startSpecificAdTimer(currentAdType, AD_COOLDOWN_SECONDS);
 
             } catch (err) {
-                console.error("Ad claim error:", err);
-                tg.showAlert("❌ تعذر إضافة النقاط حالياً، يرجى المحاولة لاحقاً.");
+                console.error("Claim ad error:", err);
+                tg.showAlert("❌ تعذر إضافة النقاط حالياً، يرجى المحاولة بعد لحظات.");
                 claimBtn.disabled = false;
-                claimBtn.innerText = "حاول مجدداً";
+                claimBtn.innerText = "إعادة المحاولة";
             }
         }
 
         // ==========================================
-        // وظائف سوق المهام وتبادل القنوات
+        // وظائف سوق المهام
         // ==========================================
         function calcSummary() {
             const cost = Math.max(1, parseInt(document.getElementById('t-cost').value) || 0);
@@ -896,7 +979,6 @@
             }
         }
 
-        // مسار التيليجرام
         function handleTaskStep(taskId, url, channelId, reward, platform) {
             const btn = document.getElementById(`btn-task-${taskId}`);
             if (btn.classList.contains('verify')) {
@@ -934,7 +1016,6 @@
             }
         }
 
-        // رفع الإثبات
         function openProofModal(task) {
             activeExecutionTask = task;
             proofBase64Image = "";
@@ -1010,7 +1091,6 @@
             }
         }
 
-        // مراجعة الإثباتات
         async function openReviewModal(taskId) {
             const container = document.getElementById('review-submissions-container');
             container.innerHTML = '<div class="status-box">⏳ جاري جلب الإثباتات...</div>';
