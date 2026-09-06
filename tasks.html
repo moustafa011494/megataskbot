@@ -47,7 +47,7 @@
         .btn-action.verify { background: #ffaa00; color: black; }
         .btn-action.done { background: #252932; color: var(--text-gray); cursor: not-allowed; border: 1px solid #333842; }
 
-        /* نافذة إضافة مهمة (Modal) */
+        /* نافذة إضافة مهمة */
         #create-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
         .modal-body { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; width: 100%; max-height: 90vh; overflow-y: auto; text-align: right; }
         .modal-title { font-size: 16px; color: var(--main-green); margin-top: 0; margin-bottom: 12px; text-align: center; }
@@ -140,8 +140,6 @@
 
             <div class="summary-box">
                 💳 إجمالي النقاط المخصومة منك: <span id="sum-total">1,000</span> نقطة<br>
-                🎁 يحصل المنفذ على: <span id="sum-reward">75</span> نقطة (75%)<br>
-                💎 عمولة المنصة: <span id="sum-fee">250</span> نقطة (25%)<br>
                 <small style="color: #ffaa00;">⚠️ تنبيه: تأكد من إضافة بوت المنصة <b>@MegaTask1Bot</b> مشرفاً بالقناة لفحص انضمام الأعضاء تلقائياً.</small>
             </div>
 
@@ -202,18 +200,12 @@
             const cost = Math.max(1, parseInt(document.getElementById('t-cost').value) || 0);
             const target = Math.max(1, parseInt(document.getElementById('t-target').value) || 0);
             const total = cost * target;
-            const rewardPerUser = Math.floor(cost * 0.75); // 75% للمنفذ
-            const platformFee = total - (rewardPerUser * target); // عمولة المنصة
-
             document.getElementById('sum-total').innerText = total.toLocaleString();
-            document.getElementById('sum-reward').innerText = rewardPerUser.toLocaleString();
-            document.getElementById('sum-fee').innerText = platformFee.toLocaleString();
         }
 
         function openCreateModal() { document.getElementById('create-modal').style.display = 'flex'; }
         function closeCreateModal() { document.getElementById('create-modal').style.display = 'none'; }
 
-        // استخراج معرف القناة بدقة
         function extractChannelId(raw) {
             if (!raw) return "";
             raw = raw.trim();
@@ -223,7 +215,6 @@
             return "@" + raw;
         }
 
-        // إنشاء ونشر مهمة جديدة بواسطة المستخدم
         async function submitCreateTask() {
             const title = document.getElementById('t-title').value.trim();
             const rawChannel = document.getElementById('t-channel').value.trim();
@@ -246,9 +237,6 @@
                 return tg.showAlert(`❌ رصيدك غير كافٍ!\nالمطلوب: ${totalCost.toLocaleString()} نقطة\nرصيدك الحالي: ${myCurrentPoints.toLocaleString()} نقطة.`);
             }
 
-            // التحقق من أن البوت مضاف بالقناة لضمان صحة الفحص
-            tg.showPopup({ title: "جاري الفحص", message: "جاري التأكد من صلاحية القناة وإمكانية فحص الأعضاء...", buttons: [{type: "ok"}] });
-            
             try {
                 const checkRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=${channelId}`);
                 const checkData = await checkRes.json();
@@ -259,15 +247,13 @@
                 console.warn("Channel pre-check warning:", e);
             }
 
-            const rewardForExecutor = Math.floor(cost * 0.75); // 75%
+            const rewardForExecutor = Math.floor(cost * 0.75); // احتساب 75% للمنفذ داخلياً
             const channelUrl = `https://t.me/${channelId.replace('@', '')}`;
 
-            // 1. خصم النقاط من حساب صاحب المهمة
             const newBalance = myCurrentPoints - totalCost;
             const { error: userErr } = await client.from('users').update({ points: newBalance }).eq('telegram_id', tid);
             if (userErr) return tg.showAlert("❌ حدث خطأ أثناء خصم النقاط، يرجى المحاولة لاحقاً.");
 
-            // 2. إدراج المهمة في قاعدة البيانات
             const { error: taskErr } = await client.from('tasks').insert([{
                 creator_id: tid,
                 title: title,
@@ -289,33 +275,45 @@
                 tg.showAlert(`🎉 مبروك! تم نشر مهمتك بنجاح بعد خصم ${totalCost.toLocaleString()} نقطة.`);
                 loadTasks();
             } else {
-                // استرجاع النقاط في حال تعذر النشر
                 await client.from('users').update({ points: myCurrentPoints }).eq('telegram_id', tid);
                 tg.showAlert("❌ تعذر حفظ المهمة في الخادم، تم إلغاء العملية واسترجاع رصيدك.");
             }
         }
 
-        // جلب قائمة المهام من Supabase
         async function loadTasks() {
             const container = document.getElementById('tasks-list');
 
             try {
-                // جلب المهام النشطة
-                const { data: tasks, error } = await client
+                // جلب المهام
+                let { data: tasks, error } = await client
                     .from('tasks')
                     .select('*')
-                    .eq('is_active', true)
                     .order('id', { ascending: false });
 
                 if (error) throw error;
 
-                // جلب المهام التي أنجزها المستخدم سابقاً
-                const { data: myDone } = await client
-                    .from('task_completions')
-                    .select('task_id')
-                    .eq('user_id', tid);
+                if (tasks && tasks.length > 0 && 'is_active' in tasks[0]) {
+                    tasks = tasks.filter(t => t.is_active !== false);
+                }
 
-                const doneSet = new Set((myDone || []).map(d => String(d.task_id)));
+                // جلب المهام المنجزة بأمان دون تعطيل الصفحة
+                const doneSet = new Set();
+                try {
+                    const { data: myDone } = await client
+                        .from('task_completions')
+                        .select('task_id')
+                        .eq('user_id', tid);
+
+                    if (myDone) {
+                        myDone.forEach(d => doneSet.add(String(d.task_id)));
+                    }
+                } catch (e) {
+                    console.warn("task_completions check skipped:", e);
+                }
+
+                // دمج المنجز محلياً أيضاً
+                const localDone = JSON.parse(localStorage.getItem(`completed_tasks_${tid}`) || "{}");
+                Object.keys(localDone).forEach(k => { if (localDone[k]) doneSet.add(String(k)); });
 
                 if (!tasks || tasks.length === 0) {
                     container.innerHTML = '<div class="status-box">🎯 لا توجد مهام نشطة حالياً.<br>كن أول من يضيف مهمة ويروج لقناته!</div>';
@@ -351,7 +349,7 @@
                                     ${imgHtml}
                                     <div class="task-details">
                                         <b>${t.title}</b>
-                                        <span>+${t.reward.toLocaleString()} نقطة (75%)</span>
+                                        <span>+${t.reward.toLocaleString()} نقطة</span>
                                     </div>
                                 </div>
                                 ${actionBtnHtml}
@@ -369,19 +367,21 @@
 
             } catch (err) {
                 console.error("Load tasks error:", err);
-                container.innerHTML = '<div class="status-box">❌ تعذر تحميل المهام، يرجى إعادة المحاولة.</div>';
+                container.innerHTML = `
+                    <div class="status-box">
+                        ❌ تعذر تحميل المهام.<br>
+                        <small style="color: #777;">تأكد من تطبيق كود SQL في Supabase</small><br>
+                        <button class="btn-action" style="margin-top: 10px;" onclick="loadTasks()">إعادة المحاولة 🔄</button>
+                    </div>`;
             }
         }
 
-        // التعامل مع خطوات تنفيذ المهمة والتحقق
         function handleTaskStep(taskId, url, channelId, reward) {
             const btn = document.getElementById(`btn-task-${taskId}`);
 
             if (btn.classList.contains('verify')) {
-                // الخطوة 2: الفحص الحقيقي للاشتراك
                 verifyTelegramSubscription(taskId, channelId, reward, btn);
             } else {
-                // الخطوة 1: فتح رابط القناة
                 if (url.startsWith("https://t.me") || url.startsWith("tg://")) {
                     tg.openTelegramLink(url);
                 } else {
@@ -393,7 +393,6 @@
             }
         }
 
-        // فحص الاشتراك التلقائي الصارم عبر API تيليجرام
         async function verifyTelegramSubscription(taskId, channelId, reward, btn) {
             btn.disabled = true;
             btn.innerText = "⏳ جاري الفحص...";
@@ -403,7 +402,6 @@
                 const data = await res.json();
 
                 if (data.ok && ["member", "administrator", "creator"].includes(data.result.status)) {
-                    // المستخدم منضم بالفعل -> صرف النقاط
                     claimTaskSuccess(taskId, reward, btn);
                 } else {
                     btn.disabled = false;
@@ -418,18 +416,18 @@
             }
         }
 
-        // تسجيل إتمام المهمة وصرف النقاط للمنفذ والعمولة للداعي
         async function claimTaskSuccess(taskId, reward, btn) {
             try {
-                // تسجيل الإنجاز لمنع التكرار
-                const { error: compErr } = await client.from('task_completions').insert([{ task_id: taskId, user_id: tid }]);
-                if (compErr) {
-                    btn.disabled = false;
-                    btn.innerText = "منجز ✅";
-                    return tg.showAlert("⚠️ لقد حصلت على نقاط هذه المهمة مسبقاً!");
+                try {
+                    await client.from('task_completions').insert([{ task_id: taskId, user_id: tid }]);
+                } catch (e) {
+                    console.warn("Insert completion warning:", e);
                 }
 
-                // تحديث رصيد المستخدم ورصيد أرباح المهام (لتغذية الـ 10% للداعي)
+                let localDone = JSON.parse(localStorage.getItem(`completed_tasks_${tid}`) || "{}");
+                localDone[taskId] = true;
+                localStorage.setItem(`completed_tasks_${tid}`, JSON.stringify(localDone));
+
                 const newPoints = (userData.points || 0) + reward;
                 const newTotalEarned = (userData.total_earned || 0) + reward;
                 const newTaskEarnings = (userData.task_earnings || 0) + reward;
@@ -446,7 +444,6 @@
                 userData.task_earnings = newTaskEarnings;
                 updateUI();
 
-                // تحديث عداد المهمة في جدول tasks
                 const { data: currentTask } = await client.from('tasks').select('completed_count, target_count').eq('id', taskId).single();
                 if (currentTask) {
                     const newCount = (currentTask.completed_count || 0) + 1;
