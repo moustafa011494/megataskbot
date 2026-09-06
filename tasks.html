@@ -23,6 +23,16 @@
         .stat-item b { display: block; font-size: 18px; color: var(--main-green); }
         .stat-item span { font-size: 11px; color: var(--text-gray); }
 
+        /* بطاقة مشاهدة الإعلان */
+        .ad-card { background: linear-gradient(145deg, #1f242c, #13171e); border: 1px solid #00d26a55; border-radius: 18px; padding: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.08); }
+        .ad-header { display: flex; align-items: center; gap: 12px; }
+        .ad-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(0, 210, 106, 0.12); border: 1px solid var(--main-green); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        .ad-details b { display: block; font-size: 14px; color: white; margin-bottom: 2px; }
+        .ad-details span { font-size: 11px; color: var(--main-green); font-weight: bold; }
+        .btn-ad { background: var(--main-green); color: black; border: none; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s; text-align: center; }
+        .btn-ad:disabled { background: #252932; color: #777; border: 1px solid #333842; cursor: not-allowed; }
+        .ad-timer-text { font-size: 11px; color: #ffaa00; text-align: center; font-weight: bold; }
+
         .btn-create-task { background: linear-gradient(135deg, #00d26a, #009e4f); color: #000; border: none; width: 100%; padding: 14px; border-radius: 15px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); }
         .btn-create-task:active { transform: scale(0.98); }
 
@@ -131,12 +141,42 @@
         </div>
     </div>
 
+    <!-- بطاقة مشاهدة إعلان OnClick الذكية -->
+    <div class="ad-card" id="ad-box">
+        <div class="ad-header">
+            <div class="ad-icon">🎁</div>
+            <div class="ad-details">
+                <b>مكافأة الإعلانات الفورية</b>
+                <span>احصل على +25 نقطة كل 5 دقائق</span>
+            </div>
+        </div>
+        <button id="btn-watch-ad" class="btn-ad" onclick="startAdProcess()">
+            🚀 فتح الإعلان (+25 نقطة)
+        </button>
+        <div id="ad-timer-text" class="ad-timer-text" style="display: none;"></div>
+    </div>
+
     <button class="btn-create-task" onclick="openPlatformSelectModal()">
         ➕ أضف مهمتك الخاصة (اختر المنصة)
     </button>
 
     <div id="tasks-list" class="tasks-container">
         <div class="status-box">⏳ جاري جلب المهام النشطة...</div>
+    </div>
+
+    <!-- نافذة فحص وتأكيد البقاء في الإعلان لمنع الزيارات الوهمية -->
+    <div id="ad-verify-modal" class="modal-overlay">
+        <div class="modal-body" style="text-align: center;">
+            <h3 style="color: var(--main-green); margin-top: 0;">⏳ جاري التحقق من الزيارة</h3>
+            <p style="font-size: 13px; color: #ccc; line-height: 1.6;">
+                تم فتح صفحة الإعلان في نافذة جديدة.<br>
+                تصفح الصفحة وانتظر انتهاء العداد لضمان احتساب النقاط وتجنب حظر حسابك.
+            </p>
+            <div id="ad-countdown-circle" style="font-size: 38px; font-weight: bold; color: #ffaa00; margin: 15px 0;">15</div>
+            <button id="btn-claim-ad" class="btn-confirm" style="width: 100%; opacity: 0.5;" disabled onclick="claimAdReward()">
+                انتظر اكتمال العداد...
+            </button>
+        </div>
     </div>
 
     <!-- النافذة 1: اختيار المنصة -->
@@ -207,7 +247,6 @@
                 <textarea id="t-desc" class="input-field" rows="2" placeholder="مثال: اعمل متابعة للصفحة ولايك لآخر بوست"></textarea>
             </div>
 
-            <!-- رفع الشعار من الملفات -->
             <div class="input-group">
                 <label>اختر صورة/شعار المهمة من هاتفك (اختياري):</label>
                 <input type="file" id="t-logo-file" class="input-field" accept="image/*" onchange="previewTaskLogo(this)">
@@ -238,7 +277,7 @@
         </div>
     </div>
 
-    <!-- النافذة 3: تنفيذ المهمة ورفع الإثبات (للمنفذ) -->
+    <!-- النافذة 3: تنفيذ المهمة ورفع الإثبات -->
     <div id="proof-modal" class="modal-overlay">
         <div class="modal-body">
             <h3 class="modal-title">📸 تنفيذ المهمة وتقديم الإثبات</h3>
@@ -271,7 +310,7 @@
         </div>
     </div>
 
-    <!-- النافذة 4: مراجعة الإثباتات (لصاحب المهمة) -->
+    <!-- النافذة 4: مراجعة الإثباتات -->
     <div id="review-modal" class="modal-overlay">
         <div class="modal-body">
             <h3 class="modal-title">🔍 مراجعة إثباتات مهمتك</h3>
@@ -320,6 +359,14 @@
         const BOT_ID = "8487785406";
         const client = supabase.createClient(S_URL, S_KEY);
 
+        // ==========================================
+        // إعدادات إعلانات OnClick / Direct Link
+        // ==========================================
+        const AD_REWARD_POINTS = 25; // عدد النقاط الممنوحة
+        const AD_COOLDOWN_SECONDS = 300; // 5 دقائق (300 ثانية)
+        const AD_MANDATORY_STAY_SECONDS = 15; // ثواني الانتظار لمنع الزيارات الوهمية
+        const AD_DIRECT_LINK = "https://otootooph.net/4/8916601"; // ضع رابط إعلان OnClick / Direct Link الخاص بك هنا
+
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
         let userData = null;
@@ -328,6 +375,8 @@
         let taskLogoBase64 = "";
         let proofBase64Image = "";
         let currentZoom = 1;
+        let adCooldownInterval = null;
+        let verifyCountdownTimer = null;
 
         const PLATFORM_CONFIG = {
             telegram: { title: "📢 ترويج قناة / جروب تيليجرام", icon: "📢", lblLink: "معرف القناة أو الرابط:", phLink: "@MyChannel أو https://t.me/...", showAdminAlert: true },
@@ -353,6 +402,7 @@
                 if (user) {
                     userData = user;
                     updateUI();
+                    checkAdCooldown();
                 }
             } catch (e) {
                 console.error("User fetch error:", e);
@@ -368,6 +418,154 @@
             document.getElementById('user-task-earnings').innerText = (userData.task_earnings || 0).toLocaleString();
         }
 
+        // ==========================================
+        // إدارة وتأكيد إعلانات OnClick
+        // ==========================================
+        function checkAdCooldown() {
+            if (!userData || !userData.last_ad_watched_at) {
+                enableAdButton();
+                return;
+            }
+
+            const lastWatched = new Date(userData.last_ad_watched_at).getTime();
+            const now = Date.now();
+            const elapsed = Math.floor((now - lastWatched) / 1000);
+
+            if (elapsed < AD_COOLDOWN_SECONDS) {
+                startCooldownTimer(AD_COOLDOWN_SECONDS - elapsed);
+            } else {
+                enableAdButton();
+            }
+        }
+
+        function enableAdButton() {
+            const btn = document.getElementById('btn-watch-ad');
+            const timerText = document.getElementById('ad-timer-text');
+            btn.disabled = false;
+            btn.innerText = `🚀 فتح الإعلان (+${AD_REWARD_POINTS} نقطة)`;
+            timerText.style.display = 'none';
+            if (adCooldownInterval) clearInterval(adCooldownInterval);
+        }
+
+        function startCooldownTimer(remaining) {
+            const btn = document.getElementById('btn-watch-ad');
+            const timerText = document.getElementById('ad-timer-text');
+            btn.disabled = true;
+            timerText.style.display = 'block';
+
+            if (adCooldownInterval) clearInterval(adCooldownInterval);
+
+            function updateTimer() {
+                if (remaining <= 0) {
+                    clearInterval(adCooldownInterval);
+                    enableAdButton();
+                    return;
+                }
+
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                const fmt = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+
+                btn.innerText = `⏳ متاح بعد (${fmt})`;
+                timerText.innerText = `⚠️ يمكنك فتح الإعلان التالي بعد انقضاء المهلة`;
+                remaining--;
+            }
+
+            updateTimer();
+            adCooldownInterval = setInterval(updateTimer, 1000);
+        }
+
+        function startAdProcess() {
+            // فتح رابط الإعلان في نافذة منبثقة/متصفح
+            if (window.Telegram?.WebApp) {
+                tg.openLink(AD_DIRECT_LINK);
+            } else {
+                window.open(AD_DIRECT_LINK, '_blank');
+            }
+
+            // تفعيل نافذة عداد التحقق لمنع الزيارات الوهمية
+            const modal = document.getElementById('ad-verify-modal');
+            const claimBtn = document.getElementById('btn-claim-ad');
+            const counter = document.getElementById('ad-countdown-circle');
+
+            modal.style.display = 'flex';
+            claimBtn.disabled = true;
+            claimBtn.style.opacity = '0.5';
+            claimBtn.innerText = "انتظر اكتمال العداد...";
+
+            let stayLeft = AD_MANDATORY_STAY_SECONDS;
+            counter.innerText = stayLeft;
+
+            if (verifyCountdownTimer) clearInterval(verifyCountdownTimer);
+
+            verifyCountdownTimer = setInterval(() => {
+                stayLeft--;
+                counter.innerText = stayLeft;
+
+                if (stayLeft <= 0) {
+                    clearInterval(verifyCountdownTimer);
+                    counter.innerText = "✅";
+                    claimBtn.disabled = false;
+                    claimBtn.style.opacity = '1';
+                    claimBtn.innerText = `🎁 استلام +${AD_REWARD_POINTS} نقطة الآن`;
+                }
+            }, 1000);
+        }
+
+        async function claimAdReward() {
+            const claimBtn = document.getElementById('btn-claim-ad');
+            claimBtn.disabled = true;
+            claimBtn.innerText = "⏳ جاري إضافة النقاط...";
+
+            try {
+                // فحص الخادم المباشر للتأكد من انقضاء الـ 5 دقائق وعدم التلاعب
+                const { data: currentUser, error: fetchErr } = await client
+                    .from('users')
+                    .select('points, last_ad_watched_at')
+                    .eq('telegram_id', tid)
+                    .single();
+
+                if (fetchErr || !currentUser) throw new Error("تعذر جلب البيانات");
+
+                if (currentUser.last_ad_watched_at) {
+                    const diff = (Date.now() - new Date(currentUser.last_ad_watched_at).getTime()) / 1000;
+                    if (diff < AD_COOLDOWN_SECONDS) {
+                        document.getElementById('ad-verify-modal').style.display = 'none';
+                        tg.showAlert("⛔ عذراً! لم تنقضِ مهلة الـ 5 دقائق بعد.");
+                        checkAdCooldown();
+                        return;
+                    }
+                }
+
+                const nowIso = new Date().toISOString();
+                const updatedPoints = (currentUser.points || 0) + AD_REWARD_POINTS;
+
+                const { error: updateErr } = await client.from('users').update({
+                    points: updatedPoints,
+                    last_ad_watched_at: nowIso
+                }).eq('telegram_id', tid);
+
+                if (updateErr) throw updateErr;
+
+                userData.points = updatedPoints;
+                userData.last_ad_watched_at = nowIso;
+                updateUI();
+
+                document.getElementById('ad-verify-modal').style.display = 'none';
+                tg.showAlert(`🎉 تم تأكيد الزيارة وإضافة +${AD_REWARD_POINTS} نقطة بنجاح!`);
+                startCooldownTimer(AD_COOLDOWN_SECONDS);
+
+            } catch (err) {
+                console.error("Ad claim error:", err);
+                tg.showAlert("❌ تعذر إضافة النقاط حالياً، يرجى المحاولة لاحقاً.");
+                claimBtn.disabled = false;
+                claimBtn.innerText = "حاول مجدداً";
+            }
+        }
+
+        // ==========================================
+        // وظائف سوق المهام وتبادل القنوات
+        // ==========================================
         function calcSummary() {
             const cost = Math.max(1, parseInt(document.getElementById('t-cost').value) || 0);
             const target = Math.max(1, parseInt(document.getElementById('t-target').value) || 0);
@@ -403,7 +601,6 @@
             openPlatformSelectModal();
         }
 
-        // معاينة وضغط صورة/شعار المهمة من الجهاز
         function previewTaskLogo(input) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
@@ -574,14 +771,12 @@
                     tasks = tasks.filter(t => t.is_active !== false);
                 }
 
-                // 1. جلب المكتمل
                 const doneSet = new Set();
                 try {
                     const { data: myDone } = await client.from('task_completions').select('task_id').eq('user_id', tid);
                     if (myDone) myDone.forEach(d => doneSet.add(String(d.task_id)));
                 } catch (e) {}
 
-                // 2. جلب أحدث إثبات ورسائل الملاحظات لكل مهمة
                 const userSubmissionsMap = {};
                 try {
                     const { data: mySubs } = await client
@@ -600,7 +795,6 @@
                     }
                 } catch (e) {}
 
-                // 3. جلب عدد الإثباتات المعلقة لصاحب المهمة
                 const creatorPendingCounts = {};
                 try {
                     const { data: pendingForMe } = await client
@@ -816,7 +1010,7 @@
             }
         }
 
-        // مراجعة الإثباتات (لصاحب المهمة)
+        // مراجعة الإثباتات
         async function openReviewModal(taskId) {
             const container = document.getElementById('review-submissions-container');
             container.innerHTML = '<div class="status-box">⏳ جاري جلب الإثباتات...</div>';
@@ -867,7 +1061,6 @@
             }
         }
 
-        // عارض الصور المتقدم
         function openLightbox(imgSrc) {
             const lightbox = document.getElementById('lightbox-modal');
             const img = document.getElementById('lightbox-img');
@@ -891,7 +1084,6 @@
             document.getElementById('lightbox-modal').style.display = 'none';
         }
 
-        // قبول الإثبات مع كلمة شكر اختيارية
         async function acceptSubmission(subId, taskId, executorId) {
             const feedbackVal = (document.getElementById(`feedback-input-${subId}`)?.value || "").trim();
 
@@ -901,7 +1093,6 @@
                 const { data: taskData } = await client.from('tasks').select('*').eq('id', parseInt(taskId)).single();
                 if (!taskData) return tg.showAlert("المهمة غير موجودة!");
 
-                // تحديث حالة الإثبات إلى approved وتخزين جملة الشكر إن وجدت
                 await client.from('task_submissions').update({
                     status: 'approved',
                     feedback: feedbackVal || null
@@ -920,7 +1111,6 @@
             }
         }
 
-        // رفض الإثبات مع شرط سبب الرفض الإجباري
         async function rejectSubmission(subId) {
             const reason = (document.getElementById(`feedback-input-${subId}`)?.value || "").trim();
 
@@ -945,7 +1135,6 @@
             }
         }
 
-        // دالة الصرف والتثبيت الموحدة
         async function claimTaskSuccess(taskId, reward, targetUserId, btn = null) {
             try {
                 try {
