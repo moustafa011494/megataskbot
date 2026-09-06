@@ -27,7 +27,7 @@
         .btn-create-task:active { transform: scale(0.98); }
 
         .tasks-container { display: flex; flex-direction: column; gap: 12px; }
-        .task-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; gap: 12px; transition: 0.2s; }
+        .task-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; gap: 10px; transition: 0.2s; }
         .task-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .task-info { display: flex; align-items: center; gap: 12px; flex: 1; }
         
@@ -36,6 +36,9 @@
         .task-details span { font-size: 12px; color: var(--main-green); font-weight: bold; }
         
         .task-desc { font-size: 12px; color: var(--text-gray); line-height: 1.5; background: #11141a; padding: 8px 12px; border-radius: 10px; border: 1px solid #22262f; }
+        .task-feedback { font-size: 11px; padding: 7px 12px; border-radius: 9px; line-height: 1.5; }
+        .task-feedback.approved { background: rgba(0, 210, 106, 0.08); border: 1px solid var(--main-green); color: #00d26a; }
+        .task-feedback.rejected { background: rgba(255, 59, 48, 0.08); border: 1px solid #ff3b30; color: #ff6b6b; }
         
         .task-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #252932; padding-top: 10px; }
         .progress-text { font-size: 11px; color: var(--text-gray); }
@@ -44,9 +47,9 @@
         .btn-action.verify { background: #ffaa00; color: black; }
         .btn-action.pending { background: #4a3b00; color: #ffcc00; cursor: not-allowed; border: 1px solid #ffcc00; }
         .btn-action.review { background: #0077ff; color: white; }
-        .btn-action.done { background: #252932; color: var(--text-gray); cursor: not-allowed; border: 1px solid #333842; }
+        .btn-action.done { background: #1c2e24; color: var(--main-green); cursor: not-allowed; border: 1px solid #254a35; }
+        .btn-action.rejected { background: #3b1717; color: #ff5e57; border: 1px solid #ff3b30; }
 
-        /* النوافذ المنبثقة */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
         .modal-body { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; width: 100%; max-height: 90vh; overflow-y: auto; text-align: right; }
         .modal-title { font-size: 17px; color: var(--main-green); margin-top: 0; margin-bottom: 15px; text-align: center; }
@@ -69,7 +72,7 @@
         .instructions-card { background: #11141a; border: 1px dashed #333; border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 12px; line-height: 1.7; color: #ddd; }
         .instructions-card b { color: var(--main-green); }
 
-        .preview-box { width: 100%; height: 160px; border-radius: 12px; border: 2px dashed #444; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 10px 0; background: #0b0d10; }
+        .preview-box { width: 100%; height: 140px; border-radius: 12px; border: 2px dashed #444; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 10px 0; background: #0b0d10; }
         .preview-box img { width: 100%; height: 100%; object-fit: contain; }
 
         .summary-box { background: rgba(0, 210, 106, 0.05); border: 1px dashed var(--main-green); border-radius: 12px; padding: 12px; margin: 15px 0; font-size: 12px; line-height: 1.8; }
@@ -80,12 +83,24 @@
         .btn-confirm { background: var(--main-green); color: black; }
         .btn-cancel { background: #252932; color: white; }
 
-        /* كروت المراجعة لصاحب المهمة */
-        .sub-review-card { background: #11141a; border: 1px solid #2d333d; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
-        .sub-review-card img { width: 100%; max-height: 220px; object-fit: contain; border-radius: 8px; margin: 8px 0; border: 1px solid #333; }
-        .sub-actions { display: flex; gap: 8px; margin-top: 8px; }
-        .btn-accept { background: var(--main-green); color: black; border: none; padding: 8px; border-radius: 8px; font-weight: bold; flex: 1; cursor: pointer; }
-        .btn-reject { background: #ff3b30; color: white; border: none; padding: 8px; border-radius: 8px; font-weight: bold; flex: 1; cursor: pointer; }
+        /* مراجعة الإثباتات */
+        .sub-review-card { background: #11141a; border: 1px solid #2d333d; border-radius: 14px; padding: 12px; margin-bottom: 15px; }
+        .sub-thumb-container { position: relative; width: 100%; border-radius: 8px; overflow: hidden; margin: 8px 0; border: 1px solid #333; cursor: zoom-in; }
+        .sub-thumb-container img { width: 100%; max-height: 180px; object-fit: cover; display: block; }
+        .sub-thumb-badge { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.75); color: white; font-size: 11px; padding: 4px 8px; border-radius: 6px; }
+
+        .sub-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-accept { background: var(--main-green); color: black; border: none; padding: 9px; border-radius: 8px; font-weight: bold; flex: 1; cursor: pointer; }
+        .btn-reject { background: #ff3b30; color: white; border: none; padding: 9px; border-radius: 8px; font-weight: bold; flex: 1; cursor: pointer; }
+
+        /* عارض الصور المتقدم */
+        #lightbox-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); z-index: 100000; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px; }
+        .lightbox-toolbar { width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .lightbox-controls { display: flex; gap: 10px; }
+        .lightbox-btn { background: #22262f; border: 1px solid #444; color: white; font-size: 14px; font-weight: bold; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+        .lightbox-btn:active { background: var(--main-green); color: black; }
+        .lightbox-viewport { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; overflow: auto; position: relative; margin: 10px 0; }
+        #lightbox-img { max-width: 95vw; max-height: 75vh; object-fit: contain; transition: transform 0.2s ease; transform-origin: center center; }
 
         .status-box { text-align: center; padding: 40px 15px; color: var(--text-gray); font-size: 13px; line-height: 1.6; }
 
@@ -192,9 +207,13 @@
                 <textarea id="t-desc" class="input-field" rows="2" placeholder="مثال: اعمل متابعة للصفحة ولايك لآخر بوست"></textarea>
             </div>
 
+            <!-- رفع الشعار من الملفات -->
             <div class="input-group">
-                <label>رابط صورة/شعار (اختياري):</label>
-                <input type="url" id="t-img" class="input-field" placeholder="https://example.com/logo.jpg">
+                <label>اختر صورة/شعار المهمة من هاتفك (اختياري):</label>
+                <input type="file" id="t-logo-file" class="input-field" accept="image/*" onchange="previewTaskLogo(this)">
+                <div id="task-logo-preview" class="preview-box" style="height: 100px; display: none; margin-top: 8px;">
+                    <img id="task-logo-img" src="" alt="شعار المهمة">
+                </div>
             </div>
 
             <div style="display: flex; gap: 10px;">
@@ -219,7 +238,7 @@
         </div>
     </div>
 
-    <!-- النافذة 3: نافذة إنجاز المهمة ورفع الإثبات (للمنفذ) -->
+    <!-- النافذة 3: تنفيذ المهمة ورفع الإثبات (للمنفذ) -->
     <div id="proof-modal" class="modal-overlay">
         <div class="modal-body">
             <h3 class="modal-title">📸 تنفيذ المهمة وتقديم الإثبات</h3>
@@ -256,13 +275,31 @@
     <div id="review-modal" class="modal-overlay">
         <div class="modal-body">
             <h3 class="modal-title">🔍 مراجعة إثباتات مهمتك</h3>
-            <p style="font-size: 12px; color: var(--text-gray); text-align: center; margin-top: -10px; margin-bottom: 15px;">تحقق من لقطات الشاشة المقدمة من الأعضاء لاعتماد النقاط لهم:</p>
+            <p style="font-size: 12px; color: var(--text-gray); text-align: center; margin-top: -10px; margin-bottom: 15px;">اضغط على الصورة لتكبيرها، واكتب ملاحظاتك قبل القبول أو الرفض:</p>
             
             <div id="review-submissions-container">
                 <div class="status-box">⏳ جاري جلب الإثباتات المعلقة...</div>
             </div>
 
             <button class="btn-cancel" style="width: 100%; padding: 12px; border-radius: 12px; margin-top: 10px;" onclick="closeModal('review-modal')">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- النافذة 5: عارض الصور المتقدم بالتكبير والتصغير -->
+    <div id="lightbox-modal">
+        <div class="lightbox-toolbar">
+            <div class="lightbox-controls">
+                <button class="lightbox-btn" onclick="zoomImage(0.25)">🔍+ تكبير</button>
+                <button class="lightbox-btn" onclick="zoomImage(-0.25)">🔍- تصغير</button>
+                <button class="lightbox-btn" onclick="resetZoom()">🔄 إعادة ضبط</button>
+            </div>
+            <button class="lightbox-btn" style="background: #ff3b30;" onclick="closeLightbox()">✖ إغلاق</button>
+        </div>
+        <div class="lightbox-viewport">
+            <img id="lightbox-img" src="" alt="Proof Fullscreen">
+        </div>
+        <div style="font-size: 12px; color: var(--text-gray); text-align: center; padding-bottom: 5px;">
+            يمكنك سحب الصورة لتحريكها والتكبير للتحقق من تفاصيل الإثبات بدقة
         </div>
     </div>
 
@@ -288,7 +325,9 @@
         let userData = null;
         let selectedPlatform = "telegram";
         let activeExecutionTask = null;
+        let taskLogoBase64 = "";
         let proofBase64Image = "";
+        let currentZoom = 1;
 
         const PLATFORM_CONFIG = {
             telegram: { title: "📢 ترويج قناة / جروب تيليجرام", icon: "📢", lblLink: "معرف القناة أو الرابط:", phLink: "@MyChannel أو https://t.me/...", showAdminAlert: true },
@@ -298,6 +337,10 @@
             instagram: { title: "📸 ترويج حساب انستجرام", icon: "📸", lblLink: "رابط الحساب على انستجرام:", phLink: "https://instagram.com/...", showAdminAlert: false },
             website: { title: "🌐 ترويج موقع إلكتروني أو رابط", icon: "🌐", lblLink: "رابط الموقع المطلوب زيارته:", phLink: "https://...", showAdminAlert: false }
         };
+
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
 
         async function init() {
             if (!tid) {
@@ -348,7 +391,9 @@
             document.getElementById('t-title').value = "";
             document.getElementById('t-link').value = "";
             document.getElementById('t-desc').value = "";
-            document.getElementById('t-img').value = "";
+            document.getElementById('t-logo-file').value = "";
+            taskLogoBase64 = "";
+            document.getElementById('task-logo-preview').style.display = 'none';
 
             document.getElementById('create-modal').style.display = 'flex';
         }
@@ -356,6 +401,42 @@
         function backToPlatformSelect() {
             closeModal('create-modal');
             openPlatformSelectModal();
+        }
+
+        // معاينة وضغط صورة/شعار المهمة من الجهاز
+        function previewTaskLogo(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxDim = 320;
+                    let w = img.width;
+                    let h = img.height;
+
+                    if (w > h && w > maxDim) {
+                        h = Math.round((h * maxDim) / w);
+                        w = maxDim;
+                    } else if (h > maxDim) {
+                        w = Math.round((w * maxDim) / h);
+                        h = maxDim;
+                    }
+
+                    canvas.width = w;
+                    canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+
+                    taskLogoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('task-logo-img').src = taskLogoBase64;
+                    document.getElementById('task-logo-preview').style.display = 'flex';
+                };
+            };
+            reader.readAsDataURL(file);
         }
 
         function extractChannelId(raw) {
@@ -372,7 +453,6 @@
             const title = document.getElementById('t-title').value.trim();
             const linkRaw = document.getElementById('t-link').value.trim();
             const desc = document.getElementById('t-desc').value.trim() || "نفذ المهمة وقدم لقطة الشاشة لكسب النقاط فوراً";
-            const imgUrl = document.getElementById('t-img').value.trim();
             const cost = parseInt(document.getElementById('t-cost').value) || 0;
             const target = parseInt(document.getElementById('t-target').value) || 0;
 
@@ -395,7 +475,6 @@
             btn.disabled = true;
             btn.innerText = "⏳ جاري الفحص...";
 
-            // فحص منع تكرار الرابط في المهام النشطة
             try {
                 let dupCheck = client.from('tasks').select('id, channel_id, url').eq('is_active', true);
                 if (selectedPlatform === "telegram" && channelId) {
@@ -408,13 +487,12 @@
                 if (existingTasks && existingTasks.length > 0) {
                     btn.disabled = false;
                     btn.innerText = "تأكيد ونشر المهمة 🚀";
-                    return tg.showAlert("⛔ هذا الرابط / القناة مضاف بالفعل في سوق المهام النشطة!\n\nلا يُسمح بتكرار نفس الرابط في أكثر من مهمة نشطة.");
+                    return tg.showAlert("⛔ هذا الرابط / القناة مضاف بالفعل في سوق المهام النشطة!");
                 }
             } catch (e) {
                 console.warn("Dup error:", e);
             }
 
-            // فحص البوت كمشرف لتيليجرام
             if (selectedPlatform === "telegram") {
                 btn.innerText = "⏳ فحص رتبة البوت...";
                 try {
@@ -424,7 +502,7 @@
                     if (!data.ok || !["administrator", "creator"].includes(data.result?.status)) {
                         btn.disabled = false;
                         btn.innerText = "تأكيد ونشر المهمة 🚀";
-                        return tg.showAlert("⛔ تعذر نشر المهمة!\n\nبوت المنصة (@MegaTask1Bot) ليس مشرفاً (Admin) في هذه القناة حتى الآن.\n\nأضف البوت مشرفاً ثم اضغط تأكيد النشر.");
+                        return tg.showAlert("⛔ تعذر نشر المهمة!\n\nبوت المنصة (@MegaTask1Bot) ليس مشرفاً في هذه القناة حتى الآن.\n\nأضف البوت مشرفاً أولاً ثم اضغط تأكيد النشر.");
                     }
                 } catch (e) {
                     btn.disabled = false;
@@ -444,7 +522,6 @@
 
             const rewardForExecutor = Math.floor(cost * 0.75);
 
-            // خصم النقاط
             const newBalance = myCurrentPoints - totalCost;
             const { error: userErr } = await client.from('users').update({ points: newBalance }).eq('telegram_id', tid);
             if (userErr) {
@@ -453,13 +530,12 @@
                 return tg.showAlert("❌ خطأ أثناء خصم النقاط: " + (userErr.message || ""));
             }
 
-            // حفظ المهمة
             const { error: taskErr } = await client.from('tasks').insert([{
                 creator_id: tid,
                 platform: selectedPlatform,
                 title: title,
                 description: desc,
-                image_url: imgUrl || null,
+                image_url: taskLogoBase64 || null,
                 channel_id: channelId || linkRaw,
                 url: finalUrl,
                 cost_per_user: cost,
@@ -498,26 +574,41 @@
                     tasks = tasks.filter(t => t.is_active !== false);
                 }
 
-                // جلب المنجز سابقاً
+                // 1. جلب المكتمل
                 const doneSet = new Set();
                 try {
                     const { data: myDone } = await client.from('task_completions').select('task_id').eq('user_id', tid);
                     if (myDone) myDone.forEach(d => doneSet.add(String(d.task_id)));
                 } catch (e) {}
 
-                // جلب الإثباتات المعلقة الخاصة بالمستخدم الحالي
-                const pendingSubmissionsMap = {};
+                // 2. جلب أحدث إثبات ورسائل الملاحظات لكل مهمة
+                const userSubmissionsMap = {};
                 try {
-                    const { data: mySubs } = await client.from('task_submissions').select('task_id, status').eq('user_id', tid);
+                    const { data: mySubs } = await client
+                        .from('task_submissions')
+                        .select('task_id, status, feedback')
+                        .eq('user_id', tid)
+                        .order('id', { ascending: true });
+
                     if (mySubs) {
-                        mySubs.forEach(s => { pendingSubmissionsMap[String(s.task_id)] = s.status; });
+                        mySubs.forEach(s => {
+                            userSubmissionsMap[String(s.task_id)] = {
+                                status: s.status,
+                                feedback: s.feedback || ""
+                            };
+                        });
                     }
                 } catch (e) {}
 
-                // جلب عدد الإثباتات المعلقة لصاحب المهمة
+                // 3. جلب عدد الإثباتات المعلقة لصاحب المهمة
                 const creatorPendingCounts = {};
                 try {
-                    const { data: pendingForMe } = await client.from('task_submissions').select('task_id').eq('creator_id', tid).eq('status', 'pending');
+                    const { data: pendingForMe } = await client
+                        .from('task_submissions')
+                        .select('task_id')
+                        .eq('creator_id', tid)
+                        .eq('status', 'pending');
+
                     if (pendingForMe) {
                         pendingForMe.forEach(p => {
                             const k = String(p.task_id);
@@ -537,14 +628,15 @@
 
                 tasks.forEach(t => {
                     const taskId = String(t.id);
-                    const isDone = doneSet.has(taskId);
                     const isMyTask = String(t.creator_id) === String(tid);
+                    const isCompleted = doneSet.has(taskId);
+                    const subInfo = userSubmissionsMap[taskId];
+                    const pendingCountForCreator = creatorPendingCounts[taskId] || 0;
                     const plt = t.platform || "telegram";
                     const pltIcon = PLATFORM_CONFIG[plt]?.icon || "📢";
-                    const userSubStatus = pendingSubmissionsMap[taskId];
-                    const pendingCountForCreator = creatorPendingCounts[taskId] || 0;
 
                     let actionBtnHtml = '';
+                    let feedbackHtml = '';
 
                     if (isMyTask) {
                         if (pendingCountForCreator > 0) {
@@ -552,10 +644,18 @@
                         } else {
                             actionBtnHtml = `<button class="btn-action done" disabled>مهمتك 👤</button>`;
                         }
-                    } else if (isDone) {
-                        actionBtnHtml = `<button class="btn-action done" disabled>منجز ✅</button>`;
-                    } else if (userSubStatus === 'pending') {
+                    } else if (isCompleted || subInfo?.status === 'approved') {
+                        actionBtnHtml = `<button class="btn-action done" disabled>تمت المراجعة وصرف النقاط ✅</button>`;
+                        if (subInfo?.feedback) {
+                            feedbackHtml = `<div class="task-feedback approved">💌 <b>رسالة شكر:</b> ${escapeHtml(subInfo.feedback)}</div>`;
+                        }
+                    } else if (subInfo?.status === 'pending') {
                         actionBtnHtml = `<button class="btn-action pending" disabled>⏳ قيد المراجعة</button>`;
+                    } else if (subInfo?.status === 'rejected') {
+                        actionBtnHtml = `<button class="btn-action rejected" onclick="openProofModal(${JSON.stringify(t).replace(/"/g, '&quot;')})">مرفوض - أعد المحاولة 🔄</button>`;
+                        if (subInfo?.feedback) {
+                            feedbackHtml = `<div class="task-feedback rejected">❌ <b>سبب الرفض:</b> ${escapeHtml(subInfo.feedback)}</div>`;
+                        }
                     } else {
                         if (plt === "telegram") {
                             actionBtnHtml = `<button id="btn-task-${taskId}" class="btn-action" onclick="handleTaskStep('${taskId}', '${t.url}', '${t.channel_id}', ${t.reward}, 'telegram')">انضمام 📢</button>`;
@@ -574,18 +674,19 @@
                                 <div class="task-info">
                                     ${imgHtml}
                                     <div class="task-details">
-                                        <b>${t.title}</b>
+                                        <b>${escapeHtml(t.title)}</b>
                                         <span>+${t.reward.toLocaleString()} نقطة</span>
                                     </div>
                                 </div>
                                 ${actionBtnHtml}
                             </div>
                             
-                            ${t.description ? `<div class="task-desc">📝 ${t.description}</div>` : ''}
+                            ${t.description ? `<div class="task-desc">📝 ${escapeHtml(t.description)}</div>` : ''}
+                            ${feedbackHtml}
 
                             <div class="task-footer">
                                 <span class="progress-text">المكتمل: ${t.completed_count || 0} من ${t.target_count}</span>
-                                <span style="font-size: 11px; color: var(--main-green);">${t.channel_id || "رابط خارجي"}</span>
+                                <span style="font-size: 11px; color: var(--main-green);">${escapeHtml(t.channel_id || "رابط مباشر")}</span>
                             </div>
                         </div>
                     `;
@@ -601,9 +702,7 @@
             }
         }
 
-        // ==========================================
-        // مسار التيليجرام: الفحص الآلي الحقيقي
-        // ==========================================
+        // مسار التيليجرام
         function handleTaskStep(taskId, url, channelId, reward, platform) {
             const btn = document.getElementById(`btn-task-${taskId}`);
             if (btn.classList.contains('verify')) {
@@ -641,9 +740,7 @@
             }
         }
 
-        // ==========================================
-        // مسار باقي المنصات: تقديم لقطة الشاشة
-        // ==========================================
+        // رفع الإثبات
         function openProofModal(task) {
             activeExecutionTask = task;
             proofBase64Image = "";
@@ -653,7 +750,6 @@
             document.getElementById('proof-modal').style.display = 'flex';
         }
 
-        // ضغط ومعاينة صورة لقطة الشاشة في المتصفح
         function previewProofImage(input) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
@@ -678,7 +774,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, w, h);
 
-                    // ضغط بصيغة JPEG بجودة 0.65 لتوفير الحجم
                     proofBase64Image = canvas.toDataURL('image/jpeg', 0.65);
                     document.getElementById('preview-box').innerHTML = `<img src="${proofBase64Image}">`;
                 };
@@ -689,7 +784,7 @@
         async function submitTaskProof() {
             if (!activeExecutionTask) return;
             if (!proofBase64Image) {
-                return tg.showAlert("❌ يرجى اختيار لقطة الشاشة (Screenshot) أولاً لإثبات تنفيذك للمهمة!");
+                return tg.showAlert("❌ يرجى اختيار لقطة الشاشة أولاً لإثبات تنفيذ المهمة!");
             }
 
             const btn = document.getElementById('btn-send-proof');
@@ -698,22 +793,22 @@
 
             try {
                 const { error } = await client.from('task_submissions').insert([{
-                    task_id: activeExecutionTask.id,
-                    creator_id: activeExecutionTask.creator_id,
-                    user_id: tid,
+                    task_id: parseInt(activeExecutionTask.id),
+                    creator_id: String(activeExecutionTask.creator_id),
+                    user_id: String(tid),
                     proof_image: proofBase64Image,
                     status: 'pending'
                 }]);
 
                 if (!error) {
                     closeModal('proof-modal');
-                    tg.showAlert("✅ تم إرسال لقطة الشاشة بنجاح!\n\nستتم مراجعة الإثبات بواسطة صاحب المهمة، وستُضاف النقاط إلى رصيدك فور اعتماده.");
+                    tg.showAlert("✅ تم إرسال الإثبات بنجاح!\n\nستتم مراجعته من قِبل صاحب المهمة وستضاف النقاط تلقائياً فور اعتماده.");
                     loadTasks();
                 } else {
                     tg.showAlert("❌ تعذر إرسال الإثبات: " + error.message);
                 }
             } catch (err) {
-                console.error("Proof submission err:", err);
+                console.error("Proof submit err:", err);
                 tg.showAlert("❌ حدث خطأ في الاتصال أثناء الإرسال.");
             } finally {
                 btn.disabled = false;
@@ -721,9 +816,7 @@
             }
         }
 
-        // ==========================================
-        // مسار مراجعة الإثباتات (لصاحب المهمة)
-        // ==========================================
+        // مراجعة الإثباتات (لصاحب المهمة)
         async function openReviewModal(taskId) {
             const container = document.getElementById('review-submissions-container');
             container.innerHTML = '<div class="status-box">⏳ جاري جلب الإثباتات...</div>';
@@ -733,7 +826,7 @@
                 const { data: subs, error } = await client
                     .from('task_submissions')
                     .select('*')
-                    .eq('task_id', taskId)
+                    .eq('task_id', parseInt(taskId))
                     .eq('status', 'pending')
                     .order('id', { ascending: false });
 
@@ -750,10 +843,18 @@
                     container.innerHTML += `
                         <div id="sub-card-${s.id}" class="sub-review-card">
                             <div style="font-size: 11px; color: var(--text-gray); display: flex; justify-content: space-between;">
-                                <span>👤 المنفذ: ${s.user_id}</span>
+                                <span>👤 المنفذ: ${escapeHtml(s.user_id)}</span>
                                 <span>🕒 ${timeStr}</span>
                             </div>
-                            <img src="${s.proof_image}" onclick="window.open(this.src)">
+                            <div class="sub-thumb-container" onclick="openLightbox('${s.proof_image}')">
+                                <img src="${s.proof_image}" alt="Proof">
+                                <div class="sub-thumb-badge">🔍 اضغط للتكبير وفحص الإثبات</div>
+                            </div>
+                            
+                            <div class="input-group" style="margin-top: 8px; margin-bottom: 6px;">
+                                <input type="text" id="feedback-input-${s.id}" class="input-field" style="font-size: 12px; padding: 8px 10px;" placeholder="اكتب سبب الرفض (إجباري) أو كلمة شكر (اختياري)...">
+                            </div>
+
                             <div class="sub-actions">
                                 <button class="btn-accept" onclick="acceptSubmission(${s.id}, ${s.task_id}, '${s.user_id}')">✅ قبول وصرف النقاط</button>
                                 <button class="btn-reject" onclick="rejectSubmission(${s.id})">❌ رفض الإثبات</button>
@@ -766,56 +867,95 @@
             }
         }
 
-        // قبول الإثبات وصرف النقاط للمنفذ
+        // عارض الصور المتقدم
+        function openLightbox(imgSrc) {
+            const lightbox = document.getElementById('lightbox-modal');
+            const img = document.getElementById('lightbox-img');
+            img.src = imgSrc;
+            currentZoom = 1;
+            img.style.transform = `scale(${currentZoom})`;
+            lightbox.style.display = 'flex';
+        }
+
+        function zoomImage(delta) {
+            currentZoom = Math.max(0.5, Math.min(3.5, currentZoom + delta));
+            document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`;
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`;
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox-modal').style.display = 'none';
+        }
+
+        // قبول الإثبات مع كلمة شكر اختيارية
         async function acceptSubmission(subId, taskId, executorId) {
+            const feedbackVal = (document.getElementById(`feedback-input-${subId}`)?.value || "").trim();
+
             if (!confirm("هل أنت متأكد من صحة لقطة الشاشة وقبول إضافة النقاط للمنفذ؟")) return;
 
             try {
-                const { data: taskData } = await client.from('tasks').select('*').eq('id', taskId).single();
+                const { data: taskData } = await client.from('tasks').select('*').eq('id', parseInt(taskId)).single();
                 if (!taskData) return tg.showAlert("المهمة غير موجودة!");
 
-                // تحديث حالة الطلب إلى مقبول
-                await client.from('task_submissions').update({ status: 'approved' }).eq('id', subId);
+                // تحديث حالة الإثبات إلى approved وتخزين جملة الشكر إن وجدت
+                await client.from('task_submissions').update({
+                    status: 'approved',
+                    feedback: feedbackVal || null
+                }).eq('id', subId);
 
-                // صرف النقاط للمنفذ
                 await claimTaskSuccess(taskId, taskData.reward, executorId);
 
-                // إخفاء الكارت
                 const card = document.getElementById(`sub-card-${subId}`);
                 if (card) card.remove();
 
-                tg.showAlert("🎉 تم قبول الإثبات بنجاح وصرف النقاط للمنفذ!");
+                tg.showAlert("🎉 تم قبول الإثبات وصرف النقاط بنجاح للمنفذ!");
                 loadTasks();
             } catch (err) {
                 console.error("Accept error:", err);
-                tg.showAlert("❌ حدث خطأ أثناء قبول الطلب.");
+                tg.showAlert("❌ حدث خطأ أثناء قبول الإثبات.");
             }
         }
 
-        // رفض الإثبات
+        // رفض الإثبات مع شرط سبب الرفض الإجباري
         async function rejectSubmission(subId) {
-            if (!confirm("هل أنت متأكد من رفض هذا الإثبات؟ لن يحصل المستخدم على أي نقاط.")) return;
+            const reason = (document.getElementById(`feedback-input-${subId}`)?.value || "").trim();
+
+            if (!reason) {
+                return tg.showAlert("⚠️ يجب كتابة سبب رفض الإثبات في الخانة المخصصة (إجباري) لكي يفهم المنفذ سبب الرفض ويتمكن من تصحيحه!");
+            }
+
+            if (!confirm(`هل أنت متأكد من رفض هذا الإثبات بالسبب التالي:\n"${reason}"؟`)) return;
 
             try {
-                await client.from('task_submissions').update({ status: 'rejected' }).eq('id', subId);
+                await client.from('task_submissions').update({
+                    status: 'rejected',
+                    feedback: reason
+                }).eq('id', subId);
+
                 const card = document.getElementById(`sub-card-${subId}`);
                 if (card) card.remove();
-                tg.showAlert("تم رفض الإثبات بنجاح.");
+                tg.showAlert("تم رفض الإثبات وإرسال سبب الرفض للمنفذ بنجاح.");
                 loadTasks();
             } catch (e) {
                 tg.showAlert("❌ تعذر رفض الطلب.");
             }
         }
 
-        // دالة الصرف الموحدة
+        // دالة الصرف والتثبيت الموحدة
         async function claimTaskSuccess(taskId, reward, targetUserId, btn = null) {
             try {
                 try {
-                    await client.from('task_completions').insert([{ task_id: taskId, user_id: targetUserId }]);
+                    await client.from('task_completions').insert([{ 
+                        task_id: parseInt(taskId), 
+                        user_id: String(targetUserId) 
+                    }]);
                 } catch (e) {}
 
-                // جلب رصيد المستخدم المنفذ
-                const { data: execUser } = await client.from('users').select('*').eq('telegram_id', targetUserId).single();
+                const { data: execUser } = await client.from('users').select('*').eq('telegram_id', String(targetUserId)).single();
                 if (execUser) {
                     const newPoints = (execUser.points || 0) + reward;
                     const newTotalEarned = (execUser.total_earned || 0) + reward;
@@ -827,27 +967,26 @@
                         total_earned: newTotalEarned,
                         task_earnings: newTaskEarnings,
                         total_tasks: newTotalTasks
-                    }).eq('telegram_id', targetUserId);
+                    }).eq('telegram_id', String(targetUserId));
 
-                    if (targetUserId === tid) {
+                    if (String(targetUserId) === String(tid)) {
                         userData.points = newPoints;
                         userData.task_earnings = newTaskEarnings;
                         updateUI();
                     }
                 }
 
-                // تحديث عداد المهمة
-                const { data: currentTask } = await client.from('tasks').select('completed_count, target_count').eq('id', taskId).single();
+                const { data: currentTask } = await client.from('tasks').select('completed_count, target_count').eq('id', parseInt(taskId)).single();
                 if (currentTask) {
                     const newCount = (currentTask.completed_count || 0) + 1;
                     const isActive = newCount < currentTask.target_count;
-                    await client.from('tasks').update({ completed_count: newCount, is_active: isActive }).eq('id', taskId);
+                    await client.from('tasks').update({ completed_count: newCount, is_active: isActive }).eq('id', parseInt(taskId));
                 }
 
                 if (btn) {
                     btn.className = "btn-action done";
                     btn.disabled = true;
-                    btn.innerText = "منجز ✅";
+                    btn.innerText = "تمت المراجعة وصرف النقاط ✅";
                     tg.showAlert(`🎉 مبروك! حصلت على +${reward.toLocaleString()} نقطة بنجاح!`);
                 }
             } catch (e) {
