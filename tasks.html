@@ -18,17 +18,14 @@
         .header h2 { margin: 0; font-size: 22px; color: var(--main-green); }
         .header p { margin: 5px 0 0; font-size: 13px; color: var(--text-gray); }
 
-        /* شريط الإحصائيات */
         .stats-bar { display: flex; justify-content: space-around; background: var(--card-bg); border: 1px solid #2d333d; border-radius: 15px; padding: 12px; margin-bottom: 15px; }
         .stat-item { text-align: center; }
         .stat-item b { display: block; font-size: 18px; color: var(--main-green); }
         .stat-item span { font-size: 11px; color: var(--text-gray); }
 
-        /* زر إضافة مهمة */
         .btn-create-task { background: linear-gradient(135deg, #00d26a, #009e4f); color: #000; border: none; width: 100%; padding: 14px; border-radius: 15px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); }
         .btn-create-task:active { transform: scale(0.98); }
 
-        /* قائمة المهام */
         .tasks-container { display: flex; flex-direction: column; gap: 12px; }
         .task-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; gap: 12px; transition: 0.2s; }
         .task-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -47,7 +44,6 @@
         .btn-action.verify { background: #ffaa00; color: black; }
         .btn-action.done { background: #252932; color: var(--text-gray); cursor: not-allowed; border: 1px solid #333842; }
 
-        /* نافذة إضافة مهمة */
         #create-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
         .modal-body { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; width: 100%; max-height: 90vh; overflow-y: auto; text-align: right; }
         .modal-title { font-size: 16px; color: var(--main-green); margin-top: 0; margin-bottom: 12px; text-align: center; }
@@ -237,23 +233,15 @@
                 return tg.showAlert(`❌ رصيدك غير كافٍ!\nالمطلوب: ${totalCost.toLocaleString()} نقطة\nرصيدك الحالي: ${myCurrentPoints.toLocaleString()} نقطة.`);
             }
 
-            try {
-                const checkRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=${channelId}`);
-                const checkData = await checkRes.json();
-                if (!checkData.ok) {
-                    return tg.showAlert("❌ تعذر العثور على القناة!\nتأكد من كتابة المعرف بشكل صحيح وأن القناة عامة (Public).");
-                }
-            } catch (e) {
-                console.warn("Channel pre-check warning:", e);
-            }
-
-            const rewardForExecutor = Math.floor(cost * 0.75); // احتساب 75% للمنفذ داخلياً
+            const rewardForExecutor = Math.floor(cost * 0.75);
             const channelUrl = `https://t.me/${channelId.replace('@', '')}`;
 
+            // خصم الرصيد
             const newBalance = myCurrentPoints - totalCost;
             const { error: userErr } = await client.from('users').update({ points: newBalance }).eq('telegram_id', tid);
-            if (userErr) return tg.showAlert("❌ حدث خطأ أثناء خصم النقاط، يرجى المحاولة لاحقاً.");
+            if (userErr) return tg.showAlert("❌ خطأ أثناء خصم النقاط: " + (userErr.message || ""));
 
+            // إدراج المهمة
             const { error: taskErr } = await client.from('tasks').insert([{
                 creator_id: tid,
                 title: title,
@@ -275,8 +263,10 @@
                 tg.showAlert(`🎉 مبروك! تم نشر مهمتك بنجاح بعد خصم ${totalCost.toLocaleString()} نقطة.`);
                 loadTasks();
             } else {
+                // استرجاع الرصيد وتوضيح الخطأ الحقيقي
                 await client.from('users').update({ points: myCurrentPoints }).eq('telegram_id', tid);
-                tg.showAlert("❌ تعذر حفظ المهمة في الخادم، تم إلغاء العملية واسترجاع رصيدك.");
+                console.error("Task Insert Error:", taskErr);
+                tg.showAlert(`❌ تعذر الحفظ: ${taskErr.message}\n(تم استرجاع رصيدك كاملاً)`);
             }
         }
 
@@ -284,7 +274,6 @@
             const container = document.getElementById('tasks-list');
 
             try {
-                // جلب المهام
                 let { data: tasks, error } = await client
                     .from('tasks')
                     .select('*')
@@ -296,7 +285,6 @@
                     tasks = tasks.filter(t => t.is_active !== false);
                 }
 
-                // جلب المهام المنجزة بأمان دون تعطيل الصفحة
                 const doneSet = new Set();
                 try {
                     const { data: myDone } = await client
@@ -311,7 +299,6 @@
                     console.warn("task_completions check skipped:", e);
                 }
 
-                // دمج المنجز محلياً أيضاً
                 const localDone = JSON.parse(localStorage.getItem(`completed_tasks_${tid}`) || "{}");
                 Object.keys(localDone).forEach(k => { if (localDone[k]) doneSet.add(String(k)); });
 
@@ -370,7 +357,7 @@
                 container.innerHTML = `
                     <div class="status-box">
                         ❌ تعذر تحميل المهام.<br>
-                        <small style="color: #777;">تأكد من تطبيق كود SQL في Supabase</small><br>
+                        <small style="color: #777;">${err.message || "خطأ في الاتصال"}</small><br>
                         <button class="btn-action" style="margin-top: 10px;" onclick="loadTasks()">إعادة المحاولة 🔄</button>
                     </div>`;
             }
