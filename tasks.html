@@ -6,37 +6,66 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Tasks - MegaTask</title>
+    <title>Tasks Market - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
+        * { box-sizing: border-box; }
         body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 110px; }
         
-        .header { text-align: center; padding: 15px 0 20px; }
+        .header { text-align: center; padding: 10px 0 15px; }
         .header h2 { margin: 0; font-size: 22px; color: var(--main-green); }
         .header p { margin: 5px 0 0; font-size: 13px; color: var(--text-gray); }
 
-        .stats-bar { display: flex; justify-content: space-around; background: var(--card-bg); border: 1px solid #2d333d; border-radius: 15px; padding: 12px; margin-bottom: 20px; }
+        /* شريط الإحصائيات */
+        .stats-bar { display: flex; justify-content: space-around; background: var(--card-bg); border: 1px solid #2d333d; border-radius: 15px; padding: 12px; margin-bottom: 15px; }
         .stat-item { text-align: center; }
         .stat-item b { display: block; font-size: 18px; color: var(--main-green); }
         .stat-item span { font-size: 11px; color: var(--text-gray); }
 
+        /* زر إضافة مهمة */
+        .btn-create-task { background: linear-gradient(135deg, #00d26a, #009e4f); color: #000; border: none; width: 100%; padding: 14px; border-radius: 15px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); }
+        .btn-create-task:active { transform: scale(0.98); }
+
+        /* قائمة المهام */
         .tasks-container { display: flex; flex-direction: column; gap: 12px; }
-        .task-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 18px; padding: 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: 0.2s; }
-        .task-card:active { transform: scale(0.98); }
-        
+        .task-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; gap: 12px; transition: 0.2s; }
+        .task-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .task-info { display: flex; align-items: center; gap: 12px; flex: 1; }
-        .task-icon { width: 44px; height: 44px; border-radius: 12px; background: #11141a; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+        
+        .task-img { width: 46px; height: 46px; border-radius: 12px; background: #11141a; border: 1px solid #333; object-fit: cover; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
         .task-details b { display: block; font-size: 14px; margin-bottom: 3px; color: white; }
         .task-details span { font-size: 12px; color: var(--main-green); font-weight: bold; }
+        
+        .task-desc { font-size: 12px; color: var(--text-gray); line-height: 1.5; background: #11141a; padding: 8px 12px; border-radius: 10px; border: 1px solid #22262f; }
+        
+        .task-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #252932; padding-top: 10px; }
+        .progress-text { font-size: 11px; color: var(--text-gray); }
 
-        .btn-task { background: var(--main-green); color: black; border: none; padding: 10px 18px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; white-space: nowrap; transition: 0.2s; }
-        .btn-task:active { transform: scale(0.95); }
-        .btn-task.done { background: #252932; color: var(--text-gray); cursor: not-allowed; border: 1px solid #333842; }
+        .btn-action { background: var(--main-green); color: black; border: none; padding: 9px 16px; border-radius: 10px; font-weight: bold; font-size: 12px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+        .btn-action.verify { background: #ffaa00; color: black; }
+        .btn-action.done { background: #252932; color: var(--text-gray); cursor: not-allowed; border: 1px solid #333842; }
 
-        .status-box { text-align: center; padding: 40px 15px; color: var(--text-gray); font-size: 14px; line-height: 1.6; }
-        .btn-retry { margin-top: 15px; background: #222; border: 1px solid var(--main-green); color: var(--main-green); padding: 8px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        /* نافذة إضافة مهمة (Modal) */
+        #create-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
+        .modal-body { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; width: 100%; max-height: 90vh; overflow-y: auto; text-align: right; }
+        .modal-title { font-size: 16px; color: var(--main-green); margin-top: 0; margin-bottom: 12px; text-align: center; }
+        
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-size: 12px; color: var(--text-gray); margin-bottom: 5px; }
+        .input-field { width: 100%; background: #000; border: 1px solid #333; padding: 10px 12px; color: white; border-radius: 10px; outline: none; font-size: 13px; }
+        .input-field:focus { border-color: var(--main-green); }
+
+        .summary-box { background: rgba(0, 210, 106, 0.05); border: 1px dashed var(--main-green); border-radius: 12px; padding: 12px; margin: 15px 0; font-size: 12px; line-height: 1.8; }
+        .summary-box span { color: var(--main-green); font-weight: bold; }
+
+        .modal-buttons { display: flex; gap: 10px; }
+        .modal-buttons button { flex: 1; padding: 12px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; }
+        .btn-confirm { background: var(--main-green); color: black; }
+        .btn-cancel { background: #252932; color: white; }
+
+        .status-box { text-align: center; padding: 40px 15px; color: var(--text-gray); font-size: 13px; line-height: 1.6; }
 
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; cursor: pointer; text-decoration: none; }
@@ -46,8 +75,8 @@
 <body>
 
     <div class="header">
-        <h2>مركز المهام 📋</h2>
-        <p>أكمل المهام المتاحة واكسب نقاطاً تُضاف لرصيدك فوراً</p>
+        <h2>سوق المهام وتبادل القنوات 📋</h2>
+        <p>نفّذ مهام القنوات واكسب نقاطاً، أو روّج لقناتك الخاصة فوراً</p>
     </div>
 
     <div class="stats-bar">
@@ -60,13 +89,67 @@
             <span>أرباح المهام</span>
         </div>
         <div class="stat-item">
-            <b id="completed-count">0</b>
-            <span>المهام المنجزة</span>
+            <b id="available-count">0</b>
+            <span>المهام النشطة</span>
         </div>
     </div>
 
+    <button class="btn-create-task" onclick="openCreateModal()">
+        ➕ أضف مهمتك الخاصة (روّج لقناتك الآن)
+    </button>
+
     <div id="tasks-list" class="tasks-container">
-        <div class="status-box">⏳ جاري جلب المهام من الخادم...</div>
+        <div class="status-box">⏳ جاري جلب المهام النشطة...</div>
+    </div>
+
+    <!-- نافذة إنشاء مهمة جديدة -->
+    <div id="create-modal">
+        <div class="modal-body">
+            <h3 class="modal-title">📢 إنشاء مهمة جديدة وترويج قناة</h3>
+            
+            <div class="input-group">
+                <label>اسم القناة أو عنوان المهمة:</label>
+                <input type="text" id="t-title" class="input-field" placeholder="مثال: قناة التقنية والربح">
+            </div>
+
+            <div class="input-group">
+                <label>معرف القناة العام أو رابطها (عامة):</label>
+                <input type="text" id="t-channel" class="input-field" placeholder="مثال: @MyChannel أو الرابط">
+            </div>
+
+            <div class="input-group">
+                <label>شرح مختصر وملاحظات للمنفذ (اختياري):</label>
+                <textarea id="t-desc" class="input-field" rows="2" placeholder="مثال: اشترك في القناة وتفاعل مع المنشورات"></textarea>
+            </div>
+
+            <div class="input-group">
+                <label>رابط صورة/شعار القناة (اختياري):</label>
+                <input type="url" id="t-img" class="input-field" placeholder="https://example.com/logo.jpg">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <div class="input-group" style="flex: 1;">
+                    <label>سعر العضو (نقاطك):</label>
+                    <input type="number" id="t-cost" class="input-field" value="100" min="20" oninput="calcSummary()">
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label>العدد المطلوب:</label>
+                    <input type="number" id="t-target" class="input-field" value="10" min="5" oninput="calcSummary()">
+                </div>
+            </div>
+
+            <div class="summary-box">
+                💳 إجمالي النقاط المخصومة منك: <span id="sum-total">1,000</span> نقطة<br>
+                🎁 يحصل المنفذ على: <span id="sum-reward">75</span> نقطة (75%)<br>
+                💎 عمولة المنصة: <span id="sum-fee">250</span> نقطة (25%)<br>
+                <small style="color: #ffaa00;">⚠️ تنبيه: تأكد من إضافة بوت المنصة <b>@MegaTask1Bot</b> مشرفاً بالقناة لفحص انضمام الأعضاء تلقائياً.</small>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-confirm" onclick="submitCreateTask()">تأكيد وخصم النقاط 🚀</button>
+                <button class="btn-cancel" onclick="closeCreateModal()">إلغاء</button>
+            </div>
+        </div>
     </div>
 
     <nav class="navbar">
@@ -82,6 +165,7 @@
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const BOT_TOKEN = "8487785406:AAHLd5lakTZH1xv1Kbc5-BktFNEHNV8AYck";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
@@ -90,7 +174,7 @@
 
         async function init() {
             if (!tid) {
-                document.getElementById('tasks-list').innerHTML = '<div class="status-box">❌ لم يتم التعرف على حسابك، يرجى فتح الصفحة من داخل البوت.</div>';
+                document.getElementById('tasks-list').innerHTML = '<div class="status-box">❌ يرجى فتح الصفحة من داخل البوت.</div>';
                 return;
             }
 
@@ -104,6 +188,7 @@
                 console.error("User fetch error:", e);
             }
 
+            calcSummary();
             loadTasks();
         }
 
@@ -113,158 +198,273 @@
             document.getElementById('user-task-earnings').innerText = (userData.task_earnings || 0).toLocaleString();
         }
 
+        function calcSummary() {
+            const cost = Math.max(1, parseInt(document.getElementById('t-cost').value) || 0);
+            const target = Math.max(1, parseInt(document.getElementById('t-target').value) || 0);
+            const total = cost * target;
+            const rewardPerUser = Math.floor(cost * 0.75); // 75% للمنفذ
+            const platformFee = total - (rewardPerUser * target); // عمولة المنصة
+
+            document.getElementById('sum-total').innerText = total.toLocaleString();
+            document.getElementById('sum-reward').innerText = rewardPerUser.toLocaleString();
+            document.getElementById('sum-fee').innerText = platformFee.toLocaleString();
+        }
+
+        function openCreateModal() { document.getElementById('create-modal').style.display = 'flex'; }
+        function closeCreateModal() { document.getElementById('create-modal').style.display = 'none'; }
+
+        // استخراج معرف القناة بدقة
+        function extractChannelId(raw) {
+            if (!raw) return "";
+            raw = raw.trim();
+            const match = raw.match(/(?:t\.me\/|@)([a-zA-Z0-9_]{4,})/);
+            if (match && match[1]) return "@" + match[1];
+            if (raw.startsWith("@")) return raw;
+            return "@" + raw;
+        }
+
+        // إنشاء ونشر مهمة جديدة بواسطة المستخدم
+        async function submitCreateTask() {
+            const title = document.getElementById('t-title').value.trim();
+            const rawChannel = document.getElementById('t-channel').value.trim();
+            const desc = document.getElementById('t-desc').value.trim() || "اشترك في القناة لدعم المحتوى واكسب نقاطاً";
+            const imgUrl = document.getElementById('t-img').value.trim();
+            const cost = parseInt(document.getElementById('t-cost').value) || 0;
+            const target = parseInt(document.getElementById('t-target').value) || 0;
+
+            const channelId = extractChannelId(rawChannel);
+
+            if (!title) return tg.showAlert("❌ يرجى إدخال عنوان للمهمة!");
+            if (!channelId || channelId.length < 5) return tg.showAlert("❌ يرجى إدخال معرف قناة صالح (مثل @Channel)!");
+            if (cost < 20) return tg.showAlert("❌ الحد الأدنى لتكلفة العضو 20 نقطة!");
+            if (target < 5) return tg.showAlert("❌ الحد الأدنى لعدد المشتركين المطلوبين 5 أعضاء!");
+
+            const totalCost = cost * target;
+            const myCurrentPoints = userData?.points || 0;
+
+            if (myCurrentPoints < totalCost) {
+                return tg.showAlert(`❌ رصيدك غير كافٍ!\nالمطلوب: ${totalCost.toLocaleString()} نقطة\nرصيدك الحالي: ${myCurrentPoints.toLocaleString()} نقطة.`);
+            }
+
+            // التحقق من أن البوت مضاف بالقناة لضمان صحة الفحص
+            tg.showPopup({ title: "جاري الفحص", message: "جاري التأكد من صلاحية القناة وإمكانية فحص الأعضاء...", buttons: [{type: "ok"}] });
+            
+            try {
+                const checkRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChat?chat_id=${channelId}`);
+                const checkData = await checkRes.json();
+                if (!checkData.ok) {
+                    return tg.showAlert("❌ تعذر العثور على القناة!\nتأكد من كتابة المعرف بشكل صحيح وأن القناة عامة (Public).");
+                }
+            } catch (e) {
+                console.warn("Channel pre-check warning:", e);
+            }
+
+            const rewardForExecutor = Math.floor(cost * 0.75); // 75%
+            const channelUrl = `https://t.me/${channelId.replace('@', '')}`;
+
+            // 1. خصم النقاط من حساب صاحب المهمة
+            const newBalance = myCurrentPoints - totalCost;
+            const { error: userErr } = await client.from('users').update({ points: newBalance }).eq('telegram_id', tid);
+            if (userErr) return tg.showAlert("❌ حدث خطأ أثناء خصم النقاط، يرجى المحاولة لاحقاً.");
+
+            // 2. إدراج المهمة في قاعدة البيانات
+            const { error: taskErr } = await client.from('tasks').insert([{
+                creator_id: tid,
+                title: title,
+                description: desc,
+                image_url: imgUrl || null,
+                channel_id: channelId,
+                url: channelUrl,
+                cost_per_user: cost,
+                reward: rewardForExecutor,
+                target_count: target,
+                completed_count: 0,
+                is_active: true
+            }]);
+
+            if (!taskErr) {
+                userData.points = newBalance;
+                updateUI();
+                closeCreateModal();
+                tg.showAlert(`🎉 مبروك! تم نشر مهمتك بنجاح بعد خصم ${totalCost.toLocaleString()} نقطة.`);
+                loadTasks();
+            } else {
+                // استرجاع النقاط في حال تعذر النشر
+                await client.from('users').update({ points: myCurrentPoints }).eq('telegram_id', tid);
+                tg.showAlert("❌ تعذر حفظ المهمة في الخادم، تم إلغاء العملية واسترجاع رصيدك.");
+            }
+        }
+
+        // جلب قائمة المهام من Supabase
         async function loadTasks() {
             const container = document.getElementById('tasks-list');
 
             try {
-                // جلب المهام الحقيقية المضافة من لوحة التحكم من جدول tasks
+                // جلب المهام النشطة
                 const { data: tasks, error } = await client
                     .from('tasks')
                     .select('*')
+                    .eq('is_active', true)
                     .order('id', { ascending: false });
 
-                if (error) {
-                    console.error("Supabase tasks error:", error);
-                    container.innerHTML = `
-                        <div class="status-box">
-                            ⚠️ تعذر تحميل المهام من قاعدة البيانات.<br>
-                            <small style="color: #666;">${error.message || ''}</small><br>
-                            <button class="btn-retry" onclick="loadTasks()">إعادة المحاولة 🔄</button>
-                        </div>`;
-                    return;
-                }
+                if (error) throw error;
+
+                // جلب المهام التي أنجزها المستخدم سابقاً
+                const { data: myDone } = await client
+                    .from('task_completions')
+                    .select('task_id')
+                    .eq('user_id', tid);
+
+                const doneSet = new Set((myDone || []).map(d => String(d.task_id)));
 
                 if (!tasks || tasks.length === 0) {
-                    container.innerHTML = `
-                        <div class="status-box">
-                            🎯 لا توجد مهام جديدة متاحة حالياً.<br>
-                            تابعنا وسيتم إضافة مهام يومية جديدة قريباً!
-                        </div>`;
-                    document.getElementById('completed-count').innerText = "0/0";
+                    container.innerHTML = '<div class="status-box">🎯 لا توجد مهام نشطة حالياً.<br>كن أول من يضيف مهمة ويروج لقناته!</div>';
+                    document.getElementById('available-count').innerText = "0";
                     return;
                 }
 
-                // جلب المهام المنجزة من قاعدة البيانات أو التخزين المحلي
-                const completedMap = JSON.parse(localStorage.getItem(`completed_tasks_${tid}`) || "{}");
-
+                document.getElementById('available-count').innerText = tasks.length;
                 container.innerHTML = "";
-                let countDone = 0;
 
-                tasks.forEach(task => {
-                    const taskId = String(task.id);
-                    const taskTitle = task.title || task.name || "مهمة سريعة";
-                    const taskReward = Number(task.reward || task.points || 50);
-                    const taskUrl = task.url || task.link || "#";
-                    const taskIcon = task.icon || "🎯";
+                tasks.forEach(t => {
+                    const taskId = String(t.id);
+                    const isDone = doneSet.has(taskId);
+                    const isMyTask = String(t.creator_id) === String(tid);
 
-                    const isDone = completedMap[taskId] === true;
-                    if (isDone) countDone++;
+                    let actionBtnHtml = '';
+                    if (isDone) {
+                        actionBtnHtml = `<button class="btn-action done" disabled>منجز ✅</button>`;
+                    } else if (isMyTask) {
+                        actionBtnHtml = `<button class="btn-action done" disabled>مهمتك 👤</button>`;
+                    } else {
+                        actionBtnHtml = `<button id="btn-task-${taskId}" class="btn-action" onclick="handleTaskStep('${taskId}', '${t.url}', '${t.channel_id}', ${t.reward})">انضمام 📢</button>`;
+                    }
 
-                    const btnHtml = isDone 
-                        ? `<button class="btn-task done" disabled>منجز ✅</button>`
-                        : `<button class="btn-task" onclick="startTask('${taskId}', '${taskUrl}', ${taskReward}, this)">تنفيذ</button>`;
+                    const imgHtml = t.image_url 
+                        ? `<img src="${t.image_url}" class="task-img" onerror="this.src=''; this.innerHTML='📢';">`
+                        : `<div class="task-img">📢</div>`;
 
                     container.innerHTML += `
                         <div class="task-card">
-                            <div class="task-info">
-                                <div class="task-icon">${taskIcon}</div>
-                                <div class="task-details">
-                                    <b>${taskTitle}</b>
-                                    <span>+${taskReward.toLocaleString()} نقطة</span>
+                            <div class="task-top">
+                                <div class="task-info">
+                                    ${imgHtml}
+                                    <div class="task-details">
+                                        <b>${t.title}</b>
+                                        <span>+${t.reward.toLocaleString()} نقطة (75%)</span>
+                                    </div>
                                 </div>
+                                ${actionBtnHtml}
                             </div>
-                            ${btnHtml}
+                            
+                            ${t.description ? `<div class="task-desc">📝 ${t.description}</div>` : ''}
+
+                            <div class="task-footer">
+                                <span class="progress-text">المكتمل: ${t.completed_count || 0} من ${t.target_count} عضو</span>
+                                <span style="font-size: 11px; color: var(--main-green);">${t.channel_id}</span>
+                            </div>
                         </div>
                     `;
                 });
 
-                document.getElementById('completed-count').innerText = `${countDone}/${tasks.length}`;
-
             } catch (err) {
-                console.error("Tasks load exception:", err);
-                container.innerHTML = `
-                    <div class="status-box">
-                        ❌ حدث خطأ في الاتصال بالخادم.<br>
-                        <button class="btn-retry" onclick="loadTasks()">إعادة المحاولة 🔄</button>
-                    </div>`;
+                console.error("Load tasks error:", err);
+                container.innerHTML = '<div class="status-box">❌ تعذر تحميل المهام، يرجى إعادة المحاولة.</div>';
             }
         }
 
-        // بدء تنفيذ المهمة
-        function startTask(taskId, url, reward, btn) {
-            btn.disabled = true;
-            btn.innerText = "⏳ تحقق...";
+        // التعامل مع خطوات تنفيذ المهمة والتحقق
+        function handleTaskStep(taskId, url, channelId, reward) {
+            const btn = document.getElementById(`btn-task-${taskId}`);
 
-            if (url && url !== "#") {
+            if (btn.classList.contains('verify')) {
+                // الخطوة 2: الفحص الحقيقي للاشتراك
+                verifyTelegramSubscription(taskId, channelId, reward, btn);
+            } else {
+                // الخطوة 1: فتح رابط القناة
                 if (url.startsWith("https://t.me") || url.startsWith("tg://")) {
                     tg.openTelegramLink(url);
                 } else {
                     tg.openLink(url);
                 }
-            }
 
-            // مهلة تحقق ذكية (5 ثوانٍ) لإتاحة الانضمام أو إتمام الخطوة
-            setTimeout(() => {
-                claimTaskReward(taskId, reward, btn);
-            }, 5000);
+                btn.classList.add('verify');
+                btn.innerText = "فحص الاشتراك 🔍";
+            }
         }
 
-        // صرف المكافأة وتحديث رصيد المهام task_earnings
-        async function claimTaskReward(taskId, reward, btn) {
+        // فحص الاشتراك التلقائي الصارم عبر API تيليجرام
+        async function verifyTelegramSubscription(taskId, channelId, reward, btn) {
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري الفحص...";
+
             try {
-                // جلب أحدث رصيد للمستخدم لضمان دقة العمليات الحسابية
-                const { data: freshUser } = await client.from('users').select('*').eq('telegram_id', tid).single();
-                const user = freshUser || userData;
+                const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${channelId}&user_id=${tid}`);
+                const data = await res.json();
 
-                const curPoints = Number(user?.points || 0);
-                const curTotal = Number(user?.total_earned || 0);
-                const curTaskEarnings = Number(user?.task_earnings || 0);
-                const curTasksCount = Number(user?.total_tasks || 0);
-
-                const newPoints = curPoints + reward;
-                const newTotal = curTotal + reward;
-                const newTaskEarnings = curTaskEarnings + reward;
-                const newTasksCount = curTasksCount + 1;
-
-                const { data, error } = await client.from('users').update({
-                    points: newPoints,
-                    total_earned: newTotal,
-                    task_earnings: newTaskEarnings,
-                    total_tasks: newTasksCount
-                }).eq('telegram_id', tid).select().single();
-
-                if (!error && data) {
-                    userData = data;
-                    updateUI();
-
-                    // حفظ المهمة كـ "منجزة"
-                    let completedMap = JSON.parse(localStorage.getItem(`completed_tasks_${tid}`) || "{}");
-                    completedMap[taskId] = true;
-                    localStorage.setItem(`completed_tasks_${tid}`, JSON.stringify(completedMap));
-
-                    btn.className = "btn-task done";
-                    btn.innerText = "منجز ✅";
-
-                    // تحديث عداد المهام المنجزة بالأعلى
-                    const totalCards = document.querySelectorAll('.task-card').length;
-                    const doneCards = document.querySelectorAll('.btn-task.done').length;
-                    document.getElementById('completed-count').innerText = `${doneCards}/${totalCards}`;
-
-                    tg.showAlert(`🎉 كفو! تم إنجاز المهمة وإضافة +${reward.toLocaleString()} نقطة إلى رصيدك بنجاح!`);
+                if (data.ok && ["member", "administrator", "creator"].includes(data.result.status)) {
+                    // المستخدم منضم بالفعل -> صرف النقاط
+                    claimTaskSuccess(taskId, reward, btn);
                 } else {
                     btn.disabled = false;
-                    btn.innerText = "تنفيذ";
-                    tg.showAlert("❌ تعذر حفظ المكافأة في السيرفر، يرجى المحاولة مرة أخرى.");
+                    btn.innerText = "فحص الاشتراك 🔍";
+                    tg.showAlert("❌ أنت لم تشترك في القناة بعد!\nيجب الانضمام للقناة أولاً ثم الضغط على فحص الاشتراك للحصول على النقاط.");
                 }
-            } catch (e) {
-                console.error("Claim error:", e);
+            } catch (err) {
+                console.error("Verification error:", err);
                 btn.disabled = false;
-                btn.innerText = "تنفيذ";
-                tg.showAlert("❌ حدث خطأ أثناء الاتصال بالخادم.");
+                btn.innerText = "فحص الاشتراك 🔍";
+                tg.showAlert("⚠️ تعذر التحقق حالياً، تأكد من اتصالك أو حاول بعد لحظات.");
             }
         }
 
-        // دوال التنقل
+        // تسجيل إتمام المهمة وصرف النقاط للمنفذ والعمولة للداعي
+        async function claimTaskSuccess(taskId, reward, btn) {
+            try {
+                // تسجيل الإنجاز لمنع التكرار
+                const { error: compErr } = await client.from('task_completions').insert([{ task_id: taskId, user_id: tid }]);
+                if (compErr) {
+                    btn.disabled = false;
+                    btn.innerText = "منجز ✅";
+                    return tg.showAlert("⚠️ لقد حصلت على نقاط هذه المهمة مسبقاً!");
+                }
+
+                // تحديث رصيد المستخدم ورصيد أرباح المهام (لتغذية الـ 10% للداعي)
+                const newPoints = (userData.points || 0) + reward;
+                const newTotalEarned = (userData.total_earned || 0) + reward;
+                const newTaskEarnings = (userData.task_earnings || 0) + reward;
+                const newTotalTasks = (userData.total_tasks || 0) + 1;
+
+                await client.from('users').update({
+                    points: newPoints,
+                    total_earned: newTotalEarned,
+                    task_earnings: newTaskEarnings,
+                    total_tasks: newTotalTasks
+                }).eq('telegram_id', tid);
+
+                userData.points = newPoints;
+                userData.task_earnings = newTaskEarnings;
+                updateUI();
+
+                // تحديث عداد المهمة في جدول tasks
+                const { data: currentTask } = await client.from('tasks').select('completed_count, target_count').eq('id', taskId).single();
+                if (currentTask) {
+                    const newCount = (currentTask.completed_count || 0) + 1;
+                    const isActive = newCount < currentTask.target_count;
+                    await client.from('tasks').update({ completed_count: newCount, is_active: isActive }).eq('id', taskId);
+                }
+
+                btn.className = "btn-action done";
+                btn.disabled = true;
+                btn.innerText = "منجز ✅";
+
+                tg.showAlert(`🎉 مبروك! تم التحقق من اشتراكك بنجاح وحصلت على +${reward.toLocaleString()} نقطة!`);
+            } catch (e) {
+                console.error("Claim error:", e);
+                tg.showAlert("❌ حدث خطأ أثناء إضافة النقاط.");
+            }
+        }
+
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
