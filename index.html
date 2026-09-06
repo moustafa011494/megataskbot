@@ -3,331 +3,457 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - Monetag Edition</title>
-    
-    <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
-
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>MegaTask - الرئيسية</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
+    <!-- استدعاء ملف الستريك المنعزل -->
+    <script src="streak.js"></script>
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 120px; overflow-x: hidden; }
-        
-        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; }
-        
-        .main-balance { text-align: center; margin-bottom: 25px; }
-        .main-balance h1 { font-size: 42px; margin: 5px 0; color: white; text-shadow: 0 0 10px rgba(0, 210, 106, 0.3); }
-        .btn-withdraw { background: var(--main-green); color: #000; border: none; padding: 10px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; margin-bottom: 20px; }
-        .stat-card { background: var(--card-bg); padding: 15px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
-        .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--main-green); }
-        
-        .action-box { margin: 0 15px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-action { background: var(--card-bg); color: white; border: 1px solid #333; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 13px; transition: 0.2s; }
-        .btn-action:active { transform: scale(0.97); }
-        .btn-ads { background: linear-gradient(90deg, #00d26a, #009e4f); color: black; border: none; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.3); }
-        
-        /* زر عروض CPA بنمط قريباً */
-        .btn-offers { 
-            background: rgba(255, 0, 85, 0.08); 
-            color: #ff4d79; 
-            grid-column: span 2; 
-            border: 1px dashed #ff0055; 
-            opacity: 0.75;
+        :root {
+            --main-green: #00d26a;
+            --dark-bg: #0b0d10;
+            --card-bg: #16191f;
+            --card-border: #232730;
+            --text-gray: #8e95a5;
+        }
+        * { box-sizing: border-box; }
+        body {
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 15px;
+            padding-bottom: 95px;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        /* ستايل خدمات MegaTask المطور */
-        .services-section { padding: 0 15px; margin-top: 25px; text-align: right; }
-        .service-title { color: var(--main-green); font-size: 14px; margin: 0 0 15px 0; border-right: 3px solid var(--main-green); padding-right: 10px; }
-        .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .btn-service { 
-            background: #16191e; 
-            border: 1px solid #2d333d; 
-            padding: 25px 10px; 
-            border-radius: 20px; 
-            text-align: center; 
-            font-size: 13px; 
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .welcome-text { font-size: 11px; color: var(--text-gray); letter-spacing: 1px; font-weight: bold; }
+        .level-badge {
+            background: #1c2027;
+            border: 1px solid var(--card-border);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #ccc;
             font-weight: bold;
-            cursor: pointer; 
-            transition: all 0.3s ease;
-            box-shadow: 0 0 5px rgba(0, 210, 106, 0.05);
         }
-        .btn-service:active { 
-            transform: scale(0.95); 
-            border-color: var(--main-green);
-            box-shadow: 0 0 15px rgba(0, 210, 106, 0.2); 
-        }
-        .btn-service span { font-size: 32px; display: block; margin-bottom: 12px; filter: drop-shadow(0 0 5px rgba(0, 210, 106, 0.1)); }
 
-        #ref-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
-        .modal-content { background: var(--card-bg); padding: 30px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 85%; }
-        .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 15px 0; outline: none; }
-        
-        .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
-        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
+        .balance-section {
+            text-align: center;
+            margin: 15px 0 20px;
+        }
+        .balance-title { font-size: 12px; color: var(--text-gray); letter-spacing: 1px; margin-bottom: 4px; }
+        .balance-amount {
+            font-size: 42px;
+            font-weight: 800;
+            color: white;
+            margin: 0 0 10px;
+            letter-spacing: -0.5px;
+        }
+        .btn-withdraw {
+            background: var(--main-green);
+            color: #000;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: 0.2s;
+        }
+        .btn-withdraw:active { transform: scale(0.96); }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 12px 6px;
+            text-align: center;
+        }
+        .stat-val { font-size: 16px; font-weight: bold; color: var(--main-green); margin-bottom: 3px; }
+        .stat-lbl { font-size: 11px; color: var(--text-gray); }
+
+        /* بطاقة الستريك العريضة بكامل عرض الصفحة */
+        .streak-fullwidth-card {
+            width: 100%;
+            background: linear-gradient(145deg, #1b2029, #11141a);
+            border: 1px solid #2d333f;
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .streak-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .streak-title-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .streak-icon {
+            width: 42px;
+            height: 42px;
+            background: rgba(255, 170, 0, 0.12);
+            border: 1px solid #ffaa00;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+        .streak-info b { display: block; font-size: 14px; color: white; }
+        .streak-info span { font-size: 11px; color: #ffaa00; font-weight: bold; }
+        .streak-badge {
+            background: #252a35;
+            padding: 5px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--main-green);
+            border: 1px solid #333a48;
+        }
+
+        .streak-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .btn-streak-claim {
+            width: 100%;
+            background: var(--main-green);
+            color: black;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-streak-claim:active { transform: scale(0.98); }
+
+        .btn-wheel-trigger {
+            width: 100%;
+            background: linear-gradient(135deg, #ffaa00, #e67e00);
+            color: black;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-wheel-trigger:disabled {
+            background: #22262f;
+            color: #777;
+            border: 1px solid #333842;
+            cursor: not-allowed;
+        }
+
+        .streak-timer-box {
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-gray);
+            background: #0d0f13;
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px dashed #2d333d;
+            display: none;
+        }
+
+        .cpa-banner {
+            border: 1px dashed #ff3b5c;
+            background: rgba(255, 59, 92, 0.05);
+            border-radius: 14px;
+            padding: 13px;
+            text-align: center;
+            font-size: 12px;
+            color: #ff3b5c;
+            font-weight: bold;
+            margin-bottom: 22px;
+            cursor: pointer;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 14px;
+            border-right: 3px solid var(--main-green);
+            padding-right: 8px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .service-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 18px;
+            padding: 20px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .service-card:active {
+            transform: scale(0.97);
+            border-color: var(--main-green);
+        }
+        .service-icon { font-size: 26px; }
+        .service-name { font-size: 13px; font-weight: bold; color: #eee; }
+
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(22, 25, 31, 0.96);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            border-top: 1px solid var(--card-border);
+            z-index: 1000;
+        }
+        .nav-item {
+            text-align: center;
+            color: var(--text-gray);
+            font-size: 11px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+        }
         .nav-item.active { color: var(--main-green); }
+        .nav-item span { display: block; font-size: 18px; margin-bottom: 2px; }
     </style>
 </head>
 <body>
 
-    <div id="ref-modal">
-        <div class="modal-content">
-            <h2 style="color: var(--main-green); margin: 0;">AGENT REGISTER</h2>
-            <input type="text" id="ref-input" class="modal-input" placeholder="ENTER CODE (ID)">
-            <button class="btn-withdraw" style="width:100%" onclick="submitRegistration()">ابدأ الآن</button>
-            <button onclick="submitRegistration(true)" style="background: none; border: none; color: #555; margin-top: 10px;">تخطي ></button>
-        </div>
+    <div class="top-bar">
+        <span class="welcome-text">WELCOME BACK</span>
+        <span class="level-badge" id="user-level">LEVEL 1</span>
     </div>
 
-    <div class="header">
-        <div class="user-badge" id="user-lvl">LEVEL 1</div>
-        <div style="color: var(--text-gray); font-size: 12px;">WELCOME BACK</div>
-    </div>
-
-    <div class="main-balance">
-        <span>BALANCE</span>
-        <h1 id="user-points">0</h1>
-        <button class="btn-withdraw" onclick="goWithdraw()">↗ Withdraw</button>
+    <div class="balance-section">
+        <div class="balance-title">BALANCE</div>
+        <div class="balance-amount" id="user-points">0</div>
+        <button class="btn-withdraw" onclick="handleWithdraw()">Withdraw ↗</button>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card"><b id="balance-short">0</b><span>Balance</span></div>
-        <div class="stat-card"><b id="user-streak">0d</b><span>Streak</span></div>
-        <div class="stat-card"><b id="tasks-done">0</b><span>Tasks</span></div>
+        <div class="stat-card">
+            <div class="stat-val" id="stat-tasks">0</div>
+            <div class="stat-lbl">Tasks</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val" id="stat-streak">1d</div>
+            <div class="stat-lbl">Streak</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val" id="stat-balance-short">0</div>
+            <div class="stat-lbl">Balance</div>
+        </div>
     </div>
 
-    <div class="action-box">
-        <div class="btn-action" onclick="claimDaily()" id="claimBtn">🎁 Daily Reward</div>
-        <div class="btn-action btn-ads" onclick="showAd()">📺 Watch & Earn</div>
-        <div class="btn-action btn-offers" onclick="showSoon('عروض CPA')">🎯 عروض CPA (قريباً..)</div>
+    <!-- بطاقة الستريك والعجلة اليومية (بعرض الصفحة بالكامل) -->
+    <div class="streak-fullwidth-card">
+        <div class="streak-header">
+            <div class="streak-title-box">
+                <div class="streak-icon">🔥</div>
+                <div class="streak-info">
+                    <b>المكافآت اليومية المتتالية</b>
+                    <span>تتجدد يومياً الساعة 12:00 منتصف الليل</span>
+                </div>
+            </div>
+            <div class="streak-badge" id="card-streak-count">0 يوم</div>
+        </div>
+
+        <div class="streak-actions">
+            <button id="btn-streak-claim" class="btn-streak-claim">
+                🎁 استلام مكافأة اليوم (+50 نقطة)
+            </button>
+            
+            <button id="btn-wheel-trigger" class="btn-wheel-trigger" onclick="StreakManager.openWheelModal()">
+                🎡 عجلة الحظ اليومية (قريباً)
+            </button>
+
+            <div id="streak-timer-box" class="streak-timer-box">
+                ⏳ الهدية القادمة بعد: 00:00:00
+            </div>
+        </div>
     </div>
 
-    <div class="services-section">
-        <h3 class="service-title">الخدمات الذكية 🛠️</h3>
-        <div class="services-grid">
-            <div class="btn-service" onclick="goSocial()">
-                <span>📥</span>تحميل الوسائط
-            </div>
-            <div class="btn-service" onclick="goMethods()">
-                <span>🔓</span>قسم الميثودات
-            </div>
-            <div class="btn-service" onclick="goDevTools()">
-                <span>👨‍💻</span>أدوات المطور
-            </div>
-            <div class="btn-service" onclick="goTempMail()">
-                <span>📧</span>بريد مؤقت
-            </div>
-            <div class="btn-service" onclick="goVirtualNumbers()">
-                <span>📱</span>أرقام وهمية
-            </div>
-            <div class="btn-service" onclick="showSoon('الخدمة الإضافية')" style="opacity: 0.6; border-style: dashed;">
-                <span>🎯</span>قريباً..
-            </div>
+    <div class="cpa-banner" onclick="tg.showAlert('🎯 عروض CPA قادمة قريباً بمكافآت ضخمة!')">
+        🎯 عروض CPA (قريباً..)
+    </div>
+
+    <div class="section-header">
+        الخدمات الذكية 🛠️
+    </div>
+
+    <div class="services-grid">
+        <div class="service-card" onclick="goMediaDownloader()">
+            <div class="service-icon">📥</div>
+            <div class="service-name">تحميل الوسائط</div>
+        </div>
+
+        <div class="service-card" onclick="goMethods()">
+            <div class="service-icon">🔒</div>
+            <div class="service-name">قسم الميتودات</div>
+        </div>
+
+        <div class="service-card" onclick="goDevTools()">
+            <div class="service-icon">👨‍💻</div>
+            <div class="service-name">أدوات المطور</div>
+        </div>
+
+        <div class="service-card" onclick="goTempMail()">
+            <div class="service-icon">📧</div>
+            <div class="service-name">بريد مؤقت</div>
+        </div>
+
+        <div class="service-card" onclick="goNumbers()">
+            <div class="service-icon">📱</div>
+            <div class="service-name">أرقام وهمية</div>
+        </div>
+
+        <div class="service-card" onclick="tg.showAlert('🚀 ميزة جديدة قيد التطوير وستنزل في التحديث القادم!')">
+            <div class="service-icon">🎯</div>
+            <div class="service-name">قريباً..</div>
         </div>
     </div>
 
     <nav class="navbar">
-        <div onclick="goHome()" class="nav-item active">🏠<br>الرئيسية</div>
-        <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
-        <div onclick="goInvite()" class="nav-item">👥<br>أجل</div>
-        <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
+        <div onclick="goHome()" class="nav-item active">
+            <span>🏠</span>الرئيسية
+        </div>
+        <div onclick="goTasks()" class="nav-item">
+            <span>📋</span>اكسب
+        </div>
+        <div onclick="goInvite()" class="nav-item">
+            <span>👥</span>أصدقاء
+        </div>
+        <div onclick="goProfile()" class="nav-item">
+            <span>👤</span>أنا
+        </div>
     </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        let userId = "";
+        const params = new URLSearchParams(window.location.search);
+        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
         let userData = null;
-        let countdownTimer = null;
 
         async function init() {
-            const params = new URLSearchParams(window.location.search);
-            userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-            if (!userId) return;
+            if (!tid) return;
 
-            const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-            
-            if (!user) {
-                document.getElementById('ref-modal').style.display = 'flex';
-            } else {
-                userData = user;
-                updateUI();
-                startDailyCountdown();
+            try {
+                const { data: user, error } = await client
+                    .from('users')
+                    .select('*')
+                    .eq('telegram_id', tid)
+                    .maybeSingle();
+
+                if (user) {
+                    userData = user;
+                    updateUI();
+
+                    // ربط موديل الستريك المنعزل بصفحة الـ HTML
+                    StreakManager.init(
+                        client, 
+                        tid, 
+                        user, 
+                        {
+                            claimBtn: document.getElementById('btn-streak-claim'),
+                            timerBox: document.getElementById('streak-timer-box'),
+                            streakCounter: document.getElementById('card-streak-count'),
+                            wheelBtn: document.getElementById('btn-wheel-trigger')
+                        }, 
+                        function(updatedUser) {
+                            userData = updatedUser;
+                            updateUI();
+                        }
+                    );
+                }
+            } catch (err) {
+                console.error("Fetch user error:", err);
             }
         }
 
-        function showAd() {
-            if (typeof show_10959333 === 'function') {
-                show_10959333().then(() => {
-                    giveReward();
-                }).catch((err) => {
-                    console.error("Ad Error:", err);
-                    tg.showAlert("❌ عذراً، لا توجد إعلانات متاحة حالياً.");
-                });
-            } else {
-                tg.showAlert("⏳ جاري تحميل نظام الإعلانات...");
-            }
-        }
-
-        async function giveReward() {
-            const currentTotal = userData.total_earned || 0;
-            const { data, error } = await client.from('users').update({
-                points: userData.points + 10,
-                total_earned: currentTotal + 10
-            }).eq('telegram_id', userId).select().single();
-            
-            if (!error && data) {
-                userData = data;
-                updateUI();
-                tg.showAlert("✅ مبروك! حصلت على 10 نقطة.");
-            }
-        }
-
-        async function submitRegistration(skip = false) {
-            const refCode = document.getElementById('ref-input').value.trim();
-            let newUser = { 
-                telegram_id: userId, 
-                name: tg.initDataUnsafe.user?.first_name || "AGENT", 
-                points: 0, 
-                total_earned: 0, 
-                streak: 0 
-            };
-            if (!skip && refCode !== "" && refCode !== userId) newUser.referred_by = refCode;
-            
-            const { data, error } = await client.from('users').insert([newUser]).select().single();
-            if (!error) {
-                userData = data;
-                document.getElementById('ref-modal').style.display = 'none';
-                updateUI();
-                startDailyCountdown();
-            }
+        function formatNumberShort(num) {
+            if (!num) return "0";
+            if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+            return num.toLocaleString();
         }
 
         function updateUI() {
-            document.getElementById('user-points').innerText = (userData.points || 0).toLocaleString();
-            document.getElementById('balance-short').innerText = userData.points >= 1000 ? (userData.points/1000).toFixed(1) + 'k' : (userData.points || 0);
-            document.getElementById('user-streak').innerText = (userData.streak || 0) + "d";
-            document.getElementById('tasks-done').innerText = userData.total_tasks || 0;
-        }
-
-        // فحص هل المستخدم استلم هدية اليوم
-        function hasClaimedToday(lastClaimIso) {
-            if (!lastClaimIso) return false;
-            const lastClaimDate = new Date(lastClaimIso);
-            const now = new Date();
-            return lastClaimDate.getFullYear() === now.getFullYear() &&
-                   lastClaimDate.getMonth() === now.getMonth() &&
-                   lastClaimDate.getDate() === now.getDate();
-        }
-
-        // حساب الستريك الجديد (لو كان أمس يزيد 1، لو تخطى يوم يعود لـ 1)
-        function calculateNewStreak(lastClaimIso, currentStreak) {
-            if (!lastClaimIso) return 1;
-            const lastClaimDate = new Date(lastClaimIso);
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-
-            const isYesterday = lastClaimDate.getFullYear() === yesterday.getFullYear() &&
-                                lastClaimDate.getMonth() === yesterday.getMonth() &&
-                                lastClaimDate.getDate() === yesterday.getDate();
-
-            return isYesterday ? (currentStreak || 0) + 1 : 1;
-        }
-
-        // حساب الوقت المتبقي لمنتصف الليل (12:00 AM) لبداية اليوم الجديد
-        function getMidnightCountdown() {
-            const now = new Date();
-            const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
-            const diffMs = tomorrow - now;
-            
-            const hours = Math.floor(diffMs / (1000 * 60 * 60));
-            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-
-            return {
-                diffMs,
-                text: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-            };
-        }
-
-        // تشغيل عداد الوقت الحي على الزر
-        function startDailyCountdown() {
-            if (countdownTimer) clearInterval(countdownTimer);
-            updateDailyButton();
-            countdownTimer = setInterval(updateDailyButton, 1000);
-        }
-
-        function updateDailyButton() {
-            const btn = document.getElementById('claimBtn');
             if (!userData) return;
-
-            if (hasClaimedToday(userData.last_claim)) {
-                const { text } = getMidnightCountdown();
-                btn.style.opacity = "0.5";
-                btn.style.pointerEvents = "none";
-                btn.innerText = `⏳ متاح بعد ${text}`;
-            } else {
-                btn.style.opacity = "1";
-                btn.style.pointerEvents = "auto";
-                const potentialStreak = calculateNewStreak(userData.last_claim, userData.streak || 0);
-                const potentialReward = 15 + (potentialStreak * 5);
-                btn.innerText = `🎁 مكافأة اليوم (+${potentialReward})`;
-            }
+            const pts = userData.points || 0;
+            document.getElementById('user-points').innerText = pts.toLocaleString();
+            document.getElementById('stat-balance-short').innerText = formatNumberShort(pts);
+            document.getElementById('stat-tasks').innerText = (userData.total_tasks || 0).toString();
+            document.getElementById('stat-streak').innerText = (userData.streak || 1) + 'd';
         }
 
-        // تنفيذ استلام المكافأة مع زيادة الستريك والنقاط التصاعدية
-        async function claimDaily() {
-            if (!userData) return;
-            if (hasClaimedToday(userData.last_claim)) {
-                tg.showAlert("⏳ استلمت مكافأة اليوم بالفعل! سيبدأ اليوم الجديد الساعة 12 منتصف الليل.");
-                return;
-            }
-
-            const now = new Date();
-            const newStreak = calculateNewStreak(userData.last_claim, userData.streak || 0);
-            // معادلة المكافأة التصاعدية: 15 نقطة أساسية + 5 لكل يوم ستريك
-            const rewardPoints = 15 + (newStreak * 5);
-
-            const { data, error } = await client.from('users').update({
-                points: (userData.points || 0) + rewardPoints,
-                total_earned: (userData.total_earned || 0) + rewardPoints,
-                streak: newStreak,
-                last_claim: now.toISOString()
-            }).eq('telegram_id', userId).select().single();
-
-            if (!error && data) {
-                userData = data;
-                updateUI();
-                startDailyCountdown();
-                tg.showAlert(`🔥 عاش يا بطل!\nزدت في الستريك لليوم (${newStreak} أيام) وحصلت على ${rewardPoints} نقطة!`);
-            } else {
-                tg.showAlert("❌ حدث خطأ أثناء استلام المكافأة، يرجى المحاولة لاحقاً.");
-            }
+        function handleWithdraw() {
+            tg.showAlert("💳 قسم السحب متاح! انتقل إلى صفحة (أنا) لتقديم طلب سحب أرباحك.");
         }
 
-        function showSoon(sectionName) {
-            tg.showAlert(`🎯 قسم ${sectionName} قيد التجهيز والتطوير حالياً وسيتوفر قريباً بأعلى مكافآت!`);
-        }
+        function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
 
-        // دوال التنقل
-        function goHome() { window.location.href = `index.html?id=${userId}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
-        function goInvite() { window.location.href = `invite.html?id=${userId}`; }
-        function goProfile() { window.location.href = `profile.html?id=${userId}`; }
-        function goWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
-        
-        function goSocial() { window.location.href = `social.html?id=${userId}`; }
-        function goMethods() { window.location.href = `methods.html?id=${userId}`; }
-        function goDevTools() { window.location.href = `devtools.html?id=${userId}`; }
-        function goTempMail() { window.location.href = `tempmail.html?id=${userId}`; }
-        function goVirtualNumbers() { window.location.href = `numbers.html?id=${userId}`; }
+        function goTempMail() { window.location.href = `tempmail.html?id=${tid}&t=${Date.now()}`; }
+        function goNumbers() { tg.showAlert("📱 قسم الأرقام الوهمية قيد التجهيز وسيتم تفعيله قريباً!"); }
+        function goMediaDownloader() { tg.showAlert("📥 أرسل أي رابط فيديو للبوت في الشات ليقوم بتحميله لك فوراً وبأعلى جودة!"); }
+        function goMethods() { tg.showAlert("🔒 قسم الميتودات والثغرات الحصرية متاح قريباً للأعضاء النشطين!"); }
+        function goDevTools() { tg.showAlert("👨‍💻 أدوات المطورين قيد الإضافة قريباً!"); }
 
         init();
     </script>
