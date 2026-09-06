@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>MegaTask - الرئيسية</title>
     
-    <!-- إعلانات Monetag SDK -->
+    <!-- إعلانات Monetag SDK الرسمية -->
     <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -464,41 +464,42 @@
 
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-        let userData = null;
+        let userData = { telegram_id: tid || "test_user", points: 0, streak: 1 };
 
         async function init() {
-            if (!tid) return;
-
             try {
-                const { data: user, error } = await client
-                    .from('users')
-                    .select('*')
-                    .eq('telegram_id', tid)
-                    .maybeSingle();
+                if (tid) {
+                    const { data: user } = await client
+                        .from('users')
+                        .select('*')
+                        .eq('telegram_id', tid)
+                        .maybeSingle();
 
-                if (user) {
-                    userData = user;
-                    updateUI();
-
-                    StreakManager.init(
-                        client, 
-                        tid, 
-                        user, 
-                        {
-                            claimBtn: document.getElementById('btn-streak-claim'),
-                            timerBox: document.getElementById('streak-timer-box'),
-                            streakCounter: document.getElementById('card-streak-count'),
-                            wheelBtn: document.getElementById('btn-wheel-trigger')
-                        }, 
-                        function(updatedUser) {
-                            userData = updatedUser;
-                            updateUI();
-                        }
-                    );
+                    if (user) {
+                        userData = user;
+                    }
                 }
             } catch (err) {
                 console.error("Fetch user error:", err);
             }
+
+            // تشغيل الـ StreakManager فوراً لضمان تفاعل الزراير
+            updateUI();
+            StreakManager.init(
+                client, 
+                tid || "test_user", 
+                userData, 
+                {
+                    claimBtn: document.getElementById('btn-streak-claim'),
+                    timerBox: document.getElementById('streak-timer-box'),
+                    streakCounter: document.getElementById('card-streak-count'),
+                    wheelBtn: document.getElementById('btn-wheel-trigger')
+                }, 
+                function(updatedUser) {
+                    userData = updatedUser;
+                    updateUI();
+                }
+            );
         }
 
         function formatNumberShort(num) {
