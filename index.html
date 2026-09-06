@@ -454,7 +454,7 @@
         </div>
     </nav>
 
-    <script>
+        <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
@@ -463,52 +463,79 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim() || "123456789";
-        let userData = { telegram_id: tid, points: 0, streak: 1 };
+        // التقاط الـ ID بدقة من الرابط أو تيليجرام أو الذاكرة المؤقتة
+        let tid = String(params.get('id') || tg.initDataUnsafe?.user?.id || "").trim();
+        
+        if (!tid || tid === "undefined" || tid === "null") {
+            tid = localStorage.getItem('mega_task_tid') || "";
+        } else {
+            localStorage.setItem('mega_task_tid', tid);
+        }
+
+        let userData = { telegram_id: tid || "123456789", points: 0, streak: 1, total_tasks: 0 };
 
         async function init() {
+            if (!tid) {
+                tid = "123456789"; // رقم افتراضي للتبرير لو فاتحه من متصفح عادي
+            }
+
+            console.log("Loading user profile for Telegram ID:", tid);
+
             try {
-                // جلب المستخدم أو إنشاؤه تلقائياً لو مش موجود لضمان ظهور الرصيد فوراً
+                // جلب بيانات المستخدم من Supabase
                 let { data: user, error } = await client
                     .from('users')
                     .select('*')
                     .eq('telegram_id', tid)
                     .maybeSingle();
 
+                if (error) {
+                    console.error("Supabase fetch error:", error.message);
+                }
+
                 if (!user) {
-                    const { data: newUser } = await client
+                    // لو المستخدم غير مسجل، يتم إنشاؤه تلقائياً
+                    const { data: newUser, error: insErr } = await client
                         .from('users')
-                        .insert([{ telegram_id: tid, points: 0, streak: 1 }])
+                        .insert([{ telegram_id: tid, points: 0, streak: 1, total_tasks: 0 }])
                         .select()
                         .single();
-                    if (newUser) user = newUser;
+
+                    if (insErr) {
+                        console.error("Supabase insert error:", insErr.message);
+                    } else if (newUser) {
+                        user = newUser;
+                    }
                 }
 
                 if (user) {
                     userData = user;
                 }
             } catch (err) {
-                console.error("Init user error:", err);
+                console.error("Init exception:", err);
             }
 
+            // تحديث الواجهة فوراً بالرصيد الحقيقي
             updateUI();
 
-            // تشغيل مدير الستريك والعجلة
-            StreakManager.init(
-                client, 
-                tid, 
-                userData, 
-                {
-                    claimBtn: document.getElementById('btn-streak-claim'),
-                    timerBox: document.getElementById('streak-timer-box'),
-                    streakCounter: document.getElementById('card-streak-count'),
-                    wheelBtn: document.getElementById('btn-wheel-trigger')
-                }, 
-                function(updatedUser) {
-                    userData = updatedUser;
-                    updateUI();
-                }
-            );
+            // تشغيل مدير الستريك وعجلة الحظ
+            if (typeof StreakManager !== 'undefined') {
+                StreakManager.init(
+                    client, 
+                    tid, 
+                    userData, 
+                    {
+                        claimBtn: document.getElementById('btn-streak-claim'),
+                        timerBox: document.getElementById('streak-timer-box'),
+                        streakCounter: document.getElementById('card-streak-count'),
+                        wheelBtn: document.getElementById('btn-wheel-trigger')
+                    }, 
+                    function(updatedUser) {
+                        userData = updatedUser;
+                        updateUI();
+                    }
+                );
+            }
         }
 
         function formatNumberShort(num) {
