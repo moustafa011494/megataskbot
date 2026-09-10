@@ -41,7 +41,7 @@
         <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
     </nav>
 
-    <script>
+        <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
@@ -52,38 +52,50 @@
         const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
 
         async function initMethodsPage() {
-            if (!userId) return;
-
-            // جلب الإشعارات الخاصة بالمستخدم
-            const { data: notifs } = await client.from('user_notifications').select('*').eq('user_id', userId).eq('is_read', false);
-            if (notifs && notifs.length > 0) {
-                const notifArea = document.getElementById('notifications-area');
-                notifArea.innerHTML = `<div style="background: rgba(0, 210, 106, 0.1); border: 1px solid var(--main-green); padding: 10px; border-radius: 12px; font-size: 12px;">
-                    🔔 لديك <span style="color:var(--main-green); font-weight:bold;">${notifs.length}</span> إشعارات جديدة تم اضافتها!
-                </div>`;
-                // تحديث الإشعارات كمقروءة
-                await client.from('user_notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false);
-            }
-
-            // جلب الميثودات من قاعدة البيانات
-            const { data: methods, error } = await client.from('methods').select('*').order('id', { ascending: false });
             const listEl = document.getElementById('methods-list');
 
-            if (error || !methods || methods.length === 0) {
-                listEl.innerHTML = `<div style="text-align: center; color: var(--text-gray); padding: 30px;">لا توجد ميثودات مضافة حالياً.</div>`;
-                return;
+            if (userId) {
+                try {
+                    const { data: notifs } = await client.from('user_notifications').select('*').eq('user_id', userId).eq('is_read', false);
+                    if (notifs && notifs.length > 0) {
+                        const notifArea = document.getElementById('notifications-area');
+                        notifArea.innerHTML = `<div style="background: rgba(0, 210, 106, 0.1); border: 1px solid var(--main-green); padding: 10px; border-radius: 12px; font-size: 12px;">
+                            🔔 لديك <span style="color:var(--main-green); font-weight:bold;">${notifs.length}</span> إشعارات جديدة تم اضافتها!
+                        </div>`;
+                        await client.from('user_notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false);
+                    }
+                } catch (e) {
+                    console.log("Notif error:", e);
+                }
             }
 
-            listEl.innerHTML = "";
-            methods.forEach(m => {
-                listEl.innerHTML += `
-                    <div class="method-card">
-                        <div class="method-title">${m.title}</div>
-                        <div class="method-desc">${m.description || ''}</div>
-                        <div class="method-links">${m.content}</div>
-                    </div>
-                `;
-            });
+            try {
+                // جلب الميثودات من قاعدة البيانات
+                const { data: methods, error } = await client.from('methods').select('*').order('id', { ascending: false });
+
+                if (error) {
+                    throw new Error(error.message);
+                }
+
+                if (!methods || methods.length === 0) {
+                    listEl.innerHTML = `<div style="text-align: center; color: var(--text-gray); padding: 30px;">لا توجد ميثودات مضافة حالياً في قاعدة البيانات.</div>`;
+                    return;
+                }
+
+                listEl.innerHTML = "";
+                methods.forEach(m => {
+                    listEl.innerHTML += `
+                        <div class="method-card">
+                            <div class="method-title">${m.title}</div>
+                            <div class="method-desc">${m.description || ''}</div>
+                            <div class="method-links">${m.content}</div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error("Load methods error:", err);
+                listEl.innerHTML = `<div style="text-align: center; color: #ff3b30; padding: 30px;">❌ خطأ في تحميل الميثودات: ${err.message}</div>`;
+            }
         }
 
         function goHome() { window.location.href = `index.html?id=${userId}`; }
