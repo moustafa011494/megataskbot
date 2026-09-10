@@ -49,15 +49,13 @@
         .btn-wheel-trigger { width: 100%; background: linear-gradient(135deg, #ffaa00, #e67e00); color: black; border: none; padding: 13px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .streak-timer-box { text-align: center; font-size: 11px; color: var(--text-gray); background: #0d0f13; padding: 9px; border-radius: 10px; border: 1px dashed #2d333d; display: none; }
 
-        .action-box { margin: 0 15px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .action-box { margin: 0 15px 15px; }
         .btn-action { background: var(--card-bg); color: white; border: 1px solid #333; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 13px; transition: 0.2s; }
-        .btn-action:active { transform: scale(0.97); }
-        .btn-ads { background: linear-gradient(90deg, #00d26a, #009e4f); color: black; border: none; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.3); }
         
         .btn-offers { 
             background: rgba(255, 0, 85, 0.08); 
             color: #ff4d79; 
-            grid-column: span 2; 
+            width: 100%;
             border: 1px dashed #ff0055; 
             opacity: 0.75;
         }
@@ -177,7 +175,6 @@
     </div>
 
     <div class="action-box">
-        <div class="btn-action btn-ads" onclick="showAd()" style="grid-column: span 2;">📺 Watch & Earn (+10 نقاط)</div>
         <div class="btn-action btn-offers" onclick="showSoon('عروض CPA')">🎯 عروض CPA (قريباً..)</div>
     </div>
 
@@ -204,14 +201,13 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         let userId = "";
         let userData = null;
         let countdownTimer = null;
 
-        // إعدادات عجلة الحظ (أقصى جائزة 25 نقطة)
         const WHEEL_SECTORS = [
             { label: "5 نقطة", value: 5, color: "#161920", text: "#00d26a" },
             { label: "10 نقطة", value: 10, color: "#1e232d", text: "#00d26a" },
@@ -224,13 +220,13 @@
         ];
         let currentAngle = 0;
         let isSpinning = false;
-        let activeAdAction = null; // لتحديد هل الإعلان للستريك أم للعجلة
+        let activeAdAction = null;
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
             userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
             if (!userId) {
-                userId = "123456789"; // افتراضي للاستقرار
+                userId = "123456789";
             }
 
             const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
@@ -241,34 +237,6 @@
                 userData = user;
                 updateUI();
                 startDailyCountdown();
-            }
-        }
-
-        // إعلان عام (Watch & Earn)
-        function showAd() {
-            if (typeof show_10959333 === 'function') {
-                show_10959333().then(() => {
-                    giveReward(10);
-                }).catch((err) => {
-                    console.error("Ad Error:", err);
-                    tg.showAlert("❌ عذراً، لا توجد إعلانات متاحة حالياً.");
-                });
-            } else {
-                tg.showAlert("⏳ جاري تحميل نظام الإعلانات...");
-            }
-        }
-
-        async function giveReward(amount) {
-            const currentTotal = userData.total_earned || 0;
-            const { data, error } = await client.from('users').update({
-                points: userData.points + amount,
-                total_earned: currentTotal + amount
-            }).eq('telegram_id', userId).select().single();
-            
-            if (!error && data) {
-                userData = data;
-                updateUI();
-                tg.showAlert(`✅ مبروك! حصلت على ${amount} نقطة.`);
             }
         }
 
@@ -388,7 +356,6 @@
             }
         }
 
-        // تشغيل إعلان الستريك
         function claimDailyWithAd() {
             if (!userData) return;
             if (hasClaimedToday(userData.last_claim)) {
@@ -399,7 +366,6 @@
             triggerMonetagAd();
         }
 
-        // تشغيل إعلان عجلة الحظ
         function showWheelAd() {
             if (!userData) return;
             if (hasSpunWheelToday(userData.last_wheel_spin)) {
@@ -429,11 +395,10 @@
             }
         }
 
-        // تنفيذ الستريك بعد مشاهدة الإعلان
         async function executeClaimDaily() {
             const now = new Date();
             const newStreak = calculateNewStreak(userData.last_claim, userData.streak || 0);
-            const rewardPoints = 5; // 5 نقاط للستريك
+            const rewardPoints = 5;
 
             const { data, error } = await client.from('users').update({
                 points: (userData.points || 0) + rewardPoints,
@@ -452,7 +417,6 @@
             }
         }
 
-        // إدارة عجلة الحظ والـ Canvas
         function openWheelModal() {
             document.getElementById('wheel-modal').style.display = 'flex';
             drawWheel();
