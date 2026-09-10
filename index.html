@@ -25,12 +25,35 @@
         .stat-card { background: var(--card-bg); padding: 15px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
         .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--main-green); }
         
+        /* بطاقة الستريك وعجلة الحظ العريضة */
+        .streak-fullwidth-card {
+            margin: 0 15px 15px;
+            background: linear-gradient(145deg, #1a202a, #101318);
+            border: 1px solid #2d333f;
+            border-radius: 18px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+        }
+        .streak-header { display: flex; justify-content: space-between; align-items: center; }
+        .streak-title-box { display: flex; align-items: center; gap: 10px; }
+        .streak-icon { width: 42px; height: 42px; background: rgba(255, 170, 0, 0.12); border: 1px solid #ffaa00; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .streak-info b { display: block; font-size: 14px; color: white; }
+        .streak-info span { font-size: 11px; color: #ffaa00; font-weight: bold; }
+        .streak-badge { background: #252a35; padding: 5px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; color: var(--main-green); border: 1px solid #333a48; }
+
+        .streak-actions { display: flex; flex-direction: column; gap: 8px; }
+        .btn-streak-claim { width: 100%; background: var(--main-green); color: black; border: none; padding: 13px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .btn-wheel-trigger { width: 100%; background: linear-gradient(135deg, #ffaa00, #e67e00); color: black; border: none; padding: 13px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .streak-timer-box { text-align: center; font-size: 11px; color: var(--text-gray); background: #0d0f13; padding: 9px; border-radius: 10px; border: 1px dashed #2d333d; display: none; }
+
         .action-box { margin: 0 15px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .btn-action { background: var(--card-bg); color: white; border: 1px solid #333; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 13px; transition: 0.2s; }
         .btn-action:active { transform: scale(0.97); }
         .btn-ads { background: linear-gradient(90deg, #00d26a, #009e4f); color: black; border: none; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.3); }
         
-        /* زر عروض CPA بنمط قريباً */
         .btn-offers { 
             background: rgba(255, 0, 85, 0.08); 
             color: #ff4d79; 
@@ -39,7 +62,6 @@
             opacity: 0.75;
         }
 
-        /* ستايل خدمات MegaTask المطور */
         .services-section { padding: 0 15px; margin-top: 25px; text-align: right; }
         .service-title { color: var(--main-green); font-size: 14px; margin: 0 0 15px 0; border-right: 3px solid var(--main-green); padding-right: 10px; }
         .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -66,6 +88,13 @@
         .modal-content { background: var(--card-bg); padding: 30px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 85%; }
         .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 15px 0; outline: none; }
         
+        /* نافذة عجلة الحظ */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 99999; align-items: center; justify-content: center; padding: 20px; }
+        .modal-box { background: #181b22; border: 1px solid #2d333d; border-radius: 20px; padding: 22px; width: 100%; max-width: 350px; text-align: center; }
+        .btn-confirm-ad { width: 100%; background: var(--main-green); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        .wheel-container-box { position: relative; width: 260px; height: 260px; margin: 15px auto; display: flex; align-items: center; justify-content: center; }
+        .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 22px solid #ff3b5c; z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+
         .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
@@ -79,6 +108,26 @@
             <input type="text" id="ref-input" class="modal-input" placeholder="ENTER CODE (ID)">
             <button class="btn-withdraw" style="width:100%" onclick="submitRegistration()">ابدأ الآن</button>
             <button onclick="submitRegistration(true)" style="background: none; border: none; color: #555; margin-top: 10px;">تخطي ></button>
+        </div>
+    </div>
+
+    <!-- نافذة عجلة الحظ اليومية -->
+    <div id="wheel-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color: #ffaa00; margin-top:0;">🎡 عجلة الحظ اليومية</h3>
+            <div id="wheel-result-msg" style="font-size: 13px; color: var(--text-gray); min-height: 20px; margin-bottom: 10px;">
+                اضغط على زر التدوير لتحديد جائزتك!
+            </div>
+            <div class="wheel-container-box">
+                <div class="wheel-pointer"></div>
+                <canvas id="wheel-canvas" width="260" height="260"></canvas>
+            </div>
+            <button id="wheel-spin-btn" class="btn-confirm-ad" style="background: linear-gradient(135deg, #ffaa00, #e67e00); margin-bottom: 8px;" onclick="spinWheel()">
+                🚀 تدوير العجلة الآن
+            </button>
+            <button class="btn-confirm-ad" style="background: #252932; color: #ccc;" onclick="closeWheelModal()">
+                إغلاق
+            </button>
         </div>
     </div>
 
@@ -99,33 +148,48 @@
         <div class="stat-card"><b id="tasks-done">0</b><span>Tasks</span></div>
     </div>
 
+    <!-- بطاقة الستريك وعجلة الحظ اليومية المدمجة بعرض الصفحة -->
+    <div class="streak-fullwidth-card">
+        <div class="streak-header">
+            <div class="streak-title-box">
+                <div class="streak-icon">🔥</div>
+                <div class="streak-info">
+                    <b>المكافآت والستريك اليومي</b>
+                    <span>شاهد الإعلان واستلم جائزتك حتى منتصف الليل</span>
+                </div>
+            </div>
+            <div class="streak-badge" id="card-streak-count">0 يوم</div>
+        </div>
+
+        <div class="streak-actions">
+            <button id="claimBtn" class="btn-streak-claim" onclick="claimDailyWithAd()">
+                🎁 مكافأة اليوم (+5 نقاط)
+            </button>
+            
+            <button id="btn-wheel-trigger" class="btn-wheel-trigger" onclick="showWheelAd()">
+                🎡 عجلة الحظ اليومية (متاحة الآن)
+            </button>
+
+            <div id="streak-timer-box" class="streak-timer-box">
+                ⏳ تتجدد المكافأة والعجلة بعد: 00:00:00
+            </div>
+        </div>
+    </div>
+
     <div class="action-box">
-        <div class="btn-action" onclick="claimDaily()" id="claimBtn">🎁 Daily Reward</div>
-        <div class="btn-action btn-ads" onclick="showAd()">📺 Watch & Earn</div>
+        <div class="btn-action btn-ads" onclick="showAd()" style="grid-column: span 2;">📺 Watch & Earn (+10 نقاط)</div>
         <div class="btn-action btn-offers" onclick="showSoon('عروض CPA')">🎯 عروض CPA (قريباً..)</div>
     </div>
 
     <div class="services-section">
         <h3 class="service-title">الخدمات الذكية 🛠️</h3>
         <div class="services-grid">
-            <div class="btn-service" onclick="goSocial()">
-                <span>📥</span>تحميل الوسائط
-            </div>
-            <div class="btn-service" onclick="goMethods()">
-                <span>🔓</span>قسم الميثودات
-            </div>
-            <div class="btn-service" onclick="goDevTools()">
-                <span>👨‍💻</span>أدوات المطور
-            </div>
-            <div class="btn-service" onclick="goTempMail()">
-                <span>📧</span>بريد مؤقت
-            </div>
-            <div class="btn-service" onclick="goVirtualNumbers()">
-                <span>📱</span>أرقام وهمية
-            </div>
-            <div class="btn-service" onclick="showSoon('الخدمة الإضافية')" style="opacity: 0.6; border-style: dashed;">
-                <span>🎯</span>قريباً..
-            </div>
+            <div class="btn-service" onclick="goSocial()"><span>📥</span>تحميل الوسائط</div>
+            <div class="btn-service" onclick="goMethods()"><span>🔓</span>قسم الميثودات</div>
+            <div class="btn-service" onclick="goDevTools()"><span>👨‍💻</span>أدوات المطور</div>
+            <div class="btn-service" onclick="goTempMail()"><span>📧</span>بريد مؤقت</div>
+            <div class="btn-service" onclick="goVirtualNumbers()"><span>📱</span>أرقام وهمية</div>
+            <div class="btn-service" onclick="showSoon('الخدمة الإضافية')" style="opacity: 0.6; border-style: dashed;"><span>🎯</span>قريباً..</div>
         </div>
     </div>
 
@@ -147,10 +211,27 @@
         let userData = null;
         let countdownTimer = null;
 
+        // إعدادات عجلة الحظ (أقصى جائزة 25 نقطة)
+        const WHEEL_SECTORS = [
+            { label: "5 نقطة", value: 5, color: "#161920", text: "#00d26a" },
+            { label: "10 نقطة", value: 10, color: "#1e232d", text: "#00d26a" },
+            { label: "حظ أوفر 💔", value: 0, color: "#161920", text: "#888888" },
+            { label: "15 نقطة", value: 15, color: "#1e232d", text: "#ffaa00" },
+            { label: "25 نقطة 💎", value: 25, color: "#00d26a", text: "#000000" },
+            { label: "5 نقطة", value: 5, color: "#2d3442", text: "#ffffff" },
+            { label: "10 نقطة", value: 10, color: "#161920", text: "#ffaa00" },
+            { label: "20 نقطة", value: 20, color: "#1e232d", text: "#ffffff" }
+        ];
+        let currentAngle = 0;
+        let isSpinning = false;
+        let activeAdAction = null; // لتحديد هل الإعلان للستريك أم للعجلة
+
         async function init() {
             const params = new URLSearchParams(window.location.search);
             userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-            if (!userId) return;
+            if (!userId) {
+                userId = "123456789"; // افتراضي للاستقرار
+            }
 
             const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
             
@@ -163,10 +244,11 @@
             }
         }
 
+        // إعلان عام (Watch & Earn)
         function showAd() {
             if (typeof show_10959333 === 'function') {
                 show_10959333().then(() => {
-                    giveReward();
+                    giveReward(10);
                 }).catch((err) => {
                     console.error("Ad Error:", err);
                     tg.showAlert("❌ عذراً، لا توجد إعلانات متاحة حالياً.");
@@ -176,17 +258,17 @@
             }
         }
 
-        async function giveReward() {
+        async function giveReward(amount) {
             const currentTotal = userData.total_earned || 0;
             const { data, error } = await client.from('users').update({
-                points: userData.points + 10,
-                total_earned: currentTotal + 10
+                points: userData.points + amount,
+                total_earned: currentTotal + amount
             }).eq('telegram_id', userId).select().single();
             
             if (!error && data) {
                 userData = data;
                 updateUI();
-                tg.showAlert("✅ مبروك! حصلت على 10 نقطة.");
+                tg.showAlert(`✅ مبروك! حصلت على ${amount} نقطة.`);
             }
         }
 
@@ -211,13 +293,14 @@
         }
 
         function updateUI() {
+            if (!userData) return;
             document.getElementById('user-points').innerText = (userData.points || 0).toLocaleString();
             document.getElementById('balance-short').innerText = userData.points >= 1000 ? (userData.points/1000).toFixed(1) + 'k' : (userData.points || 0);
             document.getElementById('user-streak').innerText = (userData.streak || 0) + "d";
             document.getElementById('tasks-done').innerText = userData.total_tasks || 0;
+            document.getElementById('card-streak-count').innerText = (userData.streak || 0) + " يوم";
         }
 
-        // فحص هل المستخدم استلم هدية اليوم
         function hasClaimedToday(lastClaimIso) {
             if (!lastClaimIso) return false;
             const lastClaimDate = new Date(lastClaimIso);
@@ -227,7 +310,15 @@
                    lastClaimDate.getDate() === now.getDate();
         }
 
-        // حساب الستريك الجديد (لو كان أمس يزيد 1، لو تخطى يوم يعود لـ 1)
+        function hasSpunWheelToday(lastSpinIso) {
+            if (!lastSpinIso) return false;
+            const lastSpinDate = new Date(lastSpinIso);
+            const now = new Date();
+            return lastSpinDate.getFullYear() === now.getFullYear() &&
+                   lastSpinDate.getMonth() === now.getMonth() &&
+                   lastSpinDate.getDate() === now.getDate();
+        }
+
         function calculateNewStreak(lastClaimIso, currentStreak) {
             if (!lastClaimIso) return 1;
             const lastClaimDate = new Date(lastClaimIso);
@@ -241,7 +332,6 @@
             return isYesterday ? (currentStreak || 0) + 1 : 1;
         }
 
-        // حساب الوقت المتبقي لمنتصف الليل (12:00 AM) لبداية اليوم الجديد
         function getMidnightCountdown() {
             const now = new Date();
             const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
@@ -257,43 +347,93 @@
             };
         }
 
-        // تشغيل عداد الوقت الحي على الزر
         function startDailyCountdown() {
             if (countdownTimer) clearInterval(countdownTimer);
-            updateDailyButton();
-            countdownTimer = setInterval(updateDailyButton, 1000);
+            updateDailyButtonsState();
+            countdownTimer = setInterval(updateDailyButtonsState, 1000);
         }
 
-        function updateDailyButton() {
-            const btn = document.getElementById('claimBtn');
+        function updateDailyButtonsState() {
+            const btnClaim = document.getElementById('claimBtn');
+            const btnWheel = document.getElementById('btn-wheel-trigger');
+            const timerBox = document.getElementById('streak-timer-box');
             if (!userData) return;
 
-            if (hasClaimedToday(userData.last_claim)) {
-                const { text } = getMidnightCountdown();
-                btn.style.opacity = "0.5";
-                btn.style.pointerEvents = "none";
-                btn.innerText = `⏳ متاح بعد ${text}`;
+            const claimed = hasClaimedToday(userData.last_claim);
+            const spun = hasSpunWheelToday(userData.last_wheel_spin);
+
+            if (claimed) {
+                btnClaim.style.display = "none";
             } else {
-                btn.style.opacity = "1";
-                btn.style.pointerEvents = "auto";
-                const potentialStreak = calculateNewStreak(userData.last_claim, userData.streak || 0);
-                const potentialReward = 15 + (potentialStreak * 5);
-                btn.innerText = `🎁 مكافأة اليوم (+${potentialReward})`;
+                btnClaim.style.display = "block";
+                btnClaim.innerText = `🎁 مكافأة اليوم (+5 نقاط)`;
+            }
+
+            if (spun) {
+                btnWheel.disabled = true;
+                btnWheel.style.opacity = "0.6";
+                btnWheel.innerText = `🎡 تم تدوير عجلة اليوم`;
+            } else {
+                btnWheel.disabled = false;
+                btnWheel.style.opacity = "1";
+                btnWheel.innerText = `🎡 عجلة الحظ اليومية (متاحة الآن)`;
+            }
+
+            if (claimed && spun) {
+                const { text } = getMidnightCountdown();
+                timerBox.style.display = 'block';
+                timerBox.innerText = `⏳ تتجدد المكافآت بعد ${text}`;
+            } else {
+                timerBox.style.display = 'none';
             }
         }
 
-        // تنفيذ استلام المكافأة مع زيادة الستريك والنقاط التصاعدية
-        async function claimDaily() {
+        // تشغيل إعلان الستريك
+        function claimDailyWithAd() {
             if (!userData) return;
             if (hasClaimedToday(userData.last_claim)) {
-                tg.showAlert("⏳ استلمت مكافأة اليوم بالفعل! سيبدأ اليوم الجديد الساعة 12 منتصف الليل.");
+                tg.showAlert("⏳ استلمت مكافأة اليوم بالفعل!");
                 return;
             }
+            activeAdAction = 'streak';
+            triggerMonetagAd();
+        }
 
+        // تشغيل إعلان عجلة الحظ
+        function showWheelAd() {
+            if (!userData) return;
+            if (hasSpunWheelToday(userData.last_wheel_spin)) {
+                tg.showAlert("⏳ لقد قمت بتدوير عجلة الحظ اليوم بالفعل!");
+                return;
+            }
+            activeAdAction = 'wheel';
+            triggerMonetagAd();
+        }
+
+        function triggerMonetagAd() {
+            if (typeof show_10959333 === 'function') {
+                show_10959333().then(() => {
+                    if (activeAdAction === 'streak') {
+                        executeClaimDaily();
+                    } else if (activeAdAction === 'wheel') {
+                        openWheelModal();
+                    }
+                    activeAdAction = null;
+                }).catch((err) => {
+                    console.error("Ad Error:", err);
+                    tg.showAlert("❌ لم تكتمل مشاهدة الإعلان، يجب مشاهدته بالكامل للحصول على الجائزة.");
+                    activeAdAction = null;
+                });
+            } else {
+                tg.showAlert("⏳ جاري تحميل نظام الإعلانات...");
+            }
+        }
+
+        // تنفيذ الستريك بعد مشاهدة الإعلان
+        async function executeClaimDaily() {
             const now = new Date();
             const newStreak = calculateNewStreak(userData.last_claim, userData.streak || 0);
-            // معادلة المكافأة التصاعدية: 15 نقطة أساسية + 5 لكل يوم ستريك
-            const rewardPoints = 15 + (newStreak * 5);
+            const rewardPoints = 5; // 5 نقاط للستريك
 
             const { data, error } = await client.from('users').update({
                 points: (userData.points || 0) + rewardPoints,
@@ -306,9 +446,131 @@
                 userData = data;
                 updateUI();
                 startDailyCountdown();
-                tg.showAlert(`🔥 عاش يا بطل!\nزدت في الستريك لليوم (${newStreak} أيام) وحصلت على ${rewardPoints} نقطة!`);
+                tg.showAlert(`🔥 عاش يا بطل!\nاستلمت مكافأة الستريك (+${rewardPoints} نقاط) وصار الستريك (${newStreak} أيام)!`);
             } else {
-                tg.showAlert("❌ حدث خطأ أثناء استلام المكافأة، يرجى المحاولة لاحقاً.");
+                tg.showAlert("❌ حدث خطأ أثناء استلام المكافأة.");
+            }
+        }
+
+        // إدارة عجلة الحظ والـ Canvas
+        function openWheelModal() {
+            document.getElementById('wheel-modal').style.display = 'flex';
+            drawWheel();
+            document.getElementById('wheel-spin-btn').disabled = false;
+            document.getElementById('wheel-result-msg').innerText = "اضغط على زر التدوير لتحديد جائزتك!";
+        }
+
+        function closeWheelModal() {
+            if (!isSpinning) {
+                document.getElementById('wheel-modal').style.display = 'none';
+            }
+        }
+
+        function drawWheel() {
+            const canvas = document.getElementById('wheel-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const numSectors = WHEEL_SECTORS.length;
+            const arc = (2 * Math.PI) / numSectors;
+            const radius = canvas.width / 2;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            WHEEL_SECTORS.forEach((sec, i) => {
+                const angle = currentAngle + i * arc;
+                ctx.beginPath();
+                ctx.fillStyle = sec.color;
+                ctx.moveTo(radius, radius);
+                ctx.arc(radius, radius, radius - 6, angle, angle + arc);
+                ctx.lineTo(radius, radius);
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#2b3240";
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(radius, radius);
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = sec.text;
+                ctx.font = "bold 12px 'Segoe UI', Tahoma";
+                ctx.fillText(sec.label, radius - 18, 4);
+                ctx.restore();
+            });
+
+            ctx.beginPath();
+            ctx.arc(radius, radius, 16, 0, 2 * Math.PI);
+            ctx.fillStyle = "#0b0d10";
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#00d26a";
+            ctx.stroke();
+        }
+
+        function spinWheel() {
+            if (isSpinning) return;
+            isSpinning = true;
+
+            const spinBtn = document.getElementById('wheel-spin-btn');
+            spinBtn.disabled = true;
+            document.getElementById('wheel-result-msg').innerText = "جاري تدوير العجلة...";
+
+            const winningIndex = Math.floor(Math.random() * WHEEL_SECTORS.length);
+            const prize = WHEEL_SECTORS[winningIndex];
+
+            const numSectors = WHEEL_SECTORS.length;
+            const arc = (2 * Math.PI) / numSectors;
+            const targetSectorCenter = winningIndex * arc + arc / 2;
+            const stopAngle = (1.5 * Math.PI) - targetSectorCenter;
+            const totalRotations = (5 + Math.floor(Math.random() * 3)) * (2 * Math.PI);
+            const finalTargetAngle = currentAngle + totalRotations + ((stopAngle - (currentAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI));
+
+            const duration = 4500;
+            const startTime = performance.now();
+            const startAngle = currentAngle;
+
+            function animate(time) {
+                const elapsed = time - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 4);
+
+                currentAngle = startAngle + (finalTargetAngle - startAngle) * easeOut;
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isSpinning = false;
+                    onWheelStopped(prize);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        async function onWheelStopped(prize) {
+            const msg = document.getElementById('wheel-result-msg');
+            const now = new Date();
+
+            const newPoints = (userData.points || 0) + prize.value;
+            const newTotalEarned = (userData.total_earned || 0) + prize.value;
+
+            const { data, error } = await client.from('users').update({
+                points: newPoints,
+                total_earned: newTotalEarned,
+                last_wheel_spin: now.toISOString()
+            }).eq('telegram_id', userId).select().single();
+
+            if (!error && data) {
+                userData = data;
+                updateUI();
+                startDailyCountdown();
+            }
+
+            if (prize.value > 0) {
+                msg.innerHTML = `🎉 مبروك! فزت بـ <b style="color: #00d26a;">+${prize.value} نقطة</b>`;
+            } else {
+                msg.innerHTML = `💔 حظ أوفر في المرة القادمة!`;
             }
         }
 
