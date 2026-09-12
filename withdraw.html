@@ -55,6 +55,11 @@
         <input type="text" id="wallet" placeholder="010xxxxxxx / ID">
     </div>
 
+    <div class="input-group">
+        <label>البريد الإلكتروني (لتلقي تفاصيل الفاتورة والإشعار)</label>
+        <input type="email" id="userEmail" placeholder="example@gmail.com">
+    </div>
+
     <button class="withdraw-btn" id="withdrawBtn" onclick="processWithdraw()">تأكيد طلب السحب ↗</button>
 
     <nav class="navbar">
@@ -68,7 +73,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
@@ -84,23 +89,12 @@
 
         async function init() {
             try {
-                let { data, error } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
-                
-                if (!data) {
-                    const { data: newUser } = await client.from('users').insert([{
-                        telegram_id: tid, points: 0, total_earned: 0, streak: 1
-                    }]).select().single();
-                    if (newUser) data = newUser;
-                }
-
+                let { data } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
                 if (data) {
                     userBalance = data.points || 0;
                     document.getElementById('current-points').innerText = userBalance.toLocaleString() + " نقطة";
-                } else {
-                    document.getElementById('current-points').innerText = "0 نقطة";
                 }
             } catch (err) {
-                console.error("Init withdraw error:", err);
                 document.getElementById('current-points').innerText = "0 نقطة";
             }
         }
@@ -108,19 +102,12 @@
         function convertCurrency() {
             const val = parseFloat(document.getElementById('amountInput').value);
             const hint = document.getElementById('conversion-hint');
-            
-            if (isNaN(val) || val <= 0) {
-                hint.innerText = "";
-                return;
-            }
+            if (isNaN(val) || val <= 0) { hint.innerText = ""; return; }
 
-            // لو الرقم أقل من 100 معناه كتب بالجنيه، ولو أكبر معناه كتب بالنقاط
             if (val < 100) {
-                const calculatedPoints = val * 100;
-                hint.innerText = `💡 يعادل بالنقاط: ${calculatedPoints.toLocaleString()} نقطة`;
+                hint.innerText = `💡 يعادل بالنقاط: ${(val * 100).toLocaleString()} نقطة`;
             } else {
-                const calculatedEgp = (val / 100).toFixed(2);
-                hint.innerText = `💡 يعادل بالمصري: ${calculatedEgp} جنيه`;
+                hint.innerText = `💡 يعادل بالمصري: ${(val / 100).toFixed(2)} جنيه`;
             }
         }
 
@@ -128,11 +115,10 @@
             let inputVal = parseFloat(document.getElementById('amountInput').value);
             const method = document.getElementById('method').value;
             const wallet = document.getElementById('wallet').value;
+            const email = document.getElementById('userEmail').value.trim();
             const btn = document.getElementById('withdrawBtn');
 
             if (isNaN(inputVal) || inputVal <= 0) return tg.showAlert("❌ يرجى إدخال مبلغ صحيح للسحب");
-
-            // توحيد الحساب إلى نقاط نهائية
             let finalPoints = inputVal < 100 ? inputVal * 100 : inputVal;
 
             if (finalPoints < 1000) return tg.showAlert("❌ الحد الأدنى للسحب هو 1,000 نقطة");
@@ -140,15 +126,47 @@
             if (!wallet) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام (رقم الهاتف أو الـ ID)");
 
             btn.disabled = true;
-            btn.innerText = "جاري المعالجة...";
+            btn.innerText = "جاري المعالجة وإرسال الفاتورة...";
 
-            const { error: err1 } = await client.from('withdrawals').insert([{
-                telegram_id: tid, amount: finalPoints, method: method, wallet_info: wallet, status: 'Pending'
-            }]);
+            // توليد رقم معاملة فريد وتاريخ بالثواني
+            const txId = "TX-" + Math.floor(100000 + Math.random() * 900000);
+            const now = new Date();
+            const timeString = now.toLocaleString('ar-EG', { hour12: true }); // يشمل الساعات والدقائق والثواني والتاريخ
+
+            const withdrawData = {
+                telegram_id: tid,
+                tx_id: txId,
+                amount: finalPoints,
+                amount_egp: finalPoints / 100,
+                method: method,
+                wallet_info: wallet,
+                email: email || "غير مسجل",
+                created_at: now.toISOString(),
+                status: 'Pending'
+            };
+
+            const { error: err1 } = await client.from('withdrawals').insert([withdrawData]);
 
             if (!err1) {
                 await client.from('users').update({ points: userBalance - finalPoints }).eq('telegram_id', tid);
-                tg.showAlert("✅ تم إرسال طلبك بنجاح! سيتم التحقق والدفع خلال 24 ساعة.");
+
+                // إرسال إشعار داخلي في جدول الإشعارات ليسطعه البوت للمستخدم
+                const invoiceText = `📄 *فاتورة طلب سحب أرباح*\n\n` +
+                                    `🆔 *رقم المعاملة:* \`${txId}\`\n` +
+                                    `💰 *المبلغ بالنقاط:* ${finalPoints.toLocaleString()} نقطة\n` +
+                                    `💵 *المبلغ بالجنيه:* ${(finalPoints/100).toFixed(2)} جنيه\n` +
+                                    `💳 *طريقة السحب:* ${method}\n` +
+                                    `📱 *رقم/حساب الاستلام:* \`${wallet}\`\n` +
+                                    `⏰ *التاريخ والوقت:* ${timeString}\n` +
+                                    `📌 *الحالة:* قيد المراجعة والدفع خلال 24 ساعة`;
+
+                await client.from('user_notifications').insert([{
+                    user_id: tid,
+                    title: '🧾 تم إرسال طلب سحب أرباحك بنجاح',
+                    message: invoiceText
+                }]);
+
+                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nتم إرسال كافة التفاصيل لإشعارات البوت.`);
                 goHome();
             } else {
                 tg.showAlert("❌ فشل الطلب: " + err1.message);
@@ -160,7 +178,7 @@
         function goHome() { window.location.href = `index.html?id=${tid}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}`; }
-        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
+        function goProfile() { window.location.href=`profile.html?id=${tid}`; }
 
         init();
     </script>
