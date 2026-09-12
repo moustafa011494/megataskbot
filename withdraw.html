@@ -68,7 +68,7 @@
         <div onclick="goInvite()" class="nav-item">👥<br>أصدقاء</div>
         <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
     </nav>
-        <script>
+       <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
@@ -79,7 +79,7 @@
         let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
         
         if (!tid || tid === "undefined" || tid === "null") {
-            tid = localStorage.getItem('mega_task_tid') || "123456789";
+            tid = localStorage.getItem('mega_task_tid') || "";
         } else {
             localStorage.setItem('mega_task_tid', tid);
         }
@@ -87,37 +87,34 @@
         let userBalance = 0;
 
         async function init() {
-            try {
-                console.log("Fetching balance for ID:", tid);
-                
-                // جلب النقاط مباشرة من جدول users بالـ telegram_id
-                let { data, error } = await client
-                    .from('users')
-                    .select('points')
-                    .eq('telegram_id', tid)
-                    .maybeSingle();
+            if (!tid) {
+                document.getElementById('current-points').innerText = "0 نقطة";
+                return;
+            }
 
-                if (error) {
-                    console.error("DB Error:", error);
+            try {
+                let userRecord = null;
+
+                // 1. محاولة البحث بالـ ID كنص
+                let { data: d1 } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
+                if (d1) {
+                    userRecord = d1;
+                } else {
+                    // 2. محاولة البحث بالـ ID برقم صحيح (Integer/BigInt) في حال كان العمود رقمي في قاعدة البيانات
+                    let { data: d2 } = await client.from('users').select('*').eq('telegram_id', parseInt(tid) || 0).maybeSingle();
+                    if (d2) userRecord = d2;
                 }
 
-                if (data && data.points !== undefined) {
-                    userBalance = data.points;
+                if (userRecord) {
+                    userBalance = userRecord.points || 0;
+                    document.getElementById('current-points').innerText = userBalance.toLocaleString() + " نقطة";
                 } else {
-                    // لو المستخدم مش موجود خالص في الجدول، بننشئه فوراً برصيد 0
-                    await client.from('users').insert([{
-                        telegram_id: tid,
-                        points: 0,
-                        total_earned: 0,
-                        streak: 1
-                    }]);
+                    // لو مش موجود خالص، بنعرض 0 بدل ما نلخبط حسابه الحقيقي بإنشاء صف وهمي
+                    document.getElementById('current-points').innerText = "0 نقطة";
                     userBalance = 0;
                 }
-
-                document.getElementById('current-points').innerText = userBalance.toLocaleString() + " نقطة";
-
             } catch (err) {
-                console.error("Init exception:", err);
+                console.error("Init error:", err);
                 document.getElementById('current-points').innerText = "0 نقطة";
                 userBalance = 0;
             }
