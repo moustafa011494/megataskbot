@@ -46,18 +46,13 @@
 
     <div class="input-group">
         <label>المبلغ المطلوب سحبه (بالنقاط أو بالجنيه)</label>
-        <input type="number" id="amountInput" placeholder="مثلاً: 1000 أو 10" oninput="convertCurrency()">
+        <input type="number" id="amount" placeholder="مثلاً: 1000 أو 10" oninput="convertCurrency()">
         <small id="conversion-hint" style="color: var(--main-green); display: block; margin-top: 5px; font-size: 11px;"></small>
     </div>
 
     <div class="input-group">
         <label>بيانات الاستلام (رقم الهاتف أو الـ ID)</label>
         <input type="text" id="wallet" placeholder="010xxxxxxx / ID">
-    </div>
-
-    <div class="input-group">
-        <label>البريد الإلكتروني (لتلقي تفاصيل الفاتورة والإشعار)</label>
-        <input type="email" id="userEmail" placeholder="example@gmail.com">
     </div>
 
     <button class="withdraw-btn" id="withdrawBtn" onclick="processWithdraw()">تأكيد طلب السحب ↗</button>
@@ -68,60 +63,35 @@
         <div onclick="goInvite()" class="nav-item">👥<br>أصدقاء</div>
         <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
     </nav>
-       <script>
+
+    <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-        
-        if (!tid || tid === "undefined" || tid === "null") {
-            tid = localStorage.getItem('mega_task_tid') || "";
-        } else {
-            localStorage.setItem('mega_task_tid', tid);
-        }
-
+        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
         let userBalance = 0;
 
         async function init() {
-            if (!tid) {
-                document.getElementById('current-points').innerText = "0 نقطة";
-                return;
-            }
-
-            try {
-                let userRecord = null;
-
-                // 1. محاولة البحث بالـ ID كنص
-                let { data: d1 } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
-                if (d1) {
-                    userRecord = d1;
-                } else {
-                    // 2. محاولة البحث بالـ ID برقم صحيح (Integer/BigInt) في حال كان العمود رقمي في قاعدة البيانات
-                    let { data: d2 } = await client.from('users').select('*').eq('telegram_id', parseInt(tid) || 0).maybeSingle();
-                    if (d2) userRecord = d2;
-                }
-
-                if (userRecord) {
-                    userBalance = userRecord.points || 0;
-                    document.getElementById('current-points').innerText = userBalance.toLocaleString() + " نقطة";
-                } else {
-                    // لو مش موجود خالص، بنعرض 0 بدل ما نلخبط حسابه الحقيقي بإنشاء صف وهمي
-                    document.getElementById('current-points').innerText = "0 نقطة";
-                    userBalance = 0;
-                }
-            } catch (err) {
-                console.error("Init error:", err);
+            if(!tid) { document.getElementById('current-points').innerText = "Error ID"; return; }
+            
+            // استعلام مباشر ومضمون 100% مثل كودك القديم
+            const { data } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
+            if (data) {
+                userBalance = data.points || 0;
+                document.getElementById('current-points').innerText = userBalance.toLocaleString() + " نقطة";
+            } else {
                 document.getElementById('current-points').innerText = "0 نقطة";
                 userBalance = 0;
             }
         }
 
+        // حساب تفاعلي لتوضيح المبلغ للمستخدم سواء كتب بالنقاط أو بالجنيه
         function convertCurrency() {
-            const val = parseFloat(document.getElementById('amountInput').value);
+            const val = parseFloat(document.getElementById('amount').value);
             const hint = document.getElementById('conversion-hint');
             if (isNaN(val) || val <= 0) { hint.innerText = ""; return; }
 
@@ -133,22 +103,24 @@
         }
 
         async function processWithdraw() {
-            let inputVal = parseFloat(document.getElementById('amountInput').value);
+            let inputVal = parseFloat(document.getElementById('amount').value);
             const method = document.getElementById('method').value;
             const wallet = document.getElementById('wallet').value;
-            const email = document.getElementById('userEmail').value.trim();
             const btn = document.getElementById('withdrawBtn');
 
             if (isNaN(inputVal) || inputVal <= 0) return tg.showAlert("❌ يرجى إدخال مبلغ صحيح للسحب");
+
+            // توحيد الحساب: لو أقل من 100 يعني كتب بالجنيه نحوله لنقاط
             let finalPoints = inputVal < 100 ? inputVal * 100 : inputVal;
 
-            if (finalPoints < 1000) return tg.showAlert("❌ الحد الأدنى للسحب هو 1,000 نقطة");
+            if (finalPoints < 1000) return tg.showAlert("❌ الحد الأدنى للسحب هو 1,000 نقطة (10 جنيه)");
             if (finalPoints > userBalance) return tg.showAlert("❌ عذراً، رصيدك غير كافٍ لهذا المبلغ");
             if (!wallet) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام (رقم الهاتف أو الـ ID)");
 
             btn.disabled = true;
             btn.innerText = "جاري المعالجة وإرسال الفاتورة...";
 
+            // توليد رقم معاملة وتاريخ دقيق بالثواني
             const txId = "TX-" + Math.floor(100000 + Math.random() * 900000);
             const now = new Date();
             const timeString = now.toLocaleString('ar-EG', { hour12: true });
@@ -160,7 +132,6 @@
                 amount_egp: finalPoints / 100,
                 method: method,
                 wallet_info: wallet,
-                email: email || "غير مسجل",
                 created_at: now.toISOString(),
                 status: 'Pending'
             };
@@ -170,12 +141,13 @@
             if (!err1) {
                 await client.from('users').update({ points: userBalance - finalPoints }).eq('telegram_id', tid);
 
+                // إرسال إشعار تفصيلي للبوت (الفاتورة)
                 const invoiceText = `📄 *فاتورة طلب سحب أرباح*\n\n` +
                                     `🆔 *رقم المعاملة:* \`${txId}\`\n` +
                                     `💰 *المبلغ بالنقاط:* ${finalPoints.toLocaleString()} نقطة\n` +
                                     `💵 *المبلغ بالجنيه:* ${(finalPoints/100).toFixed(2)} جنيه\n` +
                                     `💳 *طريقة السحب:* ${method}\n` +
-                                    `📱 *رقم/حساب الاستلام:* \`${wallet}\`\n` +
+                                    `📱 *الرقم/اليوزر المسحوب عليه:* \`${wallet}\`\n` +
                                     `⏰ *التاريخ والوقت:* ${timeString}\n` +
                                     `📌 *الحالة:* قيد المراجعة والدفع خلال 24 ساعة`;
 
@@ -185,7 +157,7 @@
                     message: invoiceText
                 }]);
 
-                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nتم إرسال الفاتورة لإشعارات البوت.`);
+                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nتم إرسال كافة تفاصيل الفاتورة لإشعارات البوت.`);
                 goHome();
             } else {
                 tg.showAlert("❌ فشل الطلب: " + err1.message);
