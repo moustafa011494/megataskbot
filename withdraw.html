@@ -18,8 +18,9 @@
         .withdraw-btn { background: var(--main-green); color: black; border: none; width: 100%; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 5px 15px rgba(0, 210, 106, 0.3); }
         .withdraw-btn:disabled { background: #333; color: #666; box-shadow: none; }
         .info-box { background: rgba(0, 210, 106, 0.1); border: 1px dashed var(--main-green); padding: 10px; border-radius: 10px; font-size: 12px; margin-bottom: 20px; color: #00d26a; text-align: center; }
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
+        .nav-item.active { color: var(--main-green); }
     </style>
 </head>
 <body>
@@ -36,7 +37,7 @@
     <div class="input-group">
         <label>وسيلة السحب</label>
         <select id="method">
-            <option value="Vodafone Cash">فودافون كاش 🇪🇬</option>
+            <option value="Vodafone Cash">فودافون كاش 🔴</option>
             <option value="Etisalat Cash">اتصالات كاش 🟢</option>
             <option value="Orange Cash">اورانج كاش 🟠</option>
             <option value="InstaPay">InstaPay (Egypt) 🏦</option>
@@ -66,24 +67,46 @@
 
     <script>
         const tg = window.Telegram.WebApp;
+        tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        
+        if (!tid || tid === "undefined" || tid === "null") {
+            tid = localStorage.getItem('mega_task_tid') || "123456789";
+        } else {
+            localStorage.setItem('mega_task_tid', tid);
+        }
+
         let userBalance = 0;
 
         async function init() {
-            if(!tid) { document.getElementById('current-points').innerText = "Error ID"; return; }
-            const { data } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
-            if (data) {
-                userBalance = data.points;
-                document.getElementById('current-points').innerText = userBalance.toLocaleString() + " نقطة";
+            try {
+                let { data, error } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
+                
+                if (!data) {
+                    // لو الحساب مش موجود في الجدول، ننشئه تلقائياً برصيد 0
+                    const { data: newUser } = await client.from('users').insert([{
+                        telegram_id: tid, points: 0, total_earned: 0, streak: 1
+                    }]).select().single();
+                    if (newUser) data = newUser;
+                }
+
+                if (data) {
+                    userBalance = data.points || 0;
+                    document.getElementById('current-points').innerText = userBalance.toLocaleString() + " نقطة";
+                } else {
+                    document.getElementById('current-points').innerText = "0 نقطة";
+                }
+            } catch (err) {
+                console.error("Init withdraw error:", err);
+                document.getElementById('current-points').innerText = "0 نقطة";
             }
         }
 
-        // دالة ذكية لتحديد ما إذا كان المدخل بالنقاط أم بالجنيه وعرض التوضيح للمستخدم
         function convertCurrency() {
             const val = parseFloat(document.getElementById('amountInput').value);
             const hint = document.getElementById('conversion-hint');
@@ -93,12 +116,10 @@
                 return;
             }
 
-            // إذا كتب المستخدم رقماً صغيراً (أقل من 100)، نعتبره كتب بالجنيه ونحولها لنقاط
             if (val < 100) {
                 const calculatedPoints = val * 100;
                 hint.innerText = `💡 يعادل بالنقاط: ${calculatedPoints.toLocaleString()} نقطة`;
             } else {
-                // نعتبره كتب بالنقاط ونوضح له كام جنيه
                 const calculatedEgp = (val / 100).toFixed(2);
                 hint.innerText = `💡 يعادل بالمصري: ${calculatedEgp} جنيه`;
             }
@@ -112,37 +133,8 @@
 
             if (isNaN(inputVal) || inputVal <= 0) return tg.showAlert("❌ يرجى إدخال مبلغ صحيح للسحب");
 
-            // تحويل المدخل إلى نقاط نهائية بغض النظر هل كُتب بالنقاط أم بالجنيه
             let finalPoints = inputVal < 100 ? inputVal * 100 : inputVal;
 
             if (finalPoints < 1000) return tg.showAlert("❌ الحد الأدنى للسحب هو 1,000 نقطة (10 جنيه)");
             if (finalPoints > userBalance) return tg.showAlert("❌ عذراً، رصيدك غير كافٍ لهذا المبلغ");
-            if (!wallet) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام (رقم الهاتف أو الـ ID)");
-
-            btn.disabled = true;
-            btn.innerText = "جاري المعالجة...";
-
-            const { error: err1 } = await client.from('withdrawals').insert([{
-                telegram_id: tid, amount: finalPoints, method: method, wallet_info: wallet, status: 'Pending'
-            }]);
-
-            if (!err1) {
-                await client.from('users').update({ points: userBalance - finalPoints }).eq('telegram_id', tid);
-                tg.showAlert("✅ تم إرسال طلبك بنجاح! سيتم المراجعة والدفع خلال 24 ساعة.");
-                goHome();
-            } else {
-                tg.showAlert("❌ فشل الطلب: " + err1.message);
-                btn.disabled = false;
-                btn.innerText = "تأكيد طلب السحب ↗";
-            }
-        }
-
-        function goHome() { window.location.href = `index.html?id=${tid}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
-        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
-        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
-
-        init();
-    </script>
-</body>
-</html>
+            if (!wallet) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام (
