@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Frost Seahorse - MegaTask</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --main-green: #00d26a; --dark-bg: #05070a; }
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--dark-bg); color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; user-select: none; -webkit-user-select: none;
+        }
+
+        /* شريط العلوي (معلومات اللعبة والسكور) */
+        .game-top-bar {
+            position: absolute; top: 0; left: 0; width: 100%;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; z-index: 10; pointer-events: none;
+            background: linear-gradient(180deg, rgba(5,7,10,0.8) 0%, transparent 100%);
+        }
+        .top-info-box { background: rgba(20, 23, 31, 0.85); border: 1px solid rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+        .top-info-box span { color: #ffaa00; }
+
+        .btn-exit {
+            position: absolute; top: 15px; right: 20px; z-index: 20;
+            background: rgba(255,59,48,0.2); border: 1px solid #ff3b30; color: #ff6b6b;
+            padding: 6px 14px; border-radius: 15px; font-size: 12px; font-weight: bold; cursor: pointer;
+        }
+
+        /* ساحة اللعبة بملء الشاشة */
+        canvas { display: block; width: 100vw; height: 100vh; background: linear-gradient(180deg, #070c14 0%, #0d1626 100%); }
+
+        /* شاشة البداية والنهاية المنبثقة */
+        .overlay-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 7, 10, 0.92); z-index: 30;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 25px; text-align: center;
+        }
+        .overlay-screen h1 { color: #00d26a; font-size: 28px; margin-bottom: 5px; text-shadow: 0 0 15px rgba(0,210,106,0.3); }
+        .overlay-screen p { color: #9ca3af; font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
+        
+        .btn-action-game {
+            background: linear-gradient(135deg, #00d26a, #009e4f); color: #000;
+            border: none; width: 100%; max-width: 260px; padding: 15px; border-radius: 20px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0, 210, 106, 0.35); transition: 0.2s;
+        }
+        .btn-action-game:active { transform: scale(0.96); }
+    </style>
+</head>
+<body>
+
+    <div class="game-top-bar">
+        <div class="top-info-box">السكور: <span id="current-score">0</span></div>
+        <div class="top-info-box" style="right: 80px; position: absolute;">الأعلى: <span id="high-score">0</span></div>
+    </div>
+    
+    <button class="btn-exit" onclick="exitGame()">✖ خروج</button>
+
+    <div id="start-screen" class="overlay-screen">
+        <div style="font-size: 50px; margin-bottom: 10px;">❄️</div>
+        <h1>FROST SEAHORSE</h1>
+        <p>انقر في أي مكان على الشاشة لقفز حصان البحر وتجنب العقبات الجليدية بملء الشاشة وبحركة فائقة السلاسة.</p>
+        <button class="btn-action-game" onclick="startGame()">🎮 ابدأ اللعب الآن</button>
+    </div>
+
+    <div id="gameover-screen" class="overlay-screen" style="display: none;">
+        <div style="font-size: 50px; margin-bottom: 10px;">💥</div>
+        <h1>انتهت الجولة!</h1>
+        <p id="final-score-text" style="color: white; font-size: 16px; font-weight: bold; margin-bottom: 20px;">السكور: 0</p>
+        <button class="btn-action-game" onclick="startGame()">🔄 اللعب مرة أخرى</button>
+        <button class="btn-action-game" style="background: #222630; color: #fff; margin-top: 10px;" onclick="exitGame()">🔙 العودة للبوت</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
+
+        const params = new URLSearchParams(window.location.search);
+        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "123456789").trim();
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // ضبط قياسات الـ Canvas لملء الشاشة بالكامل بدقة عالية
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        let score = 0;
+        let highScore = 0;
+        let userData = null;
+        let gameRunning = false;
+
+        let player = {
+            x: canvas.width * 0.2,
+            y: canvas.height / 2,
+            radius: 18,
+            velocity: 0,
+            gravity: 0.35,
+            jump: -7.2
+        };
+
+        let pipes = [];
+        let pipeWidth = 65;
+        let pipeGap = 190;
+        let frameCount = 0;
+
+        async function init() {
+            try {
+                const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+                if (user) userData = user;
+
+                const { data: scoreData } = await client.from('game_scores').select('*').eq('user_id', userId).maybeSingle();
+                if (scoreData) {
+                    highScore = scoreData.high_score || 0;
+                    document.getElementById('high-score').innerText = highScore;
+                }
+            } catch (e) {}
+        }
+
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('gameover-screen').style.display = 'none';
+            
+            gameRunning = true;
+            score = 0;
+            document.getElementById('current-score').innerText = score;
+
+            player.y = canvas.height / 2;
+            player.velocity = 0;
+            pipes = [];
+            frameCount = 0;
+
+            loop();
+        }
+
+        window.addEventListener('click', () => {
+            if (gameRunning) {
+                player.velocity = player.jump;
+            }
+        });
+        window.addEventListener('touchstart', (e) => {
+            if (gameRunning) {
+                e.preventDefault();
+                player.velocity = player.jump;
+            }
+        }, { passive: false });
+
+        function update() {
+            player.velocity += player.gravity;
+            player.y += player.velocity;
+
+            if (player.y + player.radius > canvas.height - 20 || player.y - player.radius < 0) {
+                gameOver();
+            }
+
+            if (frameCount % 110 === 0) {
+                let minH = 80;
+                let maxH = canvas.height - pipeGap - 150;
+                let topH = Math.floor(Math.random() * (maxH - minH + 1)) + minH;
+
+                pipes.push({
+                    x: canvas.width,
+                    top: topH,
+                    bottom: canvas.height - topH - pipeGap,
+                    passed: false
+                });
+            }
+
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].x -= 3;
+
+                if (!pipes[i].passed && pipes[i].x + pipeWidth < player.x) {
+                    score += 10;
+                    document.getElementById('current-score').innerText = score;
+                    pipes[i].passed = true;
+                }
+
+                if (
+                    player.x + player.radius > pipes[i].x &&
+                    player.x - player.radius < pipes[i].x + pipeWidth &&
+                    (player.y - player.radius < pipes[i].top || player.y + player.radius > canvas.height - pipes[i].bottom)
+                ) {
+                    gameOver();
+                }
+
+                if (pipes[i].x + pipeWidth < 0) pipes.splice(i, 1);
+            }
+            frameCount++;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // رسم الأنابيب الجليدية بتصميم فخم
+            pipes.forEach(p => {
+                let grad = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
+                grad.addColorStop(0, "#00d26a");
+                grad.addColorStop(0.5, "#ffffff");
+                grad.addColorStop(1, "#009e4f");
+
+                ctx.fillStyle = grad;
+                ctx.fillRect(p.x, 0, pipeWidth, p.top);
+                ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
+            });
+
+            // رسم حصان البحر المضيء
+            ctx.save();
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = "#00d26a";
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "#ffffff";
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#00d26a";
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function loop() {
+            if (!gameRunning) return;
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        async function gameOver() {
+            gameRunning = false;
+            document.getElementById('final-score-text').innerText = `السكور النهائي: ${score} نقطة`;
+            document.getElementById('gameover-screen').style.display = 'flex';
+
+            if (score > highScore) {
+                highScore = score;
+                document.getElementById('high-score').innerText = highScore;
+                try {
+                    await client.from('game_scores').upsert({ user_id: userId, high_score: highScore }, { onConflict: 'user_id' });
+                    if (userData) {
+                        const bonus = Math.floor(score / 5);
+                        const newPts = (userData.points || 0) + bonus;
+                        await client.from('users').update({ points: newPts }).eq('telegram_id', userId);
+                        userData.points = newPts;
+                        if (bonus > 0) tg.showAlert(`🏆 رقم قياسي جديد!\nحصلت على مكافأة +${bonus} نقطة لإنجازك.`);
+                    }
+                } catch (e) {}
+            }
+        }
+
+        function exitGame() {
+            window.location.href = `games.html?id=${userId}`;
+        }
+
+        init();
+    </script>
+</body>
+</html>
