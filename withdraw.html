@@ -106,7 +106,7 @@
             }
         }
 
-                async function processWithdraw() {
+         async function processWithdraw() {
             let inputVal = parseFloat(document.getElementById('amount').value);
             const method = document.getElementById('method').value;
             const wallet = document.getElementById('wallet').value;
@@ -144,7 +144,7 @@
             const { error: err1 } = await client.from('withdrawals').insert([withdrawData]);
 
             if (!err1) {
-                // 2. خصم النقاط من رصيد المستخدم
+                // 2. خصم النقاط من رصيد المستخدم بأمان تام زي ما هي
                 await client.from('users').update({ points: userBalance - finalPoints }).eq('telegram_id', tid);
 
                 // 3. تجهيز نص الفاتورة المفصلة
@@ -158,19 +158,12 @@
                                     `⏰ *التاريخ والوقت:* ${timeString}\n` +
                                     `📌 *الحالة:* قيد المراجعة والدفع خلال 24 ساعة`;
 
-                // 4. إرسال الإشعار للبوت مباشرة بنفس طريقة كود الدعوات الناجح عندك
+                // 4. إرسال الفاتورة لشات البوت مباشرة بنفس دالة الدعوات الناجحة عندك
                 if (typeof sendTelegramMessage === 'function') {
                     sendTelegramMessage(tid, invoiceText);
-                } else {
-                    // لو الدالة مش معرفة في الصفحة، بنسجلها في الجدول كاحتياطي آمن
-                    await client.from('user_notifications').insert([{
-                        user_id: tid,
-                        title: '🧾 تم إرسال طلب سحب أرباحك بنجاح',
-                        message: invoiceText
-                    }]);
                 }
 
-                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nوصلتك الفاتورة في شات البوت.`);
+                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nوصلتك الفاتورة في شات البوت الآن.`);
                 goHome();
             } else {
                 tg.showAlert("❌ فشل الطلب: " + err1.message);
@@ -178,6 +171,7 @@
                 btn.innerText = "تأكيد طلب السحب ↗";
             }
         }
+
 
 
         function goHome() { window.location.href = `index.html?id=${tid}`; }
