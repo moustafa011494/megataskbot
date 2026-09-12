@@ -20,7 +20,6 @@
         .info-box { background: rgba(0, 210, 106, 0.1); border: 1px dashed var(--main-green); padding: 10px; border-radius: 10px; font-size: 12px; margin-bottom: 20px; color: #00d26a; text-align: center; }
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
-        .nav-item.active { color: var(--main-green); }
     </style>
 </head>
 <body>
@@ -30,24 +29,24 @@
     <div class="balance-card">
         <span>رصيدك الحالي</span>
         <h2 id="current-points">جاري التحميل...</h2>
-        <div class="info-box">كل 100 نقطة تعادل 1 جنيه مصري 💵</div>
-        <small style="color: var(--text-gray);">الحد الأدنى للسحب: 1,000 نقطة (10 جنيه)</small>
+        <div class="info-box">سحب سريع وآمن لأرباحك 💳</div>
+        <small style="color: var(--text-gray);">الحد الأدنى للسحب: 1,000 نقطة</small>
     </div>
 
     <div class="input-group">
         <label>وسيلة السحب</label>
         <select id="method">
-            <option value="Vodafone Cash">فودافون كاش 🔴</option>
-            <option value="Etisalat Cash">اتصالات كاش 🟢</option>
-            <option value="Orange Cash">اورانج كاش 🟠</option>
+            <option value="Vodafone Cash">فودافون كاش (مصر) 🇪🇬</option>
+            <option value="Etisalat Cash">اتصالات كاش (مصر) 🟢</option>
+            <option value="Orange Cash">اورانج كاش (مصر) 🟠</option>
             <option value="InstaPay">InstaPay (Egypt) 🏦</option>
             <option value="Binance Pay">Binance Pay (USDT) 🌐</option>
         </select>
     </div>
 
     <div class="input-group">
-        <label>المبلغ المطلوب (اكتب بالنقاط أو بالجنيه)</label>
-        <input type="number" id="amountInput" placeholder="مثلاً: 1000 نقطة أو 10 جنيه" oninput="convertCurrency()">
+        <label>المبلغ المطلوب سحبه (بالنقاط أو بالجنيه)</label>
+        <input type="number" id="amountInput" placeholder="مثلاً: 1000 أو 10" oninput="convertCurrency()">
         <small id="conversion-hint" style="color: var(--main-green); display: block; margin-top: 5px; font-size: 11px;"></small>
     </div>
 
@@ -69,7 +68,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
@@ -88,7 +87,6 @@
                 let { data, error } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
                 
                 if (!data) {
-                    // لو الحساب مش موجود في الجدول، ننشئه تلقائياً برصيد 0
                     const { data: newUser } = await client.from('users').insert([{
                         telegram_id: tid, points: 0, total_earned: 0, streak: 1
                     }]).select().single();
@@ -116,6 +114,7 @@
                 return;
             }
 
+            // لو الرقم أقل من 100 معناه كتب بالجنيه، ولو أكبر معناه كتب بالنقاط
             if (val < 100) {
                 const calculatedPoints = val * 100;
                 hint.innerText = `💡 يعادل بالنقاط: ${calculatedPoints.toLocaleString()} نقطة`;
@@ -133,8 +132,37 @@
 
             if (isNaN(inputVal) || inputVal <= 0) return tg.showAlert("❌ يرجى إدخال مبلغ صحيح للسحب");
 
+            // توحيد الحساب إلى نقاط نهائية
             let finalPoints = inputVal < 100 ? inputVal * 100 : inputVal;
 
-            if (finalPoints < 1000) return tg.showAlert("❌ الحد الأدنى للسحب هو 1,000 نقطة (10 جنيه)");
+            if (finalPoints < 1000) return tg.showAlert("❌ الحد الأدنى للسحب هو 1,000 نقطة");
             if (finalPoints > userBalance) return tg.showAlert("❌ عذراً، رصيدك غير كافٍ لهذا المبلغ");
-            if (!wallet) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام (
+            if (!wallet) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام (رقم الهاتف أو الـ ID)");
+
+            btn.disabled = true;
+            btn.innerText = "جاري المعالجة...";
+
+            const { error: err1 } = await client.from('withdrawals').insert([{
+                telegram_id: tid, amount: finalPoints, method: method, wallet_info: wallet, status: 'Pending'
+            }]);
+
+            if (!err1) {
+                await client.from('users').update({ points: userBalance - finalPoints }).eq('telegram_id', tid);
+                tg.showAlert("✅ تم إرسال طلبك بنجاح! سيتم التحقق والدفع خلال 24 ساعة.");
+                goHome();
+            } else {
+                tg.showAlert("❌ فشل الطلب: " + err1.message);
+                btn.disabled = false;
+                btn.innerText = "تأكيد طلب السحب ↗";
+            }
+        }
+
+        function goHome() { window.location.href = `index.html?id=${tid}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
+
+        init();
+    </script>
+</body>
+</html>
