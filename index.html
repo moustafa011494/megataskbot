@@ -226,22 +226,36 @@
         let activeAdAction = null; // لتحديد هل الإعلان للستريك أم للعجلة
 
         async function init() {
-            const params = new URLSearchParams(window.location.search);
-            userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-            if (!userId) {
-                userId = "123456789"; // افتراضي للاستقرار
-            }
+    const params = new URLSearchParams(window.location.search);
+    userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+    if (!userId) {
+        userId = "123456789"; // افتراضي للاستقرار
+    }
 
-            const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-            
-            if (!user) {
-                document.getElementById('ref-modal').style.display = 'flex';
-            } else {
-                userData = user;
-                updateUI();
-                startDailyCountdown();
+    const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+    
+    if (!user) {
+        document.getElementById('ref-modal').style.display = 'flex';
+    } else {
+        userData = user;
+        updateUI();
+        startDailyCountdown();
+
+        // فحص وعرض إشعارات الفاتورة أو الطلبات الجديدة فوراً للمستخدم
+        try {
+            const { data: unreadNotifs } = await client.from('user_notifications').select('*').eq('user_id', userId).eq('is_read', false);
+            if (unreadNotifs && unreadNotifs.length > 0) {
+                for (let notif of unreadNotifs) {
+                    tg.showAlert(notif.title + "\n\n" + notif.message);
+                }
+                await client.from('user_notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false);
             }
+        } catch (e) {
+            console.error("Notification check error:", e);
         }
+    }
+}
+
 
         // إعلان عام (Watch & Earn)
         function showAd() {
