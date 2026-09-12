@@ -68,12 +68,11 @@
         <div onclick="goInvite()" class="nav-item">👥<br>أصدقاء</div>
         <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
     </nav>
-
-    <script>
+        <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
@@ -89,13 +88,38 @@
 
         async function init() {
             try {
-                let { data } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
-                if (data) {
-                    userBalance = data.points || 0;
-                    document.getElementById('current-points').innerText = userBalance.toLocaleString() + " نقطة";
+                console.log("Fetching balance for ID:", tid);
+                
+                // جلب النقاط مباشرة من جدول users بالـ telegram_id
+                let { data, error } = await client
+                    .from('users')
+                    .select('points')
+                    .eq('telegram_id', tid)
+                    .maybeSingle();
+
+                if (error) {
+                    console.error("DB Error:", error);
                 }
+
+                if (data && data.points !== undefined) {
+                    userBalance = data.points;
+                } else {
+                    // لو المستخدم مش موجود خالص في الجدول، بننشئه فوراً برصيد 0
+                    await client.from('users').insert([{
+                        telegram_id: tid,
+                        points: 0,
+                        total_earned: 0,
+                        streak: 1
+                    }]);
+                    userBalance = 0;
+                }
+
+                document.getElementById('current-points').innerText = userBalance.toLocaleString() + " نقطة";
+
             } catch (err) {
+                console.error("Init exception:", err);
                 document.getElementById('current-points').innerText = "0 نقطة";
+                userBalance = 0;
             }
         }
 
@@ -128,10 +152,9 @@
             btn.disabled = true;
             btn.innerText = "جاري المعالجة وإرسال الفاتورة...";
 
-            // توليد رقم معاملة فريد وتاريخ بالثواني
             const txId = "TX-" + Math.floor(100000 + Math.random() * 900000);
             const now = new Date();
-            const timeString = now.toLocaleString('ar-EG', { hour12: true }); // يشمل الساعات والدقائق والثواني والتاريخ
+            const timeString = now.toLocaleString('ar-EG', { hour12: true });
 
             const withdrawData = {
                 telegram_id: tid,
@@ -150,7 +173,6 @@
             if (!err1) {
                 await client.from('users').update({ points: userBalance - finalPoints }).eq('telegram_id', tid);
 
-                // إرسال إشعار داخلي في جدول الإشعارات ليسطعه البوت للمستخدم
                 const invoiceText = `📄 *فاتورة طلب سحب أرباح*\n\n` +
                                     `🆔 *رقم المعاملة:* \`${txId}\`\n` +
                                     `💰 *المبلغ بالنقاط:* ${finalPoints.toLocaleString()} نقطة\n` +
@@ -166,7 +188,7 @@
                     message: invoiceText
                 }]);
 
-                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nتم إرسال كافة التفاصيل لإشعارات البوت.`);
+                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nتم إرسال الفاتورة لإشعارات البوت.`);
                 goHome();
             } else {
                 tg.showAlert("❌ فشل الطلب: " + err1.message);
@@ -178,7 +200,7 @@
         function goHome() { window.location.href = `index.html?id=${tid}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}`; }
-        function goProfile() { window.location.href=`profile.html?id=${tid}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
 
         init();
     </script>
