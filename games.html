@@ -13,25 +13,12 @@
         .header { padding: 15px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
         .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; color: var(--main-green); font-weight: bold; }
 
-        .lobby-container { padding: 15px; display: flex; flex-direction: column; gap: 12px; }
-        .game-banner { background: linear-gradient(145deg, #161b26, #0e121a); border: 1px solid #2d333f; border-radius: 18px; padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.2s; }
+        .lobby-container { padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+        .game-banner { background: linear-gradient(145deg, #161b26, #0e121a); border: 1px solid #2d333f; border-radius: 20px; padding: 18px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .game-banner:active { transform: scale(0.98); border-color: var(--main-green); }
-        .game-icon { width: 55px; height: 55px; border-radius: 14px; background: rgba(0, 210, 106, 0.1); border: 1px solid var(--main-green); display: flex; align-items: center; justify-content: center; font-size: 28px; flex-shrink: 0; }
-        .game-info b { display: block; font-size: 15px; color: white; margin-bottom: 3px; }
-        .game-info span { font-size: 11px; color: var(--text-gray); line-height: 1.4; display: block; }
-
-        /* منطقة تشغيل اللعبة المختارة */
-        #game-arena { display: none; text-align: center; padding: 10px; }
-        .game-wrapper { width: 100%; max-width: 380px; margin: 10px auto; position: relative; border-radius: 20px; overflow: hidden; border: 2px solid #1f2937; box-shadow: 0 8px 25px rgba(0, 210, 106, 0.15); background: #0c1017; }
-        canvas { display: block; background: linear-gradient(180deg, #090e17 0%, #0d1524 100%); width: 100%; height: auto; }
-        
-        .game-controls { padding: 10px 20px; display: flex; gap: 10px; max-width: 380px; margin: 0 auto; }
-        .btn-control { flex: 1; background: var(--main-green); color: #000; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; }
-        .btn-back { background: #222630; color: #fff; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; }
-
-        .scores-bar { display: flex; justify-content: space-around; background: var(--card-bg); border: 1px solid #2d333d; border-radius: 15px; padding: 10px; margin: 10px 15px; }
-        .score-item b { display: block; font-size: 16px; color: #ffaa00; }
-        .score-item span { font-size: 10px; color: var(--text-gray); }
+        .game-icon { width: 60px; height: 60px; border-radius: 16px; background: rgba(0, 210, 106, 0.1); border: 1px solid var(--main-green); display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0; }
+        .game-info b { display: block; font-size: 16px; color: white; margin-bottom: 4px; }
+        .game-info span { font-size: 12px; color: var(--text-gray); line-height: 1.4; display: block; }
 
         .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
@@ -45,39 +32,23 @@
         <div style="color: var(--text-gray); font-size: 12px;">ARCADE LOBBY 🕹️</div>
     </div>
 
-    <div id="lobby-view" class="lobby-container">
-        <h3 style="color: var(--main-green); font-size: 14px; margin: 0 0 5px 0;">اختر لعبتك المفضلة واكسب النقاط:</h3>
+    <div class="lobby-container">
+        <h3 style="color: var(--main-green); font-size: 14px; margin: 0 0 5px 0;">اختر لعبتك لتفتح بملء الشاشة:</h3>
         
-        <div class="game-banner" onclick="launchGame('seahorse')">
+        <div class="game-banner" onclick="openGame('game-seahorse.html')">
             <div class="game-icon">❄️</div>
             <div class="game-info">
-                <b>Frost Seahorse (طيران متجمد)</b>
-                <span>تحكم في حصان البحر وتجنب العقبات الجليدية لاكتساب النقاط.</span>
+                <b>Frost Seahorse</b>
+                <span>لعبة الطيران المتجمد بملء الشاشة، سلسة، وتصميم فخم للغاية.</span>
             </div>
         </div>
 
-        <div class="game-banner" onclick="tg.showAlert('🚀 اللعبة قيد التطوير وسيتم إطلاقها قريباً في التحديث القادم!')" style="opacity: 0.7;">
+        <div class="game-banner" onclick="tg.showAlert('🚀 لعبة جديدة قيد التطوير وقريباً ستنضم للصالة!')" style="opacity: 0.7;">
             <div class="game-icon">🎯</div>
             <div class="game-info">
                 <b>Neon Dash (قريباً..)</b>
-                <span>لعبة ركض سريع وتفادي الحواجز المضيئة.</span>
+                <span>تحدي السرعة والتفادي بملء الشاشة.</span>
             </div>
-        </div>
-    </div>
-
-    <div id="game-arena">
-        <div class="scores-bar">
-            <div class="score-item"><b id="current-score">0</b><span>نقاط الجولة</span></div>
-            <div class="score-item"><b id="high-score">0</b><span>أعلى سكور</span></div>
-        </div>
-
-        <div class="game-wrapper">
-            <canvas id="gameCanvas" width="360" height="460"></canvas>
-        </div>
-
-        <div class="game-controls">
-            <button id="btn-start" class="btn-control" onclick="startActiveGame()">🎮 ابدأ اللعب</button>
-            <button class="btn-back" onclick="returnToLobby()">🔙 القائمة</button>
         </div>
     </div>
 
@@ -98,176 +69,17 @@
         const params = new URLSearchParams(window.location.search);
         let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "123456789").trim();
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-
-        let score = 0;
-        let highScore = 0;
-        let userData = null;
-        let gameRunning = false;
-        let activeGameType = null;
-
-        let player = { x: 60, y: 230, radius: 15, velocity: 0, gravity: 0.38, jump: -7.5 };
-        let pipes = [];
-        let pipeWidth = 50;
-        let pipeGap = 155;
-        let frameCount = 0;
-
         async function initLobby() {
             try {
                 const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
                 if (user) {
-                    userData = user;
                     document.getElementById('user-points').innerText = (user.points || 0).toLocaleString() + " نقطة";
                 }
-            } catch (e) {
-                console.error("Init lobby error:", e);
-            }
-        }
-
-        async function launchGame(type) {
-            activeGameType = type;
-            document.getElementById('lobby-view').style.display = 'none';
-            document.getElementById('game-arena').style.display = 'block';
-
-            try {
-                const { data: scoreData } = await client.from('game_scores').select('*').eq('user_id', userId).maybeSingle();
-                if (scoreData) {
-                    highScore = scoreData.high_score || 0;
-                    document.getElementById('high-score').innerText = highScore;
-                }
             } catch (e) {}
-
-            drawIntro();
         }
 
-        function returnToLobby() {
-            gameRunning = false;
-            document.getElementById('game-arena').style.display = 'none';
-            document.getElementById('lobby-view').style.display = 'flex';
-        }
-
-        function drawIntro() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#0d1524";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#00d26a";
-            ctx.font = "bold 18px 'Segoe UI'";
-            ctx.textAlign = "center";
-            ctx.fillText("FROST SEAHORSE ❄️", canvas.width / 2, 180);
-            ctx.fillStyle = "#9ca3af";
-            ctx.font = "12px 'Segoe UI'";
-            ctx.fillText("اضغط ابدأ للقفز وتجنب العوائق", canvas.width / 2, 220);
-        }
-
-        function startActiveGame() {
-            if (gameRunning) return;
-            gameRunning = true;
-            score = 0;
-            document.getElementById('current-score').innerText = score;
-            document.getElementById('btn-start').style.display = 'none';
-
-            player.y = 230;
-            player.velocity = 0;
-            pipes = [];
-            frameCount = 0;
-
-            loop();
-        }
-
-        canvas.addEventListener('click', () => {
-            if (gameRunning) player.velocity = player.jump;
-        });
-
-        function updateGame() {
-            player.velocity += player.gravity;
-            player.y += player.velocity;
-
-            if (player.y + player.radius > canvas.height - 15 || player.y - player.radius < 0) {
-                endGame();
-            }
-
-            if (frameCount % 100 === 0) {
-                let topH = Math.floor(Math.random() * (canvas.height - pipeGap - 120)) + 50;
-                pipes.push({ x: canvas.width, top: topH, bottom: canvas.height - topH - pipeGap, passed: false });
-            }
-
-            for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= 2.5;
-
-                if (!pipes[i].passed && pipes[i].x + pipeWidth < player.x) {
-                    score += 10;
-                    document.getElementById('current-score').innerText = score;
-                    pipes[i].passed = true;
-                }
-
-                if (
-                    player.x + player.radius > pipes[i].x &&
-                    player.x - player.radius < pipes[i].x + pipeWidth &&
-                    (player.y - player.radius < pipes[i].top || player.y + player.radius > canvas.height - pipes[i].bottom)
-                ) {
-                    endGame();
-                }
-
-                if (pipes[i].x + pipeWidth < 0) pipes.splice(i, 1);
-            }
-            frameCount++;
-        }
-
-        function drawGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#0c1017";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            pipes.forEach(p => {
-                ctx.fillStyle = "#00d26a";
-                ctx.fillRect(p.x, 0, pipeWidth, p.top);
-                ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
-            });
-
-            ctx.save();
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = "#00d26a";
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-            ctx.fillStyle = "#fff";
-            ctx.fill();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = "#00d26a";
-            ctx.stroke();
-            ctx.restore();
-        }
-
-        function loop() {
-            if (!gameRunning) return;
-            updateGame();
-            drawGame();
-            requestAnimationFrame(loop);
-        }
-
-        async function endGame() {
-            gameRunning = false;
-            document.getElementById('btn-start').style.display = 'block';
-            document.getElementById('btn-start').innerText = "🔄 إعادة المحاولة";
-
-            if (score > highScore) {
-                highScore = score;
-                document.getElementById('high-score').innerText = highScore;
-                try {
-                    await client.from('game_scores').upsert({ user_id: userId, high_score: highScore }, { onConflict: 'user_id' });
-                    if (userData) {
-                        const bonus = Math.floor(score / 5);
-                        const newPts = (userData.points || 0) + bonus;
-                        await client.from('users').update({ points: newPts }).eq('telegram_id', userId);
-                        userData.points = newPts;
-                        document.getElementById('user-points').innerText = newPts.toLocaleString() + " نقطة";
-                        if (bonus > 0) tg.showAlert(`🏆 سكور قياسي جديد!\nحصلت على مكافأة +${bonus} نقطة.`);
-                    }
-                } catch (e) {}
-            } else {
-                tg.showAlert(`💔 انتهت الجولة!\nسكورك: ${score} نقطة.`);
-            }
-            drawIntro();
+        function openGame(pageName) {
+            window.location.href = `${pageName}?id=${userId}`;
         }
 
         function goHome() { window.location.href = `index.html?id=${userId}`; }
