@@ -55,6 +55,11 @@
         <input type="text" id="wallet" placeholder="010xxxxxxx / ID">
     </div>
 
+    <div class="input-group">
+        <label>البريد الإلكتروني (لإيصال الفاتورة)</label>
+        <input type="email" id="userEmail" placeholder="example@gmail.com">
+    </div>
+
     <button class="withdraw-btn" id="withdrawBtn" onclick="processWithdraw()">تأكيد طلب السحب ↗</button>
 
     <nav class="navbar">
@@ -76,9 +81,9 @@
         let userBalance = 0;
 
         async function init() {
-            if(!tid) { document.getElementById('current-points').innerText = "Error ID"; return; }
+            if(!tid) { document.getElementById('current-points').innerText = "0 نقطة"; return; }
             
-            // استعلام مباشر ومضمون 100% مثل كودك القديم
+            // استعلامك الأصلي المضمون 100% لجلب النقاط بدون تغيير
             const { data } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
             if (data) {
                 userBalance = data.points || 0;
@@ -89,7 +94,6 @@
             }
         }
 
-        // حساب تفاعلي لتوضيح المبلغ للمستخدم سواء كتب بالنقاط أو بالجنيه
         function convertCurrency() {
             const val = parseFloat(document.getElementById('amount').value);
             const hint = document.getElementById('conversion-hint');
@@ -106,21 +110,20 @@
             let inputVal = parseFloat(document.getElementById('amount').value);
             const method = document.getElementById('method').value;
             const wallet = document.getElementById('wallet').value;
+            const email = document.getElementById('userEmail').value.trim();
             const btn = document.getElementById('withdrawBtn');
 
             if (isNaN(inputVal) || inputVal <= 0) return tg.showAlert("❌ يرجى إدخال مبلغ صحيح للسحب");
 
-            // توحيد الحساب: لو أقل من 100 يعني كتب بالجنيه نحوله لنقاط
             let finalPoints = inputVal < 100 ? inputVal * 100 : inputVal;
 
-            if (finalPoints < 1000) return tg.showAlert("❌ الحد الأدنى للسحب هو 1,000 نقطة (10 جنيه)");
+            if (finalPoints < 1000) return tg.showAlert("❌ الحد الأدنى للسحب هو 1,000 نقطة");
             if (finalPoints > userBalance) return tg.showAlert("❌ عذراً، رصيدك غير كافٍ لهذا المبلغ");
             if (!wallet) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام (رقم الهاتف أو الـ ID)");
 
             btn.disabled = true;
             btn.innerText = "جاري المعالجة وإرسال الفاتورة...";
 
-            // توليد رقم معاملة وتاريخ دقيق بالثواني
             const txId = "TX-" + Math.floor(100000 + Math.random() * 900000);
             const now = new Date();
             const timeString = now.toLocaleString('ar-EG', { hour12: true });
@@ -132,6 +135,7 @@
                 amount_egp: finalPoints / 100,
                 method: method,
                 wallet_info: wallet,
+                email: email || "غير مسجل",
                 created_at: now.toISOString(),
                 status: 'Pending'
             };
@@ -141,13 +145,14 @@
             if (!err1) {
                 await client.from('users').update({ points: userBalance - finalPoints }).eq('telegram_id', tid);
 
-                // إرسال إشعار تفصيلي للبوت (الفاتورة)
+                // إرسال إشعار الفاتورة التفصيلي إلى إشعارات البوت الخاصة بالمستخدم
                 const invoiceText = `📄 *فاتورة طلب سحب أرباح*\n\n` +
                                     `🆔 *رقم المعاملة:* \`${txId}\`\n` +
                                     `💰 *المبلغ بالنقاط:* ${finalPoints.toLocaleString()} نقطة\n` +
                                     `💵 *المبلغ بالجنيه:* ${(finalPoints/100).toFixed(2)} جنيه\n` +
                                     `💳 *طريقة السحب:* ${method}\n` +
-                                    `📱 *الرقم/اليوزر المسحوب عليه:* \`${wallet}\`\n` +
+                                    `📱 *رقم/حساب الاستلام:* \`${wallet}\`\n` +
+                                    `📧 *البريد الإلكتروني:* ${email || 'غير مسجل'}\n` +
                                     `⏰ *التاريخ والوقت:* ${timeString}\n` +
                                     `📌 *الحالة:* قيد المراجعة والدفع خلال 24 ساعة`;
 
@@ -157,7 +162,7 @@
                     message: invoiceText
                 }]);
 
-                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nتم إرسال كافة تفاصيل الفاتورة لإشعارات البوت.`);
+                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nتم إرسال الفاتورة لإشعارات البوت.`);
                 goHome();
             } else {
                 tg.showAlert("❌ فشل الطلب: " + err1.message);
