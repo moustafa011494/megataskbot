@@ -29,16 +29,16 @@
     <div class="balance-card">
         <span>رصيدك الحالي</span>
         <h2 id="current-points">جاري التحميل...</h2>
-        <div class="info-box">كل 20,000 نقطة تعادل 1 دولار 💵</div>
-        <small style="color: var(--text-gray);">الحد الأدنى للسحب: 20,000 نقطة</small>
+        <div class="info-box">كل 100 نقطة تعادل 1 جنيه مصري 💵</div>
+        <small style="color: var(--text-gray);">الحد الأدنى للسحب: 20,000 نقطة (ما يعادل 200 جنيه)</small>
     </div>
 
     <div class="input-group">
         <label>وسيلة السحب</label>
         <select id="method">
             <option value="Vodafone Cash">فودافون كاش (مصر) 🇪🇬</option>
-            <option value="Binance Pay">Binance Pay (USDT) 🌐</option>
             <option value="InstaPay">InstaPay (Egypt) 🏦</option>
+            <option value="Binance Pay">Binance Pay (USDT) 🌐</option>
             <option value="Payer">Payer Account 💳</option>
         </select>
     </div>
@@ -65,7 +65,7 @@
     <script>
         const tg = window.Telegram.WebApp;
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
