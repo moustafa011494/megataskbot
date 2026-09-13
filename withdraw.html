@@ -60,9 +60,10 @@
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
-        <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
-        <div onclick="goInvite()" class="nav-item">👥<br>أصدقاء</div>
-        <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
+        <div onclick="goTasks()" class="nav-item">📋<br>الربح من المهام</div>
+        <div class="nav-item" style="background: var(--main-green); width: 40px; height: 40px; border-radius: 50%; color: black; line-height: 40px; margin-top: -20px; font-size: 20px;">🎮</div>
+        <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
+        <div class="nav-item active">👤<br>الملف الشخصي</div>
     </nav>
 
     <script>
@@ -203,10 +204,11 @@
             }
         }
         
-        function goHome() { window.location.href = `index.html?id=${tid}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
-        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
-        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
+        function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
+        function goGames() { window.location.href = `games.html?id=${tid}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
 
         init();
     </script>
