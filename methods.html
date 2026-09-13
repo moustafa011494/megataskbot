@@ -21,9 +21,13 @@
         .methods-container { display: flex; flex-direction: column; gap: 15px; }
         .method-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
         .method-title { font-size: 16px; font-weight: bold; color: white; display: flex; justify-content: space-between; align-items: center; }
+        
         .method-content { font-size: 13px; color: #ddd; line-height: 1.7; background: #11141a; padding: 12px; border-radius: 12px; border: 1px solid #22262f; white-space: pre-wrap; word-break: break-word; }
         .method-content a { color: var(--neon-blue); text-decoration: underline; }
         
+        .locked-box { background: #11141a; border: 1px dashed #444; padding: 15px; border-radius: 12px; text-align: center; color: var(--text-gray); font-size: 13px; }
+        .btn-unlock { background: linear-gradient(135deg, #ffaa00, #e67e00); color: black; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; font-size: 13px; cursor: pointer; margin-top: 10px; }
+
         .method-img-container { position: relative; width: 100%; border-radius: 12px; overflow: hidden; max-height: 220px; border: 1px solid #333; cursor: zoom-in; }
         .method-img-container img { width: 100%; height: 100%; object-fit: cover; display: block; }
         
@@ -48,12 +52,13 @@
         .btn-confirm { background: var(--main-green); color: black; }
         .btn-cancel { background: #252932; color: white; }
 
-        /* Lightbox */
+        /* Lightbox with zoom */
         #lightbox-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); z-index: 100000; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px; }
         .lightbox-toolbar { width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .lightbox-controls { display: flex; gap: 10px; }
         .lightbox-btn { background: #22262f; border: 1px solid #444; color: white; font-size: 14px; font-weight: bold; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
         .lightbox-viewport { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; overflow: auto; position: relative; margin: 10px 0; }
-        #lightbox-img { max-width: 95vw; max-height: 75vh; object-fit: contain; }
+        #lightbox-img { max-width: 95vw; max-height: 75vh; object-fit: contain; transition: transform 0.2s ease; transform-origin: center center; }
 
         .status-box { text-align: center; padding: 40px 15px; color: var(--text-gray); font-size: 13px; line-height: 1.6; }
 
@@ -107,10 +112,14 @@
         </div>
     </div>
 
-    <!-- عارض الصور المتقدم (Lightbox) -->
+    <!-- عارض الصور المتقدم مع تكبير وتصغير -->
     <div id="lightbox-modal">
         <div class="lightbox-toolbar">
-            <div style="font-size: 13px; color: #aaa;">معاينة الصورة</div>
+            <div class="lightbox-controls">
+                <button class="lightbox-btn" onclick="zoomImage(0.25)">🔍+ تكبير</button>
+                <button class="lightbox-btn" onclick="zoomImage(-0.25)">🔍- تصغير</button>
+                <button class="lightbox-btn" onclick="resetZoom()">🔄 إعادة ضبط</button>
+            </div>
             <button class="lightbox-btn" style="background: #ff3b30;" onclick="closeLightbox()">✖ إغلاق</button>
         </div>
         <div class="lightbox-viewport">
@@ -136,12 +145,14 @@
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
         let methodBase64Image = "";
+        let currentZoom = 1;
+        let unlockedMethodsSet = new Set();
+        let userPoints = 0;
 
         function escapeHtml(str) {
             return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        // تحويل الروابط داخل النص إلى روابط قابلة للضغط أوتوماتيكياً
         function linkifyText(text) {
             const escaped = escapeHtml(text);
             const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -149,6 +160,17 @@
         }
 
         async function init() {
+            if (tid) {
+                try {
+                    const { data: uData } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
+                    if (uData) userPoints = uData.points || 0;
+
+                    const { data: unlocks } = await client.from('method_unlocks').select('method_id').eq('user_id', tid);
+                    if (unlocks) {
+                        unlocks.forEach(un => unlockedMethodsSet.add(String(un.method_id)));
+                    }
+                } catch (e) {}
+            }
             loadApprovedMethods();
         }
 
@@ -170,26 +192,47 @@
 
                 container.innerHTML = "";
                 methods.forEach(m => {
+                    const mId = String(m.id);
+                    const isOwner = String(m.user_id) === String(tid);
+                    const isUnlocked = unlockedMethodsSet.has(mId) || isOwner;
                     const dateStr = new Date(m.created_at).toLocaleDateString('ar-EG');
-                    const imgHtml = m.image_url ? `
-                        <div class="method-img-container" onclick="openLightbox('${m.image_url}')">
-                            <img src="${m.image_url}" alt="Method Image">
-                            <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.75); color: white; font-size: 11px; padding: 4px 8px; border-radius: 6px;">🔍 اضغط للتكبير</div>
-                        </div>
-                    ` : '';
+                    
+                    const rewardBadge = (m.points_awarded && m.points_awarded > 0) 
+                        ? `<div class="reward-badge">🎁 تم مكافأة المطور بـ ${m.points_awarded.toLocaleString()} نقطة</div>` 
+                        : `<div></div>`;
 
-                    const pointsBadge = (m.points_awarded && m.points_awarded > 0) ? `<div class="reward-badge">🎁 مكافأة: +${m.points_awarded.toLocaleString()} نقطة</div>` : `<div></div>`;
+                    let bodyHtml = "";
+                    if (isUnlocked) {
+                        const imgHtml = m.image_url ? `
+                            <div class="method-img-container" onclick="openLightbox('${m.image_url}')">
+                                <img src="${m.image_url}" alt="Method Image">
+                                <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.75); color: white; font-size: 11px; padding: 4px 8px; border-radius: 6px;">🔍 اضغط للتكبير</div>
+                            </div>
+                        ` : '';
+                        bodyHtml = `
+                            <div class="method-content">${linkifyText(m.content)}</div>
+                            ${imgHtml}
+                        `;
+                    } else {
+                        bodyHtml = `
+                            <div class="locked-box">
+                                🔒 محتوى هذه الميثود مقفل.<br>
+                                اضغط على زر الشراء لفك الحجب وعرض الشرح الكامل مقابل <b>50 نقطة</b> فقط.
+                                <br>
+                                <button class="btn-unlock" onclick="unlockMethod(${m.id})">🔓 شراء وفك الحجب (50 نقطة)</button>
+                            </div>
+                        `;
+                    }
 
                     container.innerHTML += `
                         <div class="method-card">
                             <div class="method-title">
                                 <span>📌 ${escapeHtml(m.title)}</span>
                             </div>
-                            <div class="method-content">${linkifyText(m.content)}</div>
-                            ${imgHtml}
+                            ${bodyHtml}
                             <div class="method-footer">
                                 <span>🕒 ${dateStr}</span>
-                                ${pointsBadge}
+                                ${rewardBadge}
                             </div>
                         </div>
                     `;
@@ -201,10 +244,36 @@
             }
         }
 
-        function openSubmitModal() {
-            if (!tid) {
-                return tg.showAlert("❌ يرجى فتح المنصة من داخل البوت.");
+        async function unlockMethod(methodId) {
+            const unlockCost = 50;
+            if (userPoints < unlockCost) {
+                return tg.showAlert(`❌ رصيدك غير كافٍ!\nمطلوب ${unlockCost} نقطة لفتح هذه الميثود.`);
             }
+
+            if (!confirm(`هل تريد خصم ${unlockCost} نقطة لفتح وعرض محتوى هذه الميثود؟`)) return;
+
+            try {
+                const newPoints = userPoints - unlockCost;
+                const { error: userErr } = await client.from('users').update({ points: newPoints }).eq('telegram_id', tid);
+                if (userErr) throw userErr;
+
+                const { error: unlErr } = await client.from('method_unlocks').insert([{
+                    user_id: tid,
+                    method_id: parseInt(methodId)
+                }]);
+                if (unlErr) throw unlErr;
+
+                userPoints = newPoints;
+                unlockedMethodsSet.add(String(methodId));
+                tg.showAlert("🎉 تم شراء الميثود بنجاح وعرض محتواها بالكامل!");
+                loadApprovedMethods();
+            } catch (e) {
+                tg.showAlert("❌ حدث خطأ أثناء إتمام عملية الشراء.");
+            }
+        }
+
+        function openSubmitModal() {
+            if (!tid) return tg.showAlert("❌ يرجى فتح المنصة من داخل البوت.");
             document.getElementById('m-title').value = "";
             document.getElementById('m-content').value = "";
             document.getElementById('m-img-file').value = "";
@@ -275,8 +344,21 @@
         }
 
         function openLightbox(imgSrc) {
-            document.getElementById('lightbox-img').src = imgSrc;
+            const img = document.getElementById('lightbox-img');
+            img.src = imgSrc;
+            currentZoom = 1;
+            img.style.transform = `scale(${currentZoom})`;
             document.getElementById('lightbox-modal').style.display = 'flex';
+        }
+
+        function zoomImage(delta) {
+            currentZoom = Math.max(0.5, Math.min(3.5, currentZoom + delta));
+            document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`;
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`;
         }
 
         function closeLightbox() {
