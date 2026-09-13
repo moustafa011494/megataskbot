@@ -7,103 +7,288 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 90px; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h2 { color: var(--main-green); margin: 0; }
+        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; --neon-blue: #00f2ff; }
+        * { box-sizing: border-box; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 110px; }
+        
+        .header { text-align: center; padding: 10px 0 15px; }
+        .header h2 { margin: 0; font-size: 22px; color: var(--main-green); }
+        .header p { margin: 5px 0 0; font-size: 13px; color: var(--text-gray); }
+
+        .btn-submit-method { background: linear-gradient(135deg, #00d26a, #009e4f); color: #000; border: none; width: 100%; padding: 14px; border-radius: 15px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); }
+        .btn-submit-method:active { transform: scale(0.98); }
+
         .methods-container { display: flex; flex-direction: column; gap: 15px; }
-        .method-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 15px; padding: 15px; }
-        .method-title { font-size: 15px; font-weight: bold; color: var(--main-green); margin-bottom: 5px; }
-        .method-desc { font-size: 12px; color: var(--text-gray); margin-bottom: 10px; line-height: 1.5; }
-        .method-links { background: #11141a; padding: 10px; border-radius: 10px; font-family: monospace; font-size: 11px; white-space: pre-wrap; word-break: break-all; color: #ddd; max-height: 180px; overflow-y: auto; }
-        .notif-badge { background: #ff3b30; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; margin-right: 5px; }
+        .method-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+        .method-title { font-size: 16px; font-weight: bold; color: white; display: flex; justify-content: space-between; align-items: center; }
+        .method-content { font-size: 13px; color: #ddd; line-height: 1.7; background: #11141a; padding: 12px; border-radius: 12px; border: 1px solid #22262f; white-space: pre-wrap; word-break: break-word; }
+        .method-content a { color: var(--neon-blue); text-decoration: underline; }
+        
+        .method-img-container { position: relative; width: 100%; border-radius: 12px; overflow: hidden; max-height: 220px; border: 1px solid #333; cursor: zoom-in; }
+        .method-img-container img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        
+        .method-footer { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-gray); border-top: 1px solid #252932; padding-top: 10px; }
+        .reward-badge { background: rgba(0, 210, 106, 0.1); border: 1px solid var(--main-green); color: var(--main-green); padding: 4px 10px; border-radius: 8px; font-weight: bold; }
+
+        /* Modal Styles */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
+        .modal-body { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; text-align: right; }
+        .modal-title { font-size: 17px; color: var(--main-green); margin-top: 0; margin-bottom: 15px; text-align: center; }
+
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-size: 12px; color: var(--text-gray); margin-bottom: 5px; }
+        .input-field { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: white; border-radius: 10px; outline: none; font-size: 13px; font-family: inherit; box-sizing: border-box; }
+        .input-field:focus { border-color: var(--main-green); }
+
+        .preview-box { width: 100%; height: 140px; border-radius: 12px; border: 2px dashed #444; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 10px 0; background: #0b0d10; }
+        .preview-box img { width: 100%; height: 100%; object-fit: contain; }
+
+        .modal-buttons { display: flex; gap: 10px; margin-top: 15px; }
+        .modal-buttons button { flex: 1; padding: 12px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; }
+        .btn-confirm { background: var(--main-green); color: black; }
+        .btn-cancel { background: #252932; color: white; }
+
+        /* Lightbox */
+        #lightbox-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); z-index: 100000; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px; }
+        .lightbox-toolbar { width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .lightbox-btn { background: #22262f; border: 1px solid #444; color: white; font-size: 14px; font-weight: bold; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+        .lightbox-viewport { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; overflow: auto; position: relative; margin: 10px 0; }
+        #lightbox-img { max-width: 95vw; max-height: 75vh; object-fit: contain; }
+
+        .status-box { text-align: center; padding: 40px 15px; color: var(--text-gray); font-size: 13px; line-height: 1.6; }
+
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
-        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
+        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; cursor: pointer; text-decoration: none; }
         .nav-item.active { color: var(--main-green); }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>🔓 قسم الميثودات والثغرات</h2>
-        <p style="font-size: 12px; color: var(--text-gray);">أحدث الطرق والمواقع الحصرية لتفعيل الحسابات</p>
+        <h2>مكتبة الثغرات والميثودات 🔓</h2>
+        <p>استكشف الطرق المجربة للربح، أو شاركنا ميثود الخاصتك لكسب النقاط</p>
     </div>
 
-    <div id="notifications-area" style="margin-bottom: 15px;"></div>
+    <button class="btn-submit-method" onclick="openSubmitModal()">
+        💡 شاركنا ميثود أو ثغرة ربحية جديدة
+    </button>
+
     <div id="methods-list" class="methods-container">
-        <div style="text-align: center; color: var(--text-gray); padding: 30px;">⏳ جاري تحميل الميثودات...</div>
+        <div class="status-box">⏳ جاري جلب الميثودات...</div>
+    </div>
+
+    <!-- نافذة إرسال ميثود جديدة -->
+    <div id="submit-modal" class="modal-overlay">
+        <div class="modal-body">
+            <h3 class="modal-title">💡 إضافة ميثود جديدة</h3>
+            
+            <div class="input-group">
+                <label>عنوان الميثود باختصار:</label>
+                <input type="text" id="m-title" class="input-field" placeholder="مثلاً: طريقة زيادة أرباح الإحالة">
+            </div>
+
+            <div class="input-group">
+                <label>شرح الميثود بالتفصيل (يمكنك إضافة روابط):</label>
+                <textarea id="m-content" class="input-field" rows="6" placeholder="اكتب التفاصيل والخطوات بوضوح ليتمكن الآخرون من الاستفادة منها..."></textarea>
+            </div>
+
+            <div class="input-group">
+                <label>صورة توضيحية من هاتفك (اختياري):</label>
+                <input type="file" id="m-img-file" class="input-field" accept="image/*" onchange="previewMethodImage(this)">
+                <div id="m-img-preview" class="preview-box" style="height: 100px; display: none; margin-top: 8px;">
+                    <img id="m-preview-tag" src="" alt="معاينة الصورة">
+                </div>
+            </div>
+
+            <div class="modal-buttons">
+                <button id="btn-submit-m" class="btn-confirm" onclick="submitNewMethod()">تأكيد وإرسال للإدارة 🚀</button>
+                <button class="btn-cancel" onclick="closeSubmitModal()">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- عارض الصور المتقدم (Lightbox) -->
+    <div id="lightbox-modal">
+        <div class="lightbox-toolbar">
+            <div style="font-size: 13px; color: #aaa;">معاينة الصورة</div>
+            <button class="lightbox-btn" style="background: #ff3b30;" onclick="closeLightbox()">✖ إغلاق</button>
+        </div>
+        <div class="lightbox-viewport">
+            <img id="lightbox-img" src="" alt="Fullscreen">
+        </div>
     </div>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
         <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
-        <div onclick="goInvite()" class="nav-item">👥<br>أجل</div>
+        <div onclick="goInvite()" class="nav-item">👥<br>أصدقاء</div>
         <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
     </nav>
 
-        <script>
+    <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        let methodBase64Image = "";
 
-        async function initMethodsPage() {
-            const listEl = document.getElementById('methods-list');
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
 
-            if (userId) {
-                try {
-                    const { data: notifs } = await client.from('user_notifications').select('*').eq('user_id', userId).eq('is_read', false);
-                    if (notifs && notifs.length > 0) {
-                        const notifArea = document.getElementById('notifications-area');
-                        notifArea.innerHTML = `<div style="background: rgba(0, 210, 106, 0.1); border: 1px solid var(--main-green); padding: 10px; border-radius: 12px; font-size: 12px;">
-                            🔔 لديك <span style="color:var(--main-green); font-weight:bold;">${notifs.length}</span> إشعارات جديدة تم اضافتها!
-                        </div>`;
-                        await client.from('user_notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false);
-                    }
-                } catch (e) {
-                    console.log("Notif error:", e);
-                }
-            }
+        // تحويل الروابط داخل النص إلى روابط قابلة للضغط أوتوماتيكياً
+        function linkifyText(text) {
+            const escaped = escapeHtml(text);
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return escaped.replace(urlRegex, '<a href="$1" target="_blank">$1</a>');
+        }
 
+        async function init() {
+            loadApprovedMethods();
+        }
+
+        async function loadApprovedMethods() {
+            const container = document.getElementById('methods-list');
             try {
-                // جلب الميثودات من قاعدة البيانات
-                const { data: methods, error } = await client.from('methods').select('*').order('id', { ascending: false });
+                const { data: methods, error } = await client
+                    .from('methods')
+                    .select('*')
+                    .eq('status', 'Approved')
+                    .order('id', { ascending: false });
 
-                if (error) {
-                    throw new Error(error.message);
-                }
+                if (error) throw error;
 
                 if (!methods || methods.length === 0) {
-                    listEl.innerHTML = `<div style="text-align: center; color: var(--text-gray); padding: 30px;">لا توجد ميثودات مضافة حالياً في قاعدة البيانات.</div>`;
+                    container.innerHTML = '<div class="status-box">🔓 لا توجد ميثودات منشورة حالياً.<br>كن أول من يشاركنا ميثود أو ثغرة ربحية!</div>';
                     return;
                 }
 
-                listEl.innerHTML = "";
+                container.innerHTML = "";
                 methods.forEach(m => {
-                    listEl.innerHTML += `
+                    const dateStr = new Date(m.created_at).toLocaleDateString('ar-EG');
+                    const imgHtml = m.image_url ? `
+                        <div class="method-img-container" onclick="openLightbox('${m.image_url}')">
+                            <img src="${m.image_url}" alt="Method Image">
+                            <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.75); color: white; font-size: 11px; padding: 4px 8px; border-radius: 6px;">🔍 اضغط للتكبير</div>
+                        </div>
+                    ` : '';
+
+                    const pointsBadge = (m.points_awarded && m.points_awarded > 0) ? `<div class="reward-badge">🎁 مكافأة: +${m.points_awarded.toLocaleString()} نقطة</div>` : `<div></div>`;
+
+                    container.innerHTML += `
                         <div class="method-card">
-                            <div class="method-title">${m.title}</div>
-                            <div class="method-desc">${m.description || ''}</div>
-                            <div class="method-links">${m.content}</div>
+                            <div class="method-title">
+                                <span>📌 ${escapeHtml(m.title)}</span>
+                            </div>
+                            <div class="method-content">${linkifyText(m.content)}</div>
+                            ${imgHtml}
+                            <div class="method-footer">
+                                <span>🕒 ${dateStr}</span>
+                                ${pointsBadge}
+                            </div>
                         </div>
                     `;
                 });
+
             } catch (err) {
                 console.error("Load methods error:", err);
-                listEl.innerHTML = `<div style="text-align: center; color: #ff3b30; padding: 30px;">❌ خطأ في تحميل الميثودات: ${err.message}</div>`;
+                container.innerHTML = '<div class="status-box">❌ تعذر تحميل الميثودات حالياً.</div>';
             }
         }
 
-        function goHome() { window.location.href = `index.html?id=${userId}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
-        function goInvite() { window.location.href = `invite.html?id=${userId}`; }
-        function goProfile() { window.location.href = `profile.html?id=${userId}`; }
+        function openSubmitModal() {
+            if (!tid) {
+                return tg.showAlert("❌ يرجى فتح المنصة من داخل البوت.");
+            }
+            document.getElementById('m-title').value = "";
+            document.getElementById('m-content').value = "";
+            document.getElementById('m-img-file').value = "";
+            methodBase64Image = "";
+            document.getElementById('m-img-preview').style.display = 'none';
+            document.getElementById('submit-modal').style.display = 'flex';
+        }
 
-        initMethodsPage();
+        function closeSubmitModal() {
+            document.getElementById('submit-modal').style.display = 'none';
+        }
+
+        function previewMethodImage(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxW = 700;
+                    let w = img.width, h = img.height;
+                    if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    methodBase64Image = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('m-preview-tag').src = methodBase64Image;
+                    document.getElementById('m-img-preview').style.display = 'flex';
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function submitNewMethod() {
+            const btn = document.getElementById('btn-submit-m');
+            const title = document.getElementById('m-title').value.trim();
+            const content = document.getElementById('m-content').value.trim();
+
+            if (!title) return tg.showAlert("❌ يرجى إدخال عنوان للميثود!");
+            if (!content) return tg.showAlert("❌ يرجى كتابة شرح تفصيلي للميثود!");
+
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري الإرسال...";
+
+            try {
+                const { error } = await client.from('methods').insert([{
+                    user_id: tid,
+                    title: title,
+                    content: content,
+                    image_url: methodBase64Image || null,
+                    status: 'Pending'
+                }]);
+
+                if (!error) {
+                    closeSubmitModal();
+                    tg.showAlert("✅ تم إرسال الميثود بنجاح!\nسيتم مراجعتها من قِبل الإدارة وصرف النقاط فور اعتمادها.");
+                    loadApprovedMethods();
+                } else {
+                    tg.showAlert("❌ تعذر إرسال الميثود: " + error.message);
+                }
+            } catch (e) {
+                tg.showAlert("❌ حدث خطأ غير متوقع.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "تأكيد وإرسال للإدارة 🚀";
+            }
+        }
+
+        function openLightbox(imgSrc) {
+            document.getElementById('lightbox-img').src = imgSrc;
+            document.getElementById('lightbox-modal').style.display = 'flex';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox-modal').style.display = 'none';
+        }
+
+        function goHome() { window.location.href = `index.html?id=${tid}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
+
+        init();
     </script>
 </body>
 </html>
