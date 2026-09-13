@@ -42,6 +42,14 @@
         .actions-box { display: flex; gap: 10px; width: 100%; margin-top: 10px; }
         
         .info-text { font-size: 13px; color: #aaa; margin-top: 4px; line-height: 1.6; }
+
+        /* Lightbox Styles for Admin */
+        #lightbox-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); z-index: 100000; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px; }
+        .lightbox-toolbar { width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
+        .lightbox-controls { display: flex; gap: 10px; }
+        .lightbox-btn { background: #22262f; border: 1px solid #444; color: white; font-size: 14px; font-weight: bold; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+        .lightbox-viewport { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; overflow: auto; position: relative; margin: 10px 0; }
+        #lightbox-img { max-width: 95vw; max-height: 75vh; object-fit: contain; transition: transform 0.2s ease; transform-origin: center center; }
     </style>
 </head>
 <body>
@@ -105,6 +113,21 @@
     </div>
 </div>
 
+<!-- Lightbox Modal for Admin Image Zoom -->
+<div id="lightbox-modal">
+    <div class="lightbox-toolbar">
+        <div class="lightbox-controls">
+            <button class="lightbox-btn" onclick="zoomImage(0.25)">🔍+ تكبير</button>
+            <button class="lightbox-btn" onclick="zoomImage(-0.25)">🔍- تصغير</button>
+            <button class="lightbox-btn" onclick="resetZoom()">🔄 إعادة ضبط</button>
+        </div>
+        <button class="lightbox-btn" style="background: #ff3b30;" onclick="closeLightbox()">✖ إغلاق</button>
+    </div>
+    <div class="lightbox-viewport">
+        <img id="lightbox-img" src="" alt="Admin Preview Fullscreen">
+    </div>
+</div>
+
 <script>
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
@@ -113,6 +136,7 @@
     const client = createClient(S_URL, S_KEY);
 
     let adminMethodBase64 = "";
+    let currentZoom = 1;
 
     function previewAdminImage(input) {
         if (!input.files || !input.files[0]) return;
@@ -147,7 +171,8 @@
             content: content,
             image_url: adminMethodBase64 || null,
             status: 'Approved',
-            points_awarded: 0
+            points_awarded: 0,
+            unlock_cost: 0
         }]);
 
         if (error) {
@@ -198,7 +223,12 @@
 
         div.innerHTML = data.length === 0 ? "✅ لا توجد ميثودات جديدة تنتظر المراجعة." : "";
         data.forEach(m => {
-            const imgTag = m.image_url ? `<div style="margin: 10px 0;"><img src="${m.image_url}" style="max-width:150px; max-height:150px; border-radius:8px; border:1px solid #444;"></div>` : '';
+            const imgTag = m.image_url ? `
+                <div style="margin: 10px 0; cursor: zoom-in;" onclick="openLightbox('${m.image_url}')">
+                    <img src="${m.image_url}" style="max-width:150px; max-height:150px; border-radius:8px; border:1px solid #444;" alt="Method Proof">
+                    <div style="font-size: 11px; color: var(--neon-blue); margin-top: 3px;">🔍 اضغط لتكبير الصورة</div>
+                </div>` : '';
+            
             div.innerHTML += `
                 <div class="item-row method-review-row" style="width:100%; box-sizing:border-box;">
                     <div style="text-align:right; width:100%;">
@@ -206,10 +236,19 @@
                         <b>👤 صاحب الميثود ID:</b> <span style="color:var(--neon-blue)">${m.user_id}</span><br>
                         <div style="background:#111; padding:10px; border-radius:8px; margin:8px 0; font-size:13px; line-height:1.6; white-space: pre-wrap;">${m.content}</div>
                         ${imgTag}
-                        <input type="number" id="method-points-${m.id}" placeholder="حدد عدد النقاط المستحقة للمستخدم" style="margin-top:5px; font-size:13px;" value="100">
+                        <div style="display: flex; gap: 10px; margin-top: 8px;">
+                            <div style="flex:1;">
+                                <label style="font-size:11px; color:#aaa;">مكافأة المطوّر (نقاط):</label>
+                                <input type="number" id="method-points-${m.id}" placeholder="مثلاً: 100" style="margin-top:2px; font-size:13px;" value="100">
+                            </div>
+                            <div style="flex:1;">
+                                <label style="font-size:11px; color:#aaa;">سعر فك الحجب للمستخدمين:</label>
+                                <input type="number" id="method-cost-${m.id}" placeholder="مثلاً: 50" style="margin-top:2px; font-size:13px;" value="50">
+                            </div>
+                        </div>
                     </div>
                     <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${m.title}', true)">موافقة وصرف النقاط ✅</button>
+                        <button class="approve-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${m.title}', true)">موافقة ونشر ✅</button>
                         <button class="reject-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${m.title}', false)">رفض ❌</button>
                     </div>
                 </div>`;
@@ -219,14 +258,25 @@
     async function reviewMethod(id, userId, title, isApproved) {
         if (isApproved) {
             const pointsInput = document.getElementById(`method-points-${id}`).value;
+            const costInput = document.getElementById(`method-cost-${id}`).value;
             const awardedPoints = parseInt(pointsInput);
+            const unlockCost = parseInt(costInput);
+
             if (isNaN(awardedPoints) || awardedPoints <= 0) {
-                return alert("⚠️ يرجى تحديد عدد نقاط صحيح للمستخدم!");
+                return alert("⚠️ يرجى تحديد عدد نقاط مكافأة صحيح!");
+            }
+            if (isNaN(unlockCost) || unlockCost < 0) {
+                return alert("⚠️ يرجى تحديد سعر فك حجب صحيح!");
             }
 
-            if (!confirm(`تأكيد قبول الميثود ومنح المستخدم ${awardedPoints} نقطة؟`)) return;
+            if (!confirm(`تأكيد قبول الميثود، منح المطوّر ${awardedPoints} نقطة، وتحديد سعر فك الحجب بـ ${unlockCost} نقطة؟`)) return;
 
-            const { error: err1 } = await client.from('methods').update({ status: 'Approved', points_awarded: awardedPoints }).eq('id', id);
+            const { error: err1 } = await client.from('methods').update({ 
+                status: 'Approved', 
+                points_awarded: awardedPoints,
+                unlock_cost: unlockCost 
+            }).eq('id', id);
+
             if (err1) { alert("خطأ: " + err1.message); return; }
 
             const { data: userData } = await client.from('users').select('points, total_earned').eq('telegram_id', userId).maybeSingle();
@@ -242,7 +292,7 @@
                 status: 'pending'
             }]);
 
-            alert("تمت الموافقة وصرف النقاط بنجاح! 🚀");
+            alert("تمت الموافقة وصرف النقاط ونشر الميثود بنجاح! 🚀");
         } else {
             const reason = prompt("أدخل سبب رفض الميثود (ليظهر للمستخدم في البوت):", "المحتوى غير دقيق أو مكرر");
             if (reason === null) return;
@@ -259,6 +309,29 @@
             alert("تم رفض الميثود وإرسال السبب للمستخدم.");
         }
         loadPendingMethods();
+    }
+
+    // --- Lightbox Functions for Admin ---
+    function openLightbox(imgSrc) {
+        const img = document.getElementById('lightbox-img');
+        img.src = imgSrc;
+        currentZoom = 1;
+        img.style.transform = `scale(${currentZoom})`;
+        document.getElementById('lightbox-modal').style.display = 'flex';
+    }
+
+    function zoomImage(delta) {
+        currentZoom = Math.max(0.5, Math.min(3.5, currentZoom + delta));
+        document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`;
+    }
+
+    function resetZoom() {
+        currentZoom = 1;
+        document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`;
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightbox-modal').style.display = 'none';
     }
 
     // --- 3. مهام المستخدمين (قيد المراجعة) ---
