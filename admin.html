@@ -47,6 +47,10 @@
         
         .info-text { font-size: 13px; color: #aaa; margin-top: 4px; line-height: 1.6; }
 
+        /* Modal Styles */
+        .admin-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
+        .admin-modal-content { background: var(--card-bg); border: 1px solid #333; padding: 25px; border-radius: 20px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; text-align: right; }
+
         #lightbox-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); z-index: 100000; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px; }
         .lightbox-toolbar { width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
         .lightbox-controls { display: flex; gap: 10px; }
@@ -60,12 +64,16 @@
 <div class="container">
     <h1>🛡️ لوحة إدارة MegaTask الاحترافية</h1>
 
-    <!-- 1. إدارة وسائل السحب (مع اللوجو) -->
+    <!-- 1. إدارة وسائل السحب -->
     <div class="card methods-card">
         <h3 style="color: var(--neon-blue);">💳 إدارة وسائل السحب</h3>
         <input type="text" id="method-name" placeholder="اسم الوسيلة (مثلاً: Vodafone Cash)">
         <input type="text" id="method-desc" placeholder="وصف أو إيموجي (مثلاً: مصر 🇪🇬)">
-        <input type="text" id="method-logo" placeholder="رابط اللوجو الصغير أو الإيموجي (مثلاً: 📱 أو رابط صورة)">
+        <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">شعار/لوجو الوسيلة (صورة):</label>
+        <input type="file" id="method-logo-file" accept="image/*" onchange="previewWithdrawLogo(this)">
+        <div id="withdraw-logo-preview" style="display:none; margin-top:5px; text-align:center;">
+            <img id="withdraw-logo-tag" style="max-width:50px; max-height:50px; border-radius:6px;">
+        </div>
         <button class="method-btn" onclick="addMethod()">إضافة وسيلة السحب للسيستم 🚀</button>
         <div id="methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
     </div>
@@ -75,7 +83,11 @@
         <h3 style="color: var(--main-green);">💰 إدارة وسائل الإيداع</h3>
         <input type="text" id="deposit-name" placeholder="اسم وسيلة الإيداع (مثلاً: USDT / فودافون كاش)">
         <input type="text" id="deposit-desc" placeholder="تفاصيل التحويل أو الرقم">
-        <input type="text" id="deposit-logo" placeholder="رابط اللوجو أو الإيموجي">
+        <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">شعار/لوجو وسيلة الإيداع (صورة):</label>
+        <input type="file" id="deposit-logo-file" accept="image/*" onchange="previewDepositLogo(this)">
+        <div id="deposit-logo-preview" style="display:none; margin-top:5px; text-align:center;">
+            <img id="deposit-logo-tag" style="max-width:50px; max-height:50px; border-radius:6px;">
+        </div>
         <button class="deposit-btn" onclick="addDepositMethod()">إضافة وسيلة إيداع جديدة 🚀</button>
         <div id="deposit-methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
     </div>
@@ -121,9 +133,9 @@
         <div id="pending-tasks-list" class="list-container">جاري فحص المهام...</div>
     </div>
 
-    <!-- 8. المهام النشطة الحالية (مع تعديل وحذف) -->
+    <!-- 8. المهام النشطة الحالية (مع تعديل كامل وحذف) -->
     <div class="card">
-        <h3>📋 المهام النشطة الحالية (تعديل أو حذف)</h3>
+        <h3>📋 المهام النشطة الحالية (تعديل كامل أو حذف)</h3>
         <div id="tasks-list" class="list-container">جاري التحميل...</div>
     </div>
 
@@ -131,6 +143,46 @@
     <div class="card withdraw-card">
         <h3 style="color: var(--main-green);">💸 طلبات السحب (قيد الانتظار)</h3>
         <div id="withdraw-list" class="list-container">جاري فحص الطلبات...</div>
+    </div>
+</div>
+
+<!-- Modal تعديل الميثود بالكامل -->
+<div id="edit-method-modal" class="admin-modal">
+    <div class="admin-modal-content">
+        <h3 style="color: var(--neon-purple);">✏️ تعديل تفاصيل الميثود</h3>
+        <input type="hidden" id="edit-m-id">
+        <label style="font-size:12px; color:#aaa;">العنوان:</label>
+        <input type="text" id="edit-m-title">
+        <label style="font-size:12px; color:#aaa;">الشرح والمحتوى:</label>
+        <textarea id="edit-m-content" rows="5"></textarea>
+        <label style="font-size:12px; color:#aaa;">سعر فك الحجب (نقاط):</label>
+        <input type="number" id="edit-m-cost">
+        <label style="font-size:12px; color:#aaa;">تحديث الصورة (اختياري):</label>
+        <input type="file" id="edit-m-img-file" accept="image/*" onchange="previewEditMethodImage(this)">
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="approve-btn" onclick="saveEditedMethod()">حفظ التعديلات ✅</button>
+            <button class="del-btn" onclick="closeEditMethodModal()">إلغاء</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تعديل المهمة بالكامل -->
+<div id="edit-task-modal" class="admin-modal">
+    <div class="admin-modal-content">
+        <h3 style="color: var(--neon-purple);">✏️ تعديل تفاصيل المهمة</h3>
+        <input type="hidden" id="edit-t-id">
+        <label style="font-size:12px; color:#aaa;">عنوان المهمة:</label>
+        <input type="text" id="edit-t-title">
+        <label style="font-size:12px; color:#aaa;">رابط المهمة (URL):</label>
+        <input type="text" id="edit-t-link">
+        <label style="font-size:12px; color:#aaa;">مكافأة العضو (نقاط):</label>
+        <input type="number" id="edit-t-reward">
+        <label style="font-size:12px; color:#aaa;">العدد المطلوب (Target):</label>
+        <input type="number" id="edit-t-target">
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="approve-btn" onclick="saveEditedTask()">حفظ التعديلات ✅</button>
+            <button class="del-btn" onclick="closeEditTaskModal()">إلغاء</button>
+        </div>
     </div>
 </div>
 
@@ -157,6 +209,9 @@
     const client = createClient(S_URL, S_KEY);
 
     let adminMethodBase64 = "";
+    let withdrawLogoBase64 = "";
+    let depositLogoBase64 = "";
+    let editMethodNewImage = "";
     let currentZoom = 1;
 
     function previewAdminImage(input) {
@@ -180,6 +235,61 @@
         reader.readAsDataURL(input.files[0]);
     }
 
+    function previewWithdrawLogo(input) {
+        if (!input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 100; canvas.height = 100;
+                canvas.getContext('2d').drawImage(img, 0, 0, 100, 100);
+                withdrawLogoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('withdraw-logo-tag').src = withdrawLogoBase64;
+                document.getElementById('withdraw-logo-preview').style.display = 'block';
+            }
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    function previewDepositLogo(input) {
+        if (!input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 100; canvas.height = 100;
+                canvas.getContext('2d').drawImage(img, 0, 0, 100, 100);
+                depositLogoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('deposit-logo-tag').src = depositLogoBase64;
+                document.getElementById('deposit-logo-preview').style.display = 'block';
+            }
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    function previewEditMethodImage(input) {
+        if (!input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const maxW = 600;
+                let w = img.width, h = img.height;
+                if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                editMethodNewImage = canvas.toDataURL('image/jpeg', 0.7);
+            }
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+
     async function addAdminMethod() {
         const title = document.getElementById('admin-method-title').value.trim();
         const content = document.getElementById('admin-method-content').value.trim();
@@ -197,12 +307,8 @@
             unlock_cost: unlockCost
         }]);
 
-        if (error) {
-            alert("خطأ أثناء النشر: " + error.message);
-        } else {
-            alert("تم نشر الميثود الرسمية بنجاح! 🚀");
-            location.reload();
-        }
+        if (error) alert("خطأ أثناء النشر: " + error.message);
+        else { alert("تم نشر الميثود الرسمية بنجاح! 🚀"); location.reload(); }
     }
 
     // --- 1. وسائل السحب ---
@@ -213,9 +319,13 @@
 
         div.innerHTML = data.length === 0 ? "📭 لا توجد وسائل سحب مضافة." : "";
         data.forEach(m => {
+            const logoTag = m.logo ? `<img src="${m.logo}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-left:8px;">` : '';
             div.innerHTML += `
                 <div class="item-row method-row" style="width:100%; box-sizing:border-box;">
-                    <div><b>${m.logo || ''} ${m.name}</b> <span class="info-text">${m.description || ''}</span></div>
+                    <div style="display:flex; align-items:center;">
+                        ${logoTag}
+                        <div><b>${m.name}</b> <span class="info-text">${m.description || ''}</span></div>
+                    </div>
                     <button class="del-btn" onclick="deleteMethod('${m.id}')">حذف 🗑️</button>
                 </div>`;
         });
@@ -224,10 +334,13 @@
     async function addMethod() {
         const name = document.getElementById('method-name').value;
         const description = document.getElementById('method-desc').value;
-        const logo = document.getElementById('method-logo').value;
         if(!name) return alert("يرجى كتابة اسم الوسيلة!");
 
-        const { error } = await client.from('withdraw_methods').insert([{ name, description, logo }]);
+        const { error } = await client.from('withdraw_methods').insert([{ 
+            name, 
+            description, 
+            logo: withdrawLogoBase64 || null 
+        }]);
         if (error) alert("خطأ: " + error.message);
         else { alert("تمت إضافة وسيلة السحب بنجاح! 💳"); location.reload(); }
     }
@@ -246,9 +359,13 @@
 
         div.innerHTML = data.length === 0 ? "📭 لا توجد وسائل إيداع مضافة." : "";
         data.forEach(d => {
+            const logoTag = d.logo ? `<img src="${d.logo}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-left:8px;">` : '';
             div.innerHTML += `
                 <div class="item-row deposit-row" style="width:100%; box-sizing:border-box;">
-                    <div><b>${d.logo || ''} ${d.name}</b> <span class="info-text">${d.description || ''}</span></div>
+                    <div style="display:flex; align-items:center;">
+                        ${logoTag}
+                        <div><b>${d.name}</b> <span class="info-text">${d.description || ''}</span></div>
+                    </div>
                     <button class="del-btn" onclick="deleteDepositMethod('${d.id}')">حذف 🗑️</button>
                 </div>`;
         });
@@ -257,10 +374,13 @@
     async function addDepositMethod() {
         const name = document.getElementById('deposit-name').value;
         const description = document.getElementById('deposit-desc').value;
-        const logo = document.getElementById('deposit-logo').value;
         if(!name) return alert("يرجى كتابة اسم وسيلة الإيداع!");
 
-        const { error } = await client.from('deposit_methods').insert([{ name, description, logo }]);
+        const { error } = await client.from('deposit_methods').insert([{ 
+            name, 
+            description, 
+            logo: depositLogoBase64 || null 
+        }]);
         if (error) alert("خطأ: " + error.message);
         else { alert("تمت إضافة وسيلة الإيداع بنجاح! 💰"); location.reload(); }
     }
@@ -283,33 +403,49 @@
                 <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
                     <div style="width:100%;">
                         <b>📌 العنوان:</b> ${m.title}<br>
-                        <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0; font-size:12px;">${m.content}</div>
+                        <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0; font-size:12px; max-height:80px; overflow:hidden;">${m.content}</div>
                         <span class="info-text">💰 سعر الفك: ${m.unlock_cost || 50} نقطة</span>
                     </div>
                     <div class="actions-box">
-                        <button class="edit-btn" onclick="editMethod(${m.id}, '${escapeQuote(m.title)}', '${escapeQuote(m.content)}', ${m.unlock_cost || 50})">تعديل المحتوى ✏️</button>
+                        <button class="edit-btn" onclick="openEditMethodModal(${m.id}, '${escapeQuote(m.title)}', '${escapeQuote(m.content)}', ${m.unlock_cost || 50})">تعديل بالكامل ✏️</button>
                         <button class="del-btn" onclick="deleteMethodItem(${m.id})">حذف نهائي 🗑️</button>
                     </div>
                 </div>`;
         });
     }
 
-    async function editMethod(id, oldTitle, oldContent, oldCost) {
-        const newTitle = prompt("تعديل عنوان الميثود:", oldTitle);
-        if (newTitle === null) return;
-        const newContent = prompt("تعديل محتوى وشرح الميثود:", oldContent);
-        if (newContent === null) return;
-        const newCost = prompt("تعديل سعر فك الحجب (بالنقاط):", oldCost);
-        if (newCost === null) return;
+    function openEditMethodModal(id, title, content, cost) {
+        document.getElementById('edit-m-id').value = id;
+        document.getElementById('edit-m-title').value = title;
+        document.getElementById('edit-m-content').value = content;
+        document.getElementById('edit-m-cost').value = cost;
+        editMethodNewImage = "";
+        document.getElementById('edit-m-img-file').value = "";
+        document.getElementById('edit-method-modal').style.display = 'flex';
+    }
 
-        const { error } = await client.from('methods').update({
-            title: newTitle,
-            content: newContent,
-            unlock_cost: parseInt(newCost) || 50
-        }).eq('id', id);
+    function closeEditMethodModal() {
+        document.getElementById('edit-method-modal').style.display = 'none';
+    }
 
-        if (error) alert("فشل التعديل: " + error.message);
-        else { alert("تم التعديل بنجاح! ✨"); loadPublishedMethods(); }
+    async function saveEditedMethod() {
+        const id = document.getElementById('edit-m-id').value;
+        const title = document.getElementById('edit-m-title').value.trim();
+        const content = document.getElementById('edit-m-content').value.trim();
+        const cost = parseInt(document.getElementById('edit-m-cost').value) || 50;
+
+        if (!title || !content) return alert("يرجى ملء العنوان والمحتوى!");
+
+        const updateData = { title, content, unlock_cost: cost };
+        if (editMethodNewImage) updateData.image_url = editMethodNewImage;
+
+        const { error } = await client.from('methods').update(updateData).eq('id', id);
+        if (error) alert("فشل الحفظ: " + error.message);
+        else {
+            alert("تم تحديث الميثود بنجاح! ✨");
+            closeEditMethodModal();
+            loadPublishedMethods();
+        }
     }
 
     async function deleteMethodItem(id) {
@@ -411,7 +547,7 @@
         loadPublishedMethods();
     }
 
-    // --- Lightbox ---
+    // --- Lightbox Functions ---
     function openLightbox(imgSrc) {
         const img = document.getElementById('lightbox-img');
         img.src = imgSrc;
@@ -431,7 +567,7 @@
         document.getElementById('lightbox-modal').style.display = 'none';
     }
 
-    // --- 5. المهام النشطة (مع تعديل وحذف) ---
+    // --- 5. المهام النشطة (تعديل كامل وحذف) ---
     async function loadTasks() {
         const div = document.getElementById('tasks-list');
         let { data, error } = await client.from('tasks').select('*').eq('status', 'Approved').order('created_at', { ascending: false });
@@ -446,29 +582,45 @@
                         <span class="info-text">💰 ${t.reward} نقطة | 🔗 <a href="${t.link}" target="_blank" style="color:var(--neon-blue)">رابط المهمة</a></span>
                     </div>
                     <div style="display:flex; gap:8px;">
-                        <button class="edit-btn" onclick="editTask(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link)}', ${t.reward})">تعديل ✏️</button>
+                        <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link)}', ${t.reward}, ${t.target_count || 10})">تعديل بالكامل ✏️</button>
                         <button class="del-btn" onclick="deleteTask(${t.id})">حذف 🗑️</button>
                     </div>
                 </div>`;
         });
     }
 
-    async function editTask(id, oldTitle, oldLink, oldReward) {
-        const newTitle = prompt("تعديل عنوان المهمة:", oldTitle);
-        if (newTitle === null) return;
-        const newLink = prompt("تعديل رابط المهمة (URL):", oldLink);
-        if (newLink === null) return;
-        const newReward = prompt("تعديل مكافأة النقاط:", oldReward);
-        if (newReward === null) return;
+    function openEditTaskModal(id, title, link, reward, target) {
+        document.getElementById('edit-t-id').value = id;
+        document.getElementById('edit-t-title').value = title;
+        document.getElementById('edit-t-link').value = link;
+        document.getElementById('edit-t-reward').value = reward;
+        document.getElementById('edit-t-target').value = target;
+        document.getElementById('edit-task-modal').style.display = 'flex';
+    }
+
+    function closeEditTaskModal() {
+        document.getElementById('edit-task-modal').style.display = 'none';
+    }
+
+    async function saveEditedTask() {
+        const id = document.getElementById('edit-t-id').value;
+        const title = document.getElementById('edit-t-title').value.trim();
+        const link = document.getElementById('edit-t-link').value.trim();
+        const reward = parseInt(document.getElementById('edit-t-reward').value) || 10;
+        const target = parseInt(document.getElementById('edit-t-target').value) || 10;
+
+        if (!title || !link) return alert("يرجى ملء عنوان والرابط!");
 
         const { error } = await client.from('tasks').update({
-            title: newTitle,
-            link: newLink,
-            reward: parseInt(newReward) || 10
+            title, link, reward, target_count: target
         }).eq('id', id);
 
-        if (error) alert("فشل التعديل: " + error.message);
-        else { alert("تم تعديل المهمة بنجاح! ✨"); loadTasks(); }
+        if (error) alert("فشل الحفظ: " + error.message);
+        else {
+            alert("تم تحديث المهمة بنجاح! ✨");
+            closeEditTaskModal();
+            loadTasks();
+        }
     }
 
     async function addTask() {
@@ -477,7 +629,7 @@
         const reward = document.getElementById('task-reward').value;
         if(!title || !link || !reward) return alert("املأ كافة الخانات!");
 
-        const { error } = await client.from('tasks').insert([{ title, link, reward: parseInt(reward), status: 'Approved' }]);
+        const { error } = await client.from('tasks').insert([{ title, link, reward: parseInt(reward), status: 'Approved', target_count: 10 }]);
         if (error) alert("خطأ: " + error.message);
         else { alert("تم نشر المهمة فوراً! 🚀"); location.reload(); }
     }
