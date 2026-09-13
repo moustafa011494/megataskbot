@@ -60,6 +60,8 @@
         .btn-create-task { background: linear-gradient(135deg, #00d26a, #009e4f); color: #000; border: none; width: 100%; padding: 14px; border-radius: 15px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); }
         .btn-create-task:active { transform: scale(0.98); }
 
+        .platform-section-title { margin: 20px 0 10px; font-size: 14px; font-weight: bold; color: var(--main-green); border-bottom: 1px solid #2d333d; padding-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        
         .tasks-container { display: flex; flex-direction: column; gap: 12px; }
         .task-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 18px; padding: 15px; display: flex; flex-direction: column; gap: 10px; transition: 0.2s; }
         .task-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -325,7 +327,7 @@
             </div>
 
             <div class="modal-buttons">
-                <button id="btn-submit-task" class="btn-confirm" onclick="submitCreateTask()">تأكيد ونشر المهمة 🚀</button>
+                <button id="btn-submit-task" class="btn-confirm" onclick="submitCreateTask()">تأكيد وإرسال للمراجعة 🚀</button>
                 <button class="btn-cancel" onclick="backToPlatformSelect()">رجوع</button>
             </div>
         </div>
@@ -444,6 +446,24 @@
             website: { title: "🌐 ترويج موقع إلكتروني أو رابط", icon: "🌐", lblLink: "رابط الموقع المطلوب زيارته:", phLink: "https://...", showAdminAlert: false }
         };
 
+        const PLATFORM_ICONS = {
+            telegram: "📢",
+            facebook: "📘",
+            youtube: "▶️",
+            tiktok: "🎵",
+            instagram: "📸",
+            website: "🌐"
+        };
+
+        const PLATFORM_TITLES = {
+            telegram: "📢 مهام تيليجرام",
+            facebook: "📘 مهام فيسبوك",
+            youtube: "▶️ مهام يوتيوب",
+            tiktok: "🎵 مهام تيك توك",
+            instagram: "📸 مهام انستجرام",
+            website: "🌐 مهام المواقع والمختلفة"
+        };
+
         function escapeHtml(str) {
             return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
@@ -481,7 +501,6 @@
         function checkAdsCooldown() {
             if (!userData) return;
 
-            // 1. فحص زر مشاهدة الإعلان
             if (userData.last_ad_watched_at) {
                 const elapsedWatch = Math.floor((Date.now() - new Date(userData.last_ad_watched_at).getTime()) / 1000);
                 if (elapsedWatch >= 0 && elapsedWatch < AD_COOLDOWN_SECONDS) {
@@ -493,7 +512,6 @@
                 enableAdBtn('watch');
             }
 
-            // 2. فحص زر زيارة المواقع OnClick
             if (userData.last_onclick_watched_at) {
                 const elapsedClick = Math.floor((Date.now() - new Date(userData.last_onclick_watched_at).getTime()) / 1000);
                 if (elapsedClick >= 0 && elapsedClick < AD_COOLDOWN_SECONDS) {
@@ -601,7 +619,6 @@
             const dbField = isWatch ? 'last_ad_watched_at' : 'last_onclick_watched_at';
 
             try {
-                // فحص توقيت السيرفر
                 const { data: currentUser, error: fetchErr } = await client
                     .from('users')
                     .select(`points, ${dbField}`)
@@ -756,7 +773,7 @@
             btn.innerText = "⏳ جاري الفحص...";
 
             try {
-                let dupCheck = client.from('tasks').select('id, channel_id, url').eq('is_active', true);
+                let dupCheck = client.from('tasks').select('id, channel_id, url');
                 if (selectedPlatform === "telegram" && channelId) {
                     dupCheck = dupCheck.or(`channel_id.ilike.${channelId},url.ilike.${finalUrl}`);
                 } else {
@@ -766,8 +783,8 @@
                 const { data: existingTasks } = await dupCheck.limit(1);
                 if (existingTasks && existingTasks.length > 0) {
                     btn.disabled = false;
-                    btn.innerText = "تأكيد ونشر المهمة 🚀";
-                    return tg.showAlert("⛔ هذا الرابط / القناة مضاف بالفعل في سوق المهام النشطة!");
+                    btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
+                    return tg.showAlert("⛔ هذا الرابط / القناة مضاف بالفعل!");
                 }
             } catch (e) {
                 console.warn("Dup error:", e);
@@ -781,12 +798,12 @@
 
                     if (!data.ok || !["administrator", "creator"].includes(data.result?.status)) {
                         btn.disabled = false;
-                        btn.innerText = "تأكيد ونشر المهمة 🚀";
+                        btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
                         return tg.showAlert("⛔ تعذر نشر المهمة!\n\nبوت المنصة (@MegaTask1Bot) ليس مشرفاً في هذه القناة حتى الآن.\n\nأضف البوت مشرفاً أولاً ثم اضغط تأكيد النشر.");
                     }
                 } catch (e) {
                     btn.disabled = false;
-                    btn.innerText = "تأكيد ونشر المهمة 🚀";
+                    btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
                     return tg.showAlert("⚠️ تعذر فحص القناة حالياً، تأكد من المعرف وحاول ثانية.");
                 }
             }
@@ -796,7 +813,7 @@
 
             if (myCurrentPoints < totalCost) {
                 btn.disabled = false;
-                btn.innerText = "تأكيد ونشر المهمة 🚀";
+                btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
                 return tg.showAlert(`❌ رصيدك غير كافٍ!\nالمطلوب: ${totalCost.toLocaleString()} نقطة\nرصيدك: ${myCurrentPoints.toLocaleString()} نقطة.`);
             }
 
@@ -806,12 +823,14 @@
             const { error: userErr } = await client.from('users').update({ points: newBalance }).eq('telegram_id', tid);
             if (userErr) {
                 btn.disabled = false;
-                btn.innerText = "تأكيد ونشر المهمة 🚀";
+                btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
                 return tg.showAlert("❌ خطأ أثناء خصم النقاط: " + (userErr.message || ""));
             }
 
+            // إرسال المهمة بحالة Pending للأدمن (مع الـ user_id والـ status)
             const { error: taskErr } = await client.from('tasks').insert([{
                 creator_id: tid,
+                user_id: tid,
                 platform: selectedPlatform,
                 title: title,
                 description: desc,
@@ -822,17 +841,18 @@
                 reward: rewardForExecutor,
                 target_count: target,
                 completed_count: 0,
-                is_active: true
+                status: 'Pending',
+                is_active: false
             }]);
 
             btn.disabled = false;
-            btn.innerText = "تأكيد ونشر المهمة 🚀";
+            btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
 
             if (!taskErr) {
                 userData.points = newBalance;
                 updateUI();
                 closeModal('create-modal');
-                tg.showAlert(`🎉 تم نشر مهمتك بنجاح بعد خصم ${totalCost.toLocaleString()} نقطة!`);
+                tg.showAlert(`✅ تم إرسال مهمتك بنجاح وهي قيد مراجعة الإدارة الآن!`);
                 loadTasks();
             } else {
                 await client.from('users').update({ points: myCurrentPoints }).eq('telegram_id', tid);
@@ -850,8 +870,10 @@
                     .order('id', { ascending: false });
 
                 if (error) throw error;
-                if (tasks && tasks.length > 0 && 'is_active' in tasks[0]) {
-                    tasks = tasks.filter(t => t.is_active !== false);
+                
+                // تصفية المهام المقبولة فقط للعامة (Status = Approved أو المهام القديمة التي ليس لها status)
+                if (tasks) {
+                    tasks = tasks.filter(t => t.status === 'Approved' || !t.status);
                 }
 
                 const doneSet = new Set();
@@ -903,71 +925,99 @@
                 document.getElementById('available-count').innerText = tasks.length;
                 container.innerHTML = "";
 
+                // تجميع المهام حسب المنصة
+                const groups = {
+                    telegram: [],
+                    facebook: [],
+                    youtube: [],
+                    tiktok: [],
+                    instagram: [],
+                    website: []
+                };
+
                 tasks.forEach(t => {
-                    const taskId = String(t.id);
-                    const isMyTask = String(t.creator_id) === String(tid);
-                    const isCompleted = doneSet.has(taskId);
-                    const subInfo = userSubmissionsMap[taskId];
-                    const pendingCountForCreator = creatorPendingCounts[taskId] || 0;
-                    const plt = t.platform || "telegram";
-                    const pltIcon = PLATFORM_CONFIG[plt]?.icon || "📢";
+                    const p = t.platform || "telegram";
+                    if (!groups[p]) groups[p] = [];
+                    groups[p].push(t);
+                });
 
-                    let actionBtnHtml = '';
-                    let feedbackHtml = '';
-
-                    if (isMyTask) {
-                        if (pendingCountForCreator > 0) {
-                            actionBtnHtml = `<button class="btn-action review" onclick="openReviewModal('${taskId}')">🔍 إثباتات (${pendingCountForCreator})</button>`;
-                        } else {
-                            actionBtnHtml = `<button class="btn-action done" disabled>مهمتك 👤</button>`;
-                        }
-                    } else if (isCompleted || subInfo?.status === 'approved') {
-                        actionBtnHtml = `<button class="btn-action done" disabled>تمت المراجعة وصرف النقاط ✅</button>`;
-                        if (subInfo?.feedback) {
-                            feedbackHtml = `<div class="task-feedback approved">💌 <b>رسالة شكر:</b> ${escapeHtml(subInfo.feedback)}</div>`;
-                        }
-                    } else if (subInfo?.status === 'pending') {
-                        actionBtnHtml = `<button class="btn-action pending" disabled>⏳ قيد المراجعة</button>`;
-                    } else if (subInfo?.status === 'rejected') {
-                        actionBtnHtml = `<button class="btn-action rejected" onclick="openProofModal(${JSON.stringify(t).replace(/"/g, '&quot;')})">مرفوض - أعد المحاولة 🔄</button>`;
-                        if (subInfo?.feedback) {
-                            feedbackHtml = `<div class="task-feedback rejected">❌ <b>سبب الرفض:</b> ${escapeHtml(subInfo.feedback)}</div>`;
-                        }
-                    } else {
-                        if (plt === "telegram") {
-                            actionBtnHtml = `<button id="btn-task-${taskId}" class="btn-action" onclick="handleTaskStep('${taskId}', '${t.url}', '${t.channel_id}', ${t.reward}, 'telegram')">انضمام 📢</button>`;
-                        } else {
-                            actionBtnHtml = `<button class="btn-action" onclick="openProofModal(${JSON.stringify(t).replace(/"/g, '&quot;')})">تنفيذ ${pltIcon}</button>`;
-                        }
-                    }
-
-                    const imgHtml = t.image_url 
-                        ? `<img src="${t.image_url}" class="task-img" onerror="this.src=''; this.innerHTML='${pltIcon}';">`
-                        : `<div class="task-img">${pltIcon}</div>`;
+                // عرض المهام مقسمة حسب كل منصة
+                for (const [pltKey, pltTasks] of Object.entries(groups)) {
+                    if (pltTasks.length === 0) continue;
 
                     container.innerHTML += `
-                        <div class="task-card">
-                            <div class="task-top">
-                                <div class="task-info">
-                                    ${imgHtml}
-                                    <div class="task-details">
-                                        <b>${escapeHtml(t.title)}</b>
-                                        <span>+${t.reward.toLocaleString()} نقطة</span>
-                                    </div>
-                                </div>
-                                ${actionBtnHtml}
-                            </div>
-                            
-                            ${t.description ? `<div class="task-desc">📝 ${escapeHtml(t.description)}</div>` : ''}
-                            ${feedbackHtml}
-
-                            <div class="task-footer">
-                                <span class="progress-text">المكتمل: ${t.completed_count || 0} من ${t.target_count}</span>
-                                <span style="font-size: 11px; color: var(--main-green);">${escapeHtml(t.channel_id || "رابط مباشر")}</span>
-                            </div>
+                        <div class="platform-section-title">
+                            ${PLATFORM_TITLES[pltKey] || "📌 مهام متنوعة"} (${pltTasks.length})
                         </div>
                     `;
-                });
+
+                    pltTasks.forEach(t => {
+                        const taskId = String(t.id);
+                        const isMyTask = String(t.creator_id) === String(tid);
+                        const isCompleted = doneSet.has(taskId);
+                        const subInfo = userSubmissionsMap[taskId];
+                        const pendingCountForCreator = creatorPendingCounts[taskId] || 0;
+                        const plt = t.platform || "telegram";
+                        const pltIcon = PLATFORM_ICONS[plt] || "📢";
+
+                        let actionBtnHtml = '';
+                        let feedbackHtml = '';
+
+                        if (isMyTask) {
+                            if (pendingCountForCreator > 0) {
+                                actionBtnHtml = `<button class="btn-action review" onclick="openReviewModal('${taskId}')">🔍 إثباتات (${pendingCountForCreator})</button>`;
+                            } else {
+                                actionBtnHtml = `<button class="btn-action done" disabled>مهمتك 👤</button>`;
+                            }
+                        } else if (isCompleted || subInfo?.status === 'approved') {
+                            actionBtnHtml = `<button class="btn-action done" disabled>تمت المراجعة وصرف النقاط ✅</button>`;
+                            if (subInfo?.feedback) {
+                                feedbackHtml = `<div class="task-feedback approved">💌 <b>رسالة شكر:</b> ${escapeHtml(subInfo.feedback)}</div>`;
+                            }
+                        } else if (subInfo?.status === 'pending') {
+                            actionBtnHtml = `<button class="btn-action pending" disabled>⏳ قيد المراجعة</button>`;
+                        } else if (subInfo?.status === 'rejected') {
+                            actionBtnHtml = `<button class="btn-action rejected" onclick="openProofModal(${JSON.stringify(t).replace(/"/g, '&quot;')})">مرفوض - أعد المحاولة 🔄</button>`;
+                            if (subInfo?.feedback) {
+                                feedbackHtml = `<div class="task-feedback rejected">❌ <b>سبب الرفض:</b> ${escapeHtml(subInfo.feedback)}</div>`;
+                            }
+                        } else {
+                            if (plt === "telegram") {
+                                actionBtnHtml = `<button id="btn-task-${taskId}" class="btn-action" onclick="handleTaskStep('${taskId}', '${t.url}', '${t.channel_id}', ${t.reward}, 'telegram')">انضمام 📢</button>`;
+                            } else {
+                                actionBtnHtml = `<button class="btn-action" onclick="openProofModal(${JSON.stringify(t).replace(/"/g, '&quot;')})">تنفيذ ${pltIcon}</button>`;
+                            }
+                        }
+
+                        // اللوجو المخصص أو اللوجو الجاهز الافتراضي للمنصة
+                        const imgHtml = t.image_url 
+                            ? `<img src="${t.image_url}" class="task-img" onerror="this.src=''; this.innerHTML='${pltIcon}';">`
+                            : `<div class="task-img">${pltIcon}</div>`;
+
+                        container.innerHTML += `
+                            <div class="task-card">
+                                <div class="task-top">
+                                    <div class="task-info">
+                                        ${imgHtml}
+                                        <div class="task-details">
+                                            <b>${escapeHtml(t.title)}</b>
+                                            <span>+${t.reward.toLocaleString()} نقطة</span>
+                                        </div>
+                                    </div>
+                                    ${actionBtnHtml}
+                                </div>
+                                
+                                ${t.description ? `<div class="task-desc">📝 ${escapeHtml(t.description)}</div>` : ''}
+                                ${feedbackHtml}
+
+                                <div class="task-footer">
+                                    <span class="progress-text">المكتمل: ${t.completed_count || 0} من ${t.target_count}</span>
+                                    <span style="font-size: 11px; color: var(--main-green);">${escapeHtml(t.channel_id || "رابط مباشر")}</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
 
             } catch (err) {
                 console.error("Load tasks error:", err);
