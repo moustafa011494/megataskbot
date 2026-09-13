@@ -6,8 +6,8 @@
     <title>MegaTask - لوحة التحكم السرية</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --neon-purple: #bc13fe; --neon-blue: #00f2ff; --bg-dark: #0a0a0a; --card-bg: #161616; --main-green: #00d26a; }
-        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; margin: 0; }
+        :root { --neon-purple: #bc13fe; --neon-blue: #00f2ff; --bg-dark: #0a0a0a; --card-bg: #161616; --main-green: #00d26a; --orange: #ff9800; }
+        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; margin: 0; padding-bottom: 50px; }
         h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 30px; text-align: center; }
         h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; }
         
@@ -15,21 +15,24 @@
         .card { background: var(--card-bg); border: 1px solid #333; padding: 25px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .task-card { border-top: 4px solid var(--neon-purple); }
         .withdraw-card { border-top: 4px solid var(--main-green); }
+        .methods-card { border-top: 4px solid var(--orange); }
 
         input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; outline: none; }
         input:focus { border-color: var(--neon-purple); box-shadow: 0 0 10px var(--neon-purple); }
         
         button { cursor: pointer; font-weight: bold; transition: 0.3s; border: none; border-radius: 10px; }
         .main-btn { background: var(--neon-purple); color: white; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
+        .method-btn { background: var(--orange); color: black; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
         
         .list-container { margin-top: 20px; max-height: 500px; overflow-y: auto; }
         .item-row { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; }
         .task-row { border-right-color: var(--neon-purple); }
-        .withdraw-row { border-right-color: var(--main-green); }
+        .withdraw-row { border-right-color: var(--main-green); flex-direction: column; align-items: flex-start; gap: 10px; }
+        .method-row { border-right-color: var(--orange); }
         
         .del-btn { background: #ff4d4d; color: white; padding: 8px 15px; }
-        .approve-btn { background: var(--main-green); color: black; padding: 10px 20px; font-size: 14px; }
-        .info-text { font-size: 13px; color: #aaa; margin-top: 5px; line-height: 1.6; }
+        .approve-btn { background: var(--main-green); color: black; padding: 10px 20px; font-size: 14px; width: 100%; text-align: center; border-radius: 8px; }
+        .info-text { font-size: 13px; color: #aaa; margin-top: 4px; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -37,6 +40,7 @@
 <div class="container">
     <h1>🛡️ لوحة إدارة MegaTask</h1>
 
+    <!-- 1. قسم إدارة المهام -->
     <div class="card task-card">
         <h3>➕ إضافة مهمة جديدة</h3>
         <input type="text" id="task-title" placeholder="عنوان المهمة">
@@ -50,6 +54,20 @@
         <div id="tasks-list" class="list-container">جاري التحميل...</div>
     </div>
 
+    <!-- 2. قسم إدارة وسائل السحب -->
+    <div class="card methods-card">
+        <h3 style="color: var(--orange);">💳 إضافة وسيلة سحب جديدة</h3>
+        <input type="text" id="method-name" placeholder="اسم الوسيلة (مثلاً: Vodafone Cash)">
+        <input type="text" id="method-desc" placeholder="وصف أو إيموجي (مثلاً: مصر 🇪🇬)">
+        <button class="method-btn" onclick="addMethod()">إضافة وسيلة السحب 🚀</button>
+    </div>
+
+    <div class="card">
+        <h3>📂 وسائل السحب المتاحة حالياً</h3>
+        <div id="methods-list" class="list-container">جاري التحميل...</div>
+    </div>
+
+    <!-- 3. قسم طلبات السحب -->
     <div class="card withdraw-card">
         <h3 style="color: var(--main-green);">💸 طلبات السحب (قيد الانتظار)</h3>
         <div id="withdraw-list" class="list-container">جاري فحص الطلبات...</div>
@@ -62,7 +80,7 @@
     const { createClient } = supabase;
     const client = createClient(S_URL, S_KEY);
 
-    // 1. جلب المهام
+    // --- 1. المهام ---
     async function loadTasks() {
         const div = document.getElementById('tasks-list');
         let { data, error } = await client.from('tasks').select('*').order('created_at', { ascending: false });
@@ -85,7 +103,7 @@
         const title = document.getElementById('task-title').value;
         const link = document.getElementById('task-link').value;
         const reward = document.getElementById('task-reward').value;
-        if(!title || !link || !reward) return alert("امسح الخانات الفارغة!");
+        if(!title || !link || !reward) return alert("املأ كافة الخانات!");
 
         const { error } = await client.from('tasks').insert([{ title, link, reward: parseInt(reward) }]);
         if (error) alert("خطأ: " + error.message);
@@ -98,10 +116,43 @@
         loadTasks();
     }
 
-    // 2. جلب طلبات السحب (بتعديل العواميد لتناسب الجدول الجديد)
+    // --- 2. وسائل السحب ---
+    async function loadMethods() {
+        const div = document.getElementById('methods-list');
+        let { data, error } = await client.from('withdraw_methods').select('*');
+        if (error) { div.innerHTML = "❌ خطأ في جلب الوسائل (تأكد من إنشاء جدول withdraw_methods)"; return; }
+
+        div.innerHTML = data.length === 0 ? "📭 لا توجد وسائل سحب مضافة." : "";
+        data.forEach(m => {
+            div.innerHTML += `
+                <div class="item-row method-row" style="width:100%">
+                    <div>
+                        <b>${m.name}</b> <span class="info-text">${m.description || ''}</span>
+                    </div>
+                    <button class="del-btn" onclick="deleteMethod('${m.id}')">حذف 🗑️</button>
+                </div>`;
+        });
+    }
+
+    async function addMethod() {
+        const name = document.getElementById('method-name').value;
+        const description = document.getElementById('method-desc').value;
+        if(!name) return alert("يرجى كتابة اسم الوسيلة!");
+
+        const { error } = await client.from('withdraw_methods').insert([{ name, description }]);
+        if (error) alert("خطأ: " + error.message);
+        else { alert("تمت إضافة وسيلة السحب بنجاح! 💳"); location.reload(); }
+    }
+
+    async function deleteMethod(id) {
+        if (!confirm("حذف وسيلة السحب هذه؟")) return;
+        await client.from('withdraw_methods').delete().eq('id', id);
+        loadMethods();
+    }
+
+    // --- 3. طلبات السحب الكاملة ---
     async function loadWithdrawals() {
         const div = document.getElementById('withdraw-list');
-        // بنفلتر على الـ status اللي قيمتها 'Pending' (لاحظ الحرف الكبير كما في كود السحب)
         let { data, error } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
         
         if (error) { div.innerHTML = "❌ خطأ: " + error.message; return; }
@@ -109,28 +160,53 @@
         div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات سحب حالياً." : "";
         data.forEach(w => {
             div.innerHTML += `
-                <div class="item-row withdraw-row">
-                    <div style="text-align:right">
-                        <b>👤 مستخدم ID:</b> <span style="color:var(--neon-blue)">${w.telegram_id}</span><br>
-                        <b>💰 المبلغ:</b> ${w.amount.toLocaleString()} نقطة<br>
-                        <b>🏦 الوسيلة:</b> ${w.method}<br>
-                        <span class="info-text">💳 المحفظة/الرقم: <b>${w.wallet_info}</b></span>
+                <div class="item-row withdraw-row" style="width:100%; box-sizing:border-box;">
+                    <div style="text-align:right; width:100%;">
+                        <b>🆔 رقم المعاملة:</b> <span style="color:var(--neon-blue)">${w.tx_id || 'غير متوفر'}</span><br>
+                        <b>👤 مستخدم Telegram ID:</b> <span style="color:var(--neon-blue)">${w.telegram_id}</span><br>
+                        <b>💰 المبلغ:</b> ${w.amount.toLocaleString()} نقطة (${w.amount_egp || (w.amount/100)} جنيه)<br>
+                        <b>💳 الوسيلة:</b> ${w.method}<br>
+                        <b>📱 رقم/حساب الاستلام:</b> <span style="color:var(--main-green)">${w.wallet_info}</span><br>
+                        <b>📧 البريد الإلكتروني:</b> ${w.email || 'غير مسجل'}<br>
+                        <b>⏰ وقت الطلب:</b> ${new Date(w.created_at).toLocaleString('ar-EG')}
                     </div>
-                    <button class="approve-btn" onclick="approveWithdraw('${w.id}')">تم التحويل ✅</button>
+                    <button class="approve-btn" onclick="approveWithdraw('${w.id}', '${w.telegram_id}', '${w.tx_id || ""}', '${w.amount}', '${w.method}', '${w.wallet_info}')">تم التحويل وإرسال الفاتورة ✅</button>
                 </div>`;
         });
     }
 
-    // 3. الموافقة وإغلاق الطلب
-    async function approveWithdraw(id) {
-        if(!confirm("تأكيد التحويل؟ سيختفي الطلب من القائمة.")) return;
+    // --- 4. الموافقة وإرسال الفاتورة التلقائية للبوت ---
+    async function approveWithdraw(id, telegramId, txId, amount, method, wallet) {
+        if(!confirm("تأكيد التحويل؟ سيتم تحديث الطلب وإرسال فاتورة النجاح لشات البوت للمستخدم فوراً.")) return;
+        
+        // 1. تحديث حالة الطلب إلى Completed
         const { error } = await client.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
-        if (error) alert("فشل التحديث: " + error.message);
-        else { alert("تم التأكيد! 💸"); loadWithdrawals(); }
+        if (error) { alert("فشل التحديث: " + error.message); return; }
+
+        // 2. تجهيز رسالة الفاتورة الناجحة وإرسالها لطابور البوت bot_messages لترسل فوراً في الشات
+        const successMessage = 
+            `🎉 *تم تحويل أرباحك بنجاح!* ✅\n` +
+            `━━━━━━━━━━━━━━━\n` +
+            `🆔 *رقم المعاملة:* \`${txId}\`\n` +
+            `💰 *المبلغ المحول:* ${parseInt(amount).toLocaleString()} نقطة (${(amount/100).toFixed(2)} جنيه)\n` +
+            `💳 *طريقة الدفع:* ${method}\n` +
+            `📱 *حساب الاستلام:* \`${wallet}\`\n` +
+            `📌 *الحالة:* مكتمل (Completed) 💸\n\n` +
+            `شكراً لاستخدامك منصة MegaTask! 🚀`;
+
+        await client.from('bot_messages').insert([{
+            telegram_id: telegramId,
+            message: successMessage,
+            status: 'pending'
+        }]);
+
+        alert("تم التأكيد بنجاح! 💸 وتم إرسال فاتورة النجاح لشات البوت.");
+        loadWithdrawals();
     }
 
     window.onload = () => {
         loadTasks();
+        loadMethods();
         loadWithdrawals();
     };
 </script>
