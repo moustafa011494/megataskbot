@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إرسال ميثود جديدة - MegaTask</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; padding-bottom: 80px; }
+        .card { background: var(--card-bg); border: 1px solid #2d333d; padding: 20px; border-radius: 20px; margin-bottom: 20px; }
+        input, textarea { width: 100%; background: #000; border: 1px solid #333; padding: 14px; border-radius: 12px; color: white; box-sizing: border-box; outline: none; margin-top: 8px; font-family: inherit; }
+        input:focus, textarea:focus { border-color: var(--main-green); }
+        .submit-btn { background: var(--main-green); color: black; border: none; width: 100%; padding: 16px; border-radius: 14px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+    <h2 style="text-align: right; color: var(--main-green);">💡 مشاركة ميثود أو ثغرة ربحية</h2>
+    <p style="font-size: 13px; color: var(--text-gray); text-align: right;">شاركنا طريقة أو ميثود مجربة للربح، وستحصل على مكافأة نقاط فور موافقة الإدارة!</p>
+
+    <div class="card">
+        <label>عنوان الميثود باختصار:</label>
+        <input type="text" id="method-title" placeholder="مثلاً: أفضل طريقة لجمع نقاط الإحالة">
+
+        <label style="margin-top: 15px; display: block;">شرح الميثود بالتفصيل:</label>
+        <textarea id="method-content" rows="6" placeholder="اكتب الخطوات بوضوح ليتمكن الآخرون من تطبيقها..."></textarea>
+
+        <label style="margin-top: 15px; display: block;">صورة توضيحية (اختياري):</label>
+        <input type="file" id="method-img" accept="image/*" onchange="previewImage(this)" style="padding: 10px;">
+        <div id="img-preview" style="margin-top: 10px; display: none; text-align: center;">
+            <img id="preview-tag" style="max-width: 100%; max-height: 150px; border-radius: 10px;">
+        </div>
+
+        <button class="submit-btn" onclick="submitMethod()">إرسال الميثود للإدارة 🚀</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
+
+        const params = new URLSearchParams(window.location.search);
+        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        let base64Image = "";
+
+        function previewImage(input) {
+            if (!input.files || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxW = 600;
+                    let w = img.width, h = img.height;
+                    if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    base64Image = canvas.toDataURL('image/jpeg', 0.7);
+                    document.getElementById('preview-tag').src = base64Image;
+                    document.getElementById('img-preview').style.display = 'block';
+                }
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        async function submitMethod() {
+            const title = document.getElementById('method-title').value.trim();
+            const content = document.getElementById('method-content').value.trim();
+
+            if (!title || !content) return tg.showAlert("❌ يرجى كتابة عنوان وشرح الميثود أولاً!");
+            if (!tid) return tg.showAlert("❌ خطأ في معرف المستخدم.");
+
+            const { error } = await client.from('methods').insert([{
+                user_id: tid,
+                title: title,
+                content: content,
+                image_url: base64Image || null,
+                status: 'Pending'
+            }]);
+
+            if (!error) {
+                tg.showAlert("✅ تم إرسال الميثود بنجاح وسيتم مراجعته من الإدارة لصرف النقاط!");
+                window.location.href = `index.html?id=${tid}`;
+            } else {
+                tg.showAlert("❌ خطأ أثناء الإرسال: " + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
