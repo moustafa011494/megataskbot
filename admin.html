@@ -84,7 +84,9 @@
 
 <script>
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+    // ضع هنا مفتاح الـ anon القديم من تاب Legacy anon في سوبابيز (يبدأ بـ eyJhbGci...)
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
+    
     const { createClient } = supabase;
     const client = createClient(S_URL, S_KEY);
 
@@ -222,7 +224,7 @@
         const div = document.getElementById('withdraw-list');
         let { data, error } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
         
-        if (error) { div.innerHTML = "❌ خطأ: " + error.message; return; }
+        if (error) { div.innerHTML = "❌ خطأ في الجلب: " + error.message; return; }
         
         div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات سحب حالياً." : "";
         data.forEach(w => {
