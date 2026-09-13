@@ -18,13 +18,15 @@
         .withdraw-card { border-top: 4px solid var(--main-green); }
         .methods-card { border-top: 4px solid var(--neon-blue); }
         .methods-review-card { border-top: 4px solid var(--neon-purple); }
+        .admin-method-card { border-top: 4px solid #ffaa00; }
 
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; outline: none; }
-        input:focus { border-color: var(--neon-purple); box-shadow: 0 0 10px var(--neon-purple); }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; outline: none; font-family: inherit; }
+        input:focus, textarea:focus { border-color: var(--neon-purple); box-shadow: 0 0 10px var(--neon-purple); }
         
         button { cursor: pointer; font-weight: bold; transition: 0.3s; border: none; border-radius: 10px; }
         .main-btn { background: var(--neon-purple); color: white; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
         .method-btn { background: var(--neon-blue); color: black; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
+        .admin-method-btn { background: #ffaa00; color: black; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
         
         .list-container { margin-top: 20px; max-height: 500px; overflow-y: auto; }
         .item-row { background: #222; padding: 15px; margin-bottom: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; flex-wrap: wrap; gap: 10px; }
@@ -56,13 +58,26 @@
         <div id="methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
     </div>
 
-    <!-- 2. مراجعة ميثودات الأعضاء الجديدة -->
+    <!-- 2. إضافة ميثود إدارية جديدة مباشرة -->
+    <div class="card admin-method-card">
+        <h3 style="color: #ffaa00;">💡 إضافة ميثود رسمية جديدة (بواسطة الأدمن)</h3>
+        <input type="text" id="admin-method-title" placeholder="عنوان الميثود">
+        <textarea id="admin-method-content" rows="4" placeholder="اكتب الشرح، التفاصيل، والروابط هنا..."></textarea>
+        <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">صورة توضيحية (اختياري):</label>
+        <input type="file" id="admin-method-img" accept="image/*" onchange="previewAdminImage(this)">
+        <div id="admin-img-preview" style="display:none; margin-top:10px; text-align:center;">
+            <img id="admin-preview-tag" style="max-width:150px; max-height:150px; border-radius:8px;">
+        </div>
+        <button class="admin-method-btn" onclick="addAdminMethod()">نشر الميثود مباشرة للعامة 🚀</button>
+    </div>
+
+    <!-- 3. مراجعة ميثودات الأعضاء الجديدة -->
     <div class="card methods-review-card">
         <h3 style="color: var(--neon-purple);">💡 ميثودات الأعضاء (قيد المراجعة وصرف النقاط)</h3>
         <div id="pending-methods-list" class="list-container">جاري فحص الميثودات...</div>
     </div>
 
-    <!-- 3. إضافة مهمة إدارية مباشرة -->
+    <!-- 4. إضافة مهمة إدارية مباشرة -->
     <div class="card task-card">
         <h3>➕ إضافة مهمة جديدة مباشرة</h3>
         <input type="text" id="task-title" placeholder="عنوان المهمة">
@@ -71,19 +86,19 @@
         <button class="main-btn" onclick="addTask()">نشر المهمة فوراً ✅</button>
     </div>
 
-    <!-- 4. مهام المستخدمين (قيد المراجعة) -->
+    <!-- 5. مهام المستخدمين (قيد المراجعة) -->
     <div class="card pending-card">
         <h3 style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة والموافقة)</h3>
         <div id="pending-tasks-list" class="list-container">جاري فحص المهام...</div>
     </div>
 
-    <!-- 5. المهام النشطة الحالية -->
+    <!-- 6. المهام النشطة الحالية -->
     <div class="card">
         <h3>📋 المهام النشطة والمقبولة حالياً</h3>
         <div id="tasks-list" class="list-container">جاري التحميل...</div>
     </div>
 
-    <!-- 6. طلبات السحب -->
+    <!-- 7. طلبات السحب -->
     <div class="card withdraw-card">
         <h3 style="color: var(--main-green);">💸 طلبات السحب (قيد الانتظار)</h3>
         <div id="withdraw-list" class="list-container">جاري فحص الطلبات...</div>
@@ -92,10 +107,56 @@
 
 <script>
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6InNub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
     
     const { createClient } = supabase;
     const client = createClient(S_URL, S_KEY);
+
+    let adminMethodBase64 = "";
+
+    function previewAdminImage(input) {
+        if (!input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const maxW = 600;
+                let w = img.width, h = img.height;
+                if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                adminMethodBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('admin-preview-tag').src = adminMethodBase64;
+                document.getElementById('admin-img-preview').style.display = 'block';
+            }
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    async function addAdminMethod() {
+        const title = document.getElementById('admin-method-title').value.trim();
+        const content = document.getElementById('admin-method-content').value.trim();
+
+        if (!title || !content) return alert("يرجى كتابة العنوان والشرح للميثود!");
+
+        const { error } = await client.from('methods').insert([{
+            user_id: 'ADMIN',
+            title: title,
+            content: content,
+            image_url: adminMethodBase64 || null,
+            status: 'Approved',
+            points_awarded: 0
+        }]);
+
+        if (error) {
+            alert("خطأ أثناء النشر: " + error.message);
+        } else {
+            alert("تم نشر الميثود الرسمية بنجاح! 🚀");
+            location.reload();
+        }
+    }
 
     // --- 1. وسائل السحب ---
     async function loadMethods() {
@@ -145,7 +206,7 @@
                         <b>👤 صاحب الميثود ID:</b> <span style="color:var(--neon-blue)">${m.user_id}</span><br>
                         <div style="background:#111; padding:10px; border-radius:8px; margin:8px 0; font-size:13px; line-height:1.6; white-space: pre-wrap;">${m.content}</div>
                         ${imgTag}
-                        <input type="number" id="method-points-${m.id}" placeholder="حدد عدد النقاط المستحقة للمستخدم (مثلاً: 100)" style="margin-top:5px; font-size:13px;" value="100">
+                        <input type="number" id="method-points-${m.id}" placeholder="حدد عدد النقاط المستحقة للمستخدم" style="margin-top:5px; font-size:13px;" value="100">
                     </div>
                     <div class="actions-box">
                         <button class="approve-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${m.title}', true)">موافقة وصرف النقاط ✅</button>
