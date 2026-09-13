@@ -84,7 +84,7 @@
 
 <script>
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6InNub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
     const { createClient } = supabase;
     const client = createClient(S_URL, S_KEY);
 
@@ -92,7 +92,7 @@
     async function loadMethods() {
         const div = document.getElementById('methods-list');
         let { data, error } = await client.from('withdraw_methods').select('*');
-        if (error) { div.innerHTML = "❌ تأكد من إنشاء جدول withdraw_methods في سوبابيز"; return; }
+        if (error) { div.innerHTML = "❌ خطأ في جلب الوسائل: " + error.message; return; }
 
         div.innerHTML = data.length === 0 ? "📭 لا توجد وسائل سحب مضافة." : "";
         data.forEach(m => {
@@ -124,7 +124,7 @@
     async function loadPendingTasks() {
         const div = document.getElementById('pending-tasks-list');
         let { data, error } = await client.from('tasks').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+        if (error) { div.innerHTML = "❌ خطأ في الجلب: " + error.message; return; }
 
         div.innerHTML = data.length === 0 ? "✅ لا توجد مهام جديدة تنتظر المراجعة." : "";
         data.forEach(t => {
@@ -138,18 +138,17 @@
                         <span class="info-text">⏰ وقت الإرسال: ${new Date(t.created_at).toLocaleString('ar-EG')}</span>
                     </div>
                     <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewTask('${t.id}', 'Approved', '${t.user_id || ""}', '${t.title}')">موافقة ونشر ✅</button>
+                        <button class="approve-btn" onclick="reviewTask('${t.id}', '${t.user_id || ""}', '${t.title}')">موافقة ونشر ✅</button>
                         <button class="reject-btn" onclick="rejectTask('${t.id}', '${t.user_id || ""}', '${t.title}')">رفض وإرسال السبب ❌</button>
                     </div>
                 </div>`;
         });
     }
 
-    async function reviewTask(id, status, userId, title) {
+    async function reviewTask(id, userId, title) {
         const { error } = await client.from('tasks').update({ status: 'Approved' }).eq('id', id);
         if (error) { alert("خطأ: " + error.message); return; }
 
-        // إشعار للمستخدم بأن مهمته اتقبلت
         if (userId) {
             await client.from('bot_messages').insert([{
                 telegram_id: userId,
@@ -158,7 +157,7 @@
             }]);
         }
 
-        alert("تمت الموافقة على المهمة ונشرها بنجاح! 🚀");
+        alert("تمت الموافقة على المهمة ونشرها بنجاح! 🚀");
         loadPendingTasks();
         loadTasks();
     }
@@ -170,7 +169,6 @@
         const { error } = await client.from('tasks').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
         if (error) { alert("خطأ: " + error.message); return; }
 
-        // إشعار للمستخدم بسبب الرفض
         if (userId) {
             await client.from('bot_messages').insert([{
                 telegram_id: userId,
@@ -187,7 +185,7 @@
     async function loadTasks() {
         const div = document.getElementById('tasks-list');
         let { data, error } = await client.from('tasks').select('*').eq('status', 'Approved').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+        if (error) { div.innerHTML = "❌ خطأ في الجلب: " + error.message; return; }
         
         div.innerHTML = data.length === 0 ? "📭 لا توجد مهام نشطة." : "";
         data.forEach(t => {
