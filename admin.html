@@ -17,6 +17,7 @@
         .pending-card { border-top: 4px solid var(--orange); }
         .withdraw-card { border-top: 4px solid var(--main-green); }
         .methods-card { border-top: 4px solid var(--neon-blue); }
+        .deposit-card { border-top: 4px solid var(--main-green); }
         .methods-review-card { border-top: 4px solid var(--neon-purple); }
         .admin-method-card { border-top: 4px solid #ffaa00; }
 
@@ -26,6 +27,7 @@
         button { cursor: pointer; font-weight: bold; transition: 0.3s; border: none; border-radius: 10px; }
         .main-btn { background: var(--neon-purple); color: white; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
         .method-btn { background: var(--neon-blue); color: black; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
+        .deposit-btn { background: var(--main-green); color: black; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
         .admin-method-btn { background: #ffaa00; color: black; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
         
         .list-container { margin-top: 20px; max-height: 500px; overflow-y: auto; }
@@ -34,16 +36,17 @@
         .pending-row { border-right-color: var(--orange); flex-direction: column; align-items: flex-start; }
         .withdraw-row { border-right-color: var(--main-green); flex-direction: column; align-items: flex-start; }
         .method-row { border-right-color: var(--neon-blue); }
+        .deposit-row { border-right-color: var(--main-green); }
         .method-review-row { border-right-color: var(--neon-purple); flex-direction: column; align-items: flex-start; }
         
         .del-btn { background: var(--red); color: white; padding: 8px 15px; }
+        .edit-btn { background: var(--orange); color: black; padding: 8px 15px; }
         .approve-btn { background: var(--main-green); color: black; padding: 10px 20px; font-size: 14px; border-radius: 8px; flex: 1; }
         .reject-btn { background: var(--red); color: white; padding: 10px 20px; font-size: 14px; border-radius: 8px; flex: 1; }
         .actions-box { display: flex; gap: 10px; width: 100%; margin-top: 10px; }
         
         .info-text { font-size: 13px; color: #aaa; margin-top: 4px; line-height: 1.6; }
 
-        /* Lightbox Styles for Admin */
         #lightbox-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); z-index: 100000; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px; }
         .lightbox-toolbar { width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
         .lightbox-controls { display: flex; gap: 10px; }
@@ -57,20 +60,32 @@
 <div class="container">
     <h1>🛡️ لوحة إدارة MegaTask الاحترافية</h1>
 
-    <!-- 1. إدارة وسائل السحب -->
+    <!-- 1. إدارة وسائل السحب (مع اللوجو) -->
     <div class="card methods-card">
         <h3 style="color: var(--neon-blue);">💳 إدارة وسائل السحب</h3>
         <input type="text" id="method-name" placeholder="اسم الوسيلة (مثلاً: Vodafone Cash)">
         <input type="text" id="method-desc" placeholder="وصف أو إيموجي (مثلاً: مصر 🇪🇬)">
+        <input type="text" id="method-logo" placeholder="رابط اللوجو الصغير أو الإيموجي (مثلاً: 📱 أو رابط صورة)">
         <button class="method-btn" onclick="addMethod()">إضافة وسيلة السحب للسيستم 🚀</button>
         <div id="methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
     </div>
 
-    <!-- 2. إضافة ميثود إدارية جديدة مباشرة -->
+    <!-- 2. إدارة وسائل الإيداع -->
+    <div class="card deposit-card">
+        <h3 style="color: var(--main-green);">💰 إدارة وسائل الإيداع</h3>
+        <input type="text" id="deposit-name" placeholder="اسم وسيلة الإيداع (مثلاً: USDT / فودافون كاش)">
+        <input type="text" id="deposit-desc" placeholder="تفاصيل التحويل أو الرقم">
+        <input type="text" id="deposit-logo" placeholder="رابط اللوجو أو الإيموجي">
+        <button class="deposit-btn" onclick="addDepositMethod()">إضافة وسيلة إيداع جديدة 🚀</button>
+        <div id="deposit-methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
+    </div>
+
+    <!-- 3. إضافة ميثود رسمية جديدة -->
     <div class="card admin-method-card">
         <h3 style="color: #ffaa00;">💡 إضافة ميثود رسمية جديدة (بواسطة الأدمن)</h3>
         <input type="text" id="admin-method-title" placeholder="عنوان الميثود">
         <textarea id="admin-method-content" rows="4" placeholder="اكتب الشرح، التفاصيل، والروابط هنا..."></textarea>
+        <input type="number" id="admin-method-cost" placeholder="سعر فك الحجب (نقاط)" value="50">
         <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">صورة توضيحية (اختياري):</label>
         <input type="file" id="admin-method-img" accept="image/*" onchange="previewAdminImage(this)">
         <div id="admin-img-preview" style="display:none; margin-top:10px; text-align:center;">
@@ -79,13 +94,19 @@
         <button class="admin-method-btn" onclick="addAdminMethod()">نشر الميثود مباشرة للعامة 🚀</button>
     </div>
 
-    <!-- 3. مراجعة ميثودات الأعضاء الجديدة -->
+    <!-- 4. قائمة وتعديل الميثودات المنشورة -->
+    <div class="card">
+        <h3>🔓 إدارة وتعديل الميثودات المنشورة</h3>
+        <div id="published-methods-list" class="list-container">جاري التحميل...</div>
+    </div>
+
+    <!-- 5. مراجعة ميثودات الأعضاء الجديدة -->
     <div class="card methods-review-card">
         <h3 style="color: var(--neon-purple);">💡 ميثودات الأعضاء (قيد المراجعة وصرف النقاط)</h3>
         <div id="pending-methods-list" class="list-container">جاري فحص الميثودات...</div>
     </div>
 
-    <!-- 4. إضافة مهمة إدارية مباشرة -->
+    <!-- 6. إضافة مهمة إدارية مباشرة -->
     <div class="card task-card">
         <h3>➕ إضافة مهمة جديدة مباشرة</h3>
         <input type="text" id="task-title" placeholder="عنوان المهمة">
@@ -94,26 +115,26 @@
         <button class="main-btn" onclick="addTask()">نشر المهمة فوراً ✅</button>
     </div>
 
-    <!-- 5. مهام المستخدمين (قيد المراجعة) -->
+    <!-- 7. مهام المستخدمين (قيد المراجعة) -->
     <div class="card pending-card">
         <h3 style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة والموافقة)</h3>
         <div id="pending-tasks-list" class="list-container">جاري فحص المهام...</div>
     </div>
 
-    <!-- 6. المهام النشطة الحالية -->
+    <!-- 8. المهام النشطة الحالية (مع تعديل وحذف) -->
     <div class="card">
-        <h3>📋 المهام النشطة والمقبولة حالياً</h3>
+        <h3>📋 المهام النشطة الحالية (تعديل أو حذف)</h3>
         <div id="tasks-list" class="list-container">جاري التحميل...</div>
     </div>
 
-    <!-- 7. طلبات السحب -->
+    <!-- 9. طلبات السحب -->
     <div class="card withdraw-card">
         <h3 style="color: var(--main-green);">💸 طلبات السحب (قيد الانتظار)</h3>
         <div id="withdraw-list" class="list-container">جاري فحص الطلبات...</div>
     </div>
 </div>
 
-<!-- Lightbox Modal for Admin Image Zoom -->
+<!-- Lightbox Modal -->
 <div id="lightbox-modal">
     <div class="lightbox-toolbar">
         <div class="lightbox-controls">
@@ -124,7 +145,7 @@
         <button class="lightbox-btn" style="background: #ff3b30;" onclick="closeLightbox()">✖ إغلاق</button>
     </div>
     <div class="lightbox-viewport">
-        <img id="lightbox-img" src="" alt="Admin Preview Fullscreen">
+        <img id="lightbox-img" src="" alt="Fullscreen">
     </div>
 </div>
 
@@ -162,6 +183,7 @@
     async function addAdminMethod() {
         const title = document.getElementById('admin-method-title').value.trim();
         const content = document.getElementById('admin-method-content').value.trim();
+        const unlockCost = parseInt(document.getElementById('admin-method-cost').value) || 50;
 
         if (!title || !content) return alert("يرجى كتابة العنوان والشرح للميثود!");
 
@@ -172,7 +194,7 @@
             image_url: adminMethodBase64 || null,
             status: 'Approved',
             points_awarded: 0,
-            unlock_cost: 0
+            unlock_cost: unlockCost
         }]);
 
         if (error) {
@@ -193,7 +215,7 @@
         data.forEach(m => {
             div.innerHTML += `
                 <div class="item-row method-row" style="width:100%; box-sizing:border-box;">
-                    <div><b>${m.name}</b> <span class="info-text">${m.description || ''}</span></div>
+                    <div><b>${m.logo || ''} ${m.name}</b> <span class="info-text">${m.description || ''}</span></div>
                     <button class="del-btn" onclick="deleteMethod('${m.id}')">حذف 🗑️</button>
                 </div>`;
         });
@@ -202,9 +224,10 @@
     async function addMethod() {
         const name = document.getElementById('method-name').value;
         const description = document.getElementById('method-desc').value;
+        const logo = document.getElementById('method-logo').value;
         if(!name) return alert("يرجى كتابة اسم الوسيلة!");
 
-        const { error } = await client.from('withdraw_methods').insert([{ name, description }]);
+        const { error } = await client.from('withdraw_methods').insert([{ name, description, logo }]);
         if (error) alert("خطأ: " + error.message);
         else { alert("تمت إضافة وسيلة السحب بنجاح! 💳"); location.reload(); }
     }
@@ -215,7 +238,92 @@
         loadMethods();
     }
 
-    // --- 2. مراجعة ميثودات الأعضاء ---
+    // --- 2. وسائل الإيداع ---
+    async function loadDepositMethods() {
+        const div = document.getElementById('deposit-methods-list');
+        let { data, error } = await client.from('deposit_methods').select('*');
+        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+
+        div.innerHTML = data.length === 0 ? "📭 لا توجد وسائل إيداع مضافة." : "";
+        data.forEach(d => {
+            div.innerHTML += `
+                <div class="item-row deposit-row" style="width:100%; box-sizing:border-box;">
+                    <div><b>${d.logo || ''} ${d.name}</b> <span class="info-text">${d.description || ''}</span></div>
+                    <button class="del-btn" onclick="deleteDepositMethod('${d.id}')">حذف 🗑️</button>
+                </div>`;
+        });
+    }
+
+    async function addDepositMethod() {
+        const name = document.getElementById('deposit-name').value;
+        const description = document.getElementById('deposit-desc').value;
+        const logo = document.getElementById('deposit-logo').value;
+        if(!name) return alert("يرجى كتابة اسم وسيلة الإيداع!");
+
+        const { error } = await client.from('deposit_methods').insert([{ name, description, logo }]);
+        if (error) alert("خطأ: " + error.message);
+        else { alert("تمت إضافة وسيلة الإيداع بنجاح! 💰"); location.reload(); }
+    }
+
+    async function deleteDepositMethod(id) {
+        if (!confirm("حذف وسيلة الإيداع؟")) return;
+        await client.from('deposit_methods').delete().eq('id', id);
+        loadDepositMethods();
+    }
+
+    // --- 3. إدارة وتعديل الميثودات المنشورة ---
+    async function loadPublishedMethods() {
+        const div = document.getElementById('published-methods-list');
+        let { data, error } = await client.from('methods').select('*').eq('status', 'Approved').order('id', { ascending: false });
+        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+
+        div.innerHTML = data.length === 0 ? "📭 لا توجد ميثودات منشورة." : "";
+        data.forEach(m => {
+            div.innerHTML += `
+                <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
+                    <div style="width:100%;">
+                        <b>📌 العنوان:</b> ${m.title}<br>
+                        <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0; font-size:12px;">${m.content}</div>
+                        <span class="info-text">💰 سعر الفك: ${m.unlock_cost || 50} نقطة</span>
+                    </div>
+                    <div class="actions-box">
+                        <button class="edit-btn" onclick="editMethod(${m.id}, '${escapeQuote(m.title)}', '${escapeQuote(m.content)}', ${m.unlock_cost || 50})">تعديل المحتوى ✏️</button>
+                        <button class="del-btn" onclick="deleteMethodItem(${m.id})">حذف نهائي 🗑️</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    async function editMethod(id, oldTitle, oldContent, oldCost) {
+        const newTitle = prompt("تعديل عنوان الميثود:", oldTitle);
+        if (newTitle === null) return;
+        const newContent = prompt("تعديل محتوى وشرح الميثود:", oldContent);
+        if (newContent === null) return;
+        const newCost = prompt("تعديل سعر فك الحجب (بالنقاط):", oldCost);
+        if (newCost === null) return;
+
+        const { error } = await client.from('methods').update({
+            title: newTitle,
+            content: newContent,
+            unlock_cost: parseInt(newCost) || 50
+        }).eq('id', id);
+
+        if (error) alert("فشل التعديل: " + error.message);
+        else { alert("تم التعديل بنجاح! ✨"); loadPublishedMethods(); }
+    }
+
+    async function deleteMethodItem(id) {
+        if (!confirm("حذف هذه الميثود نهائياً؟")) return;
+        await client.from('methods').delete().eq('id', id);
+        loadPublishedMethods();
+        loadPendingMethods();
+    }
+
+    function escapeQuote(str) {
+        return (str || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // --- 4. مراجعة ميثودات الأعضاء ---
     async function loadPendingMethods() {
         const div = document.getElementById('pending-methods-list');
         let { data, error } = await client.from('methods').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
@@ -239,11 +347,11 @@
                         <div style="display: flex; gap: 10px; margin-top: 8px;">
                             <div style="flex:1;">
                                 <label style="font-size:11px; color:#aaa;">مكافأة المطوّر (نقاط):</label>
-                                <input type="number" id="method-points-${m.id}" placeholder="مثلاً: 100" style="margin-top:2px; font-size:13px;" value="100">
+                                <input type="number" id="method-points-${m.id}" value="100" style="margin-top:2px; font-size:13px;">
                             </div>
                             <div style="flex:1;">
                                 <label style="font-size:11px; color:#aaa;">سعر فك الحجب للمستخدمين:</label>
-                                <input type="number" id="method-cost-${m.id}" placeholder="مثلاً: 50" style="margin-top:2px; font-size:13px;" value="50">
+                                <input type="number" id="method-cost-${m.id}" value="50" style="margin-top:2px; font-size:13px;">
                             </div>
                         </div>
                     </div>
@@ -259,15 +367,8 @@
         if (isApproved) {
             const pointsInput = document.getElementById(`method-points-${id}`).value;
             const costInput = document.getElementById(`method-cost-${id}`).value;
-            const awardedPoints = parseInt(pointsInput);
-            const unlockCost = parseInt(costInput);
-
-            if (isNaN(awardedPoints) || awardedPoints <= 0) {
-                return alert("⚠️ يرجى تحديد عدد نقاط مكافأة صحيح!");
-            }
-            if (isNaN(unlockCost) || unlockCost < 0) {
-                return alert("⚠️ يرجى تحديد سعر فك حجب صحيح!");
-            }
+            const awardedPoints = parseInt(pointsInput) || 100;
+            const unlockCost = parseInt(costInput) || 50;
 
             if (!confirm(`تأكيد قبول الميثود، منح المطوّر ${awardedPoints} نقطة، وتحديد سعر فك الحجب بـ ${unlockCost} نقطة؟`)) return;
 
@@ -294,12 +395,10 @@
 
             alert("تمت الموافقة وصرف النقاط ونشر الميثود بنجاح! 🚀");
         } else {
-            const reason = prompt("أدخل سبب رفض الميثود (ليظهر للمستخدم في البوت):", "المحتوى غير دقيق أو مكرر");
+            const reason = prompt("أدخل سبب رفض الميثود:", "المحتوى غير دقيق أو مكرر");
             if (reason === null) return;
 
-            const { error: err2 } = await client.from('methods').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
-            if (err2) { alert("خطأ: " + err2.message); return; }
-
+            await client.from('methods').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
             await client.from('bot_messages').insert([{
                 telegram_id: userId,
                 message: `❌ *عذراً، تم رفض الميثود المقترح*\n\n📌 *العنوان:* ${title}\n💬 *السبب:* ${reason}`,
@@ -309,9 +408,10 @@
             alert("تم رفض الميثود وإرسال السبب للمستخدم.");
         }
         loadPendingMethods();
+        loadPublishedMethods();
     }
 
-    // --- Lightbox Functions for Admin ---
+    // --- Lightbox ---
     function openLightbox(imgSrc) {
         const img = document.getElementById('lightbox-img');
         img.src = imgSrc;
@@ -319,87 +419,23 @@
         img.style.transform = `scale(${currentZoom})`;
         document.getElementById('lightbox-modal').style.display = 'flex';
     }
-
     function zoomImage(delta) {
         currentZoom = Math.max(0.5, Math.min(3.5, currentZoom + delta));
         document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`;
     }
-
     function resetZoom() {
         currentZoom = 1;
         document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`;
     }
-
     function closeLightbox() {
         document.getElementById('lightbox-modal').style.display = 'none';
     }
 
-    // --- 3. مهام المستخدمين (قيد المراجعة) ---
-    async function loadPendingTasks() {
-        const div = document.getElementById('pending-tasks-list');
-        let { data, error } = await client.from('tasks').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب: " + error.message; return; }
-
-        div.innerHTML = data.length === 0 ? "✅ لا توجد مهام جديدة تنتظر المراجعة." : "";
-        data.forEach(t => {
-            div.innerHTML += `
-                <div class="item-row pending-row" style="width:100%; box-sizing:border-box;">
-                    <div style="text-align:right; width:100%;">
-                        <b>📌 العنوان:</b> ${t.title}<br>
-                        <b>🔗 الرابط:</b> <a href="${t.link}" target="_blank" style="color:var(--neon-blue)">${t.link}</a><br>
-                        <b>💰 المكافأة:</b> ${t.reward} نقطة<br>
-                        <b>👤 أرسلها مستخدم ID:</b> <span style="color:var(--orange)">${t.user_id || 'غير معروف'}</span><br>
-                        <span class="info-text">⏰ وقت الإرسال: ${new Date(t.created_at).toLocaleString('ar-EG')}</span>
-                    </div>
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewTask('${t.id}', '${t.user_id || ""}', '${t.title}')">موافقة ونشر ✅</button>
-                        <button class="reject-btn" onclick="rejectTask('${t.id}', '${t.user_id || ""}', '${t.title}')">رفض وإرسال السبب ❌</button>
-                    </div>
-                </div>`;
-        });
-    }
-
-    async function reviewTask(id, userId, title) {
-        const { error } = await client.from('tasks').update({ status: 'Approved' }).eq('id', id);
-        if (error) { alert("خطأ: " + error.message); return; }
-
-        if (userId) {
-            await client.from('bot_messages').insert([{
-                telegram_id: userId,
-                message: `🎉 *مبارك! تم قبول ونشر مهمتك بنجاح*\n\n📌 *المهمة:* ${title}\n✅ أصبحت الآن متاحة لجميع المستخدمين لجمع النقاط منها!`,
-                status: 'pending'
-            }]);
-        }
-
-        alert("تمت الموافقة على المهمة ونشرها بنجاح! 🚀");
-        loadPendingTasks();
-        loadTasks();
-    }
-
-    async function rejectTask(id, userId, title) {
-        const reason = prompt("أدخل سبب رفض المهمة (ليظهر للمستخدم في البوت):", "المخالفة لشروط وقواعد المنصة");
-        if (reason === null) return;
-
-        const { error } = await client.from('tasks').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
-        if (error) { alert("خطأ: " + error.message); return; }
-
-        if (userId) {
-            await client.from('bot_messages').insert([{
-                telegram_id: userId,
-                message: `❌ *عذراً، تم رفض مهمتك المقترحة*\n\n📌 *المهمة:* ${title}\n💬 *سبب الرفض:* ${reason}\n\nيرجى تعديلها ومحاولة إرسالها مرة أخرى بالشروط الصحيحة.`,
-                status: 'pending'
-            }]);
-        }
-
-        alert("تم رفض المهمة وإرسال سبب الرفض للمستخدم في البوت.");
-        loadPendingTasks();
-    }
-
-    // --- 4. المهام النشطة ---
+    // --- 5. المهام النشطة (مع تعديل وحذف) ---
     async function loadTasks() {
         const div = document.getElementById('tasks-list');
         let { data, error } = await client.from('tasks').select('*').eq('status', 'Approved').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب: " + error.message; return; }
+        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
         
         div.innerHTML = data.length === 0 ? "📭 لا توجد مهام نشطة." : "";
         data.forEach(t => {
@@ -409,9 +445,30 @@
                         <b>${t.title}</b><br>
                         <span class="info-text">💰 ${t.reward} نقطة | 🔗 <a href="${t.link}" target="_blank" style="color:var(--neon-blue)">رابط المهمة</a></span>
                     </div>
-                    <button class="del-btn" onclick="deleteTask('${t.id}')">حذف 🗑️</button>
+                    <div style="display:flex; gap:8px;">
+                        <button class="edit-btn" onclick="editTask(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link)}', ${t.reward})">تعديل ✏️</button>
+                        <button class="del-btn" onclick="deleteTask(${t.id})">حذف 🗑️</button>
+                    </div>
                 </div>`;
         });
+    }
+
+    async function editTask(id, oldTitle, oldLink, oldReward) {
+        const newTitle = prompt("تعديل عنوان المهمة:", oldTitle);
+        if (newTitle === null) return;
+        const newLink = prompt("تعديل رابط المهمة (URL):", oldLink);
+        if (newLink === null) return;
+        const newReward = prompt("تعديل مكافأة النقاط:", oldReward);
+        if (newReward === null) return;
+
+        const { error } = await client.from('tasks').update({
+            title: newTitle,
+            link: newLink,
+            reward: parseInt(newReward) || 10
+        }).eq('id', id);
+
+        if (error) alert("فشل التعديل: " + error.message);
+        else { alert("تم تعديل المهمة بنجاح! ✨"); loadTasks(); }
     }
 
     async function addTask() {
@@ -431,25 +488,21 @@
         loadTasks();
     }
 
-    // --- 5. طلبات السحب ---
+    // --- 6. طلبات السحب ---
     async function loadWithdrawals() {
         const div = document.getElementById('withdraw-list');
         let { data, error } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
         
-        if (error) { div.innerHTML = "❌ خطأ في الجلب: " + error.message; return; }
+        if (error) { div.innerHTML = "❌ خطأ"; return; }
         
         div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات سحب حالياً." : "";
         data.forEach(w => {
             div.innerHTML += `
                 <div class="item-row withdraw-row" style="width:100%; box-sizing:border-box;">
                     <div style="text-align:right; width:100%;">
-                        <b>🆔 رقم المعاملة:</b> <span style="color:var(--neon-blue)">${w.tx_id || 'غير متوفر'}</span><br>
-                        <b>👤 مستخدم Telegram ID:</b> <span style="color:var(--neon-blue)">${w.telegram_id}</span><br>
-                        <b>💰 المبلغ:</b> ${w.amount.toLocaleString()} نقطة (${w.amount_egp || (w.amount/100)} جنيه)<br>
-                        <b>💳 الوسيلة:</b> ${w.method}<br>
-                        <b>📱 رقم/حساب الاستلام:</b> <span style="color:var(--main-green)">${w.wallet_info}</span><br>
-                        <b>📧 البريد الإلكتروني:</b> ${w.email || 'غير مسجل'}<br>
-                        <b>⏰ وقت الطلب:</b> ${new Date(w.created_at).toLocaleString('ar-EG')}
+                        <b>🆔 المعاملة:</b> <span style="color:var(--neon-blue)">${w.tx_id || 'N/A'}</span> | <b>ID:</b> ${w.telegram_id}<br>
+                        <b>💰 المبلغ:</b> ${w.amount.toLocaleString()} نقطة | <b>وسيلة:</b> ${w.method}<br>
+                        <b>📱 الحساب:</b> <span style="color:var(--main-green)">${w.wallet_info}</span>
                     </div>
                     <button class="approve-btn" style="width:100%; margin-top:10px;" onclick="approveWithdraw('${w.id}', '${w.telegram_id}', '${w.tx_id || ""}', '${w.amount}', '${w.method}', '${w.wallet_info}')">تم التحويل وإرسال الفاتورة ✅</button>
                 </div>`;
@@ -457,35 +510,21 @@
     }
 
     async function approveWithdraw(id, telegramId, txId, amount, method, wallet) {
-        if(!confirm("تأكيد التحويل؟ سيتم تحديث الطلب وإرسال فاتورة النجاح لشات البوت للمستخدم.")) return;
-        
-        const { error } = await client.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
-        if (error) { alert("فشل التحديث: " + error.message); return; }
-
-        const successMessage = 
-            `🎉 *تم تحويل أرباحك بنجاح!* ✅\n` +
-            `━━━━━━━━━━━━━━━\n` +
-            `🆔 *رقم المعاملة:* \`${txId}\`\n` +
-            `💰 *المبلغ المحول:* ${parseInt(amount).toLocaleString()} نقطة (${(amount/100).toFixed(2)} جنيه)\n` +
-            `💳 *طريقة الدفع:* ${method}\n` +
-            `📱 *حساب الاستلام:* \`${wallet}\`\n` +
-            `📌 *الحالة:* مكتمل (Completed) 💸\n\n` +
-            `شكراً لاستخدامك منصة MegaTask! 🚀`;
-
+        if(!confirm("تأكيد التحويل؟")) return;
+        await client.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
         await client.from('bot_messages').insert([{
             telegram_id: telegramId,
-            message: successMessage,
+            message: `🎉 *تم تحويل أرباحك بنجاح!* ✅\n💰 المبلغ: ${parseInt(amount).toLocaleString()} نقطة`,
             status: 'pending'
         }]);
-
-        alert("تم التأكيد وإرسال الفاتورة بنجاح! 💸");
         loadWithdrawals();
     }
 
     window.onload = () => {
         loadMethods();
+        loadDepositMethods();
+        loadPublishedMethods();
         loadPendingMethods();
-        loadPendingTasks();
         loadTasks();
         loadWithdrawals();
     };
