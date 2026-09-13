@@ -119,7 +119,7 @@
             }
         }
 
-        async function processWithdraw() {
+                async function processWithdraw() {
             let inputVal = parseFloat(document.getElementById('amount').value);
             const method = document.getElementById('method').value;
             const wallet = document.getElementById('wallet').value;
@@ -153,12 +153,14 @@
                 status: 'Pending'
             };
 
+            // 1. تسجيل طلب السحب في جدول withdrawals
             const { error: err1 } = await client.from('withdrawals').insert([withdrawData]);
 
             if (!err1) {
-                // خصم النقاط بأمان تام
+                // 2. خصم النقاط من رصيد المستخدم (كودك الأصلي تماماً بدون أي تغيير)
                 await client.from('users').update({ points: userBalance - finalPoints }).eq('telegram_id', tid);
 
+                // 3. تجهيز نص الفاتورة المفصلة
                 const invoiceText = 
                     `📄 *فاتورة طلب سحب أرباح*\n` +
                     `━━━━━━━━━━━━━━━\n` +
@@ -171,10 +173,14 @@
                     `⏰ *التاريخ والوقت:* ${timeString}\n` +
                     `📌 *الحالة:* قيد المراجعة والدفع خلال 24 ساعة`;
 
-                // إرسال الفاتورة لتظهر في شات البوت فوراً للمستخدم
-                sendTelegramMessage(tid, invoiceText);
+                // 4. إدراج الرسالة في طابور البوت لتصل مباشرة في شات البوت
+                await client.from('bot_messages').insert([{
+                    telegram_id: tid,
+                    message: invoiceText,
+                    status: 'pending'
+                }]);
 
-                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nوصلتك الفاتورة في شات البوت الآن.`);
+                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nتم إرسال الفاتورة لشات البوت في رسالة خاصة.`);
                 goHome();
             } else {
                 tg.showAlert("❌ فشل الطلب: " + err1.message);
@@ -182,6 +188,7 @@
                 btn.innerText = "تأكيد طلب السحب ↗";
             }
         }
+
         
         function goHome() { window.location.href = `index.html?id=${tid}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
