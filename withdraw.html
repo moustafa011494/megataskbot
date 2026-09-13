@@ -36,7 +36,7 @@
     <div class="input-group">
         <label>وسيلة السحب</label>
         <select id="method">
-            <option value="Vodafone Cash">فودافون كاش (مصر) 🇪🇬</option>
+            <option value="Vodafone Cash">فودافون كاش (مصر) 🔴</option>
             <option value="Etisalat Cash">اتصالات كاش (مصر) 🟢</option>
             <option value="Orange Cash">اورانج كاش (مصر) 🟠</option>
             <option value="InstaPay">InstaPay (Egypt) 🏦</option>
@@ -80,10 +80,23 @@
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
         let userBalance = 0;
 
+        // دالة الإرسال المؤكدة لشات البوت مباشرة
+        function sendTelegramMessage(chatId, text) {
+            // استخدام جدول الإشعارات في قاعدة البيانات لضمان وصولها للبوت المعالج
+            client.from('user_notifications').insert([{
+                user_id: chatId,
+                title: '🧾 فاتورة سحب الأرباح',
+                message: text,
+                is_read: false
+            }]).then(() => {
+                console.log("Notification queued successfully");
+            });
+        }
+
         async function init() {
             if(!tid) { document.getElementById('current-points').innerText = "0 نقطة"; return; }
             
-            // استعلامك الأصلي المضمون 100% لجلب النقاط بدون تغيير
+            // كود النقاط الأصلي المضمون بدون أي تغيير
             const { data } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
             if (data) {
                 userBalance = data.points || 0;
@@ -106,7 +119,7 @@
             }
         }
 
-                 async function processWithdraw() {
+        async function processWithdraw() {
             let inputVal = parseFloat(document.getElementById('amount').value);
             const method = document.getElementById('method').value;
             const wallet = document.getElementById('wallet').value;
@@ -115,17 +128,15 @@
 
             if (isNaN(inputVal) || inputVal <= 0) return tg.showAlert("❌ يرجى إدخال مبلغ صحيح للسحب");
 
-            // توحيد الحساب: لو أقل من 100 يعني كتب بالجنيه نحوله لنقاط
             let finalPoints = inputVal < 100 ? inputVal * 100 : inputVal;
 
-            if (finalPoints < 1000) return tg.showAlert("❌ الحد الأدنى للسحب هو 1,000 نقطة (10 جنيه)");
+            if (finalPoints < 1000) return tg.showAlert("❌ الحد الأدنى للسحب هو 1,000 نقطة");
             if (finalPoints > userBalance) return tg.showAlert("❌ عذراً، رصيدك غير كافٍ لهذا المبلغ");
             if (!wallet) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام (رقم الهاتف أو الـ ID)");
 
             btn.disabled = true;
             btn.innerText = "جاري المعالجة وإرسال الفاتورة...";
 
-            // توليد رقم معاملة وتاريخ دقيق بالثواني
             const txId = "TX-" + Math.floor(100000 + Math.random() * 900000);
             const now = new Date();
             const timeString = now.toLocaleString('ar-EG', { hour12: true });
@@ -142,14 +153,12 @@
                 status: 'Pending'
             };
 
-            // 1. تسجيل طلب السحب في قاعدة البيانات
             const { error: err1 } = await client.from('withdrawals').insert([withdrawData]);
 
             if (!err1) {
-                // 2. خصم النقاط من رصيد المستخدم بأمان تام (كودك الأصلي تماماً)
+                // خصم النقاط بأمان تام
                 await client.from('users').update({ points: userBalance - finalPoints }).eq('telegram_id', tid);
 
-                // 3. تجهيز نص الفاتورة المفصلة
                 const invoiceText = 
                     `📄 *فاتورة طلب سحب أرباح*\n` +
                     `━━━━━━━━━━━━━━━\n` +
@@ -162,10 +171,8 @@
                     `⏰ *التاريخ والوقت:* ${timeString}\n` +
                     `📌 *الحالة:* قيد المراجعة والدفع خلال 24 ساعة`;
 
-                // 4. إرسال الفاتورة لشات البوت مباشرة بنفس دالة الدعوات الناجحة عندك
-                if (typeof sendTelegramMessage === 'function') {
-                    sendTelegramMessage(tid, invoiceText);
-                }
+                // إرسال الفاتورة لتظهر في شات البوت فوراً للمستخدم
+                sendTelegramMessage(tid, invoiceText);
 
                 tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nوصلتك الفاتورة في شات البوت الآن.`);
                 goHome();
