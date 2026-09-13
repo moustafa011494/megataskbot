@@ -17,6 +17,7 @@
         .pending-card { border-top: 4px solid var(--orange); }
         .withdraw-card { border-top: 4px solid var(--main-green); }
         .methods-card { border-top: 4px solid var(--neon-blue); }
+        .methods-review-card { border-top: 4px solid var(--neon-purple); }
 
         input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; outline: none; }
         input:focus { border-color: var(--neon-purple); box-shadow: 0 0 10px var(--neon-purple); }
@@ -31,6 +32,7 @@
         .pending-row { border-right-color: var(--orange); flex-direction: column; align-items: flex-start; }
         .withdraw-row { border-right-color: var(--main-green); flex-direction: column; align-items: flex-start; }
         .method-row { border-right-color: var(--neon-blue); }
+        .method-review-row { border-right-color: var(--neon-purple); flex-direction: column; align-items: flex-start; }
         
         .del-btn { background: var(--red); color: white; padding: 8px 15px; }
         .approve-btn { background: var(--main-green); color: black; padding: 10px 20px; font-size: 14px; border-radius: 8px; flex: 1; }
@@ -54,7 +56,13 @@
         <div id="methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
     </div>
 
-    <!-- 2. إضافة مهمة إدارية مباشرة -->
+    <!-- 2. مراجعة ميثودات الأعضاء الجديدة -->
+    <div class="card methods-review-card">
+        <h3 style="color: var(--neon-purple);">💡 ميثودات الأعضاء (قيد المراجعة وصرف النقاط)</h3>
+        <div id="pending-methods-list" class="list-container">جاري فحص الميثودات...</div>
+    </div>
+
+    <!-- 3. إضافة مهمة إدارية مباشرة -->
     <div class="card task-card">
         <h3>➕ إضافة مهمة جديدة مباشرة</h3>
         <input type="text" id="task-title" placeholder="عنوان المهمة">
@@ -63,19 +71,19 @@
         <button class="main-btn" onclick="addTask()">نشر المهمة فوراً ✅</button>
     </div>
 
-    <!-- 3. مهام المستخدمين (قيد المراجعة) -->
+    <!-- 4. مهام المستخدمين (قيد المراجعة) -->
     <div class="card pending-card">
         <h3 style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة والموافقة)</h3>
         <div id="pending-tasks-list" class="list-container">جاري فحص المهام...</div>
     </div>
 
-    <!-- 4. المهام النشطة الحالية -->
+    <!-- 5. المهام النشطة الحالية -->
     <div class="card">
         <h3>📋 المهام النشطة والمقبولة حالياً</h3>
         <div id="tasks-list" class="list-container">جاري التحميل...</div>
     </div>
 
-    <!-- 5. طلبات السحب -->
+    <!-- 6. طلبات السحب -->
     <div class="card withdraw-card">
         <h3 style="color: var(--main-green);">💸 طلبات السحب (قيد الانتظار)</h3>
         <div id="withdraw-list" class="list-container">جاري فحص الطلبات...</div>
@@ -84,8 +92,7 @@
 
 <script>
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-    // ضع هنا مفتاح الـ anon القديم من تاب Legacy anon في سوبابيز (يبدأ بـ eyJhbGci...)
-    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6InNub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
     
     const { createClient } = supabase;
     const client = createClient(S_URL, S_KEY);
@@ -122,7 +129,78 @@
         loadMethods();
     }
 
-    // --- 2. مهام المستخدمين (قيد المراجعة) ---
+    // --- 2. مراجعة ميثودات الأعضاء ---
+    async function loadPendingMethods() {
+        const div = document.getElementById('pending-methods-list');
+        let { data, error } = await client.from('methods').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
+        if (error) { div.innerHTML = "❌ خطأ في الجلب: " + error.message; return; }
+
+        div.innerHTML = data.length === 0 ? "✅ لا توجد ميثودات جديدة تنتظر المراجعة." : "";
+        data.forEach(m => {
+            const imgTag = m.image_url ? `<div style="margin: 10px 0;"><img src="${m.image_url}" style="max-width:150px; max-height:150px; border-radius:8px; border:1px solid #444;"></div>` : '';
+            div.innerHTML += `
+                <div class="item-row method-review-row" style="width:100%; box-sizing:border-box;">
+                    <div style="text-align:right; width:100%;">
+                        <b>📌 عنوان الميثود:</b> ${m.title}<br>
+                        <b>👤 صاحب الميثود ID:</b> <span style="color:var(--neon-blue)">${m.user_id}</span><br>
+                        <div style="background:#111; padding:10px; border-radius:8px; margin:8px 0; font-size:13px; line-height:1.6; white-space: pre-wrap;">${m.content}</div>
+                        ${imgTag}
+                        <input type="number" id="method-points-${m.id}" placeholder="حدد عدد النقاط المستحقة للمستخدم (مثلاً: 100)" style="margin-top:5px; font-size:13px;" value="100">
+                    </div>
+                    <div class="actions-box">
+                        <button class="approve-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${m.title}', true)">موافقة وصرف النقاط ✅</button>
+                        <button class="reject-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${m.title}', false)">رفض ❌</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    async function reviewMethod(id, userId, title, isApproved) {
+        if (isApproved) {
+            const pointsInput = document.getElementById(`method-points-${id}`).value;
+            const awardedPoints = parseInt(pointsInput);
+            if (isNaN(awardedPoints) || awardedPoints <= 0) {
+                return alert("⚠️ يرجى تحديد عدد نقاط صحيح للمستخدم!");
+            }
+
+            if (!confirm(`تأكيد قبول الميثود ومنح المستخدم ${awardedPoints} نقطة؟`)) return;
+
+            const { error: err1 } = await client.from('methods').update({ status: 'Approved', points_awarded: awardedPoints }).eq('id', id);
+            if (err1) { alert("خطأ: " + err1.message); return; }
+
+            const { data: userData } = await client.from('users').select('points, total_earned').eq('telegram_id', userId).maybeSingle();
+            if (userData) {
+                const newPoints = (userData.points || 0) + awardedPoints;
+                const newTotalEarned = (userData.total_earned || 0) + awardedPoints;
+                await client.from('users').update({ points: newPoints, total_earned: newTotalEarned }).eq('telegram_id', userId);
+            }
+
+            await client.from('bot_messages').insert([{
+                telegram_id: userId,
+                message: `🎉 *مبارك! تم قبول الميثود الخاص بك*\n\n📌 *العنوان:* ${title}\n🎁 *المكافأة:* تم إضافه ${awardedPoints.toLocaleString()} نقطة إلى رصيدك مباشرة!\n\nشكراً لمساهمتك الفعالة في المنصة 🚀`,
+                status: 'pending'
+            }]);
+
+            alert("تمت الموافقة وصرف النقاط بنجاح! 🚀");
+        } else {
+            const reason = prompt("أدخل سبب رفض الميثود (ليظهر للمستخدم في البوت):", "المحتوى غير دقيق أو مكرر");
+            if (reason === null) return;
+
+            const { error: err2 } = await client.from('methods').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
+            if (err2) { alert("خطأ: " + err2.message); return; }
+
+            await client.from('bot_messages').insert([{
+                telegram_id: userId,
+                message: `❌ *عذراً، تم رفض الميثود المقترح*\n\n📌 *العنوان:* ${title}\n💬 *السبب:* ${reason}`,
+                status: 'pending'
+            }]);
+
+            alert("تم رفض الميثود وإرسال السبب للمستخدم.");
+        }
+        loadPendingMethods();
+    }
+
+    // --- 3. مهام المستخدمين (قيد المراجعة) ---
     async function loadPendingTasks() {
         const div = document.getElementById('pending-tasks-list');
         let { data, error } = await client.from('tasks').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
@@ -183,7 +261,7 @@
         loadPendingTasks();
     }
 
-    // --- 3. المهام النشطة ---
+    // --- 4. المهام النشطة ---
     async function loadTasks() {
         const div = document.getElementById('tasks-list');
         let { data, error } = await client.from('tasks').select('*').eq('status', 'Approved').order('created_at', { ascending: false });
@@ -219,7 +297,7 @@
         loadTasks();
     }
 
-    // --- 4. طلبات السحب ---
+    // --- 5. طلبات السحب ---
     async function loadWithdrawals() {
         const div = document.getElementById('withdraw-list');
         let { data, error } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
@@ -272,6 +350,7 @@
 
     window.onload = () => {
         loadMethods();
+        loadPendingMethods();
         loadPendingTasks();
         loadTasks();
         loadWithdrawals();
