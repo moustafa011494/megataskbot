@@ -3,71 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - لوحة التحكم السرية</title>
+    <title>MegaTask - لوحة التحكم الإدارية</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --neon-purple: #bc13fe; --neon-blue: #00f2ff; --bg-dark: #0a0a0a; --card-bg: #161616; --main-green: #00d26a; --orange: #ff9800; }
+        :root { --neon-purple: #bc13fe; --neon-blue: #00f2ff; --bg-dark: #0a0a0a; --card-bg: #161616; --main-green: #00d26a; --orange: #ff9800; --red: #ff4d4d; }
         body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; margin: 0; padding-bottom: 50px; }
         h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 30px; text-align: center; }
         h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; }
         
-        .container { max-width: 900px; margin: auto; }
+        .container { max-width: 950px; margin: auto; }
         .card { background: var(--card-bg); border: 1px solid #333; padding: 25px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .task-card { border-top: 4px solid var(--neon-purple); }
+        .pending-card { border-top: 4px solid var(--orange); }
         .withdraw-card { border-top: 4px solid var(--main-green); }
-        .methods-card { border-top: 4px solid var(--orange); }
+        .methods-card { border-top: 4px solid var(--neon-blue); }
 
         input { width: 100%; padding: 12px; margin: 10px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; outline: none; }
         input:focus { border-color: var(--neon-purple); box-shadow: 0 0 10px var(--neon-purple); }
         
         button { cursor: pointer; font-weight: bold; transition: 0.3s; border: none; border-radius: 10px; }
         .main-btn { background: var(--neon-purple); color: white; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
-        .method-btn { background: var(--orange); color: black; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
+        .method-btn { background: var(--neon-blue); color: black; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
         
         .list-container { margin-top: 20px; max-height: 500px; overflow-y: auto; }
-        .item-row { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; }
+        .item-row { background: #222; padding: 15px; margin-bottom: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; flex-wrap: wrap; gap: 10px; }
         .task-row { border-right-color: var(--neon-purple); }
-        .withdraw-row { border-right-color: var(--main-green); flex-direction: column; align-items: flex-start; gap: 10px; }
-        .method-row { border-right-color: var(--orange); }
+        .pending-row { border-right-color: var(--orange); flex-direction: column; align-items: flex-start; }
+        .withdraw-row { border-right-color: var(--main-green); flex-direction: column; align-items: flex-start; }
+        .method-row { border-right-color: var(--neon-blue); }
         
-        .del-btn { background: #ff4d4d; color: white; padding: 8px 15px; }
-        .approve-btn { background: var(--main-green); color: black; padding: 10px 20px; font-size: 14px; width: 100%; text-align: center; border-radius: 8px; }
+        .del-btn { background: var(--red); color: white; padding: 8px 15px; }
+        .approve-btn { background: var(--main-green); color: black; padding: 10px 20px; font-size: 14px; border-radius: 8px; flex: 1; }
+        .reject-btn { background: var(--red); color: white; padding: 10px 20px; font-size: 14px; border-radius: 8px; flex: 1; }
+        .actions-box { display: flex; gap: 10px; width: 100%; margin-top: 10px; }
+        
         .info-text { font-size: 13px; color: #aaa; margin-top: 4px; line-height: 1.6; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🛡️ لوحة إدارة MegaTask</h1>
+    <h1>🛡️ لوحة إدارة MegaTask الاحترافية</h1>
 
-    <!-- 1. قسم إدارة المهام -->
+    <!-- 1. إدارة وسائل السحب -->
+    <div class="card methods-card">
+        <h3 style="color: var(--neon-blue);">💳 إدارة وسائل السحب</h3>
+        <input type="text" id="method-name" placeholder="اسم الوسيلة (مثلاً: Vodafone Cash)">
+        <input type="text" id="method-desc" placeholder="وصف أو إيموجي (مثلاً: مصر 🇪🇬)">
+        <button class="method-btn" onclick="addMethod()">إضافة وسيلة السحب للسيستم 🚀</button>
+        <div id="methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
+    </div>
+
+    <!-- 2. إضافة مهمة إدارية مباشرة -->
     <div class="card task-card">
-        <h3>➕ إضافة مهمة جديدة</h3>
+        <h3>➕ إضافة مهمة جديدة مباشرة</h3>
         <input type="text" id="task-title" placeholder="عنوان المهمة">
         <input type="text" id="task-link" placeholder="رابط المهمة (URL)">
         <input type="number" id="task-reward" placeholder="عدد النقاط">
-        <button class="main-btn" onclick="addTask()">حفظ ونشر المهمة ✅</button>
+        <button class="main-btn" onclick="addTask()">نشر المهمة فوراً ✅</button>
     </div>
 
+    <!-- 3. مهام المستخدمين (قيد المراجعة) -->
+    <div class="card pending-card">
+        <h3 style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة والموافقة)</h3>
+        <div id="pending-tasks-list" class="list-container">جاري فحص المهام...</div>
+    </div>
+
+    <!-- 4. المهام النشطة الحالية -->
     <div class="card">
-        <h3>📋 المهام الحالية</h3>
+        <h3>📋 المهام النشطة والمقبولة حالياً</h3>
         <div id="tasks-list" class="list-container">جاري التحميل...</div>
     </div>
 
-    <!-- 2. قسم إدارة وسائل السحب -->
-    <div class="card methods-card">
-        <h3 style="color: var(--orange);">💳 إضافة وسيلة سحب جديدة</h3>
-        <input type="text" id="method-name" placeholder="اسم الوسيلة (مثلاً: Vodafone Cash)">
-        <input type="text" id="method-desc" placeholder="وصف أو إيموجي (مثلاً: مصر 🇪🇬)">
-        <button class="method-btn" onclick="addMethod()">إضافة وسيلة السحب 🚀</button>
-    </div>
-
-    <div class="card">
-        <h3>📂 وسائل السحب المتاحة حالياً</h3>
-        <div id="methods-list" class="list-container">جاري التحميل...</div>
-    </div>
-
-    <!-- 3. قسم طلبات السحب -->
+    <!-- 5. طلبات السحب -->
     <div class="card withdraw-card">
         <h3 style="color: var(--main-green);">💸 طلبات السحب (قيد الانتظار)</h3>
         <div id="withdraw-list" class="list-container">جاري فحص الطلبات...</div>
@@ -76,59 +84,21 @@
 
 <script>
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6InNub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
     const { createClient } = supabase;
     const client = createClient(S_URL, S_KEY);
 
-    // --- 1. المهام ---
-    async function loadTasks() {
-        const div = document.getElementById('tasks-list');
-        let { data, error } = await client.from('tasks').select('*').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
-        
-        div.innerHTML = data.length === 0 ? "📭 لا توجد مهام." : "";
-        data.forEach(t => {
-            div.innerHTML += `
-                <div class="item-row task-row">
-                    <div>
-                        <b>${t.title}</b><br>
-                        <span class="info-text">💰 ${t.reward} نقطة</span>
-                    </div>
-                    <button class="del-btn" onclick="deleteTask('${t.id}')">حذف 🗑️</button>
-                </div>`;
-        });
-    }
-
-    async function addTask() {
-        const title = document.getElementById('task-title').value;
-        const link = document.getElementById('task-link').value;
-        const reward = document.getElementById('task-reward').value;
-        if(!title || !link || !reward) return alert("املأ كافة الخانات!");
-
-        const { error } = await client.from('tasks').insert([{ title, link, reward: parseInt(reward) }]);
-        if (error) alert("خطأ: " + error.message);
-        else { alert("تمت الإضافة! 🚀"); location.reload(); }
-    }
-
-    async function deleteTask(id) {
-        if (!confirm("حذف المهمة؟")) return;
-        await client.from('tasks').delete().eq('id', id);
-        loadTasks();
-    }
-
-    // --- 2. وسائل السحب ---
+    // --- 1. وسائل السحب ---
     async function loadMethods() {
         const div = document.getElementById('methods-list');
         let { data, error } = await client.from('withdraw_methods').select('*');
-        if (error) { div.innerHTML = "❌ خطأ في جلب الوسائل (تأكد من إنشاء جدول withdraw_methods)"; return; }
+        if (error) { div.innerHTML = "❌ تأكد من إنشاء جدول withdraw_methods في سوبابيز"; return; }
 
         div.innerHTML = data.length === 0 ? "📭 لا توجد وسائل سحب مضافة." : "";
         data.forEach(m => {
             div.innerHTML += `
-                <div class="item-row method-row" style="width:100%">
-                    <div>
-                        <b>${m.name}</b> <span class="info-text">${m.description || ''}</span>
-                    </div>
+                <div class="item-row method-row" style="width:100%; box-sizing:border-box;">
+                    <div><b>${m.name}</b> <span class="info-text">${m.description || ''}</span></div>
                     <button class="del-btn" onclick="deleteMethod('${m.id}')">حذف 🗑️</button>
                 </div>`;
         });
@@ -145,12 +115,111 @@
     }
 
     async function deleteMethod(id) {
-        if (!confirm("حذف وسيلة السحب هذه؟")) return;
+        if (!confirm("حذف وسيلة السحب؟")) return;
         await client.from('withdraw_methods').delete().eq('id', id);
         loadMethods();
     }
 
-    // --- 3. طلبات السحب الكاملة ---
+    // --- 2. مهام المستخدمين (قيد المراجعة) ---
+    async function loadPendingTasks() {
+        const div = document.getElementById('pending-tasks-list');
+        let { data, error } = await client.from('tasks').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
+        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+
+        div.innerHTML = data.length === 0 ? "✅ لا توجد مهام جديدة تنتظر المراجعة." : "";
+        data.forEach(t => {
+            div.innerHTML += `
+                <div class="item-row pending-row" style="width:100%; box-sizing:border-box;">
+                    <div style="text-align:right; width:100%;">
+                        <b>📌 العنوان:</b> ${t.title}<br>
+                        <b>🔗 الرابط:</b> <a href="${t.link}" target="_blank" style="color:var(--neon-blue)">${t.link}</a><br>
+                        <b>💰 المكافأة:</b> ${t.reward} نقطة<br>
+                        <b>👤 أرسلها مستخدم ID:</b> <span style="color:var(--orange)">${t.user_id || 'غير معروف'}</span><br>
+                        <span class="info-text">⏰ وقت الإرسال: ${new Date(t.created_at).toLocaleString('ar-EG')}</span>
+                    </div>
+                    <div class="actions-box">
+                        <button class="approve-btn" onclick="reviewTask('${t.id}', 'Approved', '${t.user_id || ""}', '${t.title}')">موافقة ونشر ✅</button>
+                        <button class="reject-btn" onclick="rejectTask('${t.id}', '${t.user_id || ""}', '${t.title}')">رفض وإرسال السبب ❌</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    async function reviewTask(id, status, userId, title) {
+        const { error } = await client.from('tasks').update({ status: 'Approved' }).eq('id', id);
+        if (error) { alert("خطأ: " + error.message); return; }
+
+        // إشعار للمستخدم بأن مهمته اتقبلت
+        if (userId) {
+            await client.from('bot_messages').insert([{
+                telegram_id: userId,
+                message: `🎉 *مبارك! تم قبول ونشر مهمتك بنجاح*\n\n📌 *المهمة:* ${title}\n✅ أصبحت الآن متاحة لجميع المستخدمين لجمع النقاط منها!`,
+                status: 'pending'
+            }]);
+        }
+
+        alert("تمت الموافقة على المهمة ונشرها بنجاح! 🚀");
+        loadPendingTasks();
+        loadTasks();
+    }
+
+    async function rejectTask(id, userId, title) {
+        const reason = prompt("أدخل سبب رفض المهمة (ليظهر للمستخدم في البوت):", "المخالفة لشروط وقواعد المنصة");
+        if (reason === null) return;
+
+        const { error } = await client.from('tasks').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
+        if (error) { alert("خطأ: " + error.message); return; }
+
+        // إشعار للمستخدم بسبب الرفض
+        if (userId) {
+            await client.from('bot_messages').insert([{
+                telegram_id: userId,
+                message: `❌ *عذراً، تم رفض مهمتك المقترحة*\n\n📌 *المهمة:* ${title}\n💬 *سبب الرفض:* ${reason}\n\nيرجى تعديلها ومحاولة إرسالها مرة أخرى بالشروط الصحيحة.`,
+                status: 'pending'
+            }]);
+        }
+
+        alert("تم رفض المهمة وإرسال سبب الرفض للمستخدم في البوت.");
+        loadPendingTasks();
+    }
+
+    // --- 3. المهام النشطة ---
+    async function loadTasks() {
+        const div = document.getElementById('tasks-list');
+        let { data, error } = await client.from('tasks').select('*').eq('status', 'Approved').order('created_at', { ascending: false });
+        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+        
+        div.innerHTML = data.length === 0 ? "📭 لا توجد مهام نشطة." : "";
+        data.forEach(t => {
+            div.innerHTML += `
+                <div class="item-row task-row" style="width:100%; box-sizing:border-box;">
+                    <div>
+                        <b>${t.title}</b><br>
+                        <span class="info-text">💰 ${t.reward} نقطة | 🔗 <a href="${t.link}" target="_blank" style="color:var(--neon-blue)">رابط المهمة</a></span>
+                    </div>
+                    <button class="del-btn" onclick="deleteTask('${t.id}')">حذف 🗑️</button>
+                </div>`;
+        });
+    }
+
+    async function addTask() {
+        const title = document.getElementById('task-title').value;
+        const link = document.getElementById('task-link').value;
+        const reward = document.getElementById('task-reward').value;
+        if(!title || !link || !reward) return alert("املأ كافة الخانات!");
+
+        const { error } = await client.from('tasks').insert([{ title, link, reward: parseInt(reward), status: 'Approved' }]);
+        if (error) alert("خطأ: " + error.message);
+        else { alert("تم نشر المهمة فوراً! 🚀"); location.reload(); }
+    }
+
+    async function deleteTask(id) {
+        if (!confirm("حذف المهمة نهائياً؟")) return;
+        await client.from('tasks').delete().eq('id', id);
+        loadTasks();
+    }
+
+    // --- 4. طلبات السحب ---
     async function loadWithdrawals() {
         const div = document.getElementById('withdraw-list');
         let { data, error } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
@@ -170,20 +239,17 @@
                         <b>📧 البريد الإلكتروني:</b> ${w.email || 'غير مسجل'}<br>
                         <b>⏰ وقت الطلب:</b> ${new Date(w.created_at).toLocaleString('ar-EG')}
                     </div>
-                    <button class="approve-btn" onclick="approveWithdraw('${w.id}', '${w.telegram_id}', '${w.tx_id || ""}', '${w.amount}', '${w.method}', '${w.wallet_info}')">تم التحويل وإرسال الفاتورة ✅</button>
+                    <button class="approve-btn" style="width:100%; margin-top:10px;" onclick="approveWithdraw('${w.id}', '${w.telegram_id}', '${w.tx_id || ""}', '${w.amount}', '${w.method}', '${w.wallet_info}')">تم التحويل وإرسال الفاتورة ✅</button>
                 </div>`;
         });
     }
 
-    // --- 4. الموافقة وإرسال الفاتورة التلقائية للبوت ---
     async function approveWithdraw(id, telegramId, txId, amount, method, wallet) {
-        if(!confirm("تأكيد التحويل؟ سيتم تحديث الطلب وإرسال فاتورة النجاح لشات البوت للمستخدم فوراً.")) return;
+        if(!confirm("تأكيد التحويل؟ سيتم تحديث الطلب وإرسال فاتورة النجاح لشات البوت للمستخدم.")) return;
         
-        // 1. تحديث حالة الطلب إلى Completed
         const { error } = await client.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
         if (error) { alert("فشل التحديث: " + error.message); return; }
 
-        // 2. تجهيز رسالة الفاتورة الناجحة وإرسالها لطابور البوت bot_messages لترسل فوراً في الشات
         const successMessage = 
             `🎉 *تم تحويل أرباحك بنجاح!* ✅\n` +
             `━━━━━━━━━━━━━━━\n` +
@@ -200,13 +266,14 @@
             status: 'pending'
         }]);
 
-        alert("تم التأكيد بنجاح! 💸 وتم إرسال فاتورة النجاح لشات البوت.");
+        alert("تم التأكيد وإرسال الفاتورة بنجاح! 💸");
         loadWithdrawals();
     }
 
     window.onload = () => {
-        loadTasks();
         loadMethods();
+        loadPendingTasks();
+        loadTasks();
         loadWithdrawals();
     };
 </script>
