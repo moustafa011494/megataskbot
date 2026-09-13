@@ -33,13 +33,12 @@
         <small style="color: var(--text-gray);">الحد الأدنى للسحب: 1,000 نقطة</small>
     </div>
 
-        <div class="input-group">
+    <div class="input-group">
         <label>وسيلة السحب</label>
         <select id="method">
             <option value="">جاري تحميل وسائل السحب...</option>
         </select>
     </div>
-
 
     <div class="input-group">
         <label>المبلغ المطلوب سحبه (بالنقاط أو بالجنيه)</label>
@@ -77,9 +76,29 @@
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
         let userBalance = 0;
 
+        // جلب وسائل السحب تلقائياً من سوبابيز وعرضها في القائمة المنسدلة
+        async function loadMethodsDropdown() {
+            const select = document.getElementById('method');
+            try {
+                const { data, error } = await client.from('withdraw_methods').select('*');
+                if (!error && data && data.length > 0) {
+                    select.innerHTML = "";
+                    data.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.name;
+                        opt.textContent = `${m.name} ${m.description || ''}`;
+                        select.appendChild(opt);
+                    });
+                } else {
+                    select.innerHTML = '<option value="Vodafone Cash">فودافون كاش (مصر) 🇪🇬</option>';
+                }
+            } catch (err) {
+                select.innerHTML = '<option value="Vodafone Cash">فودافون كاش (مصر) 🇪🇬</option>';
+            }
+        }
+
         // دالة الإرسال المؤكدة لشات البوت مباشرة
         function sendTelegramMessage(chatId, text) {
-            // استخدام جدول الإشعارات في قاعدة البيانات لضمان وصولها للبوت المعالج
             client.from('user_notifications').insert([{
                 user_id: chatId,
                 title: '🧾 فاتورة سحب الأرباح',
@@ -91,9 +110,11 @@
         }
 
         async function init() {
+            // تحميل وسائل السحب أولاً
+            await loadMethodsDropdown();
+
             if(!tid) { document.getElementById('current-points').innerText = "0 نقطة"; return; }
             
-            // كود النقاط الأصلي المضمون بدون أي تغيير
             const { data } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
             if (data) {
                 userBalance = data.points || 0;
@@ -116,7 +137,7 @@
             }
         }
 
-                async function processWithdraw() {
+        async function processWithdraw() {
             let inputVal = parseFloat(document.getElementById('amount').value);
             const method = document.getElementById('method').value;
             const wallet = document.getElementById('wallet').value;
@@ -150,14 +171,11 @@
                 status: 'Pending'
             };
 
-            // 1. تسجيل طلب السحب في جدول withdrawals
             const { error: err1 } = await client.from('withdrawals').insert([withdrawData]);
 
             if (!err1) {
-                // 2. خصم النقاط من رصيد المستخدم (كودك الأصلي تماماً بدون أي تغيير)
                 await client.from('users').update({ points: userBalance - finalPoints }).eq('telegram_id', tid);
 
-                // 3. تجهيز نص الفاتورة المفصلة
                 const invoiceText = 
                     `📄 *فاتورة طلب سحب أرباح*\n` +
                     `━━━━━━━━━━━━━━━\n` +
@@ -170,7 +188,6 @@
                     `⏰ *التاريخ والوقت:* ${timeString}\n` +
                     `📌 *الحالة:* قيد المراجعة والدفع خلال 24 ساعة`;
 
-                // 4. إدراج الرسالة في طابور البوت لتصل مباشرة في شات البوت
                 await client.from('bot_messages').insert([{
                     telegram_id: tid,
                     message: invoiceText,
@@ -185,7 +202,6 @@
                 btn.innerText = "تأكيد طلب السحب ↗";
             }
         }
-
         
         function goHome() { window.location.href = `index.html?id=${tid}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
