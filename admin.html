@@ -102,7 +102,15 @@
         </div>
     </div>
 
-    <!-- 3. إضافة منتج جديد للمتجر الرسمي -->
+    <!-- 3. طلبات الإيداع الواردة -->
+    <div class="card deposit-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">📥 طلبات الإيداع الواردة (قيد الانتظار) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div id="deposits-requests-list" class="list-container">جاري فحص طلبات الإيداع...</div>
+        </div>
+    </div>
+
+    <!-- 4. إضافة منتج جديد للمتجر الرسمي -->
     <div class="card store-card">
         <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -118,6 +126,7 @@
             <input type="text" id="store-title" placeholder="عنوان المنتج">
             <textarea id="store-desc" rows="3" placeholder="وصف وتفاصيل المنتج..."></textarea>
             <input type="number" id="store-price" placeholder="السعر بالنقاط">
+            <input type="number" id="store-target" placeholder="العدد المتاح (Target Count)" value="100">
             <input type="text" id="store-link" placeholder="رابط المنتج أو الخدمة (اختياري)">
             <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">صورة أو ملف المنتج (اختياري):</label>
             <input type="file" id="store-file" accept="image/*,.zip,.pdf" onchange="previewStoreFile(this)">
@@ -125,15 +134,15 @@
         </div>
     </div>
 
-    <!-- 4. قائمة وتعديل منتجات المتجر الرسمية -->
+    <!-- 5. قائمة وتعديل منتجات المتجر الرسمية (مع الإحصائيات ومن اشتراه) -->
     <div class="card store-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">📦 إدارة وتعديل منتجات المتجر <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">📦 إحصائيات وإدارة منتجات المتجر <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div id="store-products-list" class="list-container">جاري التحميل...</div>
         </div>
     </div>
 
-    <!-- 5. منتجات الأعضاء المعلقة -->
+    <!-- 6. منتجات الأعضاء المعلقة -->
     <div class="card pending-card">
         <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ منتجات الأعضاء المعلقة (بانتظار الموافقة) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -141,7 +150,7 @@
         </div>
     </div>
 
-    <!-- 6. طلبات الشراء الواردة للمتجر -->
+    <!-- 7. طلبات الشراء الواردة للمتجر -->
     <div class="card orders-card">
         <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 طلبات الشراء الواردة للمتجر (قيد التنفيذ) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -149,7 +158,7 @@
         </div>
     </div>
 
-    <!-- 7. إضافة ميثود رسمية جديدة -->
+    <!-- 8. إضافة ميثود رسمية جديدة -->
     <div class="card admin-method-card">
         <h3 onclick="toggleCard(this)" style="color: #ffaa00;">💡 إضافة ميثود رسمية جديدة (بواسطة الأدمن) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -165,7 +174,7 @@
         </div>
     </div>
 
-    <!-- 8. قائمة وتعديل الميثودات المنشورة -->
+    <!-- 9. قائمة وتعديل الميثودات المنشورة -->
     <div class="card">
         <h3 onclick="toggleCard(this)">🔓 إدارة وتعديل الميثودات المنشورة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -173,7 +182,7 @@
         </div>
     </div>
 
-    <!-- 9. مراجعة ميثودات الأعضاء الجديدة -->
+    <!-- 10. مراجعة ميثودات الأعضاء الجديدة -->
     <div class="card methods-review-card">
         <h3 onclick="toggleCard(this)" style="color: var(--neon-purple);">💡 ميثودات الأعضاء (قيد المراجعة وصرف النقاط) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -181,7 +190,7 @@
         </div>
     </div>
 
-    <!-- 10. إضافة مهمة إدارية مباشرة -->
+    <!-- 11. إضافة مهمة إدارية مباشرة -->
     <div class="card task-card">
         <h3 onclick="toggleCard(this)">➕ إضافة مهمة جديدة مباشرة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -192,7 +201,7 @@
         </div>
     </div>
 
-    <!-- 11. مهام المستخدمين (قيد المراجعة) -->
+    <!-- 12. مهام المستخدمين (قيد المراجعة) -->
     <div class="card pending-card">
         <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة والموافقة) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -200,7 +209,7 @@
         </div>
     </div>
 
-    <!-- 12. المهام النشطة الحالية (مع تعديل كامل وحذف) -->
+    <!-- 13. المهام النشطة الحالية (مع تعديل كامل وحذف) -->
     <div class="card">
         <h3 onclick="toggleCard(this)">📋 المهام النشطة الحالية (تعديل كامل أو حذف) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -208,7 +217,7 @@
         </div>
     </div>
 
-    <!-- 13. طلبات السحب -->
+    <!-- 14. طلبات السحب -->
     <div class="card withdraw-card">
         <h3 onclick="toggleCard(this)" style="color: var(--main-green);">💸 طلبات السحب (قيد الانتظار) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -228,6 +237,8 @@
         <textarea id="edit-s-desc" rows="3"></textarea>
         <label style="font-size:12px; color:#aaa;">السعر (نقاط):</label>
         <input type="number" id="edit-s-price">
+        <label style="font-size:12px; color:#aaa;">العدد المتاح (Target):</label>
+        <input type="number" id="edit-s-target">
         <label style="font-size:12px; color:#aaa;">الرابط (اختياري):</label>
         <input type="text" id="edit-s-link">
         <label style="font-size:12px; color:#aaa;">تحديث الصورة/الملف (اختياري):</label>
@@ -309,7 +320,6 @@
     let editMethodNewImage = "";
     let currentZoom = 1;
 
-    // دالة فتح وإغلاق القوائم بالأسهم المنسدلة
     function toggleCard(headerEl) {
         const body = headerEl.nextElementSibling;
         const arrow = headerEl.querySelector('.arrow-icon');
@@ -427,6 +437,7 @@
         const title = document.getElementById('store-title').value.trim();
         const description = document.getElementById('store-desc').value.trim();
         const price = parseInt(document.getElementById('store-price').value);
+        const target = parseInt(document.getElementById('store-target').value) || 100;
         const link = document.getElementById('store-link').value.trim() || "#";
 
         if (!title || isNaN(price)) return alert("يرجى ملء العنوان والسعر الأساسي للمنتج!");
@@ -434,8 +445,8 @@
         const { error } = await client.from('store_products').insert([{
             creator_id: 'ADMIN',
             category, title, description, price, link,
+            target_count: target,
             image_url: storeFileBase64 || null,
-            target_count: 1000,
             status: 'Approved'
         }]);
 
@@ -450,27 +461,45 @@
         if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
 
         div.innerHTML = data.length === 0 ? "📭 لا توجد منتجات في المتجر." : "";
-        data.forEach(p => {
+        
+        for (let p of data) {
+            // جلب الإحصائيات ومن قام بالشراء من جدول store_orders
+            let { data: orders } = await client.from('store_orders').select('user_id, buyer_input, created_at').eq('product_id', p.id);
+            let soldCount = orders ? orders.length : 0;
+            let buyersHtml = "";
+            if (orders && orders.length > 0) {
+                buyersHtml = "<div style='font-size:11px; color:var(--main-green); margin-top:5px;'><b>🛒 من قام بالشراؤه:</b><br>";
+                orders.forEach(o => {
+                    buyersHtml += `• ID: ${o.user_id} | البيانات: ${o.buyer_input}<br>`;
+                });
+                buyersHtml += "</div>";
+            } else {
+                buyersHtml = "<div style='font-size:11px; color:#888; margin-top:5px;'>لم يتم شراؤه بعد.</div>";
+            }
+
             div.innerHTML += `
                 <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
                     <div style="width:100%;">
                         <b>📦 العنوان:</b> ${p.title} (${p.category})<br>
-                        <b>💰 السعر:</b> ${p.price.toLocaleString()} نقطة | <b>🔗 الرابط:</b> ${p.link || 'بدون رابط'}<br>
+                        <b>💰 السعر:</b> ${p.price.toLocaleString()} نقطة | <b>العدد المتاح:</b> ${p.target_count || 100} | <b>تم بيعه:</b> <span style="color:var(--neon-blue);">${soldCount} مرة</span><br>
+                        <b>🔗 الرابط:</b> ${p.link || 'بدون رابط'}<br>
                         <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0;">${p.description || 'بلا وصف'}</div>
+                        ${buyersHtml}
                     </div>
                     <div class="actions-box">
-                        <button class="edit-btn" onclick="openEditStoreModal(${p.id}, '${escapeQuote(p.title)}', '${escapeQuote(p.description)}', ${p.price}, '${escapeQuote(p.link)}')">تعديل بالكامل ✏️</button>
+                        <button class="edit-btn" onclick="openEditStoreModal(${p.id}, '${escapeQuote(p.title)}', '${escapeQuote(p.description)}', ${p.price}, ${p.target_count || 100}, '${escapeQuote(p.link)}')">تعديل بالكامل ✏️</button>
                         <button class="del-btn" onclick="deleteStoreProductItem(${p.id})">حذف نهائي 🗑️</button>
                     </div>
                 </div>`;
-        });
+        }
     }
 
-    function openEditStoreModal(id, title, desc, price, link) {
+    function openEditStoreModal(id, title, desc, price, target, link) {
         document.getElementById('edit-s-id').value = id;
         document.getElementById('edit-s-title').value = title;
         document.getElementById('edit-s-desc').value = desc;
         document.getElementById('edit-s-price').value = price;
+        document.getElementById('edit-s-target').value = target;
         document.getElementById('edit-s-link').value = link;
         editStoreNewFile = "";
         document.getElementById('edit-s-file').value = "";
@@ -486,11 +515,12 @@
         const title = document.getElementById('edit-s-title').value.trim();
         const description = document.getElementById('edit-s-desc').value.trim();
         const price = parseInt(document.getElementById('edit-s-price').value) || 10;
+        const target = parseInt(document.getElementById('edit-s-target').value) || 100;
         const link = document.getElementById('edit-s-link').value.trim() || "#";
 
         if (!title) return alert("يرجى إدخال عنوان المنتج!");
 
-        const updateData = { title, description, price, link };
+        const updateData = { title, description, price, target_count: target, link };
         if (editStoreNewFile) updateData.image_url = editStoreNewFile;
 
         const { error } = await client.from('store_products').update(updateData).eq('id', id);
@@ -506,6 +536,70 @@
         if (!confirm("حذف هذا المنتج نهائياً من المتجر؟")) return;
         await client.from('store_products').delete().eq('id', id);
         loadStoreProductsList();
+    }
+
+    // --- طلبات الإيداع ---
+    async function loadDepositsRequests() {
+        const div = document.getElementById('deposits-requests-list');
+        if (!div) return;
+        let { data, error } = await client.from('deposits').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
+        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+
+        div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات إيداع معلقة." : "";
+        data.forEach(d => {
+            div.innerHTML += `
+                <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
+                    <div style="width:100%;">
+                        <b>🆔 المعاملة:</b> <span style="color:var(--neon-blue);">${d.tx_id}</span> | <b>ID:</b> ${d.telegram_id}<br>
+                        <b>💰 المبلغ:</b> ${d.amount} | <b>وسيلة الإيداع:</b> ${d.method}<br>
+                        <b>📱 رقم/حساب التحويل:</b> <span style="color:var(--main-green); font-weight:bold;">${d.wallet_info}</span><br>
+                        <b>📧 البريد:</b> ${d.email}<br>
+                        <span class="info-text">⏰ الوقت: ${new Date(d.created_at).toLocaleString('ar-EG')}</span>
+                    </div>
+                    <div class="actions-box">
+                        <button class="approve-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', ${d.amount}, true)">قبول وإضافة الرصيد ✅</button>
+                        <button class="reject-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', ${d.amount}, false)">رفض ❌</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    async function reviewDeposit(id, telegramId, amount, isApproved) {
+        if (isApproved) {
+            if (!confirm(`تأكيد قبول الإيداع وإضافة الرصيد للمستخدم؟`)) return;
+
+            const { error: err1 } = await client.from('deposits').update({ status: 'Completed' }).eq('id', id);
+            if (err1) { alert("خطأ: " + err1.message); return; }
+
+            const { data: userData } = await client.from('users').select('points, total_earned').eq('telegram_id', telegramId).maybeSingle();
+            if (userData) {
+                const addPts = parseFloat(amount) > 1000 ? parseFloat(amount) : parseFloat(amount) * 100; // تحويل مبدئي أو إضافة مباشرة
+                const newPoints = (userData.points || 0) + addPts;
+                const newTotalEarned = (userData.total_earned || 0) + addPts;
+                await client.from('users').update({ points: newPoints, total_earned: newTotalEarned }).eq('telegram_id', telegramId);
+            }
+
+            await client.from('bot_messages').insert([{
+                telegram_id: telegramId,
+                message: `🎉 *تم قبول وإضافة إيداعك بنجاح!* ✅\n\n💰 المبلغ المضاف برصيدك: ${amount}\n\nشكراً لاستخدامك منصة MegaTask! 🚀`,
+                status: 'pending'
+            }]);
+
+            alert("تم قبول الإيداع وإضافة الرصيد للمستخدم بنجاح! 🚀");
+        } else {
+            const reason = prompt("أدخل سبب رفض الإيداع (ليظهر للمستخدم في البوت):", "لم يتم تأكيد وصول التحويل");
+            if (reason === null) return;
+
+            await client.from('deposits').update({ status: 'Rejected' }).eq('id', id);
+            await client.from('bot_messages').insert([{
+                telegram_id: telegramId,
+                message: `❌ *عذراً، تم رفض طلب الإيداع الخاص بك*\n\n💬 *السبب:* ${reason}`,
+                status: 'pending'
+            }]);
+
+            alert("تم رفض طلب الإيداع وإرسال السبب للمستخدم.");
+        }
+        loadDepositsRequests();
     }
 
     async function loadPendingStoreProducts() {
@@ -526,7 +620,7 @@
                     </div>
                     <div class="actions-box">
                         <button class="approve-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', true)">موافقة ونشر ✅</button>
-                        <button class="reject-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}, '${escapeQuote(p.title)}', false)">رفض ❌</button>
+                        <button class="reject-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', false)">رفض ❌</button>
                     </div>
                 </div>`;
         });
@@ -962,6 +1056,7 @@
     window.onload = () => {
         loadMethods();
         loadDepositMethods();
+        loadDepositsRequests();
         loadStoreProductsList();
         loadPublishedMethods();
         loadPendingMethods();
