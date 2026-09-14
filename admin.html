@@ -9,7 +9,7 @@
         :root { --neon-purple: #bc13fe; --neon-blue: #00f2ff; --bg-dark: #0a0a0a; --card-bg: #161616; --main-green: #00d26a; --orange: #ff9800; --red: #ff4d4d; }
         body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; margin: 0; padding-bottom: 50px; }
         h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 30px; text-align: center; }
-        h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; }
+        h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
         
         .container { max-width: 950px; margin: auto; }
         .card { background: var(--card-bg); border: 1px solid #333; padding: 25px; border-radius: 20px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -33,6 +33,10 @@
         .admin-method-btn { background: #ffaa00; color: black; padding: 15px 30px; width: 100%; font-size: 16px; margin-top: 10px; }
         
         .list-container { margin-top: 20px; max-height: 500px; overflow-y: auto; }
+        .collapsible-body { display: none; margin-top: 15px; }
+        .arrow-icon { font-size: 14px; transition: transform 0.3s ease; }
+        .arrow-icon.open { transform: rotate(180deg); }
+
         .item-row { background: #222; padding: 15px; margin-bottom: 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; flex-wrap: wrap; gap: 10px; }
         .task-row { border-right-color: var(--neon-purple); }
         .pending-row { border-right-color: var(--orange); flex-direction: column; align-items: flex-start; }
@@ -68,114 +72,170 @@
 
     <!-- 1. إدارة وسائل السحب -->
     <div class="card methods-card">
-        <h3 style="color: var(--neon-blue);">💳 إدارة وسائل السحب</h3>
-        <input type="text" id="method-name" placeholder="اسم الوسيلة (مثلاً: Vodafone Cash)">
-        <input type="text" id="method-desc" placeholder="وصف أو إيموجي (مثلاً: مصر 🇪🇬)">
-        <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">شعار/لوجو الوسيلة (صورة):</label>
-        <input type="file" id="method-logo-file" accept="image/*" onchange="previewWithdrawLogo(this)">
-        <div id="withdraw-logo-preview" style="display:none; margin-top:5px; text-align:center;">
-            <img id="withdraw-logo-tag" style="max-width:50px; max-height:50px; border-radius:6px;">
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">💳 إدارة وسائل السحب <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <input type="text" id="method-name" placeholder="اسم الوسيلة (مثلاً: Vodafone Cash)">
+            <input type="text" id="method-desc" placeholder="وصف أو إيموجي (مثلاً: مصر 🇪🇬)">
+            <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">شعار/لوجو الوسيلة (صورة):</label>
+            <input type="file" id="method-logo-file" accept="image/*" onchange="previewWithdrawLogo(this)">
+            <div id="withdraw-logo-preview" style="display:none; margin-top:5px; text-align:center;">
+                <img id="withdraw-logo-tag" style="max-width:50px; max-height:50px; border-radius:6px;">
+            </div>
+            <button class="method-btn" onclick="addMethod()">إضافة وسيلة السحب للسيستم 🚀</button>
+            <div id="methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
         </div>
-        <button class="method-btn" onclick="addMethod()">إضافة وسيلة السحب للسيستم 🚀</button>
-        <div id="methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
     </div>
 
     <!-- 2. إدارة وسائل الإيداع -->
     <div class="card deposit-card">
-        <h3 style="color: var(--main-green);">💰 إدارة وسائل الإيداع</h3>
-        <input type="text" id="deposit-name" placeholder="اسم وسيلة الإيداع (مثلاً: USDT / فودافون كاش)">
-        <input type="text" id="deposit-desc" placeholder="تفاصيل التحويل أو الرقم">
-        <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">شعار/لوجو وسيلة الإيداع (صورة):</label>
-        <input type="file" id="deposit-logo-file" accept="image/*" onchange="previewDepositLogo(this)">
-        <div id="deposit-logo-preview" style="display:none; margin-top:5px; text-align:center;">
-            <img id="deposit-logo-tag" style="max-width:50px; max-height:50px; border-radius:6px;">
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">💰 إدارة وسائل الإيداع <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <input type="text" id="deposit-name" placeholder="اسم وسيلة الإيداع (مثلاً: USDT / فودافون كاش)">
+            <input type="text" id="deposit-desc" placeholder="تفاصيل التحويل أو الرقم">
+            <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">شعار/لوجو وسيلة الإيداع (صورة):</label>
+            <input type="file" id="deposit-logo-file" accept="image/*" onchange="previewDepositLogo(this)">
+            <div id="deposit-logo-preview" style="display:none; margin-top:5px; text-align:center;">
+                <img id="deposit-logo-tag" style="max-width:50px; max-height:50px; border-radius:6px;">
+            </div>
+            <button class="deposit-btn" onclick="addDepositMethod()">إضافة وسيلة إيداع جديدة 🚀</button>
+            <div id="deposit-methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
         </div>
-        <button class="deposit-btn" onclick="addDepositMethod()">إضافة وسيلة إيداع جديدة 🚀</button>
-        <div id="deposit-methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
     </div>
 
     <!-- 3. إضافة منتج جديد للمتجر الرسمي -->
     <div class="card store-card">
-        <h3 style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي</h3>
-        <select id="store-cat" class="input-field">
-            <option value="recharge">🔋 شحن وفكة</option>
-            <option value="telegram">📢 تيليجرام</option>
-            <option value="facebook">📘 فيسبوك</option>
-            <option value="youtube">▶️ يوتيوب</option>
-            <option value="tiktok">🎵 تيك توك</option>
-            <option value="instagram">📸 انستجرام</option>
-            <option value="subscriptions">👑 اشتراكات مدفوعة</option>
-        </select>
-        <input type="text" id="store-title" placeholder="عنوان المنتج">
-        <textarea id="store-desc" rows="3" placeholder="وصف وتفاصيل المنتج..."></textarea>
-        <input type="number" id="store-price" placeholder="السعر بالنقاط">
-        <input type="text" id="store-link" placeholder="رابط المنتج أو الخدمة (URL)">
-        <button class="main-btn" style="background: var(--neon-blue); color:black;" onclick="addStoreProduct()">نشر المنتج في المتجر 🚀</button>
-    </div>
-
-    <!-- 4. منتجات الأعضاء المعلقة -->
-    <div class="card pending-card">
-        <h3 style="color: var(--orange);">⏳ منتجات الأعضاء المعلقة (بانتظار الموافقة)</h3>
-        <div id="pending-store-list" class="list-container">جاري الفحص...</div>
-    </div>
-
-    <!-- 5. طلبات الشراء الواردة للمتجر -->
-    <div class="card orders-card">
-        <h3 style="color: var(--main-green);">🛒 طلبات الشراء الواردة للمتجر (قيد التنفيذ)</h3>
-        <div id="store-orders-list" class="list-container">جاري فحص الطلبات...</div>
-    </div>
-
-    <!-- 6. إضافة ميثود رسمية جديدة -->
-    <div class="card admin-method-card">
-        <h3 style="color: #ffaa00;">💡 إضافة ميثود رسمية جديدة (بواسطة الأدمن)</h3>
-        <input type="text" id="admin-method-title" placeholder="عنوان الميثود">
-        <textarea id="admin-method-content" rows="4" placeholder="اكتب الشرح، التفاصيل، والروابط هنا..."></textarea>
-        <input type="number" id="admin-method-cost" placeholder="سعر فك الحجب (نقاط)" value="50">
-        <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">صورة توضيحية (اختياري):</label>
-        <input type="file" id="admin-method-img" accept="image/*" onchange="previewAdminImage(this)">
-        <div id="admin-img-preview" style="display:none; margin-top:10px; text-align:center;">
-            <img id="admin-preview-tag" style="max-width:150px; max-height:150px; border-radius:8px;">
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <select id="store-cat" class="input-field">
+                <option value="recharge">🔋 شحن وفكة</option>
+                <option value="telegram">📢 تيليجرام</option>
+                <option value="facebook">📘 فيسبوك</option>
+                <option value="youtube">▶️ يوتيوب</option>
+                <option value="tiktok">🎵 تيك توك</option>
+                <option value="instagram">📸 انستجرام</option>
+                <option value="subscriptions">👑 اشتراكات مدفوعة</option>
+            </select>
+            <input type="text" id="store-title" placeholder="عنوان المنتج">
+            <textarea id="store-desc" rows="3" placeholder="وصف وتفاصيل المنتج..."></textarea>
+            <input type="number" id="store-price" placeholder="السعر بالنقاط">
+            <input type="text" id="store-link" placeholder="رابط المنتج أو الخدمة (اختياري)">
+            <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">صورة أو ملف المنتج (اختياري):</label>
+            <input type="file" id="store-file" accept="image/*,.zip,.pdf" onchange="previewStoreFile(this)">
+            <button class="main-btn" style="background: var(--neon-blue); color:black;" onclick="addStoreProduct()">نشر المنتج في المتجر 🚀</button>
         </div>
-        <button class="admin-method-btn" onclick="addAdminMethod()">نشر الميثود مباشرة للعامة 🚀</button>
     </div>
 
-    <!-- 7. قائمة وتعديل الميثودات المنشورة -->
-    <div class="card">
-        <h3>🔓 إدارة وتعديل الميثودات المنشورة</h3>
-        <div id="published-methods-list" class="list-container">جاري التحميل...</div>
+    <!-- 4. قائمة وتعديل منتجات المتجر الرسمية -->
+    <div class="card store-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">📦 إدارة وتعديل منتجات المتجر <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div id="store-products-list" class="list-container">جاري التحميل...</div>
+        </div>
     </div>
 
-    <!-- 8. مراجعة ميثودات الأعضاء الجديدة -->
-    <div class="card methods-review-card">
-        <h3 style="color: var(--neon-purple);">💡 ميثودات الأعضاء (قيد المراجعة وصرف النقاط)</h3>
-        <div id="pending-methods-list" class="list-container">جاري فحص الميثودات...</div>
-    </div>
-
-    <!-- 9. إضافة مهمة إدارية مباشرة -->
-    <div class="card task-card">
-        <h3>➕ إضافة مهمة جديدة مباشرة</h3>
-        <input type="text" id="task-title" placeholder="عنوان المهمة">
-        <input type="text" id="task-link" placeholder="رابط المهمة (URL)">
-        <input type="number" id="task-reward" placeholder="عدد النقاط">
-        <button class="main-btn" onclick="addTask()">نشر المهمة فوراً ✅</button>
-    </div>
-
-    <!-- 10. مهام المستخدمين (قيد المراجعة) -->
+    <!-- 5. منتجات الأعضاء المعلقة -->
     <div class="card pending-card">
-        <h3 style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة والموافقة)</h3>
-        <div id="pending-tasks-list" class="list-container">جاري فحص المهام...</div>
+        <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ منتجات الأعضاء المعلقة (بانتظار الموافقة) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div id="pending-store-list" class="list-container">جاري الفحص...</div>
+        </div>
     </div>
 
-    <!-- 11. المهام النشطة الحالية (مع تعديل كامل وحذف) -->
+    <!-- 6. طلبات الشراء الواردة للمتجر -->
+    <div class="card orders-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 طلبات الشراء الواردة للمتجر (قيد التنفيذ) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div id="store-orders-list" class="list-container">جاري فحص الطلبات...</div>
+        </div>
+    </div>
+
+    <!-- 7. إضافة ميثود رسمية جديدة -->
+    <div class="card admin-method-card">
+        <h3 onclick="toggleCard(this)" style="color: #ffaa00;">💡 إضافة ميثود رسمية جديدة (بواسطة الأدمن) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <input type="text" id="admin-method-title" placeholder="عنوان الميثود">
+            <textarea id="admin-method-content" rows="4" placeholder="اكتب الشرح، التفاصيل، والروابط هنا..."></textarea>
+            <input type="number" id="admin-method-cost" placeholder="سعر فك الحجب (نقاط)" value="50">
+            <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">صورة توضيحية (اختياري):</label>
+            <input type="file" id="admin-method-img" accept="image/*" onchange="previewAdminImage(this)">
+            <div id="admin-img-preview" style="display:none; margin-top:10px; text-align:center;">
+                <img id="admin-preview-tag" style="max-width:150px; max-height:150px; border-radius:8px;">
+            </div>
+            <button class="admin-method-btn" onclick="addAdminMethod()">نشر الميثود مباشرة للعامة 🚀</button>
+        </div>
+    </div>
+
+    <!-- 8. قائمة وتعديل الميثودات المنشورة -->
     <div class="card">
-        <h3>📋 المهام النشطة الحالية (تعديل كامل أو حذف)</h3>
-        <div id="tasks-list" class="list-container">جاري التحميل...</div>
+        <h3 onclick="toggleCard(this)">🔓 إدارة وتعديل الميثودات المنشورة <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div id="published-methods-list" class="list-container">جاري التحميل...</div>
+        </div>
     </div>
 
-    <!-- 12. طلبات السحب والإيداع -->
+    <!-- 9. مراجعة ميثودات الأعضاء الجديدة -->
+    <div class="card methods-review-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-purple);">💡 ميثودات الأعضاء (قيد المراجعة وصرف النقاط) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div id="pending-methods-list" class="list-container">جاري فحص الميثودات...</div>
+        </div>
+    </div>
+
+    <!-- 10. إضافة مهمة إدارية مباشرة -->
+    <div class="card task-card">
+        <h3 onclick="toggleCard(this)">➕ إضافة مهمة جديدة مباشرة <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <input type="text" id="task-title" placeholder="عنوان المهمة">
+            <input type="text" id="task-link" placeholder="رابط المهمة (URL)">
+            <input type="number" id="task-reward" placeholder="عدد النقاط">
+            <button class="main-btn" onclick="addTask()">نشر المهمة فوراً ✅</button>
+        </div>
+    </div>
+
+    <!-- 11. مهام المستخدمين (قيد المراجعة) -->
+    <div class="card pending-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة والموافقة) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div id="pending-tasks-list" class="list-container">جاري فحص المهام...</div>
+        </div>
+    </div>
+
+    <!-- 12. المهام النشطة الحالية (مع تعديل كامل وحذف) -->
+    <div class="card">
+        <h3 onclick="toggleCard(this)">📋 المهام النشطة الحالية (تعديل كامل أو حذف) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div id="tasks-list" class="list-container">جاري التحميل...</div>
+        </div>
+    </div>
+
+    <!-- 13. طلبات السحب -->
     <div class="card withdraw-card">
-        <h3 style="color: var(--main-green);">💸 طلبات السحب (قيد الانتظار)</h3>
-        <div id="withdraw-list" class="list-container">جاري فحص الطلبات...</div>
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">💸 طلبات السحب (قيد الانتظار) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div id="withdraw-list" class="list-container">جاري فحص الطلبات...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal تعديل منتج المتجر -->
+<div id="edit-store-modal" class="admin-modal">
+    <div class="admin-modal-content">
+        <h3 style="color: var(--neon-blue);">✏️ تعديل منتج المتجر</h3>
+        <input type="hidden" id="edit-s-id">
+        <label style="font-size:12px; color:#aaa;">العنوان:</label>
+        <input type="text" id="edit-s-title">
+        <label style="font-size:12px; color:#aaa;">الوصف:</label>
+        <textarea id="edit-s-desc" rows="3"></textarea>
+        <label style="font-size:12px; color:#aaa;">السعر (نقاط):</label>
+        <input type="number" id="edit-s-price">
+        <label style="font-size:12px; color:#aaa;">الرابط (اختياري):</label>
+        <input type="text" id="edit-s-link">
+        <label style="font-size:12px; color:#aaa;">تحديث الصورة/الملف (اختياري):</label>
+        <input type="file" id="edit-s-file" accept="image/*,.zip,.pdf" onchange="previewEditStoreFile(this)">
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button class="approve-btn" onclick="saveEditedStoreProduct()">حفظ التعديلات ✅</button>
+            <button class="del-btn" onclick="closeEditStoreModal()">إلغاء</button>
+        </div>
     </div>
 </div>
 
@@ -236,7 +296,7 @@
 
 <script>
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2InMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc2OTUwODU2OCwiZXhwIjoyMDg1MDg0NTY4fQ.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
     
     const { createClient } = supabase;
     const client = createClient(S_URL, S_KEY);
@@ -244,8 +304,23 @@
     let adminMethodBase64 = "";
     let withdrawLogoBase64 = "";
     let depositLogoBase64 = "";
+    let storeFileBase64 = "";
+    let editStoreNewFile = "";
     let editMethodNewImage = "";
     let currentZoom = 1;
+
+    // دالة فتح وإغلاق القوائم بالأسهم المنسدلة
+    function toggleCard(headerEl) {
+        const body = headerEl.nextElementSibling;
+        const arrow = headerEl.querySelector('.arrow-icon');
+        if (body.style.display === 'block') {
+            body.style.display = 'none';
+            arrow.classList.remove('open');
+        } else {
+            body.style.display = 'block';
+            arrow.classList.add('open');
+        }
+    }
 
     function previewAdminImage(input) {
         if (!input.files || !input.files[0]) return;
@@ -304,22 +379,24 @@
         reader.readAsDataURL(input.files[0]);
     }
 
+    function previewStoreFile(input) {
+        if (!input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = function(e) { storeFileBase64 = e.target.result; }
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    function previewEditStoreFile(input) {
+        if (!input.files || !input.files[0]) return;
+        const reader = new FileReader();
+        reader.onload = function(e) { editStoreNewFile = e.target.result; }
+        reader.readAsDataURL(input.files[0]);
+    }
+
     function previewEditMethodImage(input) {
         if (!input.files || !input.files[0]) return;
         const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const maxW = 600;
-                let w = img.width, h = img.height;
-                if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
-                canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                editMethodNewImage = canvas.toDataURL('image/jpeg', 0.7);
-            }
-        }
+        reader.onload = function(e) { editMethodNewImage = e.target.result; }
         reader.readAsDataURL(input.files[0]);
     }
 
@@ -350,19 +427,85 @@
         const title = document.getElementById('store-title').value.trim();
         const description = document.getElementById('store-desc').value.trim();
         const price = parseInt(document.getElementById('store-price').value);
-        const link = document.getElementById('store-link').value.trim();
+        const link = document.getElementById('store-link').value.trim() || "#";
 
-        if (!title || isNaN(price) || !link) return alert("يرجى ملء الحانات الأساسية للمنتج!");
+        if (!title || isNaN(price)) return alert("يرجى ملء العنوان والسعر الأساسي للمنتج!");
 
         const { error } = await client.from('store_products').insert([{
             creator_id: 'ADMIN',
             category, title, description, price, link,
+            image_url: storeFileBase64 || null,
             target_count: 1000,
             status: 'Approved'
         }]);
 
         if (error) alert("خطأ: " + error.message);
         else { alert("تم نشر المنتج في المتجر بنجاح! 🚀"); location.reload(); }
+    }
+
+    async function loadStoreProductsList() {
+        const div = document.getElementById('store-products-list');
+        if (!div) return;
+        let { data, error } = await client.from('store_products').select('*').eq('status', 'Approved').order('id', { ascending: false });
+        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+
+        div.innerHTML = data.length === 0 ? "📭 لا توجد منتجات في المتجر." : "";
+        data.forEach(p => {
+            div.innerHTML += `
+                <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
+                    <div style="width:100%;">
+                        <b>📦 العنوان:</b> ${p.title} (${p.category})<br>
+                        <b>💰 السعر:</b> ${p.price.toLocaleString()} نقطة | <b>🔗 الرابط:</b> ${p.link || 'بدون رابط'}<br>
+                        <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0;">${p.description || 'بلا وصف'}</div>
+                    </div>
+                    <div class="actions-box">
+                        <button class="edit-btn" onclick="openEditStoreModal(${p.id}, '${escapeQuote(p.title)}', '${escapeQuote(p.description)}', ${p.price}, '${escapeQuote(p.link)}')">تعديل بالكامل ✏️</button>
+                        <button class="del-btn" onclick="deleteStoreProductItem(${p.id})">حذف نهائي 🗑️</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    function openEditStoreModal(id, title, desc, price, link) {
+        document.getElementById('edit-s-id').value = id;
+        document.getElementById('edit-s-title').value = title;
+        document.getElementById('edit-s-desc').value = desc;
+        document.getElementById('edit-s-price').value = price;
+        document.getElementById('edit-s-link').value = link;
+        editStoreNewFile = "";
+        document.getElementById('edit-s-file').value = "";
+        document.getElementById('edit-store-modal').style.display = 'flex';
+    }
+
+    function closeEditStoreModal() {
+        document.getElementById('edit-store-modal').style.display = 'none';
+    }
+
+    async function saveEditedStoreProduct() {
+        const id = document.getElementById('edit-s-id').value;
+        const title = document.getElementById('edit-s-title').value.trim();
+        const description = document.getElementById('edit-s-desc').value.trim();
+        const price = parseInt(document.getElementById('edit-s-price').value) || 10;
+        const link = document.getElementById('edit-s-link').value.trim() || "#";
+
+        if (!title) return alert("يرجى إدخال عنوان المنتج!");
+
+        const updateData = { title, description, price, link };
+        if (editStoreNewFile) updateData.image_url = editStoreNewFile;
+
+        const { error } = await client.from('store_products').update(updateData).eq('id', id);
+        if (error) alert("فشل الحفظ: " + error.message);
+        else {
+            alert("تم تحديث المنتج بنجاح! ✨");
+            closeEditStoreModal();
+            loadStoreProductsList();
+        }
+    }
+
+    async function deleteStoreProductItem(id) {
+        if (!confirm("حذف هذا المنتج نهائياً من المتجر؟")) return;
+        await client.from('store_products').delete().eq('id', id);
+        loadStoreProductsList();
     }
 
     async function loadPendingStoreProducts() {
@@ -378,12 +521,12 @@
                     <div style="width:100%;">
                         <b>📦 العنوان:</b> ${p.title} (${p.category})<br>
                         <b>💰 السعر:</b> ${p.price.toLocaleString()} نقطة | <b>👤 البائع ID:</b> ${p.creator_id}<br>
-                        <b>🔗 الرابط:</b> <a href="${p.link}" target="_blank" style="color:var(--neon-blue)">${p.link}</a><br>
+                        <b>🔗 الرابط:</b> ${p.link || 'بدون رابط'}<br>
                         <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0;">${p.description || 'بلا وصف'}</div>
                     </div>
                     <div class="actions-box">
                         <button class="approve-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', true)">موافقة ونشر ✅</button>
-                        <button class="reject-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', false)">رفض ❌</button>
+                        <button class="reject-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}, '${escapeQuote(p.title)}', false)">رفض ❌</button>
                     </div>
                 </div>`;
         });
@@ -414,6 +557,7 @@
             alert("تم رفض المنتج وإرسال السبب للبائع.");
         }
         loadPendingStoreProducts();
+        loadStoreProductsList();
     }
 
     async function loadStoreOrders() {
@@ -635,8 +779,8 @@
                         </div>
                     </div>
                     <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${m.title}', true)">موافقة ونشر ✅</button>
-                        <button class="reject-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${m.title}', false)">رفض ❌</button>
+                        <button class="approve-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${escapeQuote(m.title)}', true)">موافقة ونشر ✅</button>
+                        <button class="reject-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${escapeQuote(m.title)}', false)">رفض ❌</button>
                     </div>
                 </div>`;
         });
@@ -818,6 +962,7 @@
     window.onload = () => {
         loadMethods();
         loadDepositMethods();
+        loadStoreProductsList();
         loadPublishedMethods();
         loadPendingMethods();
         loadPendingStoreProducts();
