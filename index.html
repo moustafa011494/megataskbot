@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MegaTask - Monetag Edition</title>
     
     <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
@@ -12,7 +12,7 @@
     
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 120px; overflow-x: hidden; }
+        html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 110px; width: 100%; max-width: 100vw; overflow-x: hidden; position: relative; }
         
         .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; }
@@ -36,6 +36,8 @@
             flex-direction: column;
             gap: 12px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
         }
         .streak-header { display: flex; justify-content: space-between; align-items: center; }
         .streak-title-box { display: flex; align-items: center; gap: 10px; }
@@ -45,7 +47,7 @@
         .streak-badge { background: #252a35; padding: 5px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; color: var(--main-green); border: 1px solid #333a48; }
 
         .streak-actions { display: flex; flex-direction: column; gap: 8px; }
-        .btn-streak-claim { width: 100%; background: var(--main-green); color: black; border: none; padding: 13px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; }
+        .btn-streak-claim { width: 100%; background: var(--main-green); color: black; border: none; padding: 13px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.3s; }
         .btn-wheel-trigger { width: 100%; background: linear-gradient(135deg, #ffaa00, #e67e00); color: black; border: none; padding: 13px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .streak-timer-box { text-align: center; font-size: 11px; color: var(--text-gray); background: #0d0f13; padding: 9px; border-radius: 10px; border: 1px dashed #2d333d; display: none; }
 
@@ -61,7 +63,6 @@
             width: 100%;
         }
 
-        /* زر المتجر الجديد */
         .btn-store-full {
             width: 100%;
             background: linear-gradient(135deg, #00f2ff, #0077ff);
@@ -111,9 +112,17 @@
         .wheel-container-box { position: relative; width: 260px; height: 260px; margin: 15px auto; display: flex; align-items: center; justify-content: center; }
         .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 22px solid #ff3b5c; z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
 
-        .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
+
+        /* تأثيرات بصرية للستريك */
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(0, 210, 106, 0.2); }
+            50% { box-shadow: 0 0 25px rgba(0, 210, 106, 0.8), inset 0 0 15px rgba(0, 210, 106, 0.4); }
+            100% { box-shadow: 0 0 5px rgba(0, 210, 106, 0.2); }
+        }
+        .streak-glow-effect { animation: pulseGlow 1s ease-in-out; }
     </style>
 </head>
 <body>
@@ -165,7 +174,7 @@
     </div>
 
     <!-- بطاقة الستريك وعجلة الحظ اليومية المدمجة بعرض الصفحة -->
-    <div class="streak-fullwidth-card">
+    <div class="streak-fullwidth-card" id="streak-card-box">
         <div class="streak-header">
             <div class="streak-title-box">
                 <div class="streak-icon">🔥</div>
@@ -194,7 +203,6 @@
 
     <div class="action-box">
         <div class="btn-action btn-offers" onclick="showSoon('عروض CPA')">🎯 عروض CPA (قريباً..)</div>
-        <!-- زر المتجر الجديد -->
         <button class="btn-store-full" onclick="goStore()">🛍️ متجر MegaTask (شحن، متابعين، اشتراكات)</button>
     </div>
 
@@ -229,7 +237,6 @@
         let userData = null;
         let countdownTimer = null;
 
-        // إعدادات عجلة الحظ (أقصى جائزة 25 نقطة)
         const WHEEL_SECTORS = [
             { label: "5 نقطة", value: 5, color: "#161920", text: "#00d26a" },
             { label: "10 نقطة", value: 10, color: "#1e232d", text: "#00d26a" },
@@ -242,13 +249,13 @@
         ];
         let currentAngle = 0;
         let isSpinning = false;
-        let activeAdAction = null; // لتحديد هل الإعلان للستريك أم للعجلة
+        let activeAdAction = null;
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
             userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
             if (!userId) {
-                userId = "123456789"; // افتراضي للاستقرار
+                userId = "123456789";
             }
 
             const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
@@ -259,9 +266,8 @@
                 userData = user;
                 updateUI();
                 startDailyCountdown();
-                checkNewMethodPopup(); // فحص وإظهار إشعار الميثود الجديدة مرة واحدة فقط
+                checkNewMethodPopup();
 
-                // فحص وعرض إشعارات الفاتورة أو الطلبات الجديدة فوراً للمستخدم
                 try {
                     const { data: unreadNotifs } = await client.from('user_notifications').select('*').eq('user_id', userId).eq('is_read', false);
                     if (unreadNotifs && unreadNotifs.length > 0) {
@@ -276,7 +282,6 @@
             }
         }
 
-        // فحص وإظهار إشعار الميثود الجديدة مرة واحدة فقط للمستخدم باستخدام localStorage
         async function checkNewMethodPopup() {
             try {
                 const { data } = await client.from('methods').select('id, title').eq('status', 'Approved').order('id', { ascending: false }).limit(1);
@@ -288,37 +293,7 @@
                         localStorage.setItem('last_seen_method_id', latest.id);
                     }
                 }
-            } catch (e) {
-                console.error("Method popup error:", e);
-            }
-        }
-
-        // إعلان عام (Watch & Earn)
-        function showAd() {
-            if (typeof show_10959333 === 'function') {
-                show_10959333().then(() => {
-                    giveReward(10);
-                }).catch((err) => {
-                    console.error("Ad Error:", err);
-                    tg.showAlert("❌ عذراً، لا توجد إعلانات متاحة حالياً.");
-                });
-            } else {
-                tg.showAlert("⏳ جاري تحميل نظام الإعلانات...");
-            }
-        }
-
-        async function giveReward(amount) {
-            const currentTotal = userData.total_earned || 0;
-            const { data, error } = await client.from('users').update({
-                points: userData.points + amount,
-                total_earned: currentTotal + amount
-            }).eq('telegram_id', userId).select().single();
-            
-            if (!error && data) {
-                userData = data;
-                updateUI();
-                tg.showAlert(`✅ مبروك! حصلت على ${amount} نقطة.`);
-            }
+            } catch (e) {}
         }
 
         async function submitRegistration(skip = false) {
@@ -437,7 +412,7 @@
             }
         }
 
-        // تشغيل إعلان الستريك
+        // تشغيل إعلان الستريك مع Monetag
         function claimDailyWithAd() {
             if (!userData) return;
             if (hasClaimedToday(userData.last_claim)) {
@@ -448,7 +423,7 @@
             triggerMonetagAd();
         }
 
-        // تشغيل إعلان عجلة الحظ
+        // تشغيل إعلان عجلة الحظ مع Monetag
         function showWheelAd() {
             if (!userData) return;
             if (hasSpunWheelToday(userData.last_wheel_spin)) {
@@ -478,11 +453,11 @@
             }
         }
 
-        // تنفيذ الستريك بعد مشاهدة الإعلان
+        // تنفيذ الستريك بعد مشاهدة الإعلان مع مؤثرات بصريه
         async function executeClaimDaily() {
             const now = new Date();
             const newStreak = calculateNewStreak(userData.last_claim, userData.streak || 0);
-            const rewardPoints = 5; // 5 نقاط للستريك
+            const rewardPoints = 5;
 
             const { data, error } = await client.from('users').update({
                 points: (userData.points || 0) + rewardPoints,
@@ -495,13 +470,18 @@
                 userData = data;
                 updateUI();
                 startDailyCountdown();
+                
+                // تفعيل المؤثرات البصرية للبطاقة
+                const cardBox = document.getElementById('streak-card-box');
+                cardBox.classList.add('streak-glow-effect');
+                setTimeout(() => cardBox.classList.remove('streak-glow-effect'), 1000);
+
                 tg.showAlert(`🔥 عاش يا بطل!\nاستلمت مكافأة الستريك (+${rewardPoints} نقاط) وصار الستريك (${newStreak} أيام)!`);
             } else {
                 tg.showAlert("❌ حدث خطأ أثناء استلام المكافأة.");
             }
         }
 
-        // إدارة عجلة الحظ والـ Canvas
         function openWheelModal() {
             document.getElementById('wheel-modal').style.display = 'flex';
             drawWheel();
@@ -627,7 +607,7 @@
             tg.showAlert(`🎯 قسم ${sectionName} قيد التجهيز والتطوير حالياً وسيتوفر قريباً بأعلى مكافآت!`);
         }
 
-        // دوال التنقل المحدثة والمضبوطة بالكامل
+        // دوال التنقل
         function goHome() { window.location.href = `index.html?id=${userId}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
         function goGames() { window.location.href = `games.html?id=${userId}`; }
@@ -635,7 +615,7 @@
         function goProfile() { window.location.href = `profile.html?id=${userId}`; }
         function goWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
         function goStore() { window.location.href = `store.html?id=${userId}`; }
-
+        
         function goSocial() { window.location.href = `social.html?id=${userId}`; }
         function goMethods() { window.location.href = `methods.html?id=${userId}`; }
         function goDevTools() { window.location.href = `devtools.html?id=${userId}`; }
