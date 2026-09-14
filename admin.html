@@ -69,7 +69,7 @@
         <h3 style="color: var(--neon-blue);">💳 إدارة وسائل السحب</h3>
         <input type="text" id="method-name" placeholder="اسم الوسيلة (مثلاً: Vodafone Cash)">
         <input type="text" id="method-desc" placeholder="وصف أو إيموجي (مثلاً: مصر 🇪🇬)">
-        <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">شعار/لوجو الوسيلة (صورة):</label>
+        <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">شعار/لوجو الوسيلة (اختر ملف صورة):</label>
         <input type="file" id="method-logo-file" accept="image/*" onchange="previewWithdrawLogo(this)">
         <div id="withdraw-logo-preview" style="display:none; margin-top:5px; text-align:center;">
             <img id="withdraw-logo-tag" style="max-width:50px; max-height:50px; border-radius:6px;">
@@ -83,7 +83,7 @@
         <h3 style="color: var(--main-green);">💰 إدارة وسائل الإيداع</h3>
         <input type="text" id="deposit-name" placeholder="اسم وسيلة الإيداع (مثلاً: USDT / فودافون كاش)">
         <input type="text" id="deposit-desc" placeholder="تفاصيل التحويل أو الرقم">
-        <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">شعار/لوجو وسيلة الإيداع (صورة):</label>
+        <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">شعار/لوجو وسيلة الإيداع (اختر ملف صورة):</label>
         <input type="file" id="deposit-logo-file" accept="image/*" onchange="previewDepositLogo(this)">
         <div id="deposit-logo-preview" style="display:none; margin-top:5px; text-align:center;">
             <img id="deposit-logo-tag" style="max-width:50px; max-height:50px; border-radius:6px;">
@@ -149,7 +149,7 @@
 <!-- Modal تعديل الميثود بالكامل -->
 <div id="edit-method-modal" class="admin-modal">
     <div class="admin-modal-content">
-        <h3 style="color: var(--neon-purple);">✏️ تعديل تفاصيل الميثود</h3>
+        <h3 style="color: var(--neon-purple);">✏️ تعديل تفاصيل الميثود بالكامل</h3>
         <input type="hidden" id="edit-m-id">
         <label style="font-size:12px; color:#aaa;">العنوان:</label>
         <input type="text" id="edit-m-title">
@@ -169,7 +169,7 @@
 <!-- Modal تعديل المهمة بالكامل -->
 <div id="edit-task-modal" class="admin-modal">
     <div class="admin-modal-content">
-        <h3 style="color: var(--neon-purple);">✏️ تعديل تفاصيل المهمة</h3>
+        <h3 style="color: var(--neon-purple);">✏️ تعديل تفاصيل المهمة بالكامل</h3>
         <input type="hidden" id="edit-t-id">
         <label style="font-size:12px; color:#aaa;">عنوان المهمة:</label>
         <input type="text" id="edit-t-title">
@@ -203,7 +203,7 @@
 
 <script>
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2InMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc2OTUwODU2OCwiZXhwIjoyMDg1MDg0NTY4fQ.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
     
     const { createClient } = supabase;
     const client = createClient(S_URL, S_KEY);
