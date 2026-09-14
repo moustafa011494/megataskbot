@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit - MegaTask</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; padding-bottom: 100px; }
+        .balance-card { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #2d333d; text-align: center; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .balance-card h2 { color: var(--main-green); font-size: 32px; margin: 10px 0; }
+        .input-group { margin-bottom: 20px; text-align: right; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-gray); }
+        select, input { width: 100%; background: #000; border: 1px solid #2d333d; padding: 15px; border-radius: 12px; color: white; box-sizing: border-box; outline: none; transition: 0.3s; }
+        select:focus, input:focus { border-color: var(--main-green); }
+        .deposit-btn { background: var(--main-green); color: black; border: none; width: 100%; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 5px 15px rgba(0, 210, 106, 0.3); }
+        .info-box { background: rgba(0, 210, 106, 0.1); border: 1px dashed var(--main-green); padding: 10px; border-radius: 10px; font-size: 12px; margin-bottom: 20px; color: #00d26a; text-align: center; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h2 style="text-align: right;">💳 إيداع رصيد في المنصة</h2>
+
+    <div class="balance-card">
+        <span>رصيدك الحالي</span>
+        <h2 id="current-points">جاري التحميل...</h2>
+        <div class="info-box">شحن آمن وفوري لرصيدك لاستخدام خدمات المتجر ⚡</div>
+    </div>
+
+    <div class="input-group">
+        <label>وسيلة الإيداع</label>
+        <select id="deposit-method">
+            <option value="">جاري تحميل وسائل الإيداع...</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label>المبلغ المراد إيداعه (بالجنيه أو النقاط)</label>
+        <input type="number" id="deposit-amount" placeholder="مثلاً: 100 جنيه أو 10000 نقطة">
+    </div>
+
+    <div class="input-group">
+        <label>رقم الحساب المحول منه / رقم العملية (TX ID)</label>
+        <input type="text" id="deposit-wallet" placeholder="أدخل رقم هاتفك المحول منه أو رقم الإيصال">
+    </div>
+
+    <div class="input-group">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="deposit-email" placeholder="example@gmail.com">
+    </div>
+
+    <button class="deposit-btn" onclick="processDeposit()">تأكيد وإرسال طلب الإيداع ↗</button>
+
+    <nav class="navbar">
+        <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
+        <div onclick="goStore()" class="nav-item" style="color: var(--main-green);">🛍️<br>المتجر</div>
+        <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
+        <div onclick="goInvite()" class="nav-item">👥<br>أصدقاء</div>
+        <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
+    </nav>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2InMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc2OTUwODU2OCwiZXhwIjoyMDg1MDg0NTY4fQ.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
+
+        const params = new URLSearchParams(window.location.search);
+        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+
+        async function init() {
+            loadDepositMethods();
+            if (!tid) return;
+            const { data } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
+            if (data) document.getElementById('current-points').innerText = (data.points || 0).toLocaleString() + " نقطة";
+        }
+
+        async function loadDepositMethods() {
+            const select = document.getElementById('deposit-method');
+            const { data, error } = await client.from('deposit_methods').select('*');
+            if (!error && data && data.length > 0) {
+                select.innerHTML = "";
+                data.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.name;
+                    opt.textContent = `${m.name} - ${m.description || ''}`;
+                    select.appendChild(opt);
+                });
+            } else {
+                select.innerHTML = '<option value="Vodafone Cash">فودافون كاش - تحويل مباشر</option>';
+            }
+        }
+
+        async function processDeposit() {
+            const amount = parseFloat(document.getElementById('deposit-amount').value);
+            const method = document.getElementById('deposit-method').value;
+            const wallet = document.getElementById('deposit-wallet').value.trim();
+            const email = document.getElementById('deposit-email').value.trim();
+
+            if (isNaN(amount) || amount <= 0) return tg.showAlert("❌ يرجى إدخال مبلغ صحيح للإيداع!");
+            if (!wallet) return tg.showAlert("❌ يرجى إدخال تفاصيل الحساب المحول منه أو رقم الإيصال!");
+
+            const txId = "DEP-" + Math.floor(100000 + Math.random() * 900000);
+            const { error } = await client.from('deposits').insert([{
+                telegram_id: tid,
+                tx_id: txId,
+                amount: amount,
+                method: method,
+                wallet_info: wallet,
+                email: email || "غير مسجل",
+                status: 'Pending'
+            }]);
+
+            if (!error) {
+                tg.showAlert(`✅ تم إرسال طلب الإيداع بنجاح!\nرقم المعاملة: ${txId}\nسيتم مراجعة التحويل وإضافة الرصيد قريباً.`);
+                goStore();
+            } else {
+                tg.showAlert("❌ خطأ أثناء إرسال الطلب: " + error.message);
+            }
+        }
+
+        function goHome() { window.location.href = `index.html?id=${tid}`; }
+        function goStore() { window.location.href = `store.html?id=${tid}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
+
+        init();
+    </script>
+</body>
+</html>
