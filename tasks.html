@@ -400,7 +400,7 @@
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
-        <div onclick="goTasks()" class="nav-item">📋<br>الربح من المهام</div>
+        <div onclick="goTasks()" class="nav-item active" style="color: var(--main-green);">📋<br>الربح من المهام</div>
         <div onclick="goGames()" class="nav-item" style="background: var(--main-green); width: 40px; height: 40px; border-radius: 50%; color: black; line-height: 40px; margin-top: -20px; font-size: 20px; text-align: center; cursor: pointer;">🎮</div>
         <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
         <div onclick="goProfile()" class="nav-item">👤<br>الملف الشخصي</div>
@@ -411,18 +411,18 @@
         tg.expand();
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2InMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc2OTUwODU2OCwiZXhwIjoyMDg1MDg0NTY4fQ.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const BOT_TOKEN = "8487785406:AAHLd5lakTZH1xv1Kbc5-BktFNEHNV8AYck";
         const BOT_ID = "8487785406";
         const client = supabase.createClient(S_URL, S_KEY);
 
         // ==========================================
-        // إعدادات الإعلانات والـ 5 دقائق
+        // روابط الإعلانات المباشرة (يمكنك استبدالها بروابط Monetag Direct Link الخاصة بك)
         // ==========================================
-        const AD_COOLDOWN_SECONDS = 300; // 5 دقائق كاملة (300 ثانية)
-        const AD_STAY_SECONDS = 15; // 15 ثانية تفاعل إجباري لمنع الزيارات الوهمية
-        const AD_LINK_WATCH = "https://otootooph.net/4/8916601"; 
-        const AD_LINK_ONCLICK = "https://otootooph.net/4/8916601"; 
+        const AD_COOLDOWN_SECONDS = 300; // 5 دقائق
+        const AD_STAY_SECONDS = 15; // 15 ثانية تفاعل إجباري
+        const AD_LINK_WATCH = "https://omg10.com/4/10959404"; // رابط مشاهدة الإعلان
+        const AD_LINK_ONCLICK = "https://omg10.com/4/10959404"; // رابط زيارة المواقع (Direct Link / OnClick)
 
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
@@ -447,23 +447,8 @@
             website: { title: "🌐 ترويج موقع إلكتروني أو رابط", icon: "🌐", lblLink: "رابط الموقع المطلوب زيارته:", phLink: "https://...", showAdminAlert: false }
         };
 
-        const PLATFORM_ICONS = {
-            telegram: "📢",
-            facebook: "📘",
-            youtube: "▶️",
-            tiktok: "🎵",
-            instagram: "📸",
-            website: "🌐"
-        };
-
-        const PLATFORM_TITLES = {
-            telegram: "📢 مهام تيليجرام",
-            facebook: "📘 مهام فيسبوك",
-            youtube: "▶️ مهام يوتيوب",
-            tiktok: "🎵 مهام تيك توك",
-            instagram: "📸 مهام انستجرام",
-            website: "🌐 مهام المواقع والمختلفة"
-        };
+        const PLATFORM_ICONS = { telegram: "📢", facebook: "📘", youtube: "▶️", tiktok: "🎵", instagram: "📸", website: "🌐" };
+        const PLATFORM_TITLES = { telegram: "📢 مهام تيليجرام", facebook: "📘 مهام فيسبوك", youtube: "▶️ مهام يوتيوب", tiktok: "🎵 مهام تيك توك", instagram: "📸 مهام انستجرام", website: "🌐 مهام المواقع والمختلفة" };
 
         function escapeHtml(str) {
             return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -496,9 +481,6 @@
             document.getElementById('user-task-earnings').innerText = (userData.task_earnings || 0).toLocaleString();
         }
 
-        // ==========================================
-        // منطق الـ 5 دقائق وفحص الإعلانات المزدوج
-        // ==========================================
         function checkAdsCooldown() {
             if (!userData) return;
 
@@ -664,9 +646,6 @@
             }
         }
 
-        // ==========================================
-        // وظائف سوق المهام
-        // ==========================================
         function calcSummary() {
             const cost = Math.max(1, parseInt(document.getElementById('t-cost').value) || 0);
             const target = Math.max(1, parseInt(document.getElementById('t-target').value) || 0);
@@ -787,9 +766,7 @@
                     btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
                     return tg.showAlert("⛔ هذا الرابط / القناة مضاف بالفعل!");
                 }
-            } catch (e) {
-                console.warn("Dup error:", e);
-            }
+            } catch (e) {}
 
             if (selectedPlatform === "telegram") {
                 btn.innerText = "⏳ فحص رتبة البوت...";
@@ -825,10 +802,9 @@
             if (userErr) {
                 btn.disabled = false;
                 btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
-                return tg.showAlert("❌ خطأ أثناء خصم النقاط: " + (userErr.message || ""));
+                return tg.showAlert("❌ خطأ أثناء خصم النقاط.");
             }
 
-            // إرسال المهمة بحالة Pending للأدمن (مع الـ user_id والـ status)
             const { error: taskErr } = await client.from('tasks').insert([{
                 creator_id: tid,
                 user_id: tid,
@@ -857,7 +833,7 @@
                 loadTasks();
             } else {
                 await client.from('users').update({ points: myCurrentPoints }).eq('telegram_id', tid);
-                tg.showAlert(`❌ تعذر حفظ المهمة: ${taskErr.message}\n(تم استرجاع رصيدك)`);
+                tg.showAlert(`❌ تعذر حفظ المهمة: ${taskErr.message}`);
             }
         }
 
@@ -872,7 +848,6 @@
 
                 if (error) throw error;
                 
-                // تصفية المهام المقبولة فقط للعامة (Status = Approved أو المهام القديمة التي ليس لها status)
                 if (tasks) {
                     tasks = tasks.filter(t => t.status === 'Approved' || !t.status);
                 }
@@ -926,15 +901,7 @@
                 document.getElementById('available-count').innerText = tasks.length;
                 container.innerHTML = "";
 
-                // تجميع المهام حسب المنصة
-                const groups = {
-                    telegram: [],
-                    facebook: [],
-                    youtube: [],
-                    tiktok: [],
-                    instagram: [],
-                    website: []
-                };
+                const groups = { telegram: [], facebook: [], youtube: [], tiktok: [], instagram: [], website: [] };
 
                 tasks.forEach(t => {
                     const p = t.platform || "telegram";
@@ -942,7 +909,6 @@
                     groups[p].push(t);
                 });
 
-                // عرض المهام مقسمة حسب كل منصة
                 for (const [pltKey, pltTasks] of Object.entries(groups)) {
                     if (pltTasks.length === 0) continue;
 
@@ -990,7 +956,6 @@
                             }
                         }
 
-                        // اللوجو المخصص أو اللوجو الجاهز الافتراضي للمنصة
                         const imgHtml = t.image_url 
                             ? `<img src="${t.image_url}" class="task-img" onerror="this.src=''; this.innerHTML='${pltIcon}';">`
                             : `<div class="task-img">${pltIcon}</div>`;
