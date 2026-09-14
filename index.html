@@ -49,18 +49,34 @@
         .btn-wheel-trigger { width: 100%; background: linear-gradient(135deg, #ffaa00, #e67e00); color: black; border: none; padding: 13px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .streak-timer-box { text-align: center; font-size: 11px; color: var(--text-gray); background: #0d0f13; padding: 9px; border-radius: 10px; border: 1px dashed #2d333d; display: none; }
 
-        .action-box { margin: 0 15px 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .action-box { margin: 0 15px 15px; display: flex; flex-direction: column; gap: 10px; }
         .btn-action { background: var(--card-bg); color: white; border: 1px solid #333; padding: 15px; border-radius: 15px; font-weight: bold; cursor: pointer; text-align: center; font-size: 13px; transition: 0.2s; }
         .btn-action:active { transform: scale(0.97); }
-        .btn-ads { background: linear-gradient(90deg, #00d26a, #009e4f); color: black; border: none; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.3); }
         
         .btn-offers { 
             background: rgba(255, 0, 85, 0.08); 
             color: #ff4d79; 
-            grid-column: span 2; 
             border: 1px dashed #ff0055; 
             opacity: 0.75;
+            width: 100%;
         }
+
+        /* زر المتجر الجديد */
+        .btn-store-full {
+            width: 100%;
+            background: linear-gradient(135deg, #00f2ff, #0077ff);
+            color: black;
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.25);
+            transition: 0.2s;
+        }
+        .btn-store-full:active { transform: scale(0.98); }
 
         .services-section { padding: 0 15px; margin-top: 25px; text-align: right; }
         .service-title { color: var(--main-green); font-size: 14px; margin: 0 0 15px 0; border-right: 3px solid var(--main-green); padding-right: 10px; }
@@ -178,6 +194,8 @@
 
     <div class="action-box">
         <div class="btn-action btn-offers" onclick="showSoon('عروض CPA')">🎯 عروض CPA (قريباً..)</div>
+        <!-- زر المتجر الجديد -->
+        <button class="btn-store-full" onclick="showSoon('المتجر')">🛍️ متجر MegaTask (شحن، متابعين، اشتراكات)</button>
     </div>
 
     <div class="services-section">
@@ -193,7 +211,7 @@
     </div>
 
     <nav class="navbar">
-        <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
+        <div onclick="goHome()" class="nav-item active">🏠<br>الرئيسية</div>
         <div onclick="goTasks()" class="nav-item">📋<br>الربح من المهام</div>
         <div onclick="goGames()" class="nav-item" style="background: var(--main-green); width: 40px; height: 40px; border-radius: 50%; color: black; line-height: 40px; margin-top: -20px; font-size: 20px; text-align: center; cursor: pointer;">🎮</div>
         <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
@@ -204,7 +222,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2InMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc2OTUwODU2OCwiZXhwIjoyMDg1MDg0NTY4fQ.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         let userId = "";
@@ -609,12 +627,12 @@
             tg.showAlert(`🎯 قسم ${sectionName} قيد التجهيز والتطوير حالياً وسيتوفر قريباً بأعلى مكافآت!`);
         }
 
-        // دوال التنقل
-        function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
-        function goGames() { window.location.href = `games.html?id=${tid}&t=${Date.now()}`; }
-        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
-        function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
+        // دوال التنقل المحدثة والمضبوطة بالكامل
+        function goHome() { window.location.href = `index.html?id=${userId}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
+        function goGames() { window.location.href = `games.html?id=${userId}`; }
+        function goInvite() { window.location.href = `invite.html?id=${userId}`; }
+        function goProfile() { window.location.href = `profile.html?id=${userId}`; }
         function goWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
         
         function goSocial() { window.location.href = `social.html?id=${userId}`; }
