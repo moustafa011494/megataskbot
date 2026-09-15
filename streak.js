@@ -22,6 +22,25 @@ const StreakManager = (function() {
         { label: "20 نقطة", value: 20, color: "#1e232d", text: "#ffffff" }
     ];
 
+    // قوائم الألقاب الدقيقة
+    const MALE_TITLES = [
+        "جميل", "أنيق", "رائع", "بديع", "اخاذ", "جذاب", "خلاب", "ساحر", "متعلم", "قويم",
+        "فهيم", "ذكي", "مجتهد", "مثابر", "سمح", "كريم", "كفو", "شهم", "رجل", "عنيد",
+        "مغامر", "شنب", "محزم", "ذيب (ذيبان)", "نشمي", "مطنوخ", "محارب (مقاتل)", "عظيم", "شيخ", "شامخ",
+        "قوي", "شجاع", "مقدام", "بتار", "كسار", "صلب", "بطل", "فارس", "مغوار", "قائد",
+        "زعيم", "صنديد", "أشوس", "ملك", "صقر", "نمر", "جلاد", "مرعب", "أسد", "غضنفر",
+        "فتاك", "سفاح", "جبار", "أسطورة"
+    ];
+
+    const FEMALE_TITLES = [
+        "جميلة", "أنيقة", "رائعة", "بديعة", "آخاذة", "جذابة", "خلابة", "ساحرة", "متعلمة", "قويمة",
+        "فهيمة", "ذكية", "مجتهدة", "مثابرة", "سمحة", "كريمة", "كفؤ", "شهيمة", "امرأة", "عنيدة",
+        "مغامرة", "محزمة", "ذيبانة", "نشمية", "مطنوخة", "محاربة (مقاتلة)", "عظيمة", "شيخة", "شامخة",
+        "قوية", "شجاعة", "مقدامة", "بتارة", "كسارة", "صلبة", "بطلة", "فارسة", "مغوارة", "قائدة",
+        "زعيمة", "صنديدة", "مهيبة", "ملكة", "صقرية", "لبؤة", "مرعبة", "ضارية", "فتاكة", "قاهرة",
+        "جبارة", "أسطورة"
+    ];
+
     let currentAngle = 0;
     let isSpinning = false;
 
@@ -67,20 +86,54 @@ const StreakManager = (function() {
         _timerInterval = setInterval(tick, 1000);
     }
 
-    function applyStreakVisualEffects(streakVal, cardElement) {
-        if (!cardElement) return;
-        cardElement.style.boxShadow = "0 4px 15px rgba(0, 0, 0, 0.25)";
-        cardElement.style.border = "1px solid #2d333f";
+    // حساب اللقب ولون النار وتأثيرات التقدم بناءً على الـ Streak وكل 25 يوم
+    function getStreakTierData(streak, gender) {
+        const list = (gender === 'female') ? FEMALE_TITLES : MALE_TITLES;
+        const index = Math.max(0, Math.min(streak - 1, list.length - 1));
+        const title = list[index];
 
-        if (streakVal >= 3 && streakVal < 7) {
-            cardElement.style.border = "1px solid #00d26a66";
-            cardElement.style.boxShadow = "0 0 18px rgba(0, 210, 106, 0.15)";
-        } else if (streakVal >= 7 && streakVal < 15) {
-            cardElement.style.border = "1px solid #ffaa0088";
-            cardElement.style.boxShadow = "0 0 22px rgba(255, 170, 0, 0.25)";
-        } else if (streakVal >= 15) {
-            cardElement.style.border = "2px solid #ff3b5c";
-            cardElement.style.boxShadow = "0 0 30px rgba(255, 59, 92, 0.35)";
+        // كل 25 يوم تتغير مرحلة اللون والنار بقوة أكبر
+        const tier = Math.floor((streak - 1) / 25); 
+        
+        let flameColor = "#ffaa00"; // التير الأول (الافتراضي - نار برتقالية)
+        let glowShadow = "0 0 15px rgba(255, 170, 0, 0.3)";
+        let fireScale = 1 + Math.min(streak * 0.015, 0.4); // تعلو النيران أكثر فأكثر مع كل يوم
+
+        if (tier === 1) {
+            flameColor = "#00f2ff"; // التير الثاني (أزرق سماوي ناصع)
+            glowShadow = "0 0 25px rgba(0, 242, 255, 0.5)";
+        } else if (tier === 2) {
+            flameColor = "#bc13fe"; // التير الثالث (بنفسجي فخم)
+            glowShadow = "0 0 35px rgba(188, 19, 254, 0.6)";
+        } else if (tier >= 3) {
+            flameColor = "#00d26a"; // التير الأسطوري (أخضر زمردي متوهج)
+            glowShadow = "0 0 45px rgba(0, 210, 106, 0.8)";
+        }
+
+        return { title, flameColor, glowShadow, fireScale };
+    }
+
+    function applyStreakVisualEffects(streakVal, gender, cardElement) {
+        if (!cardElement) return;
+        const tierData = getStreakTierData(streakVal, gender);
+
+        cardElement.style.border = `2px solid ${tierData.flameColor}`;
+        cardElement.style.boxShadow = tierData.glowShadow;
+        cardElement.style.transition = "all 0.4s ease";
+
+        // تحديث أيقونة النيران أو النصوص لتظهر اللقب والتقدم المشتعل
+        const infoSpan = cardElement.querySelector('.streak-info span');
+        const iconBox = cardElement.querySelector('.streak-icon');
+
+        if (iconBox) {
+            iconBox.style.transform = `scale(${tierData.fireScale})`;
+            iconBox.style.color = tierData.flameColor;
+            iconBox.style.borderColor = tierData.flameColor;
+            iconBox.style.boxShadow = `0 0 12px ${tierData.flameColor}88`;
+        }
+
+        if (infoSpan) {
+            infoSpan.innerHTML = `🔥 اللقب: <b style="color: ${tierData.flameColor};">${tierData.title}</b> (مستوى ${Math.floor((streakVal-1)/25)+1})`;
         }
     }
 
@@ -92,13 +145,14 @@ const StreakManager = (function() {
         const claimedToday = lastClaim && isSameDay(lastClaim, now);
         const spunToday = lastSpin && isSameDay(lastSpin, now);
         const currentStreak = _userData?.streak || 0;
+        const userGender = _userData?.gender || 'male';
 
         if (domElements.streakCounter) {
             domElements.streakCounter.innerText = `${currentStreak} يوم`;
         }
 
         const cardBox = document.querySelector('.streak-fullwidth-card');
-        applyStreakVisualEffects(currentStreak, cardBox);
+        applyStreakVisualEffects(currentStreak, userGender, cardBox);
 
         if (claimedToday) {
             if (domElements.claimBtn) domElements.claimBtn.style.display = 'none';
@@ -127,7 +181,38 @@ const StreakManager = (function() {
         }
     }
 
-    // جلب أو إنشاء المستخدم تلقائياً في السيرفر لمنع أي خطأ
+    // نافذة اختيار النوع (ذكر أم أنثى) لأول مرة
+    function promptGenderSelection() {
+        return new Promise((resolve) => {
+            const existingModal = document.getElementById('gender-select-modal');
+            if (existingModal) existingModal.remove();
+
+            const modalHtml = `
+                <div id="gender-select-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:999999; display:flex; align-items:center; justify-content:center; padding:20px;">
+                    <div style="background:#161920; border:1px solid #2d333d; border-radius:20px; padding:25px; width:100%; max-width:320px; text-align:center;">
+                        <h3 style="color:#00d26a; margin-top:0; margin-bottom:10px;">🎯 حدد نوعك لتخصيص الألقاب</h3>
+                        <p style="font-size:13px; color:#9ca3af; margin-bottom:20px;">اختر التصنيف المناسب لكي يتم حساب ألقاب الستريك وتطورها بدقة:</p>
+                        <div style="display:flex; gap:12px; margin-bottom:10px;">
+                            <button id="btn-gender-male" style="flex:1; background:#1e232d; border:1px solid #333; color:white; padding:14px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:14px;">🧔 ذكر</button>
+                            <button id="btn-gender-female" style="flex:1; background:#1e232d; border:1px solid #333; color:white; padding:14px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:14px;">👩 أنثى</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            document.getElementById('btn-gender-male').onclick = () => {
+                document.getElementById('gender-select-modal').remove();
+                resolve('male');
+            };
+            document.getElementById('btn-gender-female').onclick = () => {
+                document.getElementById('gender-select-modal').remove();
+                resolve('female');
+            };
+        });
+    }
+
+    // جلب أو إنشاء المستخدم تلقائياً في السيرفر مع التحقق من الجنس
     async function getOrCreateUser() {
         if (!_tid || _tid === "test_user") {
             const fallbackId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "123456789");
@@ -141,17 +226,28 @@ const StreakManager = (function() {
             .maybeSingle();
 
         if (!userCurrent) {
-            // إنشاء الحساب تلقائياً لو مش موجود
+            const genderChoice = await promptGenderSelection();
             const { data: newUser, error: insErr } = await _client
                 .from('users')
-                .insert([{ telegram_id: _tid, points: 0, streak: 1 }])
+                .insert([{ telegram_id: _tid, points: 0, streak: 1, gender: genderChoice }])
                 .select()
                 .single();
 
             if (!insErr && newUser) {
                 userCurrent = newUser;
             }
+        } else if (!userCurrent.gender) {
+            // لو الحساب موجود بس ملوش جنس مسجل
+            const genderChoice = await promptGenderSelection();
+            const { data: updatedG } = await _client
+                .from('users')
+                .update({ gender: genderChoice })
+                .eq('telegram_id', _tid)
+                .select()
+                .single();
+            if (updatedG) userCurrent = updatedG;
         }
+
         return userCurrent;
     }
 
@@ -196,12 +292,18 @@ const StreakManager = (function() {
                     return;
                 }
                 if (isYesterday(last, now)) {
+                    // استمرارية صحيحة: زيادة يوم
                     newStreak = (userCurrent.streak || 0) + 1;
+                } else {
+                    // فات يوم أو أكثر: إعادة الستريك من البداية
+                    newStreak = 1;
                 }
             }
 
             const updatedPoints = (userCurrent.points || 0) + 5;
             const nowIso = now.toISOString();
+            const userGender = userCurrent.gender || 'male';
+            const tierInfo = getStreakTierData(newStreak, userGender);
 
             const { data: saved, error: updateErr } = await _client
                 .from('users')
@@ -218,7 +320,7 @@ const StreakManager = (function() {
                 _userData = saved;
                 if (typeof _onUpdate === 'function') _onUpdate(saved);
                 renderUI(domElements);
-                window.Telegram?.WebApp?.showAlert(`🎉 مبروك! استلمت +5 نقاط.\n🔥 الستريك: ${newStreak} أيام متتالية!`);
+                window.Telegram?.WebApp?.showAlert(`🎉 مبروك! استلمت +5 نقاط.\n🔥 الستريك: ${newStreak} أيام متتالية!\n⭐ لقبك الحالي: ${tierInfo.title}`);
             } else {
                 window.Telegram?.WebApp?.showAlert("❌ خطأ أثناء تحديث النقاط: " + (updateErr?.message || ""));
             }
