@@ -86,27 +86,24 @@ const StreakManager = (function() {
         _timerInterval = setInterval(tick, 1000);
     }
 
-    // حساب اللقب ولون النار وتأثيرات التقدم بناءً على الـ Streak وكل 25 يوم
     function getStreakTierData(streak, gender) {
         const list = (gender === 'female') ? FEMALE_TITLES : MALE_TITLES;
         const index = Math.max(0, Math.min(streak - 1, list.length - 1));
         const title = list[index];
 
-        // كل 25 يوم تتغير مرحلة اللون والنار بقوة أكبر
-        const tier = Math.floor((streak - 1) / 25); 
-        
-        let flameColor = "#ffaa00"; // التير الأول (الافتراضي - نار برتقالية)
+        const tier = Math.floor((streak - 1) / 25);
+        let flameColor = "#ffaa00"; 
         let glowShadow = "0 0 15px rgba(255, 170, 0, 0.3)";
-        let fireScale = 1 + Math.min(streak * 0.015, 0.4); // تعلو النيران أكثر فأكثر مع كل يوم
+        let fireScale = 1 + Math.min(streak * 0.015, 0.4); 
 
         if (tier === 1) {
-            flameColor = "#00f2ff"; // التير الثاني (أزرق سماوي ناصع)
+            flameColor = "#00f2ff"; 
             glowShadow = "0 0 25px rgba(0, 242, 255, 0.5)";
         } else if (tier === 2) {
-            flameColor = "#bc13fe"; // التير الثالث (بنفسجي فخم)
+            flameColor = "#bc13fe"; 
             glowShadow = "0 0 35px rgba(188, 19, 254, 0.6)";
         } else if (tier >= 3) {
-            flameColor = "#00d26a"; // التير الأسطوري (أخضر زمردي متوهج)
+            flameColor = "#00d26a"; 
             glowShadow = "0 0 45px rgba(0, 210, 106, 0.8)";
         }
 
@@ -121,7 +118,6 @@ const StreakManager = (function() {
         cardElement.style.boxShadow = tierData.glowShadow;
         cardElement.style.transition = "all 0.4s ease";
 
-        // تحديث أيقونة النيران أو النصوص لتظهر اللقب والتقدم المشتعل
         const infoSpan = cardElement.querySelector('.streak-info span');
         const iconBox = cardElement.querySelector('.streak-icon');
 
@@ -181,14 +177,13 @@ const StreakManager = (function() {
         }
     }
 
-    // نافذة اختيار النوع (ذكر أم أنثى) لأول مرة
     function promptGenderSelection() {
         return new Promise((resolve) => {
             const existingModal = document.getElementById('gender-select-modal');
             if (existingModal) existingModal.remove();
 
             const modalHtml = `
-                <div id="gender-select-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:999999; display:flex; align-items:center; justify-content:center; padding:20px;">
+                <div id="gender-select-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.88); z-index:999999; display:flex; align-items:center; justify-content:center; padding:20px;">
                     <div style="background:#161920; border:1px solid #2d333d; border-radius:20px; padding:25px; width:100%; max-width:320px; text-align:center;">
                         <h3 style="color:#00d26a; margin-top:0; margin-bottom:10px;">🎯 حدد نوعك لتخصيص الألقاب</h3>
                         <p style="font-size:13px; color:#9ca3af; margin-bottom:20px;">اختر التصنيف المناسب لكي يتم حساب ألقاب الستريك وتطورها بدقة:</p>
@@ -212,7 +207,7 @@ const StreakManager = (function() {
         });
     }
 
-    // جلب أو إنشاء المستخدم تلقائياً في السيرفر مع التحقق من الجنس
+    // فحص وإنشاء المستخدم فوراً عند بدء التشغيل مع طلب النوع لو غير موجود
     async function getOrCreateUser() {
         if (!_tid || _tid === "test_user") {
             const fallbackId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "123456789");
@@ -237,7 +232,6 @@ const StreakManager = (function() {
                 userCurrent = newUser;
             }
         } else if (!userCurrent.gender) {
-            // لو الحساب موجود بس ملوش جنس مسجل
             const genderChoice = await promptGenderSelection();
             const { data: updatedG } = await _client
                 .from('users')
@@ -251,7 +245,6 @@ const StreakManager = (function() {
         return userCurrent;
     }
 
-    // تشغيل إعلان Monetag
     function triggerAdFlow(actionType, domElements) {
         _pendingAction = actionType;
 
@@ -292,11 +285,9 @@ const StreakManager = (function() {
                     return;
                 }
                 if (isYesterday(last, now)) {
-                    // استمرارية صحيحة: زيادة يوم
                     newStreak = (userCurrent.streak || 0) + 1;
                 } else {
-                    // فات يوم أو أكثر: إعادة الستريك من البداية
-                    newStreak = 1;
+                    newStreak = 1; // ضاع اليوم، يبدأ من جديد
                 }
             }
 
@@ -330,7 +321,6 @@ const StreakManager = (function() {
         }
     }
 
-    // عجلة الحظ
     function drawWheel() {
         const canvas = document.getElementById('wheel-canvas');
         if (!canvas) return;
@@ -464,11 +454,17 @@ const StreakManager = (function() {
     }
 
     return {
-        init: function(client, tid, initialUser, domElements, onUpdateCallback) {
+        init: async function(client, tid, initialUser, domElements, onUpdateCallback) {
             _client = client;
             _tid = tid;
             _userData = initialUser;
             _onUpdate = onUpdateCallback;
+
+            // التحقق من المستخدم وإظهار اختيار النوع فوراً عند الفتح لو غير مسجل
+            _userData = await getOrCreateUser();
+            if (_userData && typeof _onUpdate === 'function') {
+                _onUpdate(_userData);
+            }
 
             if (domElements.claimBtn) {
                 domElements.claimBtn.onclick = () => triggerAdFlow('streak', domElements);
