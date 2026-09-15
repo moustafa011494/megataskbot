@@ -1,10 +1,111 @@
 :root {
-    --neon-purple: #bc13fe;
-    --neon-blue: #00f2ff;
-    --bg-dark: #0d0d0d;
+    --bg-primary: #0f131a;
+    --bg-surface: #171d28;
+    --bg-surface-hover: #1f2736;
+    --border-color: #262f42;
+    --text-main: #f3f4f6;
+    --text-muted: #9ca3af;
+    --accent: #10b981; /* أخضر زمردي هادي وراقي */
+    --accent-hover: #059669;
+    --accent-glow: rgba(16, 185, 129, 0.12);
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-body { background: var(--bg-dark); color: white; font-family: sans-serif; padding: 20px; direction: rtl; }
-.balance-card { background: linear-gradient(135deg, #1a1a1a, #2c004d); padding: 20px; border-radius: 20px; border: 1px solid var(--neon-purple); text-align: center; margin-bottom: 20px; }
-.btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.menu-item { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 1px solid #333; text-align: center; text-decoration: none; color: white; }
-.back-btn { background: none; border: 1px solid #555; color: #ccc; padding: 5px 15px; border-radius: 8px; cursor: pointer; }
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+    background-color: var(--bg-primary);
+    color: var(--text-main);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 16px;
+    padding-bottom: 110px;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* الكروت والبطاقات بتصميم مطفي وراقي */
+.card, .streak-fullwidth-card, .method-card, .product-card, .task-card, .ad-box, .balance-card, .stat-card {
+    background-color: var(--bg-surface) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+    transition: var(--transition);
+}
+
+/* الأزرار الأساسية وتفاعل اللمس */
+button, .btn-action, .btn-streak-claim, .btn-wheel-trigger, .btn-store-full, .btn-submit-method, .btn-withdraw, .btn-create-task, .deposit-btn, .main-btn, .method-btn {
+    background-color: var(--accent) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 600 !important;
+    transition: var(--transition) !important;
+    cursor: pointer;
+    font-family: inherit;
+}
+button:active, .btn-action:active {
+    transform: scale(0.97);
+    opacity: 0.9;
+}
+
+/* الحقول والنماذج */
+input, textarea, select {
+    background-color: #0b0e14 !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-main) !important;
+    border-radius: var(--radius-sm) !important;
+    padding: 12px 14px !important;
+    outline: none !important;
+    transition: var(--transition);
+}
+input:focus, textarea:focus, select:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-glow) !important;
+}
+
+/* شريط التنقل السفلي الثابت والهادي */
+.navbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(15, 19, 26, 0.95) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 0;
+    border-top: 1px solid var(--border-color) !important;
+    z-index: 1000;
+}
+.nav-item {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: var(--transition);
+}
+.nav-item.active, .nav-item:hover {
+    color: var(--accent) !important;
+}
+
+/* النوافذ المنبثقة (Modals) */
+.modal-overlay, .admin-modal {
+    background: rgba(15, 19, 26, 0.85) !important;
+    backdrop-filter: blur(8px);
+}
+.modal-content, .modal-body, .modal-box, .admin-modal-content {
+    background-color: var(--bg-surface) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-lg) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+}
