@@ -161,7 +161,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2InMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc2OTUwODU2OCwiZXhwIjoyMDg1MDg0NTY4fQ.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
@@ -263,7 +263,6 @@
                 return tg.showAlert("❌ يرجى ملء جميع الحانات المطلوبة بشكل صحيح!");
             }
 
-            // فحص منع تكرار نفس الرابط للمنتج
             const { data: existing } = await client.from('store_products').select('id').eq('link', link).eq('status', 'Approved').limit(1);
             if (existing && existing.length > 0) {
                 return tg.showAlert("⛔ عذراً، هذا الرابط مسجل ومضاف مسبقاً في المتجر!");
@@ -323,6 +322,15 @@
                 }]);
                 if (err2) throw err2;
 
+                // تسجيل العملية في الهيستوري (Transactions History) لتظهر في صفحة البروفايل
+                await client.from('transactions').insert([{
+                    telegram_id: String(tid),
+                    type: 'store',
+                    title: `شراء: ${selectedProductForBuy.title}`,
+                    amount: `-${selectedProductForBuy.price.toLocaleString()} نقطة`,
+                    status: 'قيد التنفيذ'
+                }]);
+
                 // إرسال إشعار لشات البوت للمستخدم بالتفاصيل
                 const orderMsg = 
                     `🛒 *تم استلام طلب شرائك بنجاح!* ✅\n` +
@@ -341,7 +349,7 @@
                 userPoints = newPoints;
                 document.getElementById('user-points').innerText = userPoints.toLocaleString() + " نقطة";
                 closeModal('buy-modal');
-                tg.showAlert("✅ تم تنفيذ عملية الشراء بنجاح! وتفاصيل الطلب وصلت لشات البوت الخاص بك.");
+                tg.showAlert("✅ تم تنفيذ عملية الشراء بنجاح! وتفاصيل الطلب وصلت لشات البوت الخاص بك وتم تسجيلها في سجلك.");
             } catch (e) {
                 tg.showAlert("❌ حدث خطأ أثناء إتمام الشراء: " + e.message);
             }
