@@ -511,7 +511,7 @@
             const btn = document.getElementById(`btn-ad-${type}`);
             const badge = document.getElementById(`timer-ad-${type}`);
             btn.disabled = false;
-            btn.innerText = type === 'watch' ? "📺 مشاهدة الإعلان الآن (+20 نقطة)" : "🌐 تصفح وزيارة الموقع المعلن (+30 نقطة)";
+            btn.innerText = type === 'watch' ? "📺 مشاهدة الإعلان الآن (+2 نقطة)" : "🌐 تصفح وزيارة الموقع المعلن (+3 نقطة)";
             badge.style.display = 'none';
         }
 
@@ -586,7 +586,7 @@
                     counter.innerText = "✅";
                     claimBtn.disabled = false;
                     claimBtn.style.opacity = '1';
-                    const rewardAmt = (type === 'watch') ? 20 : 30;
+                    const rewardAmt = (type === 'watch') ? 2 : 3;
                     claimBtn.innerText = `🎁 استلام +${rewardAmt} نقطة الآن`;
                 }
             }, 1000);
@@ -598,7 +598,7 @@
             claimBtn.innerText = "⏳ جاري التأكيد وإضافة النقاط...";
 
             const isWatch = (currentAdType === 'watch');
-            const rewardPoints = isWatch ? 20 : 30;
+            const rewardPoints = isWatch ? 2 : 3;
             const dbField = isWatch ? 'last_ad_watched_at' : 'last_onclick_watched_at';
 
             try {
