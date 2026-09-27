@@ -8,13 +8,30 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: sans-serif; margin: 0; padding: 20px; padding-bottom: 100px; }
-        .profile-header { text-align: center; margin: 30px 0; }
+        body { background-color: var(--dark-bg); color: white; font-family: sans-serif; margin: 0; padding: 20px; padding-bottom: 110px; }
+        .profile-header { text-align: center; margin: 25px 0; }
         .avatar { width: 80px; height: 80px; background: var(--main-green); border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: black; font-size: 30px; font-weight: bold; }
         .menu-list { background: var(--card-bg); border-radius: 15px; border: 1px solid #2d333d; margin-bottom: 20px; }
         .menu-item { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid #2d333d; }
         .menu-item:last-child { border-bottom: none; }
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: #1a1d23; display: flex; justify-content: space-around; padding: 10px 0; border-top: 1px solid #2d333d; }
+        
+        /* تنسيقات الهيستوري والسجلات */
+        .history-section-title { font-size: 15px; font-weight: bold; color: var(--main-green); margin: 20px 0 10px; display: flex; align-items: center; gap: 6px; }
+        .history-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+        .history-tab { background: var(--card-bg); border: 1px solid #2d333d; color: var(--text-gray); padding: 7px 14px; border-radius: 10px; font-size: 11px; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .history-tab.active { background: var(--main-green); color: black; font-weight: bold; border-color: var(--main-green); }
+        
+        .history-container { display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto; }
+        .history-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 12px; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+        .history-info b { display: block; color: white; font-size: 13px; margin-bottom: 3px; }
+        .history-info span { color: var(--text-gray); font-size: 10px; }
+        .history-amount { font-weight: bold; font-size: 13px; }
+        .history-amount.positive { color: var(--main-green); }
+        .history-amount.negative { color: #ff3b30; }
+
+        .status-box { text-align: center; padding: 25px; color: var(--text-gray); font-size: 12px; background: var(--card-bg); border-radius: 12px; border: 1px dashed #2d333d; }
+
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
     </style>
@@ -33,38 +50,131 @@
         <div class="menu-item"><span>🤝 العمولات</span><b id="r">0</b></div>
     </div>
 
+    <!-- قسم السجلات والهيستوري -->
+    <div class="history-section-title">📜 سجل العمليات والهيستوري</div>
+    
+    <div class="history-tabs">
+        <div class="history-tab active" onclick="filterHistory('all', this)">الكل</div>
+        <div class="history-tab" onclick="filterHistory('withdraw', this)">السحب والإيداع</div>
+        <div class="history-tab" onclick="filterHistory('store', this)">المتجر</div>
+        <div class="history-tab" onclick="filterHistory('points', this)">النقاط</div>
+    </div>
+
+    <div id="history-container" class="history-container">
+        <div class="status-box">⏳ جاري جلب السجلات...</div>
+    </div>
+
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
         <div onclick="goTasks()" class="nav-item">📋<br>الربح من المهام</div>
         <div onclick="goGames()" class="nav-item" style="background: var(--main-green); width: 40px; height: 40px; border-radius: 50%; color: black; line-height: 40px; margin-top: -20px; font-size: 20px; text-align: center; cursor: pointer;">🎮</div>
         <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
-        <div onclick="goProfile()" class="nav-item">👤<br>الملف الشخصي</div>
+        <div onclick="goProfile()" class="nav-item active">👤<br>الملف الشخصي</div>
     </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
+        tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2InMiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc2OTUwODU2OCwiZXhwIjoyMDg1MDg0NTY4fQ.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const tid = new URLSearchParams(window.location.search).get('id') || tg.initDataUnsafe.user?.id;
+        let allTransactions = [];
 
         async function load() {
+            if (!tid) return;
+
+            // جلب بيانات المستخدم الأساسية
             let { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).single();
             if(u) {
                 document.getElementById('name').innerText = u.name || "User";
                 document.getElementById('id-display').innerText = "ID: " + tid;
                 document.getElementById('avatar').innerText = (u.name || "U")[0].toUpperCase();
-                document.getElementById('p').innerText = u.points || 0;
+                document.getElementById('p').innerText = (u.points || 0).toLocaleString();
                 document.getElementById('t').innerText = u.total_tasks || 0;
                 document.getElementById('r').innerText = u.total_ref_commission || 0;
             }
+
+            // جلب الهيستوري والعمليات من قاعدة البيانات
+            await loadHistoryData();
         }
+
+        async function loadHistoryData() {
+            const container = document.getElementById('history-container');
+            try {
+                let { data: txs, error } = await client
+                    .from('transactions')
+                    .select('*')
+                    .eq('telegram_id', String(tid))
+                    .order('id', { ascending: false });
+
+                if (error) throw error;
+
+                allTransactions = txs || [];
+                renderHistory(allTransactions);
+
+            } catch (e) {
+                console.error("History load error:", e);
+                container.innerHTML = '<div class="status-box">⚠️ لا توجد سجلات مسجلة حتى الآن.</div>';
+            }
+        }
+
+        function filterHistory(type, tabElement) {
+            document.querySelectorAll('.history-tab').forEach(t => t.classList.remove('active'));
+            tabElement.classList.add('active');
+
+            if (type === 'all') {
+                renderHistory(allTransactions);
+            } else if (type === 'withdraw') {
+                const filtered = allTransactions.filter(t => t.type === 'withdraw' || t.type === 'deposit');
+                renderHistory(filtered);
+            } else if (type === 'store') {
+                const filtered = allTransactions.filter(t => t.type === 'store');
+                renderHistory(filtered);
+            } else if (type === 'points') {
+                const filtered = allTransactions.filter(t => t.type === 'points');
+                renderHistory(filtered);
+            }
+        }
+
+        function renderHistory(list) {
+            const container = document.getElementById('history-container');
+            if (!list || list.length === 0) {
+                container.innerHTML = '<div class="status-box">📭 لا توجد عمليات في هذا القسم حالياً.</div>';
+                return;
+            }
+
+            container.innerHTML = "";
+            list.forEach(tx => {
+                const dateStr = new Date(tx.created_at).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const isPositive = String(tx.amount).startsWith('+') || (typeof tx.amount === 'number' && tx.amount > 0);
+                const amountClass = isPositive ? 'positive' : 'negative';
+
+                container.innerHTML += `
+                    <div class="history-card">
+                        <div class="history-info">
+                            <b>${escapeHtml(tx.title)}</b>
+                            <span>🕒 ${dateStr} • الحالة: ${escapeHtml(tx.status || 'مكتمل')}</span>
+                        </div>
+                        <div class="history-amount ${amountClass}">
+                            ${escapeHtml(tx.amount)}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
         function goGames() { window.location.href = `games.html?id=${tid}&t=${Date.now()}`; }
         function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
+        
         load();
     </script>
 </body>
