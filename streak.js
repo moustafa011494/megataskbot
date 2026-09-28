@@ -207,7 +207,6 @@ const StreakManager = (function() {
         });
     }
 
-    // فحص وإنشاء المستخدم فوراً عند بدء التشغيل مع طلب النوع لو غير موجود
     async function getOrCreateUser() {
         if (!_tid || _tid === "test_user") {
             const fallbackId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "123456789");
@@ -287,7 +286,7 @@ const StreakManager = (function() {
                 if (isYesterday(last, now)) {
                     newStreak = (userCurrent.streak || 0) + 1;
                 } else {
-                    newStreak = 1; // ضاع اليوم، يبدأ من جديد
+                    newStreak = 1; 
                 }
             }
 
@@ -310,6 +309,16 @@ const StreakManager = (function() {
             if (!updateErr && saved) {
                 _userData = saved;
                 if (typeof _onUpdate === 'function') _onUpdate(saved);
+                
+                // تسجيل مكافأة الستريك في الهيستوري
+                await _client.from('transactions').insert([{
+                    telegram_id: String(_tid),
+                    type: 'points',
+                    title: `مكافأة الستريك اليومي (اليوم ${newStreak})`,
+                    amount: '+5 نقطة',
+                    status: 'مكتمل'
+                }]);
+
                 renderUI(domElements);
                 window.Telegram?.WebApp?.showAlert(`🎉 مبروك! استلمت +5 نقاط.\n🔥 الستريك: ${newStreak} أيام متتالية!\n⭐ لقبك الحالي: ${tierInfo.title}`);
             } else {
@@ -436,6 +445,18 @@ const StreakManager = (function() {
             if (!updateErr && updated) {
                 _userData = updated;
                 if (typeof _onUpdate === 'function') _onUpdate(updated);
+
+                // تسجيل جائزة العجلة في الهيستوري إذا فاز بنقاط
+                if (prize.value > 0) {
+                    await _client.from('transactions').insert([{
+                        telegram_id: String(_tid),
+                        type: 'points',
+                        title: 'جائزة عجلة الحظ اليومية',
+                        amount: `+${prize.value} نقطة`,
+                        status: 'مكتمل'
+                    }]);
+                }
+
                 renderUI(domElements);
             } else {
                 window.Telegram?.WebApp?.showAlert("❌ خطأ أثناء حفظ جائزة العجلة: " + (updateErr?.message || ""));
@@ -460,7 +481,6 @@ const StreakManager = (function() {
             _userData = initialUser;
             _onUpdate = onUpdateCallback;
 
-            // التحقق من المستخدم وإظهار اختيار النوع فوراً عند الفتح لو غير مسجل
             _userData = await getOrCreateUser();
             if (_userData && typeof _onUpdate === 'function') {
                 _onUpdate(_userData);
