@@ -320,6 +320,33 @@
     let editMethodNewImage = "";
     let currentZoom = 1;
 
+    // ⭐ دالة الإرسال الجماعي الشاملة (تصل في الويب أب وفي شات البوت على تيليجرام)
+    async function broadcastToAllUsers(title, messageText) {
+        try {
+            const { data: allUsers, error } = await client.from('users').select('telegram_id');
+            if (error || !allUsers || allUsers.length === 0) return;
+
+            const notifications = allUsers.map(u => ({
+                user_id: String(u.telegram_id),
+                title: title,
+                message: messageText,
+                is_read: false
+            }));
+
+            const formattedBotMessage = `🔔 *${title}* \n\n${messageText}`;
+            const botMessages = allUsers.map(u => ({
+                telegram_id: String(u.telegram_id),
+                message: formattedBotMessage,
+                status: 'pending'
+            }));
+
+            await client.from('user_notifications').insert(notifications);
+            await client.from('bot_messages').insert(botMessages);
+        } catch (e) {
+            console.error("Broadcast exception:", e);
+        }
+    }
+
     function toggleCard(headerEl) {
         const body = headerEl.nextElementSibling;
         const arrow = headerEl.querySelector('.arrow-icon');
@@ -428,7 +455,11 @@
         }]);
 
         if (error) alert("خطأ أثناء النشر: " + error.message);
-        else { alert("تم نشر الميثود الرسمية بنجاح! 🚀"); location.reload(); }
+        else { 
+            await broadcastToAllUsers("🔓 ميثود رسمية جديدة!", `تم نشر ميثود جديدة: ${title} - تفقد قسم الميثودات الآن!`);
+            alert("تم نشر الميثود الرسمية بنجاح وإرسال الإشعارات! 🚀"); 
+            location.reload(); 
+        }
     }
 
     // --- المتجر الرسمي للأدمن ---
@@ -451,7 +482,11 @@
         }]);
 
         if (error) alert("خطأ: " + error.message);
-        else { alert("تم نشر المنتج في المتجر بنجاح! 🚀"); location.reload(); }
+        else { 
+            await broadcastToAllUsers("🛍️ منتج جديد في المتجر", `تم إضافة وتوفير منتج جديد: ${title} بسعر ${price.toLocaleString()} نقطة`);
+            alert("تم نشر المنتج في المتجر بنجاح وإرسال الإشعارات! 🚀"); 
+            location.reload(); 
+        }
     }
 
     async function loadStoreProductsList() {
@@ -537,7 +572,7 @@
         loadStoreProductsList();
     }
 
-    // --- طلبات الإيداع (تم إصلاح إضافة النقاط وسجل الهيستوري) ---
+    // --- طلبات الإيداع ---
     async function loadDepositsRequests() {
         const div = document.getElementById('deposits-requests-list');
         if (!div) return;
@@ -570,7 +605,7 @@
             const { error: err1 } = await client.from('deposits').update({ status: 'Completed' }).eq('id', id);
             if (err1) { alert("خطأ: " + err1.message); return; }
 
-            const addPts = parseFloat(amount) > 1000 ? parseFloat(amount) : parseFloat(amount) * 1000; // حساب دقيق للنقاط
+            const addPts = parseFloat(amount) > 1000 ? parseFloat(amount) : parseFloat(amount) * 1000;
 
             const { data: userData } = await client.from('users').select('points, total_earned').eq('telegram_id', telegramId).maybeSingle();
             if (userData) {
@@ -579,7 +614,6 @@
                 await client.from('users').update({ points: newPoints, total_earned: newTotalEarned }).eq('telegram_id', telegramId);
             }
 
-            // ⭐ تسجيل الإيداع في جدول الهيستوري (transactions) بالنوع points ليظهر في البروفايل
             await client.from('transactions').insert([{
                 telegram_id: String(telegramId),
                 type: 'points',
@@ -732,7 +766,11 @@
             logo: withdrawLogoBase64 || null 
         }]);
         if (error) alert("خطأ: " + error.message);
-        else { alert("تمت إضافة وسيلة السحب بنجاح! 💳"); location.reload(); }
+        else { 
+            await broadcastToAllUsers("💳 وسيلة سحب جديدة", `تم إضافة وسيلة سحب جديدة: ${name} (${description || ''})`);
+            alert("تمت إضافة وسيلة السحب بنجاح وإرسال الإشعارات! 💳"); 
+            location.reload(); 
+        }
     }
 
     async function deleteMethod(id) {
@@ -772,7 +810,11 @@
             logo: depositLogoBase64 || null 
         }]);
         if (error) alert("خطأ: " + error.message);
-        else { alert("تمت إضافة وسيلة الإيداع بنجاح! 💰"); location.reload(); }
+        else { 
+            await broadcastToAllUsers("💰 وسيلة إيداع جديدة", `تم إضافة وسيلة إيداع جديدة: ${name}`);
+            alert("تمت إضافة وسيلة الإيداع بنجاح وإرسال الإشعارات! 💰"); 
+            location.reload(); 
+        }
     }
 
     async function deleteDepositMethod(id) {
@@ -1000,7 +1042,6 @@
             const reason = prompt("أدخل سبب رفض المهمة (ليظهر للمستخدم في البوت):", "المخالفة لشروط وقواعد المنصة");
             if (reason === null) return;
 
-            // جلب تفاصيل المهمة لاسترداد نقاط التكلفة للمستخدم عند الرفض
             let { data: taskData } = await client.from('tasks').select('*').eq('id', id).single();
             if (taskData) {
                 const refundPoints = (taskData.cost_per_user || taskData.reward || 10) * (taskData.target_count || 10);
@@ -1092,7 +1133,11 @@
 
         const { error } = await client.from('tasks').insert([{ title, link, reward: parseInt(reward), status: 'Approved', target_count: 10 }]);
         if (error) alert("خطأ: " + error.message);
-        else { alert("تم نشر المهمة فوراً! 🚀"); location.reload(); }
+        else { 
+            await broadcastToAllUsers("📋 مهمة جديدة للربح!", `تم نشر مهمة جديدة: ${title} - اربح ${reward} نقطة فوراً!`);
+            alert("تم نشر المهمة فوراً وإرسال الإشعارات! 🚀"); 
+            location.reload(); 
+        }
     }
 
     async function deleteTask(id) {
@@ -1143,7 +1188,7 @@
         loadPendingStoreProducts();
         loadStoreOrders();
         loadTasks();
-        loadPendingTasks(); // تم تفعيل استدعاء مهام المستخدمين المعلقة هنا
+        loadPendingTasks();
         loadWithdrawals();
     };
 </script>
