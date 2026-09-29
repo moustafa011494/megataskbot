@@ -312,13 +312,15 @@ const StreakManager = (function() {
                 
                 // تسجيل مكافأة الستريك في جدول السجلات (الهيستوري)
                 const { error: txErr } = await _client.from('transactions').insert([{
-                    telegram_id: String(_tid),
-                    type: 'points',
-                    title: `مكافأة الستريك اليومي (اليوم ${newStreak})`,
-                    amount: '+5 نقطة',
-                    status: 'مكتمل'
-                }]);
-                if (txErr) console.error("Streak Tx Error:", txErr);
+    telegram_id: String(_tid),
+    type: 'points',
+    title: `مكافأة الستريك اليومي (اليوم ${newStreak})`,
+    amount: '+5 نقطة',
+    status: 'مكتمل'
+}]);
+if (txErr) {
+    window.Telegram?.WebApp?.showAlert("❌ خطأ الهيستوري: " + txErr.message);
+}
 
                 renderUI(domElements);
                 window.Telegram?.WebApp?.showAlert(`🎉 مبروك! استلمت +5 نقاط.\n🔥 الستريك: ${newStreak} أيام متتالية!\n⭐ لقبك الحالي: ${tierInfo.title}`);
