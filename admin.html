@@ -210,7 +210,15 @@
         </div>
     </div>
 
-    <!-- 12. مهام المستخدمين (قيد المراجعة) -->
+    <!-- 12. مراجعة إثباتات مهام الأدمن (جديد) -->
+    <div class="card pending-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--orange);">🔍 مراجعة إثباتات وتنفيذات مهام الأدمن <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div id="admin-task-submissions-list" class="list-container">جاري فحص إثباتات المهام...</div>
+        </div>
+    </div>
+
+    <!-- 13. مهام المستخدمين (قيد المراجعة) -->
     <div class="card pending-card">
         <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة والموافقة) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -218,7 +226,7 @@
         </div>
     </div>
 
-    <!-- 13. المهام النشطة الحالية (مع تعديل كامل وحذف) -->
+    <!-- 14. المهام النشطة الحالية (مع تعديل كامل وحذف) -->
     <div class="card">
         <h3 onclick="toggleCard(this)">📋 المهام النشطة الحالية (تعديل كامل أو حذف) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -226,7 +234,7 @@
         </div>
     </div>
 
-    <!-- 14. طلبات السحب -->
+    <!-- 15. طلبات السحب -->
     <div class="card withdraw-card">
         <h3 onclick="toggleCard(this)" style="color: var(--main-green);">💸 طلبات السحب (قيد الانتظار) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -329,7 +337,7 @@
     let editMethodNewImage = "";
     let currentZoom = 1;
 
-    // ⭐ دالة الإرسال الجماعي الشاملة (تصل في الويب أب وفي شات البوت على تيليجرام)
+    // ⭐ دالة الإرسال الجماعي الشاملة
     async function broadcastToAllUsers(title, messageText) {
         try {
             const { data: allUsers, error } = await client.from('users').select('telegram_id');
@@ -1008,7 +1016,150 @@
         document.getElementById('lightbox-modal').style.display = 'none';
     }
 
-    // --- 5. مهام المستخدمين المعلقة (Pending Tasks) ---
+    // --- 5. مراجعة إثباتات مهام الأدمن (جديد) ---
+    async function loadAdminTaskSubmissions() {
+        const div = document.getElementById('admin-task-submissions-list');
+        if (!div) return;
+        try {
+            let { data: subs, error } = await client
+                .from('task_submissions')
+                .select('*')
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+
+            if (!subs || subs.length === 0) {
+                div.innerHTML = "✅ لا توجد إثباتات مهام معلقة للمراجعة حالياً.";
+                return;
+            }
+
+            div.innerHTML = "";
+            for (let s of subs) {
+                let taskTitle = "مهمة إدارية";
+                try {
+                    let { data: tData } = await client.from('tasks').select('title, reward').eq('id', s.task_id).maybeSingle();
+                    if (tData) taskTitle = `${tData.title} (${tData.reward} نقطة)`;
+                } catch(e){}
+
+                const timeStr = new Date(s.created_at).toLocaleString('ar-EG');
+                div.innerHTML += `
+                    <div id="admin-sub-${s.id}" class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
+                        <div style="width:100%;">
+                            <b>📌 المهمة:</b> ${taskTitle}<br>
+                            <b>👤 المنفذ ID:</b> <span style="color:var(--neon-blue);">${s.user_id}</span> | <b>الوقت:</b> ${timeStr}<br>
+                            <div style="margin: 10px 0; cursor: zoom-in;" onclick="openLightbox('${s.proof_image}')">
+                                <img src="${s.proof_image}" style="max-width:180px; max-height:180px; border-radius:8px; border:1px solid #444;" alt="Proof">
+                                <div style="font-size: 11px; color: var(--neon-blue); margin-top: 3px;">🔍 اضغط لتكبير لقطة الشاشة</div>
+                            </div>
+                        </div>
+                        <div class="input-group" style="width:100%; margin: 8px 0;">
+                            <input type="text" id="admin-feedback-${s.id}" class="input-field" placeholder="اكتب سبب الرفض (إجباري عند الرفض) أو كلمة شكر...">
+                        </div>
+                        <div class="actions-box">
+                            <button class="approve-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', true)">قبول وصرف النقاط ✅</button>
+                            <button class="reject-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', false)">رفض الإثبات ❌</button>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (e) {
+            console.error("Load admin submissions error:", e);
+            div.innerHTML = "❌ خطأ في تحميل الإثباتات.";
+        }
+    }
+
+    async function reviewAdminSubmission(subId, taskId, userId, isApproved) {
+        const feedbackVal = (document.getElementById(`admin-feedback-${subId}`)?.value || "").trim();
+
+        if (!isApproved && !feedbackVal) {
+            alert("⚠️ يجب كتابة سبب الرفض في خانة الملاحظات لكي يفهم المستخدم سبب الرفض!");
+            return;
+        }
+
+        if (!confirm(isApproved ? "تأكيد قبول الإثبات وصرف النقاط للمنفذ؟" : `تأكيد رفض الإثبات بالسبب: "${feedbackVal}"؟`)) return;
+
+        try {
+            let { data: taskData } = await client.from('tasks').select('*').eq('id', taskId).single();
+            if (!taskData) {
+                alert("❌ المهمة غير موجودة!");
+                return;
+            }
+
+            const reward = taskData.reward || 10;
+
+            if (isApproved) {
+                await client.from('task_submissions').update({
+                    status: 'approved',
+                    feedback: feedbackVal || null
+                }).eq('id', subId);
+
+                try {
+                    await client.from('task_completions').insert([{ 
+                        task_id: parseInt(taskId), 
+                        user_id: String(userId) 
+                    }]);
+                } catch (e) {}
+
+                let { data: execUser } = await client.from('users').select('*').eq('telegram_id', String(userId)).maybeSingle();
+                if (execUser) {
+                    const newPoints = (execUser.points || 0) + reward;
+                    const newTotalEarned = (execUser.total_earned || 0) + reward;
+                    const newTaskEarnings = (execUser.task_earnings || 0) + reward;
+                    const newTotalTasks = (execUser.total_tasks || 0) + 1;
+
+                    await client.from('users').update({
+                        points: newPoints,
+                        total_earned: newTotalEarned,
+                        task_earnings: newTaskEarnings,
+                        total_tasks: newTotalTasks
+                    }).eq('telegram_id', String(userId));
+
+                    await client.from('transactions').insert([{
+                        telegram_id: String(userId),
+                        type: 'points',
+                        title: 'مكافأة إتمام مهمة بنجاح',
+                        amount: `+${reward} نقطة`,
+                        status: 'مكتمل'
+                    }]);
+                }
+
+                const newCount = (taskData.completed_count || 0) + 1;
+                const isActive = newCount < taskData.target_count;
+                await client.from('tasks').update({ completed_count: newCount, is_active: isActive }).eq('id', taskId);
+
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(userId),
+                    message: `🎉 *مبروك! تم قبول إثبات المهمة وصرف النقاط* ✅\n\n📌 *المهمة:* ${taskData.title}\n🎁 *النقاط المضافة:* +${reward} نقطة${feedbackVal ? `\n💌 *ملاحظة الأدمن:* ${feedbackVal}` : ''}`,
+                    status: 'pending'
+                }]);
+
+                alert("✅ تم قبول الإثبات وصرف النقاط للمنفذ بنجاح!");
+
+            } else {
+                await client.from('task_submissions').update({
+                    status: 'rejected',
+                    feedback: feedbackVal
+                }).eq('id', subId);
+
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(userId),
+                    message: `❌ *عذراً، تم رفض إثبات المهمة الخاصة بك*\n\n📌 *المهمة:* ${taskData.title}\n💬 *السبب:* ${feedbackVal}\n\nيمكنك مراجعة التفاصيل وإعادة المحاولة.`,
+                    status: 'pending'
+                }]);
+
+                alert("تم رفض الإثبات وإرسال السبب للمستخدم.");
+            }
+
+            loadAdminTaskSubmissions();
+
+        } catch (err) {
+            console.error("Review submission error:", err);
+            alert("❌ حدث خطأ أثناء معالجة الإثبات.");
+        }
+    }
+
+    // --- 6. مهام المستخدمين المعلقة (Pending Tasks) ---
     async function loadPendingTasks() {
         const div = document.getElementById('pending-tasks-list');
         if (!div) return;
@@ -1078,7 +1229,7 @@
         loadTasks();
     }
 
-    // --- 6. المهام النشطة (تعديل كامل وحذف) ---
+    // --- 7. المهام النشطة (تعديل كامل وحذف) ---
     async function loadTasks() {
         const div = document.getElementById('tasks-list');
         let { data, error } = await client.from('tasks').select('*').eq('status', 'Approved').order('created_at', { ascending: false });
@@ -1168,7 +1319,7 @@
         loadTasks();
     }
 
-    // --- 7. طلبات السحب ---
+    // --- 8. طلبات السحب ---
     async function loadWithdrawals() {
         const div = document.getElementById('withdraw-list');
         let { data, error } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
@@ -1211,6 +1362,7 @@
         loadStoreOrders();
         loadTasks();
         loadPendingTasks();
+        loadAdminTaskSubmissions(); // تفعيل استدعاء مراجعة إثباتات مهام الأدمن
         loadWithdrawals();
     };
 </script>
