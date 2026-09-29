@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MegaTask - Memory Game</title>
+    
+    <!-- إعلانات Monetag (اختياري لو حابب تظهرها هنا كمان) -->
+    <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
+        html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 50px; width: 100%; max-width: 100vw; overflow-x: hidden; text-align: center; }
+        
+        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d333d; }
+        .back-btn { background: #252932; color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; text-decoration: none; }
+        
+        .game-title { margin: 20px 0 5px; color: var(--main-green); font-size: 20px; }
+        .game-desc { font-size: 12px; color: var(--text-gray); margin-bottom: 20px; }
+
+        .stats-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+        .stat-card { background: var(--card-bg); border: 1px solid #2d333d; padding: 10px 20px; border-radius: 14px; }
+        .stat-card b { display: block; color: #ffaa00; font-size: 16px; }
+        .stat-card span { font-size: 11px; color: var(--text-gray); }
+
+        /* شبكة الكروت للعبة الذاكرة */
+        .memory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 320px; margin: 0 auto 25px; padding: 0 15px; }
+        .memory-card { aspect-ratio: 1; background: #16191e; border: 2px solid #2d333d; border-radius: 16px; font-size: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; user-select: none; }
+        .memory-card.flipped { background: #1a222c; border-color: var(--main-green); transform: rotateY(180deg); }
+        .memory-card.matched { background: rgba(0, 210, 106, 0.1); border-color: var(--main-green); opacity: 0.7; cursor: default; }
+
+        .btn-action { background: var(--main-green); color: black; border: none; padding: 14px 30px; border-radius: 14px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); }
+        .btn-action:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
+        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">🧠 لعبة الذاكرة</span>
+        <div style="width: 60px;"></div>
+    </div>
+
+    <h2 class="game-title">اختبر قوة ذاكرتك!</h2>
+    <p class="game-desc">طابق كروت الأ emojis المتشابهة لاكتساب نقاط اللعبة.</p>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <b id="score-counter">0</b>
+            <span>نقاط الجلسة</span>
+        </div>
+        <div class="stat-card">
+            <b id="moves-counter">0</b>
+            <span>عدد المحاولات</span>
+        </div>
+    </div>
+
+    <div class="memory-grid" id="memory-grid">
+        <!-- يتم توليد الكروت ديناميكياً عبر الجافاسكريبت -->
+    </div>
+
+    <button id="restart-btn" class="btn-action" style="display: none;" onclick="startGame()">
+        🔄 لعب دورة جديدة
+    </button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const params = new URLSearchParams(window.location.search);
+        const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+
+        // ربط زر العودة لصفحة الألعاب الرئيسية مع الحفاظ على الـ ID
+        document.getElementById('back-link').href = `../games.html?id=${userId}`;
+
+        const emojis = ['🪙', '💎', '🚀', '🔥', '👑', '🎁'];
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let score = 0;
+        let isLocked = false;
+
+        function startGame() {
+            const grid = document.getElementById('memory-grid');
+            grid.innerHTML = '';
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            document.getElementById('moves-counter').innerText = moves;
+            document.getElementById('restart-btn').style.display = 'none';
+
+            // مضاعفة الرموز وتشكيل الكروت (6 أزواج = 12 كارت)
+            cards = [...emojis, ...emojis]
+                .sort(() => Math.random() - 0.5)
+                .map((emoji, index) => ({ id: index, emoji, isFlipped: false, isMatched: false }));
+
+            cards.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.classList.add('memory-card');
+                cardEl.dataset.id = card.id;
+                cardEl.innerText = '❓';
+                cardEl.onclick = () => flipCard(card.id, cardEl);
+                grid.appendChild(cardEl);
+            });
+        }
+
+        function flipCard(id, el) {
+            if (isLocked) return;
+            const clickedCard = cards.find(c => c.id === id);
+
+            if (clickedCard.isFlipped || clickedCard.isMatched) return;
+
+            clickedCard.isFlipped = true;
+            el.innerText = clickedCard.emoji;
+            el.classList.add('flipped');
+            flippedCards.push({ id, emoji: clickedCard.emoji, el });
+
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('moves-counter').innerText = moves;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            
+            if (card1.emoji === card2.emoji) {
+                cards.find(c => c.id === card1.id).isMatched = true;
+                cards.find(c => c.id === card2.id).isMatched = true;
+                
+                card1.el.classList.add('matched');
+                card2.el.classList.add('matched');
+                
+                matchedPairs++;
+                flippedCards = [];
+
+                if (matchedPairs === emojis.length) {
+                    score += 5; // منح 5 نقاط لعبة عند الفوز
+                    document.getElementById('score-counter').innerText = score;
+                    document.getElementById('restart-btn').style.display = 'inline-block';
+                    
+                    // حفظ النقاط في الـ LocalStorage عشان ترجع تضاف لنقاط اللعبة الرئيسية لو حابب
+                    let savedGamePoints = parseInt(localStorage.getItem(`clicker_game_${userId}_points`) || '0');
+                    localStorage.setItem(`clicker_game_${userId}_points`, savedGamePoints + 5);
+
+                    tg.showAlert("🎉 عاش يا بطل! أتممت اللعبة بنجاح وحصلت على +5 نقاط لعبة إضافية!");
+                }
+            } else {
+                isLocked = true;
+                setTimeout(() => {
+                    cards.find(c => c.id === card1.id).isFlipped = false;
+                    cards.find(c => c.id === card2.id).isFlipped = false;
+                    
+                    card1.el.innerText = '❓';
+                    card2.el.innerText = '❓';
+                    card1.el.classList.remove('flipped');
+                    card2.el.classList.remove('flipped');
+                    
+                    flippedCards = [];
+                    isLocked = false;
+                }, 900);
+            }
+        }
+
+        startGame();
+    </script>
+</body>
+</html>
