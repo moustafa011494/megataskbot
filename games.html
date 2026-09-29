@@ -24,15 +24,22 @@
         .stat-box b { display: block; font-size: 18px; color: #ffaa00; }
         .stat-box span { font-size: 11px; color: var(--text-gray); }
 
-        /* منطقة اللعبة الأولى */
+        /* حاوية الألعاب */
         .game-container { margin: 0 15px 20px; background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
         .game-title { font-size: 16px; font-weight: bold; color: white; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         
-        .clicker-target { width: 120px; height: 120px; background: linear-gradient(135deg, #00d26a, #009e4f); border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 36px; cursor: pointer; box-shadow: 0 5px 20px rgba(0, 210, 106, 0.4); transition: 0.1s; user-select: none; }
+        .clicker-target { width: 120px; height: 120px; background: linear-gradient(135deg, #00d26a, #009e4f); border-radius: 50%; margin: 15px auto; display: flex; align-items: center; justify-content: center; font-size: 36px; cursor: pointer; box-shadow: 0 5px 20px rgba(0, 210, 106, 0.4); transition: 0.1s; user-select: none; }
         .clicker-target:active { transform: scale(0.92); }
 
-        .btn-convert { background: linear-gradient(135deg, #ffaa00, #e67e00); color: black; border: none; width: 100%; padding: 14px; border-radius: 14px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.2); }
-        .btn-convert:active { transform: scale(0.98); }
+        .btn-action-game { background: linear-gradient(135deg, #ffaa00, #e67e00); color: black; border: none; width: 100%; padding: 14px; border-radius: 14px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.2); }
+        .btn-action-game:disabled { background: #333; color: #777; cursor: not-allowed; box-shadow: none; }
+
+        /* شبكة الألعاب الأخرى المستقبلية */
+        .other-games-section { padding: 0 15px; margin-top: 25px; text-align: right; }
+        .section-title { color: var(--main-green); font-size: 14px; margin: 0 0 15px 0; border-right: 3px solid var(--main-green); padding-right: 10px; }
+        .games-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .game-card-item { background: #16191e; border: 1px solid #2d333d; padding: 20px 10px; border-radius: 20px; text-align: center; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .game-card-item span { font-size: 28px; display: block; margin-bottom: 8px; }
 
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
@@ -43,13 +50,13 @@
 
     <div class="header">
         <h2>🎮 مركز ألعاب MegaTask</h2>
-        <p>العب واجمع نقاط اللعبة، ثم حولها لرصيد حقيقي عبر الإعلانات!</p>
+        <p>العب الألعاب المختلفة، اجمع نقاط اللعبة وحولها لرصيد حقيقي!</p>
     </div>
 
     <div class="game-stats-bar">
         <div class="stat-box">
             <b id="game-points-counter">0</b>
-            <span>نقاط اللعبة الحالية</span>
+            <span>نقاط اللعبة (متاحة للتحويل)</span>
         </div>
         <div class="stat-box">
             <b id="user-real-points">0</b>
@@ -57,19 +64,36 @@
         </div>
     </div>
 
-    <!-- اللعبة الأولى: لعبة النقرات السريعة (Tap Clicker) -->
+    <!-- اللعبة الأولى: لعبة النقرات السريعة (مفعلة بالكامل بالشروط المطلوبة) -->
     <div class="game-container">
         <div class="game-title">⚡ لعبة النقرات السريعة</div>
-        <p style="font-size: 12px; color: var(--text-gray); margin-bottom: 10px;">اضغط بسرعة على الدائرة لتجميع أكبر قدر من نقاط اللعبة!</p>
+        <p style="font-size: 12px; color: var(--text-gray); margin-bottom: 5px;">كل 10 ضغطات تمنحك نقطة لعبة (يتخللها إعلان + مؤقت 5 دقائق)</p>
+        <div style="font-size: 11px; color: #ffaa00; margin-bottom: 10px;">ضغطات اليوم: <span id="daily-clicks-count">0</span> / 100</div>
         
-        <div class="clicker-target" onclick="incrementGamePoints()">
+        <div class="clicker-target" id="clicker-btn" onclick="handleCardClick()">
             🪙
         </div>
-        <div style="font-size: 13px; color: #ffaa00; font-weight: bold;">نقاط هذه الجلسة: <span id="session-score">0</span></div>
+        
+        <div id="clicker-status-msg" style="font-size: 12px; color: var(--text-gray); margin-top: 8px; min-height: 20px;">
+            اضغط على الدائرة للبدء!
+        </div>
 
-        <button class="btn-convert" onclick="showAdAndConvertPoints()">
-            🎁 مشاهدة إعلان وتحويل نقاط اللعبة لرصيد حقيقي ↗
+        <button id="convert-btn" class="btn-action-game" onclick="showAdAndConvertPoints()">
+            🎁 تحويل نقاط اللعبة إلى رصيد حقيقي ↗
         </button>
+    </div>
+
+    <!-- قسم الألعاب الأخرى المختلفة (مستقبلية / فولدر games/) -->
+    <div class="other-games-section">
+        <h3 class="section-title">ألعاب أخرى قادمة قريباً 🕹️</h3>
+        <div class="games-grid">
+            <div class="game-card-item" onclick="showSoon('لعبة الذاكرة')">
+                <span>🧠</span>لعبة الذاكرة
+            </div>
+            <div class="game-card-item" onclick="showSoon('كويز المعلومات')">
+                <span>❓</span>كويز ذكاء
+            </div>
+        </div>
     </div>
 
     <nav class="navbar">
@@ -90,86 +114,195 @@
         const params = new URLSearchParams(window.location.search);
         const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
 
-        let sessionGamePoints = 0;
         let userData = null;
+        let clickerData = {
+            date: new Date().toDateString(),
+            dailyClicks: 0,
+            batchClicks: 0,
+            cooldownUntil: 0,
+            gamePoints: 0
+        };
+
+        let cooldownInterval = null;
 
         async function init() {
             if (!userId) return;
+            
+            // استرجاع بيانات اللعبة من الـ LocalStorage خاصة بالمستخدم
+            const savedData = localStorage.getItem(`clicker_game_${userId}`);
+            if (savedData) {
+                clickerData = JSON.parse(savedData);
+                // إعادة ضبط البيانات لو اليوم تغير
+                if (clickerData.date !== new Date().toDateString()) {
+                    clickerData.date = new Date().toDateString();
+                    clickerData.dailyClicks = 0;
+                    clickerData.batchClicks = 0;
+                    clickerData.cooldownUntil = 0;
+                }
+            }
+
             const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
             if (user) {
                 userData = user;
                 document.getElementById('user-real-points').innerText = (user.points || 0).toLocaleString();
             }
+
+            updateClickerUI();
+            checkCooldownTimer();
         }
 
-        // زيادة نقاط اللعبة محلياً مع كل ضغطة
-        function incrementGamePoints() {
-            sessionGamePoints += 1; // كل نقرة بنقطة (أو تقدر تزودها)
-            document.getElementById('game-points-counter').innerText = sessionGamePoints.toLocaleString();
-            document.getElementById('session-score').innerText = sessionGamePoints.toLocaleString();
+        function saveClickerState() {
+            localStorage.setItem(`clicker_game_${userId}`, JSON.stringify(clickerData));
         }
 
-        // تشغيل إعلان Monetag للتحويل
-        function showAdAndConvertPoints() {
-            if (sessionGamePoints <= 0) {
-                tg.showAlert("⚠️ لم تجمّع أي نقاط في اللعبة بعد! اضغط على الدائرة أولاً.");
+        function updateClickerUI() {
+            document.getElementById('game-points-counter').innerText = clickerData.gamePoints.toLocaleString();
+            document.getElementById('daily-clicks-count').innerText = clickerData.dailyClicks;
+        }
+
+        function handleCardClick() {
+            const now = Date.now();
+            if (clickerData.cooldownUntil > now) {
+                return; // في فترة الانتظار
+            }
+
+            if (clickerData.dailyClicks >= 100) {
+                tg.showAlert("🛑 لقد وصلت الحد الأقصى للضغطات اليومية (100 ضغطة). عود غداً لمزيد من الأرباح!");
                 return;
             }
 
-            if (typeof show_10959333 === 'function') {
-                show_10959333().then(() => {
-                    executePointsConversion();
-                }).catch((err) => {
-                    console.error("Ad error:", err);
-                    tg.showAlert("❌ يجب مشاهدة الإعلان بالكامل حتى يتم تحويل النقاط لرصيدك.");
-                });
+            clickerData.dailyClicks++;
+            clickerData.batchClicks++;
+            saveClickerState();
+            updateClickerUI();
+
+            // عند الوصول لـ 10 ضغطات، يتم عرض الإعلان
+            if (clickerData.batchClicks >= 10) {
+                triggerClickerAd();
             } else {
-                tg.showAlert("⏳ جاري تحميل نظام الإعلانات، حاول بعد قليل.");
+                document.getElementById('clicker-status-msg').innerText = `متبقي ${10 - clickerData.batchClicks} ضغطات للإعلان القادم`;
             }
         }
 
-        // تحويل النقاط وإضافتها لسوبابيز والهيستوري
-        async function executePointsConversion() {
-            if (!userData || sessionGamePoints <= 0) return;
+        function triggerClickerAd() {
+            document.getElementById('clicker-status-msg').innerText = "⏳ جاري عرض الإعلان للحصول على النقطة...";
+            
+            if (typeof show_10959333 === 'function') {
+                show_10959333().then(() => {
+                    // نجاح مشاهدة الإعلان
+                    clickerData.gamePoints += 1; // منح نقطة لعبة واحدة
+                    clickerData.batchClicks = 0;
+                    clickerData.cooldownUntil = Date.now() + (5 * 60 * 1000); // مؤقت 5 دقائق
+                    saveClickerState();
+                    updateClickerUI();
+                    startCooldownTimer();
+                    tg.showAlert("🎉 رائع! تم احتساب الـ 10 ضغطات وإضافة (+1 نقطة لعبة). بدأ مؤقت الـ 5 دقائق!");
+                }).catch((err) => {
+                    console.error("Ad error:", err);
+                    tg.showAlert("❌ يجب مشاهدة الإعلان بالكامل لاحتساب الضغطات.");
+                    clickerData.batchClicks = 0; // إعادة ضبط الدفعة الحالية لإعادة المحاولة
+                    saveClickerState();
+                    updateClickerUI();
+                    document.getElementById('clicker-status-msg').innerText = "اضغط على الدائرة للمتابعة";
+                });
+            } else {
+                // وضع تجريبي لو الـ SDK مش متحمل
+                clickerData.gamePoints += 1;
+                clickerData.batchClicks = 0;
+                clickerData.cooldownUntil = Date.now() + (5 * 60 * 1000);
+                saveClickerState();
+                updateClickerUI();
+                startCooldownTimer();
+                tg.showAlert("🎉 تم منح النقطة (وضع تجريبي بدون إعلان). بدأ مؤقت الـ 5 دقائق!");
+            }
+        }
 
-            const pointsToAdd = sessionGamePoints; // كل نقطة لعبة = نقطة حقيقية (أو اضربها في معامل لو حابب)
-            const newPointsTotal = (userData.points || 0) + pointsToAdd;
-            const newTotalEarned = (userData.total_earned || 0) + pointsToAdd;
+        function startCooldownTimer() {
+            if (cooldownInterval) clearInterval(cooldownInterval);
+            
+            const btn = document.getElementById('clicker-btn');
+            const statusMsg = document.getElementById('clicker-status-msg');
+            btn.style.opacity = "0.5";
+
+            cooldownInterval = setInterval(() => {
+                const now = Date.now();
+                const remaining = clickerData.cooldownUntil - now;
+
+                if (remaining <= 0) {
+                    clearInterval(cooldownInterval);
+                    btn.style.opacity = "1";
+                    statusMsg.innerText = "🟢 انتهى وقت الانتظار! يمكنك الضغط الآن.";
+                } else {
+                    const mins = Math.floor(remaining / (1000 * 60));
+                    const secs = Math.floor((remaining % (1000 * 60)) / 1000);
+                    statusMsg.innerText = `⏳ يرجى الانتظار: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                }
+            }, 1000);
+        }
+
+        function checkCooldownTimer() {
+            const now = Date.now();
+            if (clickerData.cooldownUntil > now) {
+                startCooldownTimer();
+            } else {
+                document.getElementById('clicker-status-msg').innerText = "اضغط على الدائرة للبدء!";
+            }
+        }
+
+        // تحويل نقاط اللعبة إلى رصيد حقيقي في البوت
+        async function showAdAndConvertPoints() {
+            if (clickerData.gamePoints <= 0) {
+                tg.showAlert("⚠️ ليس لديك نقاط لعبة كافية للتحويل حالياً.");
+                return;
+            }
+
+            const pointsToConvert = clickerData.gamePoints;
+            const conversionRate = 10; // سعر النقطة الواحدة للعبة (مثلاً كل 1 نقطة لعبة = 10 نقاط حقيقية أو حسب رغبتك)
+            const realPointsEarned = pointsToConvert * conversionRate;
+
+            if (!userData) return;
+
+            const newTotalPoints = (userData.points || 0) + realPointsEarned;
+            const newTotalEarned = (userData.total_earned || 0) + realPointsEarned;
 
             try {
-                // 1. تحديث رصيد المستخدم
-                const { error: userErr } = await client.from('users').update({
-                    points: newPointsTotal,
+                const { error } = await client.from('users').update({
+                    points: newTotalPoints,
                     total_earned: newTotalEarned
                 }).eq('telegram_id', userId);
 
-                if (userErr) throw userErr;
+                if (error) throw error;
 
-                // 2. تسجيل العملية في جدول transactions (الهيستوري بـ type: 'points')
+                // تسجيل العملية في الهيستوري بـ type: 'points' لتظهر في البروفايل
                 await client.from('transactions').insert([{
                     telegram_id: String(userId),
                     type: 'points',
-                    title: 'أرباح ألعاب المنصة',
-                    amount: `+${pointsToAdd} نقطة`,
+                    title: 'تحويل أرباح الألعاب لرصيد البوت',
+                    amount: `+${realPointsEarned.toLocaleString()} نقطة`,
                     status: 'مكتمل'
                 }]);
 
-                userData.points = newPointsTotal;
-                document.getElementById('user-real-points').innerText = newPointsTotal.toLocaleString();
-                
-                sessionGamePoints = 0;
-                document.getElementById('game-points-counter').innerText = "0";
-                document.getElementById('session-score').innerText = "0";
+                userData.points = newTotalPoints;
+                document.getElementById('user-real-points').innerText = newTotalPoints.toLocaleString();
 
-                tg.showAlert(`🎉 مبروك يا بطل!\nتم تحويل نقاط اللعبة بنجاح وتم إضافة (+${pointsToAdd.toLocaleString()} نقطة) إلى رصيدك الحقيقي في البوت!`);
+                // تصفير نقاط اللعبة بعد التحويل
+                clickerData.gamePoints = 0;
+                saveClickerState();
+                updateClickerUI();
+
+                tg.showAlert(`🎉 مبروك! تم بنجاح تحويل نقاط ألعابك وإضافة (+${realPointsEarned.toLocaleString()} نقطة حقيقية) إلى رصيدك في البوت وفي الهيستوري!`);
 
             } catch (e) {
                 console.error("Conversion error:", e);
-                tg.showAlert("❌ حدث خطأ أثناء تحويل النقاط، حاول مجدداً.");
+                tg.showAlert("❌ حدث خطأ أثناء تحويل النقاط، حاول مرة أخرى.");
             }
         }
 
-        // دوال التنقل المظبوطة
+        function showSoon(gameName) {
+            tg.showAlert(`🎯 ${gameName} قيد البرمجة والتطوير وسيتم إضافتها قريباً في فولدر الألعاب!`);
+        }
+
+        // التنقل بين الصفحات
         function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
         function goGames() { window.location.href = `games.html?id=${userId}&t=${Date.now()}`; }
