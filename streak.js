@@ -244,49 +244,36 @@ const StreakManager = (function() {
         return userCurrent;
     }
 
-        // ⭐ الدالة المركزية الصحيحة 100%
-    async function addPointsAndLog(pointsChange, titleText) {
+        async function addPointsAndLog(pointsChange, titleText) {
         try {
-            let { data: uInfo, error: fetchErr } = await _client.from('users').select('points').eq('telegram_id', String(_tid)).single();
-            if (fetchErr) {
-                window.Telegram?.WebApp?.showAlert("❌ خطأ جلب المستخدم: " + fetchErr.message);
-                return false;
-            }
-
+            // 1. تحديث النقاط مباشرة في جدول المستخدمين
+            let { data: uInfo } = await _client.from('users').select('points').eq('telegram_id', String(_tid)).single();
             const currentP = uInfo ? (uInfo.points || 0) : 0;
             const newTotalP = currentP + pointsChange;
 
-            // 1. تحديث رصيد النقاط للمستخدم
-            let { error: uErr } = await _client.from('users').update({ points: newTotalP }).eq('telegram_id', String(_tid));
-            if (uErr) {
-                window.Telegram?.WebApp?.showAlert("❌ خطأ تحديث النقاط: " + uErr.message);
-                return false;
-            }
+            await _client.from('users').update({ points: newTotalP }).eq('telegram_id', String(_tid));
 
-            // 2. تسجيل العملية في جدول السجلات (transactions)
-            const amountFormatted = pointsChange >= 0 ? `+${pointsChange} نقطة` : `${pointsChange} نقطة`;
-            let { error: tErr } = await _client.from('transactions').insert([{
+            // 2. إدخال السجل مباشرة في جدول transactions مع إظهار رسالة لو فشل
+            const { error: tErr } = await _client.from('transactions').insert([{
                 telegram_id: String(_tid),
                 type: 'points',
                 title: titleText,
-                amount: amountFormatted,
+                amount: `+${pointsChange} نقطة`,
                 status: 'مكتمل'
             }]);
-            
+
             if (tErr) {
-                window.Telegram?.WebApp?.showAlert("❌ خطأ حفظ الهيستوري: " + tErr.message);
-                console.error("Transaction log error:", tErr);
-                return false;
+                window.Telegram?.WebApp?.showAlert("⚠️ خطأ في حفظ الهيستوري: " + tErr.message);
             }
 
             return newTotalP;
-        } catch (err) {  // تم التصحيح هنا بنجاح
-            window.Telegram?.WebApp?.showAlert("❌ خطأ عام: " + err.message);
+        } catch (err) {
+            console.error(err);
             return false;
         }
     }
 
-
+    
     function triggerAdFlow(actionType, domElements) {
         _pendingAction = actionType;
 
