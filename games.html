@@ -2,25 +2,39 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - صالة الألعاب 🎮</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MegaTask - Games Hub</title>
+    
+    <!-- إعلانات Monetag -->
+    <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #07090d; --card-bg: #14171f; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 90px; }
+        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
+        html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 110px; width: 100%; max-width: 100vw; overflow-x: hidden; }
         
-        .header { padding: 15px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
-        .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; color: var(--main-green); font-weight: bold; }
+        .header { padding: 20px; text-align: center; }
+        .header h2 { margin: 0; color: var(--main-green); font-size: 22px; }
+        .header p { margin: 5px 0 0; font-size: 12px; color: var(--text-gray); }
 
-        .lobby-container { padding: 15px; display: flex; flex-direction: column; gap: 15px; }
-        .game-banner { background: linear-gradient(145deg, #161b26, #0e121a); border: 1px solid #2d333f; border-radius: 20px; padding: 18px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .game-banner:active { transform: scale(0.98); border-color: var(--main-green); }
-        .game-icon { width: 60px; height: 60px; border-radius: 16px; background: rgba(0, 210, 106, 0.1); border: 1px solid var(--main-green); display: flex; align-items: center; justify-content: center; font-size: 30px; flex-shrink: 0; }
-        .game-info b { display: block; font-size: 16px; color: white; margin-bottom: 4px; }
-        .game-info span { font-size: 12px; color: var(--text-gray); line-height: 1.4; display: block; }
+        .game-stats-bar { display: flex; justify-content: space-around; background: var(--card-bg); margin: 0 15px 15px; border: 1px solid #2d333d; border-radius: 16px; padding: 12px; }
+        .stat-box { text-align: center; }
+        .stat-box b { display: block; font-size: 18px; color: #ffaa00; }
+        .stat-box span { font-size: 11px; color: var(--text-gray); }
 
-        .navbar { position: fixed; bottom: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        /* منطقة اللعبة الأولى */
+        .game-container { margin: 0 15px 20px; background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        .game-title { font-size: 16px; font-weight: bold; color: white; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        
+        .clicker-target { width: 120px; height: 120px; background: linear-gradient(135deg, #00d26a, #009e4f); border-radius: 50%; margin: 20px auto; display: flex; align-items: center; justify-content: center; font-size: 36px; cursor: pointer; box-shadow: 0 5px 20px rgba(0, 210, 106, 0.4); transition: 0.1s; user-select: none; }
+        .clicker-target:active { transform: scale(0.92); }
+
+        .btn-convert { background: linear-gradient(135deg, #ffaa00, #e67e00); color: black; border: none; width: 100%; padding: 14px; border-radius: 14px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.2); }
+        .btn-convert:active { transform: scale(0.98); }
+
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
     </style>
@@ -28,83 +42,141 @@
 <body>
 
     <div class="header">
-        <div class="user-badge" id="user-points">0 نقطة</div>
-        <div style="color: var(--text-gray); font-size: 12px;">ARCADE LOBBY 🕹️</div>
+        <h2>🎮 مركز ألعاب MegaTask</h2>
+        <p>العب واجمع نقاط اللعبة، ثم حولها لرصيد حقيقي عبر الإعلانات!</p>
     </div>
 
-    <div class="lobby-container">
-        <h3 style="color: var(--main-green); font-size: 14px; margin: 0 0 5px 0;">اختر لعبتك لتفتح بملء الشاشة:</h3>
+    <div class="game-stats-bar">
+        <div class="stat-box">
+            <b id="game-points-counter">0</b>
+            <span>نقاط اللعبة الحالية</span>
+        </div>
+        <div class="stat-box">
+            <b id="user-real-points">0</b>
+            <span>رصيدك الحقيقي بالبوت</span>
+        </div>
+    </div>
+
+    <!-- اللعبة الأولى: لعبة النقرات السريعة (Tap Clicker) -->
+    <div class="game-container">
+        <div class="game-title">⚡ لعبة النقرات السريعة</div>
+        <p style="font-size: 12px; color: var(--text-gray); margin-bottom: 10px;">اضغط بسرعة على الدائرة لتجميع أكبر قدر من نقاط اللعبة!</p>
         
-        <div class="game-banner" onclick="openGame('game-seahorse.html')">
-            <div class="game-icon">❄️</div>
-            <div class="game-info">
-                <b>Frost Seahorse</b>
-                <span>لعبة الطيران المتجمد بملء الشاشة، سلسة، وتصميم فخم للغاية.</span>
-            </div>
+        <div class="clicker-target" onclick="incrementGamePoints()">
+            🪙
         </div>
-                  <div class="game-banner" onclick="openGame('game-seahorse.html')">
-            <div class="game-icon">❄️</div>
-            <div class="game-info">
-                <b>Frost Seahorse</b>
-                <span>طيران متجمد بملء الشاشة، سلسة، وتصميم فخم للغاية.</span>
-            </div>
-        </div>
+        <div style="font-size: 13px; color: #ffaa00; font-weight: bold;">نقاط هذه الجلسة: <span id="session-score">0</span></div>
 
-        <div class="game-banner" onclick="openGame('game-space.html')">
-            <div class="game-icon">🚀</div>
-            <div class="game-info">
-                <b>Space Dodge (حرب النيازك)</b>
-                <span>تفادى النيازك المشتعلة، اجمع الجواهر، وتصدر لوحة الشرف!</span>
-            </div>
-        </div>
-
-        <div class="game-banner" onclick="tg.showAlert('🚀 لعبة جديدة قيد التطوير وقريباً ستنضم للصالة!')" style="opacity: 0.7;">
-            <div class="game-icon">🎯</div>
-            <div class="game-info">
-                <b>Neon Dash (قريباً..)</b>
-                <span>تحدي السرعة والتفادي بملء الشاشة.</span>
-            </div>
-        </div>
+        <button class="btn-convert" onclick="showAdAndConvertPoints()">
+            🎁 مشاهدة إعلان وتحويل نقاط اللعبة لرصيد حقيقي ↗
+        </button>
     </div>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
         <div onclick="goTasks()" class="nav-item">📋<br>الربح من المهام</div>
-        <div onclick="goGames()" class="nav-item" style="background: var(--main-green); width: 40px; height: 40px; border-radius: 50%; color: black; line-height: 40px; margin-top: -20px; font-size: 20px; text-align: center; cursor: pointer;">🎮</div>
+        <div onclick="goGames()" class="nav-item active" style="color: var(--main-green); width: 40px; height: 40px; border-radius: 50%; background: var(--main-green); color: black !important; line-height: 40px; margin-top: -20px; font-size: 20px; text-align: center;">🎮</div>
         <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
         <div onclick="goProfile()" class="nav-item">👤<br>الملف الشخصي</div>
     </nav>
-
+    
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdWBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "123456789").trim();
+        const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
 
-        async function initLobby() {
+        let sessionGamePoints = 0;
+        let userData = null;
+
+        async function init() {
+            if (!userId) return;
+            const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+            if (user) {
+                userData = user;
+                document.getElementById('user-real-points').innerText = (user.points || 0).toLocaleString();
+            }
+        }
+
+        // زيادة نقاط اللعبة محلياً مع كل ضغطة
+        function incrementGamePoints() {
+            sessionGamePoints += 1; // كل نقرة بنقطة (أو تقدر تزودها)
+            document.getElementById('game-points-counter').innerText = sessionGamePoints.toLocaleString();
+            document.getElementById('session-score').innerText = sessionGamePoints.toLocaleString();
+        }
+
+        // تشغيل إعلان Monetag للتحويل
+        function showAdAndConvertPoints() {
+            if (sessionGamePoints <= 0) {
+                tg.showAlert("⚠️ لم تجمّع أي نقاط في اللعبة بعد! اضغط على الدائرة أولاً.");
+                return;
+            }
+
+            if (typeof show_10959333 === 'function') {
+                show_10959333().then(() => {
+                    executePointsConversion();
+                }).catch((err) => {
+                    console.error("Ad error:", err);
+                    tg.showAlert("❌ يجب مشاهدة الإعلان بالكامل حتى يتم تحويل النقاط لرصيدك.");
+                });
+            } else {
+                tg.showAlert("⏳ جاري تحميل نظام الإعلانات، حاول بعد قليل.");
+            }
+        }
+
+        // تحويل النقاط وإضافتها لسوبابيز والهيستوري
+        async function executePointsConversion() {
+            if (!userData || sessionGamePoints <= 0) return;
+
+            const pointsToAdd = sessionGamePoints; // كل نقطة لعبة = نقطة حقيقية (أو اضربها في معامل لو حابب)
+            const newPointsTotal = (userData.points || 0) + pointsToAdd;
+            const newTotalEarned = (userData.total_earned || 0) + pointsToAdd;
+
             try {
-                const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-                if (user) {
-                    document.getElementById('user-points').innerText = (user.points || 0).toLocaleString() + " نقطة";
-                }
-            } catch (e) {}
+                // 1. تحديث رصيد المستخدم
+                const { error: userErr } = await client.from('users').update({
+                    points: newPointsTotal,
+                    total_earned: newTotalEarned
+                }).eq('telegram_id', userId);
+
+                if (userErr) throw userErr;
+
+                // 2. تسجيل العملية في جدول transactions (الهيستوري بـ type: 'points')
+                await client.from('transactions').insert([{
+                    telegram_id: String(userId),
+                    type: 'points',
+                    title: 'أرباح ألعاب المنصة',
+                    amount: `+${pointsToAdd} نقطة`,
+                    status: 'مكتمل'
+                }]);
+
+                userData.points = newPointsTotal;
+                document.getElementById('user-real-points').innerText = newPointsTotal.toLocaleString();
+                
+                sessionGamePoints = 0;
+                document.getElementById('game-points-counter').innerText = "0";
+                document.getElementById('session-score').innerText = "0";
+
+                tg.showAlert(`🎉 مبروك يا بطل!\nتم تحويل نقاط اللعبة بنجاح وتم إضافة (+${pointsToAdd.toLocaleString()} نقطة) إلى رصيدك الحقيقي في البوت!`);
+
+            } catch (e) {
+                console.error("Conversion error:", e);
+                tg.showAlert("❌ حدث خطأ أثناء تحويل النقاط، حاول مجدداً.");
+            }
         }
 
-        function openGame(pageName) {
-            window.location.href = `${pageName}?id=${userId}`;
-        }
+        // دوال التنقل المظبوطة
+        function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
+        function goGames() { window.location.href = `games.html?id=${userId}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${userId}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${userId}&t=${Date.now()}`; }
 
-        function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
-        function goGames() { window.location.href = `games.html?id=${tid}&t=${Date.now()}`; }
-        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
-        function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
-
-        initLobby();
+        init();
     </script>
 </body>
 </html>
