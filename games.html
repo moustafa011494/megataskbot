@@ -23,6 +23,10 @@
         .stat-box { text-align: center; }
         .stat-box b { display: block; font-size: 18px; color: #ffaa00; }
         .stat-box span { font-size: 11px; color: var(--text-gray); }
+        
+        /* جعل بطاقة نقاط اللعبة قابلة للضغط للتحويل */
+        .clickable-stat { cursor: pointer; transition: 0.2s; border-radius: 10px; padding: 4px 8px; }
+        .clickable-stat:active { background: rgba(255, 170, 0, 0.15); transform: scale(0.97); }
 
         .game-container { margin: 0 15px 20px; background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
         .game-title { font-size: 16px; font-weight: bold; color: white; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -30,14 +34,17 @@
         .clicker-target { width: 120px; height: 120px; background: linear-gradient(135deg, #00d26a, #009e4f); border-radius: 50%; margin: 15px auto; display: flex; align-items: center; justify-content: center; font-size: 36px; cursor: pointer; box-shadow: 0 5px 20px rgba(0, 210, 106, 0.4); transition: 0.1s; user-select: none; }
         .clicker-target:active { transform: scale(0.92); }
 
-        .btn-action-game { background: linear-gradient(135deg, #ffaa00, #e67e00); color: black; border: none; width: 100%; padding: 14px; border-radius: 14px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.2); }
-        .btn-action-game:disabled { background: #333; color: #777; cursor: not-allowed; box-shadow: none; }
-
         .other-games-section { padding: 0 15px; margin-top: 25px; text-align: right; }
         .section-title { color: var(--main-green); font-size: 14px; margin: 0 0 15px 0; border-right: 3px solid var(--main-green); padding-right: 10px; }
         .games-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .game-card-item { background: #16191e; border: 1px solid #2d333d; padding: 20px 10px; border-radius: 20px; text-align: center; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .game-card-item span { font-size: 28px; display: block; margin-bottom: 8px; }
+
+        /* نافذة التحويل المنبثقة (Modal) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
+        .modal-box { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 25px; width: 100%; max-width: 340px; text-align: center; }
+        .btn-confirm-modal { width: 100%; background: var(--main-green); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .btn-close-modal { width: 100%; background: #252932; color: #ccc; border: none; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: bold; cursor: pointer; margin-top: 8px; }
 
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
@@ -53,12 +60,12 @@
 
     <div class="game-stats-bar">
         <div class="stat-box">
-            <b id="game-points-counter">0</b>
-            <span>نقاط اللعبة (متاحة للتحويل)</span>
-        </div>
-        <div class="stat-box">
             <b id="user-real-points">0</b>
             <span>رصيدك الحقيقي بالبوت</span>
+        </div>
+        <div class="stat-box clickable-stat" onclick="openConvertModal()">
+            <b id="game-points-counter">0</b>
+            <span>نقاط اللعبة (اضغط للتحويل ↗)</span>
         </div>
     </div>
 
@@ -74,25 +81,43 @@
         <div id="clicker-status-msg" style="font-size: 12px; color: var(--text-gray); margin-top: 8px; min-height: 20px;">
             اضغط على الدائرة للبدء!
         </div>
-
-        <button id="convert-btn" class="btn-action-game" onclick="showAdAndConvertPoints()">
-            🎁 تحويل نقاط اللعبة إلى رصيد حقيقي ↗
-        </button>
     </div>
 
-    <!-- قسم الألعاب الأخرى -->
+    <!-- نافذة تحويل النقاط (Modal) -->
+    <div id="convert-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color: #ffaa00; margin-top:0;">🎁 تحويل نقاط الألعاب</h3>
+            <p style="font-size: 13px; color: var(--text-gray); line-height: 1.6; margin-bottom: 15px;">
+                لديك <b id="modal-game-points" style="color: #00d26a;">0</b> نقطة لعبة متاح تحويلها برأس مال متساوٍ (1 نقطة لعبة = 1 نقطة بوت حقيقية).
+            </p>
+            <button class="btn-confirm-modal" onclick="confirmAndWatchAdConversion()">
+                📺 مشاهدة إعلان وتحويل النقاط الآن
+            </button>
+            <button class="btn-close-modal" onclick="closeConvertModal()">
+                إغلاق
+            </button>
+        </div>
+    </div>
+
+    <!-- قسم الألعاب الأخرى (بما فيها اللعبتين القديمتين Seahorse و Space) -->
     <div class="other-games-section">
         <h3 class="section-title">ألعاب ممتعة أخرى 🕹️</h3>
         <div class="games-grid">
+            <div class="game-card-item" onclick="openGame('seahorse')">
+                <span>🌊</span>مغامرة الحصان
+            </div>
+            <div class="game-card-item" onclick="openGame('space')">
+                <span>🚀</span>حرب الفضاء
+            </div>
             <div class="game-card-item" onclick="openGame('quiz')">
                 <span>❓</span>كويز ذكاء
             </div>
-           <div class="game-card-item" onclick="openGame('chests')">
-        <span>🎁</span>صناديق الحظ
-    </div>
-    <div class="game-card-item" onclick="openGame('memory')">
-        <span>🧠</span>لعبة الذاكرة
-    </div>
+            <div class="game-card-item" onclick="openGame('memory')">
+                <span>🧠</span>لعبة الذاكرة
+            </div>
+            <div class="game-card-item" onclick="openGame('chests')">
+                <span>🎁</span>صناديق الحظ
+            </div>
         </div>
     </div>
 
@@ -112,7 +137,6 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        // ⭐ الاستخراج الدقيق والصحيح لأيدي المستخدم
         let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
         if (!userId || userId === "undefined" || userId === "null") {
             userId = "123456789";
@@ -141,8 +165,7 @@
                 }
             }
 
-            // ⭐ جلب بيانات المستخدم الحقيقية من سوبابيز
-            const { data: user, error } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+            const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
             if (user) {
                 userData = user;
                 document.getElementById('user-real-points').innerText = (user.points || 0).toLocaleString();
@@ -150,9 +173,9 @@
                 document.getElementById('user-real-points').innerText = "0";
             }
 
-            let memoryBonus = parseInt(localStorage.getItem(`clicker_game_${userId}_points`) || '0');
-            if (memoryBonus > 0) {
-                clickerData.gamePoints += memoryBonus;
+            let extraBonus = parseInt(localStorage.getItem(`clicker_game_${userId}_points`) || '0');
+            if (extraBonus > 0) {
+                clickerData.gamePoints += extraBonus;
                 localStorage.setItem(`clicker_game_${userId}_points`, '0');
                 saveClickerState();
             }
@@ -192,33 +215,34 @@
         }
 
         function triggerClickerAd() {
-            document.getElementById('clicker-status-msg').innerText = "⏳ جاري عرض الإعلان للحصول على النقطة...";
+            document.getElementById('clicker-status-msg').innerText = "⏳ جاري عرض الإعلان للحصول على الـ 10 نقاط...";
             
             if (typeof show_10959333 === 'function') {
                 show_10959333().then(() => {
-                    clickerData.gamePoints += 1;
+                    // ⭐ تعديل: منح 10 نقاط لعبة دفعة واحدة بعد إتمام الـ 10 ضغطات ومشاهدة الإعلان
+                    clickerData.gamePoints += 10;
                     clickerData.batchClicks = 0;
                     clickerData.cooldownUntil = Date.now() + (5 * 60 * 1000);
                     saveClickerState();
                     updateClickerUI();
                     startCooldownTimer();
-                    tg.showAlert("🎉 رائع! تم احتساب الـ 10 ضغطات وإضافة (+1 نقطة لعبة). بدأ مؤقت الـ 5 دقائق!");
+                    tg.showAlert("🎉 رائع! تم إتمام الـ 10 ضغطات وإضافة (+10 نقاط لعبة). بدأ مؤقت الـ 5 دقائق!");
                 }).catch((err) => {
                     console.error("Ad error:", err);
-                    tg.showAlert("❌ يجب مشاهدة الإعلان بالكامل لاحتساب الضغطات.");
+                    tg.showAlert("❌ يجب مشاهدة الإعلان بالكامل لاحتساب النقاط.");
                     clickerData.batchClicks = 0;
                     saveClickerState();
                     updateClickerUI();
                     document.getElementById('clicker-status-msg').innerText = "اضغط على الدائرة للمتابعة";
                 });
             } else {
-                clickerData.gamePoints += 1;
+                clickerData.gamePoints += 10;
                 clickerData.batchClicks = 0;
                 clickerData.cooldownUntil = Date.now() + (5 * 60 * 1000);
                 saveClickerState();
                 updateClickerUI();
                 startCooldownTimer();
-                tg.showAlert("🎉 تم منح النقطة (وضع تجريبي بدون إعلان). بدأ مؤقت الـ 5 دقائق!");
+                tg.showAlert("🎉 تم منح الـ 10 نقاط (وضع تجريبي بدون إعلان). بدأ مؤقت الـ 5 دقائق!");
             }
         }
 
@@ -254,17 +278,30 @@
             }
         }
 
-        async function showAdAndConvertPoints() {
+        // تحكم نافذة التحويل (Modal)
+        function openConvertModal() {
             if (clickerData.gamePoints <= 0) {
                 tg.showAlert("⚠️ ليس لديك نقاط لعبة كافية للتحويل حالياً.");
                 return;
             }
+            document.getElementById('modal-game-points').innerText = clickerData.gamePoints.toLocaleString();
+            document.getElementById('convert-modal').style.display = 'flex';
+        }
+
+        function closeConvertModal() {
+            document.getElementById('convert-modal').style.display = 'none';
+        }
+
+        async function confirmAndWatchAdConversion() {
+            if (clickerData.gamePoints <= 0) return;
 
             const pointsToConvert = clickerData.gamePoints;
-            const conversionRate = 1;
+            const conversionRate = 1; // 1 نقطة لعبة = 1 نقطة بوت حقيقية
             const realPointsEarned = pointsToConvert * conversionRate;
 
             if (!userData) return;
+
+            closeConvertModal();
 
             const newTotalPoints = (userData.points || 0) + realPointsEarned;
             const newTotalEarned = (userData.total_earned || 0) + realPointsEarned;
@@ -301,14 +338,18 @@
         }
 
         function openGame(gameType) {
-    if (gameType === 'memory') {
-        window.location.href = `games/memory.html?id=${userId}`;
-    } else if (gameType === 'quiz') {
-        window.location.href = `games/quiz.html?id=${userId}`;
-    } else if (gameType === 'chests') {
-        window.location.href = `games/chests.html?id=${userId}`;
-    }
-}
+            if (gameType === 'memory') {
+                window.location.href = `games/memory.html?id=${userId}`;
+            } else if (gameType === 'quiz') {
+                window.location.href = `games/quiz.html?id=${userId}`;
+            } else if (gameType === 'chests') {
+                window.location.href = `games/chests.html?id=${userId}`;
+            } else if (gameType === 'seahorse') {
+                window.location.href = `game-seahorse.html?id=${userId}`;
+            } else if (gameType === 'space') {
+                window.location.href = `game-space.html?id=${userId}`;
+            }
+        }
 
         function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
