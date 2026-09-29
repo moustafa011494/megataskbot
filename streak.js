@@ -244,6 +244,41 @@ const StreakManager = (function() {
         return userCurrent;
     }
 
+    // ⭐ الدالة المركزية الآمنة لتحديث النقاط وتسجيل الهيستوري معاً وبدون أخطاء
+    async function addPointsAndLog(pointsChange, titleText) {
+        try {
+            let { data: uInfo } = await _client.from('users').select('points').eq('telegram_id', String(_tid)).single();
+            const currentP = uInfo ? (uInfo.points || 0) : 0;
+            const newTotalP = currentP + pointsChange;
+
+            // 1. تحديث رصيد النقاط للمستخدم
+            let { error: uErr } = await _client.from('users').update({ points: newTotalP }).eq('telegram_id', String(_tid));
+            if (uErr) {
+                console.error("Points update error:", uErr);
+                return false;
+            }
+
+            // 2. تسجيل العملية مباشرة في جدول السجلات (transactions)
+            const amountFormatted = pointsChange >= 0 ? `+${pointsChange} نقطة` : `${pointsChange} نقطة`;
+            let { error: tErr } = await _client.from('transactions').insert([{
+                telegram_id: String(_tid),
+                type: 'points',
+                title: titleText,
+                amount: amountFormatted,
+                status: 'مكتمل'
+            }]);
+            
+            if (tErr) {
+                console.error("Transaction log error:", tErr);
+            }
+
+            return newTotalP;
+        } catch (err) {
+            console.error("addPointsAndLog exception:", err);
+            return false;
+        }
+    }
+
     function triggerAdFlow(actionType, domElements) {
         _pendingAction = actionType;
 
@@ -290,15 +325,14 @@ const StreakManager = (function() {
                 }
             }
 
-            const updatedPoints = (userCurrent.points || 0) + 5;
             const nowIso = now.toISOString();
             const userGender = userCurrent.gender || 'male';
             const tierInfo = getStreakTierData(newStreak, userGender);
 
+            // تحديث الستريك وتاريخ الاستلام في جدول المستخدمين
             const { data: saved, error: updateErr } = await _client
                 .from('users')
                 .update({
-                    points: updatedPoints,
                     streak: newStreak,
                     last_daily_claim: nowIso
                 })
@@ -307,25 +341,18 @@ const StreakManager = (function() {
                 .single();
 
             if (!updateErr && saved) {
-                _userData = saved;
-                if (typeof _onUpdate === 'function') _onUpdate(saved);
+                // استخدام الدالة المركزية لإضافة 5 نقاط وتجسيلها في الهيستوري بدقة
+                const updatedPointsTotal = await addPointsAndLog(5, `مكافأة الستريك اليومي (اليوم ${newStreak})`);
                 
-                // تسجيل مكافأة الستريك في جدول السجلات (الهيستوري)
-                const { error: txErr } = await _client.from('transactions').insert([{
-    telegram_id: String(_tid),
-    type: 'points',
-    title: `مكافأة الستريك اليومي (اليوم ${newStreak})`,
-    amount: '+5 نقطة',
-    status: 'مكتمل'
-}]);
-if (txErr) {
-    window.Telegram?.WebApp?.showAlert("❌ خطأ الهيستوري: " + txErr.message);
-}
+                saved.points = updatedPointsTotal !== false ? updatedPointsTotal : (saved.points + 5);
+                _userData = saved;
+
+                if (typeof _onUpdate === 'function') _onUpdate(saved);
 
                 renderUI(domElements);
                 window.Telegram?.WebApp?.showAlert(`🎉 مبروك! استلمت +5 نقاط.\n🔥 الستريك: ${newStreak} أيام متتالية!\n⭐ لقبك الحالي: ${tierInfo.title}`);
             } else {
-                window.Telegram?.WebApp?.showAlert("❌ خطأ أثناء تحديث النقاط: " + (updateErr?.message || ""));
+                window.Telegram?.WebApp?.showAlert("❌ خطأ أثناء تحديث الستريك: " + (updateErr?.message || ""));
             }
         } catch (e) {
             console.error("Streak save error:", e);
@@ -432,13 +459,12 @@ if (txErr) {
                 return;
             }
 
-            const newPoints = (userCurrent.points || 0) + prize.value;
             const nowIso = new Date().toISOString();
 
+            // تحديث موعد تدوير العجلة في جدول المستخدمين
             const { data: updated, error: updateErr } = await _client
                 .from('users')
                 .update({
-                    points: newPoints,
                     last_wheel_spin: nowIso
                 })
                 .eq('telegram_id', _tid)
@@ -446,24 +472,18 @@ if (txErr) {
                 .single();
 
             if (!updateErr && updated) {
+                // استخدام الدالة المركزية لإضافة النقاط وتوثيقها في الهيستوري لو الجائزة أكبر من صفر
+                if (prize.value > 0) {
+                    const updatedPointsTotal = await addPointsAndLog(prize.value, 'جائزة عجلة الحظ اليومية');
+                    updated.points = updatedPointsTotal !== false ? updatedPointsTotal : (updated.points + prize.value);
+                }
+
                 _userData = updated;
                 if (typeof _onUpdate === 'function') _onUpdate(updated);
 
-                // تسجيل جائزة العجلة في جدول السجلات (الهيستوري) إذا فاز بنقاط
-                if (prize.value > 0) {
-                    const { error: txErr } = await _client.from('transactions').insert([{
-                        telegram_id: String(_tid),
-                        type: 'points',
-                        title: 'جائزة عجلة الحظ اليومية',
-                        amount: `+${prize.value} نقطة`,
-                        status: 'مكتمل'
-                    }]);
-                    if (txErr) console.error("Wheel Tx Error:", txErr);
-                }
-
                 renderUI(domElements);
             } else {
-                window.Telegram?.WebApp?.showAlert("❌ خطأ أثناء حفظ جائزة العجلة: " + (updateErr?.message || ""));
+                window.Telegram?.WebApp?.showAlert("❌ خطأ أثناء حفظ العجلة: " + (updateErr?.message || ""));
             }
 
             if (prize.value > 0) {
