@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MegaTask - Lucky Chests</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
+        html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 50px; width: 100%; max-width: 100vw; overflow-x: hidden; text-align: center; }
+        
+        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d333d; }
+        .back-link { background: #252932; color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; text-decoration: none; }
+        
+        .game-title { margin: 20px 0 5px; color: #ffaa00; font-size: 20px; }
+        .game-desc { font-size: 12px; color: var(--text-gray); margin-bottom: 20px; }
+
+        .stat-badge { font-size: 13px; color: var(--main-green); font-weight: bold; margin-bottom: 20px; display: inline-block; background: rgba(0,210,106,0.1); padding: 6px 15px; border-radius: 10px; border: 1px solid var(--main-green); }
+
+        /* شبكة الصناديق */
+        .chests-container { display: flex; justify-content: center; gap: 15px; margin: 20px auto 30px; padding: 0 15px; max-width: 350px; }
+        .chest-box { flex: 1; aspect-ratio: 1; background: var(--card-bg); border: 2px solid #2d333d; border-radius: 20px; font-size: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; user-select: none; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .chest-box:hover { border-color: #ffaa00; transform: translateY(-3px); }
+        .chest-box.opened { background: #16191e; border-color: var(--main-green); cursor: default; }
+
+        .btn-action { background: linear-gradient(135deg, #ffaa00, #e67e00); color: black; border: none; padding: 14px 30px; border-radius: 14px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.2); display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
+        <span style="font-size: 13px; font-weight: bold; color: #ffaa00;">🎁 صناديق الحظ</span>
+        <div style="width: 60px;"></div>
+    </div>
+
+    <h2 class="game-title">اختر صندوقاً واربح الجائزة!</h2>
+    <p class="game-desc">اضغط على أحد الصناديق الثلاثة لاكتشاف ما تخفيه داخله.</p>
+
+    <div class="stat-badge">نقاط الجلسة: <span id="chests-score">0</span></div>
+
+    <div class="chests-container" id="chests-grid">
+        <div class="chest-box" onclick="openChest(0)">📦</div>
+        <div class="chest-box" onclick="openChest(1)">📦</div>
+        <div class="chest-box" onclick="openChest(2)">📦</div>
+    </div>
+
+    <div id="result-msg" style="font-size: 14px; font-weight: bold; color: white; margin-bottom: 20px; min-height: 25px;"></div>
+
+    <button id="next-round-btn" class="btn-action" onclick="resetChests()">
+        🔄 المحاولة مرة أخرى
+    </button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const params = new URLSearchParams(window.location.search);
+        const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+
+        document.getElementById('back-link').href = `../games.html?id=${userId}`;
+
+        let sessionPoints = 0;
+        let isOpened = false;
+
+        const prizes = [3, 5, 0]; // جوائز الصناديق (3 نقاط، 5 نقاط، أو حظ أوفر 0)
+
+        function openChest(index) {
+            if (isOpened) return;
+            isOpened = true;
+
+            // خلط الجوائز عشوائياً ع الصناديق
+            const shuffledPrizes = [...prizes].sort(() => Math.random() - 0.5);
+            const boxes = document.querySelectorAll('.chest-box');
+
+            boxes.forEach((box, i) => {
+                box.classList.add('opened');
+                const prize = shuffledPrizes[i];
+                if (prize > 0) {
+                    box.innerText = `🎁\n+${prize}`;
+                    box.style.color = '#00d26a';
+                } else {
+                    box.innerText = `❌\nفارغ`;
+                    box.style.color = '#ff3b30';
+                }
+            });
+
+            const userWon = shuffledPrizes[index];
+            const msgEl = document.getElementById('result-msg');
+
+            if (userWon > 0) {
+                sessionPoints += userWon;
+                document.getElementById('chests-score').innerText = sessionPoints;
+                msgEl.innerHTML = `🎉 مبروك! اخترت الصندوق الصحيح وفزت بـ <span style="color: var(--main-green);">+${userWon} نقاط لعبة</span>!`;
+                
+                // حفظ النقاط في الـ LocalStorage لإضافتها لنقاط اللعبة الرئيسية
+                let savedGamePoints = parseInt(localStorage.getItem(`clicker_game_${userId}_points`) || '0');
+                localStorage.setItem(`clicker_game_${userId}_points`, savedGamePoints + userWon);
+            } else {
+                msgEl.innerHTML = `💔 حظ أوفر هذه المرة! الصندوق كان فارغاً.`;
+            }
+
+            document.getElementById('next-round-btn').style.display = 'inline-block';
+        }
+
+        function resetChests() {
+            isOpened = false;
+            const boxes = document.querySelectorAll('.chest-box');
+            boxes.forEach(box => {
+                box.classList.remove('opened');
+                box.innerText = '📦';
+                box.style.color = 'white';
+            });
+            document.getElementById('result-msg').innerText = '';
+            document.getElementById('next-round-btn').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
