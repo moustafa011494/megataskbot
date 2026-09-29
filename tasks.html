@@ -1166,7 +1166,7 @@
 
                             <div class="sub-actions">
                                 <button class="btn-accept" onclick="acceptSubmission(${s.id}, ${s.task_id}, '${s.user_id}')">✅ قبول وصرف النقاط</button>
-                                <button class="btn-reject" onclick="rejectSubmission(${s.id})">❌ رفض الإثبات</button>
+                                <button class="btn-reject" onclick="rejectSubmission(${s.id}, '${s.user_id}', ${s.task_id})">❌ رفض الإثبات</button>
                             </div>
                         </div>
                     `;
@@ -1215,6 +1215,13 @@
 
                 await claimTaskSuccess(taskId, taskData.reward, executorId);
 
+                // ⭐ إرسال إشعار فوري في شات البوت للمنفذ (المستخدم رقم 2) بالقبول وصرف النقاط
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(executorId),
+                    message: `🎉 *مبروك! تم قبول إثبات المهمة وصرف النقاط* ✅\n\n📌 *المهمة:* ${taskData.title}\n🎁 *النقاط المضافة:* +${taskData.reward} نقطة${feedbackVal ? `\n💌 *ملاحظة صاحب المهمة:* ${feedbackVal}` : ''}`,
+                    status: 'pending'
+                }]);
+
                 const card = document.getElementById(`sub-card-${subId}`);
                 if (card) card.remove();
 
@@ -1226,7 +1233,7 @@
             }
         }
 
-        async function rejectSubmission(subId) {
+        async function rejectSubmission(subId, executorId, taskId) {
             const reason = (document.getElementById(`feedback-input-${subId}`)?.value || "").trim();
 
             if (!reason) {
@@ -1240,6 +1247,19 @@
                     status: 'rejected',
                     feedback: reason
                 }).eq('id', subId);
+
+                let taskTitle = "المهمة الخاصة بك";
+                try {
+                    const { data: tData } = await client.from('tasks').select('title').eq('id', parseInt(taskId)).maybeSingle();
+                    if (tData) taskTitle = tData.title;
+                } catch(e){}
+
+                // ⭐ إرسال إشعار فوري في شات البوت للمنفذ (المستخدم رقم 2) بالرفض وسبب الرفض
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(executorId),
+                    message: `❌ *عذراً، تم رفض إثبات المهمة الخاصة بك*\n\n📌 *المهمة:* ${taskTitle}\n💬 *السبب:* ${reason}\n\nيمكنك مراجعة التفاصيل وإعادة المحاولة.`,
+                    status: 'pending'
+                }]);
 
                 const card = document.getElementById(`sub-card-${subId}`);
                 if (card) card.remove();
