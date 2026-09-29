@@ -26,7 +26,7 @@
 
         /* حاوية الألعاب */
         .game-container { margin: 0 15px 20px; background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
-        .game-title { font-size: 16px; font-weight: bold; color: white; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .game-title { font-size: 16px; font-weight: bold; color: white; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         
         .clicker-target { width: 120px; height: 120px; background: linear-gradient(135deg, #00d26a, #009e4f); border-radius: 50%; margin: 15px auto; display: flex; align-items: center; justify-content: center; font-size: 36px; cursor: pointer; box-shadow: 0 5px 20px rgba(0, 210, 106, 0.4); transition: 0.1s; user-select: none; }
         .clicker-target:active { transform: scale(0.92); }
@@ -64,10 +64,9 @@
         </div>
     </div>
 
-    <!-- اللعبة الأولى: لعبة النقرات السريعة (مفعلة بالكامل بالشروط المطلوبة) -->
+    <!-- اللعبة الأولى: لعبة النقرات السريعة -->
     <div class="game-container">
         <div class="game-title">⚡ لعبة النقرات السريعة</div>
-        <p style="font-size: 12px; color: var(--text-gray); margin-bottom: 5px;">كل 10 ضغطات تمنحك نقطة لعبة (يتخللها إعلان + مؤقت 5 دقائق)</p>
         <div style="font-size: 11px; color: #ffaa00; margin-bottom: 10px;">ضغطات اليوم: <span id="daily-clicks-count">0</span> / 100</div>
         
         <div class="clicker-target" id="clicker-btn" onclick="handleCardClick()">
@@ -83,7 +82,7 @@
         </button>
     </div>
 
-    <!-- قسم الألعاب الأخرى المختلفة (مستقبلية / فولدر games/) -->
+    <!-- قسم الألعاب الأخرى المختلفة (مستقبلية) -->
     <div class="other-games-section">
         <h3 class="section-title">ألعاب أخرى قادمة قريباً 🕹️</h3>
         <div class="games-grid">
@@ -128,11 +127,9 @@
         async function init() {
             if (!userId) return;
             
-            // استرجاع بيانات اللعبة من الـ LocalStorage خاصة بالمستخدم
             const savedData = localStorage.getItem(`clicker_game_${userId}`);
             if (savedData) {
                 clickerData = JSON.parse(savedData);
-                // إعادة ضبط البيانات لو اليوم تغير
                 if (clickerData.date !== new Date().toDateString()) {
                     clickerData.date = new Date().toDateString();
                     clickerData.dailyClicks = 0;
@@ -163,7 +160,7 @@
         function handleCardClick() {
             const now = Date.now();
             if (clickerData.cooldownUntil > now) {
-                return; // في فترة الانتظار
+                return;
             }
 
             if (clickerData.dailyClicks >= 100) {
@@ -176,7 +173,6 @@
             saveClickerState();
             updateClickerUI();
 
-            // عند الوصول لـ 10 ضغطات، يتم عرض الإعلان
             if (clickerData.batchClicks >= 10) {
                 triggerClickerAd();
             } else {
@@ -189,10 +185,9 @@
             
             if (typeof show_10959333 === 'function') {
                 show_10959333().then(() => {
-                    // نجاح مشاهدة الإعلان
-                    clickerData.gamePoints += 1; // منح نقطة لعبة واحدة
+                    clickerData.gamePoints += 1;
                     clickerData.batchClicks = 0;
-                    clickerData.cooldownUntil = Date.now() + (5 * 60 * 1000); // مؤقت 5 دقائق
+                    clickerData.cooldownUntil = Date.now() + (5 * 60 * 1000);
                     saveClickerState();
                     updateClickerUI();
                     startCooldownTimer();
@@ -200,13 +195,12 @@
                 }).catch((err) => {
                     console.error("Ad error:", err);
                     tg.showAlert("❌ يجب مشاهدة الإعلان بالكامل لاحتساب الضغطات.");
-                    clickerData.batchClicks = 0; // إعادة ضبط الدفعة الحالية لإعادة المحاولة
+                    clickerData.batchClicks = 0;
                     saveClickerState();
                     updateClickerUI();
                     document.getElementById('clicker-status-msg').innerText = "اضغط على الدائرة للمتابعة";
                 });
             } else {
-                // وضع تجريبي لو الـ SDK مش متحمل
                 clickerData.gamePoints += 1;
                 clickerData.batchClicks = 0;
                 clickerData.cooldownUntil = Date.now() + (5 * 60 * 1000);
@@ -249,15 +243,14 @@
             }
         }
 
-        // تحويل نقاط اللعبة إلى رصيد حقيقي في البوت
         async function showAdAndConvertPoints() {
             if (clickerData.gamePoints <= 0) {
-                tg.showAlert("⚠️ ليس لديك نقاط لعبة كافية للتحويل حالياً.");
+                tg.showAlert("⚠️️ ليس لديك نقاط لعبة كافية للتحويل حالياً.");
                 return;
             }
 
             const pointsToConvert = clickerData.gamePoints;
-            const conversionRate = 10; // سعر النقطة الواحدة للعبة (مثلاً كل 1 نقطة لعبة = 10 نقاط حقيقية أو حسب رغبتك)
+            const conversionRate = 10;
             const realPointsEarned = pointsToConvert * conversionRate;
 
             if (!userData) return;
@@ -273,7 +266,6 @@
 
                 if (error) throw error;
 
-                // تسجيل العملية في الهيستوري بـ type: 'points' لتظهر في البروفايل
                 await client.from('transactions').insert([{
                     telegram_id: String(userId),
                     type: 'points',
@@ -285,7 +277,6 @@
                 userData.points = newTotalPoints;
                 document.getElementById('user-real-points').innerText = newTotalPoints.toLocaleString();
 
-                // تصفير نقاط اللعبة بعد التحويل
                 clickerData.gamePoints = 0;
                 saveClickerState();
                 updateClickerUI();
@@ -302,7 +293,6 @@
             tg.showAlert(`🎯 ${gameName} قيد البرمجة والتطوير وسيتم إضافتها قريباً في فولدر الألعاب!`);
         }
 
-        // التنقل بين الصفحات
         function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
         function goGames() { window.location.href = `games.html?id=${userId}&t=${Date.now()}`; }
