@@ -244,21 +244,26 @@ const StreakManager = (function() {
         return userCurrent;
     }
 
-    // ⭐ الدالة المركزية الآمنة لتحديث النقاط وتسجيل الهيستوري معاً وبدون أخطاء
+        // ⭐ الدالة المركزية الصحيحة 100%
     async function addPointsAndLog(pointsChange, titleText) {
         try {
-            let { data: uInfo } = await _client.from('users').select('points').eq('telegram_id', String(_tid)).single();
+            let { data: uInfo, error: fetchErr } = await _client.from('users').select('points').eq('telegram_id', String(_tid)).single();
+            if (fetchErr) {
+                window.Telegram?.WebApp?.showAlert("❌ خطأ جلب المستخدم: " + fetchErr.message);
+                return false;
+            }
+
             const currentP = uInfo ? (uInfo.points || 0) : 0;
             const newTotalP = currentP + pointsChange;
 
             // 1. تحديث رصيد النقاط للمستخدم
             let { error: uErr } = await _client.from('users').update({ points: newTotalP }).eq('telegram_id', String(_tid));
             if (uErr) {
-                console.error("Points update error:", uErr);
+                window.Telegram?.WebApp?.showAlert("❌ خطأ تحديث النقاط: " + uErr.message);
                 return false;
             }
 
-            // 2. تسجيل العملية مباشرة في جدول السجلات (transactions)
+            // 2. تسجيل العملية في جدول السجلات (transactions)
             const amountFormatted = pointsChange >= 0 ? `+${pointsChange} نقطة` : `${pointsChange} نقطة`;
             let { error: tErr } = await _client.from('transactions').insert([{
                 telegram_id: String(_tid),
@@ -269,15 +274,18 @@ const StreakManager = (function() {
             }]);
             
             if (tErr) {
+                window.Telegram?.WebApp?.showAlert("❌ خطأ حفظ الهيستوري: " + tErr.message);
                 console.error("Transaction log error:", tErr);
+                return false;
             }
 
             return newTotalP;
-        } catch (err) {
-            console.error("addPointsAndLog exception:", err);
+        } catch (err) {  // تم التصحيح هنا بنجاح
+            window.Telegram?.WebApp?.showAlert("❌ خطأ عام: " + err.message);
             return false;
         }
     }
+
 
     function triggerAdFlow(actionType, domElements) {
         _pendingAction = actionType;
