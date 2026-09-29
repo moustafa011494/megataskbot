@@ -310,7 +310,7 @@ const StreakManager = (function() {
                 _userData = saved;
                 if (typeof _onUpdate === 'function') _onUpdate(saved);
                 
-                // تسجيل مكافأة الستريك في الهيستوري مع كشف الخطأ إن وجد
+                // تسجيل مكافأة الستريك في جدول السجلات (الهيستوري)
                 const { error: txErr } = await _client.from('transactions').insert([{
                     telegram_id: String(_tid),
                     type: 'points',
@@ -447,7 +447,7 @@ const StreakManager = (function() {
                 _userData = updated;
                 if (typeof _onUpdate === 'function') _onUpdate(updated);
 
-                // تسجيل جائزة العجلة في الهيستوري مع كشف الخطأ إن وجد
+                // تسجيل جائزة العجلة في جدول السجلات (الهيستوري) إذا فاز بنقاط
                 if (prize.value > 0) {
                     const { error: txErr } = await _client.from('transactions').insert([{
                         telegram_id: String(_tid),
