@@ -19,7 +19,11 @@
         
         .main-balance { text-align: center; margin-bottom: 25px; }
         .main-balance h1 { font-size: 42px; margin: 5px 0; color: white; text-shadow: 0 0 10px rgba(0, 210, 106, 0.3); }
-        .btn-withdraw { background: var(--main-green); color: #000; border: none; padding: 10px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; }
+        
+        /* حاوية أزرار السحب والإيداع بجانب بعضهما */
+        .balance-actions { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-withdraw { background: var(--main-green); color: #000; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-deposit { background: linear-gradient(135deg, #00f2ff, #0077ff); color: #000; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 14px; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; margin-bottom: 20px; }
         .stat-card { background: var(--card-bg); padding: 15px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
@@ -164,7 +168,10 @@
     <div class="main-balance">
         <span>BALANCE</span>
         <h1 id="user-points">0</h1>
-        <button class="btn-withdraw" onclick="goWithdraw()">↗ Withdraw</button>
+        <div class="balance-actions">
+            <button class="btn-withdraw" onclick="goWithdraw()">↗ Withdraw</button>
+            <button class="btn-deposit" onclick="goDeposit()">📥 Deposit</button>
+        </div>
     </div>
 
     <div class="stats-grid">
@@ -266,34 +273,42 @@
                 userData = user;
                 updateUI();
                 startDailyCountdown();
-                checkNewMethodPopup();
-
-                try {
-                    const { data: unreadNotifs } = await client.from('user_notifications').select('*').eq('user_id', userId).eq('is_read', false);
-                    if (unreadNotifs && unreadNotifs.length > 0) {
-                        for (let notif of unreadNotifs) {
-                            tg.showAlert(notif.title + "\n\n" + notif.message);
-                        }
-                        await client.from('user_notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false);
-                    }
-                } catch (e) {
-                    console.error("Notification check error:", e);
-                }
+                checkAndShowNotifications();
             }
         }
 
-        async function checkNewMethodPopup() {
+        // ⭐ فحص وتجميع الإشعارات غير المقروءة وعرضها مرة واحدة بدلاً من تكرارها، ثم تحويل حالتها إلى مقروءة (true)
+        async function checkAndShowNotifications() {
             try {
-                const { data } = await client.from('methods').select('id, title').eq('status', 'Approved').order('id', { ascending: false }).limit(1);
-                if (data && data.length > 0) {
-                    const latest = data[0];
-                    const lastSeenId = localStorage.getItem('last_seen_method_id');
-                    if (lastSeenId !== String(latest.id)) {
-                        tg.showAlert(`🔔 يوجد ميثود جديدة مميزة تم إضافتها!\n\n📌 ${latest.title}\nتفضل بزيارة قسم الميثودات للاستفادة منها.`);
-                        localStorage.setItem('last_seen_method_id', latest.id);
-                    }
+                let { data: unreadNotifs, error } = await client
+                    .from('user_notifications')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .eq('is_read', false);
+
+                if (error || !unreadNotifs || unreadNotifs.length === 0) return;
+
+                const methodNotifs = unreadNotifs.filter(n => n.message && (n.message.includes('ميثود') || n.message.includes('إضافة')));
+                const otherNotifs = unreadNotifs.filter(n => n.message && !n.message.includes('ميثود') && !n.message.includes('إضافة'));
+
+                const idsToMark = unreadNotifs.map(n => n.id);
+
+                if (methodNotifs.length > 1) {
+                    tg.showAlert(`🔔 إشعارات جديدة:\n\nتم إضافة ${methodNotifs.length} ميثودات وتحديثات جديدة أثناء غيابك! تفقد قسم الميثودات للاستفادة منها.`);
+                } else if (methodNotifs.length === 1) {
+                    tg.showAlert((methodNotifs[0].title || "تنبيه جديد") + "\n\n" + methodNotifs[0].message);
                 }
-            } catch (e) {}
+
+                otherNotifs.forEach(n => {
+                    tg.showAlert((n.title || "تنبيه") + "\n\n" + n.message);
+                });
+
+                if (idsToMark.length > 0) {
+                    await client.from('user_notifications').update({ is_read: true }).in('id', idsToMark);
+                }
+            } catch (e) {
+                console.error("Notification check error:", e);
+            }
         }
 
         async function submitRegistration(skip = false) {
@@ -471,7 +486,6 @@
                 updateUI();
                 startDailyCountdown();
                 
-                // تفعيل المؤثرات البصرية للبطاقة
                 const cardBox = document.getElementById('streak-card-box');
                 cardBox.classList.add('streak-glow-effect');
                 setTimeout(() => cardBox.classList.remove('streak-glow-effect'), 1000);
@@ -614,6 +628,7 @@
         function goInvite() { window.location.href = `invite.html?id=${userId}`; }
         function goProfile() { window.location.href = `profile.html?id=${userId}`; }
         function goWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
+        function goDeposit() { window.location.href = `deposit.html?id=${userId}`; }
         function goStore() { window.location.href = `store.html?id=${userId}`; }
         
         function goSocial() { window.location.href = `social.html?id=${userId}`; }
