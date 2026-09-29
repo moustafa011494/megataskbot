@@ -98,7 +98,7 @@
         </div>
     </div>
 
-    <!-- قسم الـ 6 ألعاب المتكاملة داخل فولدر games/ -->
+    <!-- قسم الـ 6 ألعاب المتكاملة -->
     <div class="other-games-section">
         <h3 class="section-title">جميع الألعاب المتاحة 🕹️</h3>
         <div class="games-grid">
@@ -139,9 +139,10 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('megatask_uid') || "").trim();
-        if (!userId || userId === "undefined" || userId === "null" || userId === "") {
-            userId = "123456789";
+        // ⭐ الطريقة المعتمدة لجلب الأيدي بدقة تامة مثل باقي الصفحات
+        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        if (!userId) {
+            userId = localStorage.getItem('megatask_uid') || "";
         } else {
             localStorage.setItem('megatask_uid', userId);
         }
@@ -158,6 +159,11 @@
         let cooldownInterval = null;
 
         async function init() {
+            if (!userId) {
+                document.getElementById('user-real-points').innerText = "0";
+                return;
+            }
+
             let savedDiamonds = parseInt(localStorage.getItem(`megatask_diamonds_${userId}`) || '0');
             clickerData.diamonds = savedDiamonds;
 
@@ -171,7 +177,12 @@
                 }
             }
 
-            const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+            // ⭐ استعلام سوبابيز لجلب رصيد المستخدم الحقيقي
+            const { data: user, error } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+            if (error) {
+                console.error("Supabase error:", error);
+            }
+
             if (user) {
                 userData = user;
                 document.getElementById('user-real-points').innerText = (user.points || 0).toLocaleString();
@@ -184,6 +195,7 @@
         }
 
         function saveClickerState() {
+            if (!userId) return;
             localStorage.setItem(`megatask_diamonds_${userId}`, clickerData.diamonds);
             localStorage.setItem(`clicker_game_${userId}`, JSON.stringify({
                 date: clickerData.date,
@@ -347,7 +359,6 @@
         }
 
         function openGame(gameType) {
-            // ⭐ تحديث مسارات جميع الألعاب لتكون داخل فولدر games/ بدقة
             if (gameType === 'memory') {
                 window.location.href = `games/memory.html?id=${userId}`;
             } else if (gameType === 'quiz') {
