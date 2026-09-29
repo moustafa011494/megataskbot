@@ -98,7 +98,7 @@
         </div>
     </div>
 
-    <!-- قسم الـ 6 ألعاب المتكاملة -->
+    <!-- قسم الـ 6 ألعاب المتكاملة داخل فولدر games/ -->
     <div class="other-games-section">
         <h3 class="section-title">جميع الألعاب المتاحة 🕹️</h3>
         <div class="games-grid">
@@ -135,13 +135,15 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6InNub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-        if (!userId || userId === "undefined" || userId === "null") {
+        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('megatask_uid') || "").trim();
+        if (!userId || userId === "undefined" || userId === "null" || userId === "") {
             userId = "123456789";
+        } else {
+            localStorage.setItem('megatask_uid', userId);
         }
 
         let userData = null;
@@ -297,12 +299,11 @@
             if (clickerData.diamonds <= 0) return;
 
             const diamondsToConvert = clickerData.diamonds;
-            // ⭐ قاعدة التحويل: كل 10 ألماسات = 1 نقطة بوت حقيقية
             const realPointsEarned = Math.floor(diamondsToConvert / 10);
             const diamondsUsed = realPointsEarned * 10;
 
             if (realPointsEarned <= 0) {
-                tg.showAlert("⚠️️ يجب أن تمتلك 10 ألماسات على الأقل لتحويلها إلى نقطة واحدة بالبوت!");
+                tg.showAlert("⚠️ يجب أن تمتلك 10 ألماسات على الأقل لتحويلها إلى نقطة واحدة بالبوت!");
                 closeConvertModal();
                 return;
             }
@@ -346,6 +347,7 @@
         }
 
         function openGame(gameType) {
+            // ⭐ تحديث مسارات جميع الألعاب لتكون داخل فولدر games/ بدقة
             if (gameType === 'memory') {
                 window.location.href = `games/memory.html?id=${userId}`;
             } else if (gameType === 'quiz') {
@@ -355,9 +357,9 @@
             } else if (gameType === 'tictactoe') {
                 window.location.href = `games/tictactoe.html?id=${userId}`;
             } else if (gameType === 'seahorse') {
-                window.location.href = `game-seahorse.html?id=${userId}`;
+                window.location.href = `games/game-seahorse.html?id=${userId}`;
             } else if (gameType === 'space') {
-                window.location.href = `game-space.html?id=${userId}`;
+                window.location.href = `games/game-space.html?id=${userId}`;
             }
         }
 
