@@ -40,7 +40,7 @@
 
     <div class="input-group">
         <label>المبلغ المراد إيداعه (بالجنيه أو النقاط)</label>
-        <input type="number" id="deposit-amount" placeholder="مثلاً: 100 جنيه أو 10000 نقطة">
+        <input type="number" id="deposit-amount" placeholder="مثلاً: 100 جنيه أو 10000 نقطة" oninput="updateConversionHint()">
         <small id="conversion-hint" style="color: var(--main-green); display: block; margin-top: 5px; font-size: 11px;"></small>
     </div>
 
@@ -81,6 +81,18 @@
             if (data) document.getElementById('current-points').innerText = (data.points || 0).toLocaleString() + " نقطة";
         }
 
+        // ⭐ تحديث هنت التحويل التلقائي بناءً على المبلغ المدخل (مثلاً كل 1 جنيه = 1000 نقطة أو حسب نظامك)
+        function updateConversionHint() {
+            const val = parseFloat(document.getElementById('deposit-amount').value) || 0;
+            const hint = document.getElementById('conversion-hint');
+            if (val > 0) {
+                const pointsEstimated = val * 1000; // عدل المعامل حسب نظام نقاطك لو مختلف
+                hint.innerHTML = `💡 يعادل تقريباً: ${pointsEstimated.toLocaleString()} نقطة`;
+            } else {
+                hint.innerHTML = "";
+            }
+        }
+
         async function loadDepositMethods() {
             const select = document.getElementById('deposit-method');
             const { data, error } = await client.from('deposit_methods').select('*');
@@ -107,6 +119,8 @@
             if (!wallet) return tg.showAlert("❌ يرجى إدخال تفاصيل الحساب المحول منه أو رقم الإيصال!");
 
             const txId = "DEP-" + Math.floor(100000 + Math.random() * 900000);
+            
+            // 1. إرسال الطلب لجدول الإيداعات
             const { error } = await client.from('deposits').insert([{
                 telegram_id: tid,
                 tx_id: txId,
@@ -118,6 +132,15 @@
             }]);
 
             if (!error) {
+                // ⭐ 2. تسجيل العملية في جدول السجلات (الهيستوري) لتظهر في البروفايل
+                await client.from('transactions').insert([{
+                    telegram_id: String(tid),
+                    type: 'deposit',
+                    title: `طلب إيداع (${method})`,
+                    amount: `+${amount} جنيه`,
+                    status: 'قيد المراجعة'
+                }]);
+
                 tg.showAlert(`✅ تم إرسال طلب الإيداع بنجاح!\nرقم المعاملة: ${txId}\nسيتم مراجعة التحويل وإضافة الرصيد قريباً.`);
                 goStore();
             } else {
