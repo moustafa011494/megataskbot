@@ -34,7 +34,7 @@
         .btn-action-game { background: linear-gradient(135deg, #ffaa00, #e67e00); color: black; border: none; width: 100%; padding: 14px; border-radius: 14px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.2); }
         .btn-action-game:disabled { background: #333; color: #777; cursor: not-allowed; box-shadow: none; }
 
-        /* شبكة الألعاب الأخرى المستقبلية */
+        /* شبكة الألعاب الأخرى */
         .other-games-section { padding: 0 15px; margin-top: 25px; text-align: right; }
         .section-title { color: var(--main-green); font-size: 14px; margin: 0 0 15px 0; border-right: 3px solid var(--main-green); padding-right: 10px; }
         .games-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -82,15 +82,15 @@
         </button>
     </div>
 
-    <!-- قسم الألعاب الأخرى المختلفة (مستقبلية) -->
+    <!-- قسم الألعاب الأخرى -->
     <div class="other-games-section">
-        <h3 class="section-title">ألعاب أخرى قادمة قريباً 🕹️</h3>
+        <h3 class="section-title">ألعاب ممتعة أخرى 🕹️</h3>
         <div class="games-grid">
-            <div class="game-card-item" onclick="showSoon('لعبة الذاكرة')">
-                <span>🧠</span>لعبة الذاكرة
-            </div>
-            <div class="game-card-item" onclick="showSoon('كويز المعلومات')">
+            <div class="game-card-item" onclick="openGame('quiz')">
                 <span>❓</span>كويز ذكاء
+            </div>
+            <div class="game-card-item" onclick="openGame('memory')">
+                <span>🧠</span>لعبة الذاكرة
             </div>
         </div>
     </div>
@@ -111,7 +111,11 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        // ⭐ حل جذري: جلب الـ ID من الرابط أو من تليجرام ويب أب مباشرة
+        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        if (!userId) {
+            userId = "123456789"; // قيمة افتراضية احتياطية لو مش موجود
+        }
 
         let userData = null;
         let clickerData = {
@@ -125,8 +129,7 @@
         let cooldownInterval = null;
 
         async function init() {
-            if (!userId) return;
-            
+            // جلب نقاط اللعبة المخزنة مؤقتاً للمستخدم
             const savedData = localStorage.getItem(`clicker_game_${userId}`);
             if (savedData) {
                 clickerData = JSON.parse(savedData);
@@ -138,10 +141,21 @@
                 }
             }
 
-            const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+            // ⭐ جلب رصيد المستخدم الحقيقي من سوبابيز بناءً على الـ userId الصحيح
+            const { data: user, error } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
             if (user) {
                 userData = user;
                 document.getElementById('user-real-points').innerText = (user.points || 0).toLocaleString();
+            } else {
+                document.getElementById('user-real-points').innerText = "0";
+            }
+
+            // فحص لو فيه نقاط لعبة متراكمة من لعبة الذاكرة مثلاً
+            let memoryBonus = parseInt(localStorage.getItem(`clicker_game_${userId}_points`) || '0');
+            if (memoryBonus > 0) {
+                clickerData.gamePoints += memoryBonus;
+                localStorage.setItem(`clicker_game_${userId}_points`, '0');
+                saveClickerState();
             }
 
             updateClickerUI();
@@ -245,7 +259,7 @@
 
         async function showAdAndConvertPoints() {
             if (clickerData.gamePoints <= 0) {
-                tg.showAlert("⚠️️ ليس لديك نقاط لعبة كافية للتحويل حالياً.");
+                tg.showAlert("⚠️ ليس لديك نقاط لعبة كافية للتحويل حالياً.");
                 return;
             }
 
@@ -289,9 +303,14 @@
             }
         }
 
-        <div class="game-card-item" onclick="window.location.href='games/memory.html?id=' + userId">
-    <span>🧠</span>لعبة الذاكرة
-   </div>
+        // ⭐ دالة فتح الألعاب المختلفة من فولدر games/
+        function openGame(gameType) {
+            if (gameType === 'memory') {
+                window.location.href = `games/memory.html?id=${userId}`;
+            } else if (gameType === 'quiz') {
+                window.location.href = `games/quiz.html?id=${userId}`;
+            }
+        }
 
         function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
