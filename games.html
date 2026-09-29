@@ -289,9 +289,9 @@
             }
         }
 
-        function showSoon(gameName) {
-            tg.showAlert(`🎯 ${gameName} قيد البرمجة والتطوير وسيتم إضافتها قريباً في فولدر الألعاب!`);
-        }
+        <div class="game-card-item" onclick="window.location.href='games/memory.html?id=' + userId">
+    <span>🧠</span>لعبة الذاكرة
+   </div>
 
         function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
