@@ -463,7 +463,6 @@
         div.innerHTML = data.length === 0 ? "📭 لا توجد منتجات في المتجر." : "";
         
         for (let p of data) {
-            // جلب الإحصائيات ومن قام بالشراء من جدول store_orders
             let { data: orders } = await client.from('store_orders').select('user_id, buyer_input, created_at').eq('product_id', p.id);
             let soldCount = orders ? orders.length : 0;
             let buyersHtml = "";
@@ -538,7 +537,7 @@
         loadStoreProductsList();
     }
 
-    // --- طلبات الإيداع ---
+    // --- طلبات الإيداع (تم إصلاح إضافة النقاط وسجل الهيستوري) ---
     async function loadDepositsRequests() {
         const div = document.getElementById('deposits-requests-list');
         if (!div) return;
@@ -557,35 +556,45 @@
                         <span class="info-text">⏰ الوقت: ${new Date(d.created_at).toLocaleString('ar-EG')}</span>
                     </div>
                     <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', ${d.amount}, true)">قبول وإضافة الرصيد ✅</button>
-                        <button class="reject-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', ${d.amount}, false)">رفض ❌</button>
+                        <button class="approve-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', ${d.amount}, '${escapeQuote(d.method)}', true)">قبول وإضافة الرصيد ✅</button>
+                        <button class="reject-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', ${d.amount}, '${escapeQuote(d.method)}', false)">رفض ❌</button>
                     </div>
                 </div>`;
         });
     }
 
-    async function reviewDeposit(id, telegramId, amount, isApproved) {
+    async function reviewDeposit(id, telegramId, amount, method, isApproved) {
         if (isApproved) {
             if (!confirm(`تأكيد قبول الإيداع وإضافة الرصيد للمستخدم؟`)) return;
 
             const { error: err1 } = await client.from('deposits').update({ status: 'Completed' }).eq('id', id);
             if (err1) { alert("خطأ: " + err1.message); return; }
 
+            const addPts = parseFloat(amount) > 1000 ? parseFloat(amount) : parseFloat(amount) * 1000; // حساب دقيق للنقاط
+
             const { data: userData } = await client.from('users').select('points, total_earned').eq('telegram_id', telegramId).maybeSingle();
             if (userData) {
-                const addPts = parseFloat(amount) > 1000 ? parseFloat(amount) : parseFloat(amount) * 100; // تحويل مبدئي أو إضافة مباشرة
                 const newPoints = (userData.points || 0) + addPts;
                 const newTotalEarned = (userData.total_earned || 0) + addPts;
                 await client.from('users').update({ points: newPoints, total_earned: newTotalEarned }).eq('telegram_id', telegramId);
             }
 
+            // ⭐ تسجيل الإيداع في جدول الهيستوري (transactions) بالنوع points ليظهر في البروفايل
+            await client.from('transactions').insert([{
+                telegram_id: String(telegramId),
+                type: 'points',
+                title: `إيداع رصيد ناجح (${method})`,
+                amount: `+${addPts.toLocaleString()} نقطة`,
+                status: 'مكتمل'
+            }]);
+
             await client.from('bot_messages').insert([{
                 telegram_id: telegramId,
-                message: `🎉 *تم قبول وإضافة إيداعك بنجاح!* ✅\n\n💰 المبلغ المضاف برصيدك: ${amount}\n\nشكراً لاستخدامك منصة MegaTask! 🚀`,
+                message: `🎉 *تم قبول وإضافة إيداعك بنجاح!* ✅\n\n💰 المبلغ المضاف برصيدك: ${addPts.toLocaleString()} نقطة\n\nشكراً لاستخدامك منصة MegaTask! 🚀`,
                 status: 'pending'
             }]);
 
-            alert("تم قبول الإيداع وإضافة الرصيد للمستخدم بنجاح! 🚀");
+            alert("تم قبول الإيداع وإضافة الرصيد ونشر الهيستوري للمستخدم بنجاح! 🚀");
         } else {
             const reason = prompt("أدخل سبب رفض الإيداع (ليظهر للمستخدم في البوت):", "لم يتم تأكيد وصول التحويل");
             if (reason === null) return;
@@ -948,7 +957,78 @@
         document.getElementById('lightbox-modal').style.display = 'none';
     }
 
-    // --- 5. المهام النشطة (تعديل كامل وحذف) ---
+    // --- 5. مهام المستخدمين المعلقة (Pending Tasks) ---
+    async function loadPendingTasks() {
+        const div = document.getElementById('pending-tasks-list');
+        if (!div) return;
+        let { data, error } = await client.from('tasks').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
+        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+
+        div.innerHTML = data.length === 0 ? "✅ لا توجد مهام جديدة تنتظر المراجعة." : "";
+        data.forEach(t => {
+            div.innerHTML += `
+                <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
+                    <div style="width:100%;">
+                        <b>📌 العنوان:</b> ${t.title} (${t.platform || 'telegram'})<br>
+                        <b>👤 صاحب المهمة ID:</b> <span style="color:var(--neon-blue);">${t.creator_id || t.user_id}</span><br>
+                        <b>💰 مكافأة العضو:</b> ${t.reward} نقطة | <b>العدد المطلوب:</b> ${t.target_count || 10}<br>
+                        <b>🔗 الرابط:</b> <a href="${t.url}" target="_blank" style="color:var(--neon-blue);">${t.url}</a><br>
+                        <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0;">${t.description || 'بلا وصف'}</div>
+                    </div>
+                    <div class="actions-box">
+                        <button class="approve-btn" onclick="reviewUserTask(${t.id}, '${t.creator_id || t.user_id}', '${escapeQuote(t.title)}', true)">موافقة ونشر ✅</button>
+                        <button class="reject-btn" onclick="reviewUserTask(${t.id}, '${t.creator_id || t.user_id}', '${escapeQuote(t.title)}', false)">رفض ❌</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    async function reviewUserTask(id, creatorId, title, isApproved) {
+        if (isApproved) {
+            const { error } = await client.from('tasks').update({ status: 'Approved', is_active: true }).eq('id', id);
+            if (error) { alert("خطأ: " + error.message); return; }
+
+            if (creatorId && creatorId !== 'ADMIN') {
+                await client.from('bot_messages').insert([{
+                    telegram_id: creatorId,
+                    message: `🎉 *مبارك! تم قبول ونشر مهمتك بنجاح* ✅\n\n📌 *المهمة:* ${title}`,
+                    status: 'pending'
+                }]);
+            }
+            alert("تمت الموافقة على المهمة ونشرها بنجاح! 🚀");
+        } else {
+            const reason = prompt("أدخل سبب رفض المهمة (ليظهر للمستخدم في البوت):", "المخالفة لشروط وقواعد المنصة");
+            if (reason === null) return;
+
+            // جلب تفاصيل المهمة لاسترداد نقاط التكلفة للمستخدم عند الرفض
+            let { data: taskData } = await client.from('tasks').select('*').eq('id', id).single();
+            if (taskData) {
+                const refundPoints = (taskData.cost_per_user || taskData.reward || 10) * (taskData.target_count || 10);
+                if (refundPoints > 0 && creatorId && creatorId !== 'ADMIN') {
+                    let { data: userDat } = await client.from('users').select('points').eq('telegram_id', creatorId).maybeSingle();
+                    if (userDat) {
+                        const refundedBal = (userDat.points || 0) + refundPoints;
+                        await client.from('users').update({ points: refundedBal }).eq('telegram_id', creatorId);
+                    }
+                }
+            }
+
+            await client.from('tasks').update({ status: 'Rejected' }).eq('id', id);
+
+            if (creatorId && creatorId !== 'ADMIN') {
+                await client.from('bot_messages').insert([{
+                    telegram_id: creatorId,
+                    message: `❌ *عذراً، تم رفض مهمتك المقترحة*\n\n📌 *المهمة:* ${title}\n💬 *السبب:* ${reason}\n💰 تم استرداد نقاط التكلفة إلى رصيدك.`,
+                    status: 'pending'
+                }]);
+            }
+            alert("تم رفض المهمة واسترداد النقاط لصاحبها.");
+        }
+        loadPendingTasks();
+        loadTasks();
+    }
+
+    // --- 6. المهام النشطة (تعديل كامل وحذف) ---
     async function loadTasks() {
         const div = document.getElementById('tasks-list');
         let { data, error } = await client.from('tasks').select('*').eq('status', 'Approved').order('created_at', { ascending: false });
@@ -960,10 +1040,10 @@
                 <div class="item-row task-row" style="width:100%; box-sizing:border-box;">
                     <div>
                         <b>${t.title}</b><br>
-                        <span class="info-text">💰 ${t.reward} نقطة | 🔗 <a href="${t.link}" target="_blank" style="color:var(--neon-blue)">رابط المهمة</a></span>
+                        <span class="info-text">💰 ${t.reward} نقطة | 🔗 <a href="${t.link || t.url}" target="_blank" style="color:var(--neon-blue)">رابط المهمة</a></span>
                     </div>
                     <div style="display:flex; gap:8px;">
-                        <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link)}', ${t.reward}, ${t.target_count || 10})">تعديل بالكامل ✏️</button>
+                        <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link || t.url)}', ${t.reward}, ${t.target_count || 10})">تعديل بالكامل ✏️</button>
                         <button class="del-btn" onclick="deleteTask(${t.id})">حذف 🗑️</button>
                     </div>
                 </div>`;
@@ -1021,7 +1101,7 @@
         loadTasks();
     }
 
-    // --- 6. طلبات السحب ---
+    // --- 7. طلبات السحب ---
     async function loadWithdrawals() {
         const div = document.getElementById('withdraw-list');
         let { data, error } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
@@ -1063,6 +1143,7 @@
         loadPendingStoreProducts();
         loadStoreOrders();
         loadTasks();
+        loadPendingTasks(); // تم تفعيل استدعاء مهام المستخدمين المعلقة هنا
         loadWithdrawals();
     };
 </script>
