@@ -74,7 +74,7 @@
     <div id="start-screen" class="overlay-screen">
         <div style="font-size: 55px; margin-bottom: 10px;">🚀</div>
         <h1>SPACE DODGE</h1>
-        <p>اسحب بإصبعك لتحريك السفينة، تفادى النيازك، واجمع الجواهر الفضائية لكسب الألماس الموحد 💎!</p>
+        <p>تفادى النيازك السريعة واجمع الألماس الموحد 💎!</p>
         
         <div class="leaderboard-box">
             <div class="leaderboard-title">🏆 لوحة الشرف (أعلى السكورات)</div>
@@ -121,8 +121,8 @@
         let ship = {
             x: canvas.width / 2,
             y: canvas.height - 120,
-            width: 44,
-            height: 50
+            width: 40,
+            height: 45
         };
 
         let meteors = [];
@@ -132,12 +132,12 @@
 
         function initStars() {
             stars = [];
-            for (let i = 0; i < 60; i++) {
+            for (let i = 0; i < 50; i++) {
                 stars.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
-                    radius: Math.random() * 2,
-                    speed: Math.random() * 1.5 + 0.5
+                    radius: Math.random() * 1.5,
+                    speed: Math.random() * 1 + 0.3
                 });
             }
         }
@@ -164,14 +164,13 @@
             }
         }
 
-        // إظهار إعلان قبل بدء أو إعادة الجولة
         function triggerAdAndStart() {
             if (typeof show_10959333 === 'function') {
                 show_10959333().then(() => {
                     startGame();
                 }).catch((err) => {
                     console.error("Ad error:", err);
-                    startGame(); // بدء اللعبة حتى لو فشل تحميل الإعلان تفادياً لتعطل المستخدم
+                    startGame();
                 });
             } else {
                 startGame();
@@ -214,17 +213,18 @@
                 if (s.y > canvas.height) s.y = 0;
             });
 
-            let spawnRate = Math.max(30, 70 - Math.floor(score / 50));
+            // ⭐ زيادة الصعوبة: نيازك تظهر بشكل أسرع وأكثر كثافة
+            let spawnRate = Math.max(20, 50 - Math.floor(score / 30));
             if (frameCount % spawnRate === 0) {
                 meteors.push({
                     x: Math.random() * (canvas.width - 40) + 20,
                     y: -50,
-                    radius: Math.random() * 18 + 14,
-                    speed: Math.random() * 3 + 4 + (score / 200)
+                    radius: Math.random() * 20 + 15,
+                    speed: Math.random() * 4 + 6 + (score / 100) // سرعة أعلى
                 });
             }
 
-            if (frameCount % 120 === 0) {
+            if (frameCount % 180 === 0) {
                 gems.push({
                     x: Math.random() * (canvas.width - 30) + 15,
                     y: -30,
@@ -246,7 +246,7 @@
 
                 if (meteors[i].y > canvas.height + 50) {
                     meteors.splice(i, 1);
-                    score += 5;
+                    score += 1; // ⭐ تقليل النقاط المكتسبة لكل نيزك يتم تفاديه لتصبح النقاط بطيئة
                     document.getElementById('current-score').innerText = score;
                 }
             }
@@ -259,7 +259,7 @@
                 let distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance < ship.width / 2 + gems[i].radius) {
-                    score += 20;
+                    score += 5; // نقاط أقل للجواهر أيضاً
                     document.getElementById('current-score').innerText = score;
                     gems.splice(i, 1);
                     continue;
@@ -345,21 +345,20 @@
                     await client.from('game_scores').upsert({ user_id: userId, high_score: score }, { onConflict: 'user_id' });
                 }
 
-                // حساب الألماس الممنوح بنسبة متوازنة (مثلاً كل 10 نقاط سكور = 1 ألماسة)
-                const earnedDiamonds = Math.floor(score / 10);
+                // ⭐ ضبط حساب الألماس ليكون متناسباً مع المعدل الأبطأ الجديد (مثلاً كل 5 نقاط سكور = 1 ألماسة)
+                const earnedDiamonds = Math.floor(score / 5);
                 if (earnedDiamonds > 0) {
                     let currentDiamonds = parseInt(localStorage.getItem(`megatask_diamonds_${userId}`) || '0');
                     localStorage.setItem(`megatask_diamonds_${userId}`, currentDiamonds + earnedDiamonds);
                     
-                    // إظهار إعلان عند جمع ومطالبة الألماس
                     if (typeof show_10959333 === 'function') {
                         show_10959333().then(() => {
-                            tg.showAlert(`🚀 ممتاز!\nأداء فضي رائع، تمت إضافة (+${earnedDiamonds} 💎 ألماسات) لرصيدك الموحد.`);
+                            tg.showAlert(`🚀 ممتاز!\nتمت إضافة (+${earnedDiamonds} 💎 ألماسات) لرصيدك الموحد.`);
                         }).catch(() => {
-                            tg.showAlert(`🚀 ممتاز!\nأداء فضي رائع، تمت إضافة (+${earnedDiamonds} 💎 ألماسات) لرصيدك الموحد.`);
+                            tg.showAlert(`🚀 ممتاز!\nتمت إضافة (+${earnedDiamonds} 💎 ألماسات) لرصيدك الموحد.`);
                         });
                     } else {
-                        tg.showAlert(`🚀 ممتاز!\nأداء فضي رائع، تمت إضافة (+${earnedDiamonds} 💎 ألماسات) لرصيدك الموحد.`);
+                        tg.showAlert(`🚀 ممتاز!\nتمت إضافة (+${earnedDiamonds} 💎 ألماسات) لرصيدك الموحد.`);
                     }
                 }
             } catch (e) {
@@ -368,7 +367,7 @@
         }
 
         function exitGame() {
-            window.location.href = `games.html?id=${userId}`;
+            window.location.href = `../games.html?id=${userId}`;
         }
 
         init();
