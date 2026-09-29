@@ -105,12 +105,13 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6InNub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
+        // ⭐ الاستخراج الدقيق والصحيح لأيدي المستخدم
         let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-        if (!userId) {
+        if (!userId || userId === "undefined" || userId === "null") {
             userId = "123456789";
         }
 
@@ -137,7 +138,8 @@
                 }
             }
 
-            const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+            // ⭐ جلب بيانات المستخدم الحقيقية من سوبابيز
+            const { data: user, error } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
             if (user) {
                 userData = user;
                 document.getElementById('user-real-points').innerText = (user.points || 0).toLocaleString();
@@ -145,7 +147,6 @@
                 document.getElementById('user-real-points').innerText = "0";
             }
 
-            // فحص رصيد الألعاب المضاف من ألعاب ثانوية (مثل الذاكرة أو الكويز)
             let memoryBonus = parseInt(localStorage.getItem(`clicker_game_${userId}_points`) || '0');
             if (memoryBonus > 0) {
                 clickerData.gamePoints += memoryBonus;
@@ -257,7 +258,7 @@
             }
 
             const pointsToConvert = clickerData.gamePoints;
-            const conversionRate = 1; // ⭐ تعديل: كل نقطة لعبة تعادل نقطة واحدة حقيقية في البوت
+            const conversionRate = 1;
             const realPointsEarned = pointsToConvert * conversionRate;
 
             if (!userData) return;
@@ -306,7 +307,7 @@
 
         function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
-        function goGames() { window.location.href, `games.html?id=${userId}&t=${Date.now()}`; }
+        function goGames() { window.location.href = `games.html?id=${userId}&t=${Date.now()}`; }
         function goInvite() { window.location.href = `invite.html?id=${userId}&t=${Date.now()}`; }
         function goProfile() { window.location.href = `profile.html?id=${userId}&t=${Date.now()}`; }
 
