@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Space Dodge - MegaTask Arcade</title>
+    
+    <!-- إعلانات Monetag -->
+    <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
@@ -16,7 +20,6 @@
             overflow: hidden; user-select: none; -webkit-user-select: none;
         }
 
-        /* شريط العلوي الفخم */
         .game-top-bar {
             position: absolute; top: 0; left: 0; width: 100%;
             display: flex; justify-content: space-between; align-items: center;
@@ -34,7 +37,6 @@
 
         canvas { display: block; width: 100vw; height: 100vh; background: #030508; }
 
-        /* شاشات البداية والنهاية الـ Overlay */
         .overlay-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(3, 5, 8, 0.94); z-index: 30;
@@ -52,7 +54,6 @@
         }
         .btn-action-game:active { transform: scale(0.96); }
 
-        /* جدول الصدارة المصغر (Leaderboard) */
         .leaderboard-box {
             background: rgba(20, 23, 31, 0.8); border: 1px solid #2d333f;
             border-radius: 15px; padding: 12px; width: 100%; max-width: 280px; margin-bottom: 20px;
@@ -68,27 +69,27 @@
         <div class="top-info-box">النقاط: <span id="current-score">0</span></div>
     </div>
     
-    <button class="btn-exit" onclick="exitGame()">✖ خروج</button>
+    <button class="btn-exit" onclick="exitGame()">✖ خروج للألعاب</button>
 
     <div id="start-screen" class="overlay-screen">
-        <div style="font-size: 55px; margin-bottom: 10px; animation: float 2s infinite alternate;">🚀</div>
+        <div style="font-size: 55px; margin-bottom: 10px;">🚀</div>
         <h1>SPACE DODGE</h1>
-        <p>اسحب بإصبعك يميناً ويساراً لتحريك السفينة، تفادى النيازك المشتعلة، واجمع الجواهر الفضائية المضاعفة!</p>
+        <p>اسحب بإصبعك لتحريك السفينة، تفادى النيازك، واجمع الجواهر الفضائية لكسب الألماس الموحد 💎!</p>
         
         <div class="leaderboard-box">
             <div class="leaderboard-title">🏆 لوحة الشرف (أعلى السكورات)</div>
             <div id="lb-content">جاري تحميل التصنيف...</div>
         </div>
 
-        <button class="btn-action-game" onclick="startGame()">⚡ بدء المهمة الفضائية</button>
+        <button class="btn-action-game" onclick="triggerAdAndStart()">⚡ بدء المهمة الفضائية</button>
     </div>
 
     <div id="gameover-screen" class="overlay-screen" style="display: none;">
         <div style="font-size: 55px; margin-bottom: 10px;">💥</div>
         <h1 style="color: #ff3b30; text-shadow: 0 0 20px rgba(255,59,48,0.4);">اصطدام مدمر!</h1>
         <p id="final-score-text" style="color: white; font-size: 16px; font-weight: bold; margin-bottom: 20px;">النقاط المحققة: 0</p>
-        <button class="btn-action-game" onclick="startGame()">🔄 محاولة أخرى</button>
-        <button class="btn-action-game" style="background: #222630; color: #fff; margin-top: 10px;" onclick="exitGame()">🔙 العودة للصالة</button>
+        <button class="btn-action-game" onclick="triggerAdAndStart()">🔄 محاولة أخرى</button>
+        <button class="btn-action-game" style="background: #222630; color: #fff; margin-top: 10px;" onclick="exitGame()">🔙 العودة لصفحة الألعاب</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -115,16 +116,13 @@
         });
 
         let score = 0;
-        let userData = null;
         let gameRunning = false;
 
-        // خصائص سفينة الفضاء
         let ship = {
             x: canvas.width / 2,
             y: canvas.height - 120,
             width: 44,
-            height: 50,
-            speed: 0
+            height: 50
         };
 
         let meteors = [];
@@ -132,7 +130,6 @@
         let stars = [];
         let frameCount = 0;
 
-        // توليد النجوم في الخلفية لتعطي عمق فضائي فخم
         function initStars() {
             stars = [];
             for (let i = 0; i < 60; i++) {
@@ -146,11 +143,7 @@
         }
 
         async function init() {
-            try {
-                const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-                if (user) userData = user;
-                loadLeaderboard();
-            } catch (e) {}
+            loadLeaderboard();
             initStars();
         }
 
@@ -164,10 +157,24 @@
                         lbBox.innerHTML += `<div class="lb-row"><span>#${idx+1} لاعب (${s.user_id.slice(-4)})</span><b style="color:#00d26a">${s.high_score} ن</b></div>`;
                     });
                 } else {
-                    lbBox.innerHTML = "لا توجد سكورات مسجلة بعد. كن الأول!";
+                    lbBox.innerHTML = "لا توجد سكورات مسجلة بعد.";
                 }
             } catch (e) {
                 document.getElementById('lb-content').innerHTML = "فشل تحميل لوحة الشرف";
+            }
+        }
+
+        // إظهار إعلان قبل بدء أو إعادة الجولة
+        function triggerAdAndStart() {
+            if (typeof show_10959333 === 'function') {
+                show_10959333().then(() => {
+                    startGame();
+                }).catch((err) => {
+                    console.error("Ad error:", err);
+                    startGame(); // بدء اللعبة حتى لو فشل تحميل الإعلان تفادياً لتعطل المستخدم
+                });
+            } else {
+                startGame();
             }
         }
 
@@ -187,11 +194,9 @@
             loop();
         }
 
-        // تحريك السفينة باللمس والسحب السلس
         window.addEventListener('touchmove', (e) => {
             if (gameRunning) {
                 ship.x = e.touches[0].clientX;
-                // حماية من الخروج عن الشاشة
                 if (ship.x < 30) ship.x = 30;
                 if (ship.x > canvas.width - 30) ship.x = canvas.width - 30;
             }
@@ -204,13 +209,11 @@
         });
 
         function update() {
-            // تحديث النجوم
             stars.forEach(s => {
                 s.y += s.speed;
                 if (s.y > canvas.height) s.y = 0;
             });
 
-            // توليد النيازك المشتعلة بزيادة التدريج في الصعوبة
             let spawnRate = Math.max(30, 70 - Math.floor(score / 50));
             if (frameCount % spawnRate === 0) {
                 meteors.push({
@@ -221,7 +224,6 @@
                 });
             }
 
-            // توليد الجواهر المضيئة للتحفيز
             if (frameCount % 120 === 0) {
                 gems.push({
                     x: Math.random() * (canvas.width - 30) + 15,
@@ -231,7 +233,6 @@
                 });
             }
 
-            // تحريك النيازك وفحص الاصطدام المميت
             for (let i = meteors.length - 1; i >= 0; i--) {
                 meteors[i].y += meteors[i].speed;
 
@@ -245,12 +246,11 @@
 
                 if (meteors[i].y > canvas.height + 50) {
                     meteors.splice(i, 1);
-                    score += 5; // نقطة لكل نيزك يتم تفاديه
+                    score += 5;
                     document.getElementById('current-score').innerText = score;
                 }
             }
 
-            // تحريك وتجميع الجواهر المضيئة
             for (let i = gems.length - 1; i >= 0; i--) {
                 gems[i].y += gems[i].speed;
 
@@ -259,7 +259,7 @@
                 let distance = Math.sqrt(dx * dx + dy * dy);
 
                 if (distance < ship.width / 2 + gems[i].radius) {
-                    score += 25; // مكافأة جوهرة
+                    score += 20;
                     document.getElementById('current-score').innerText = score;
                     gems.splice(i, 1);
                     continue;
@@ -276,7 +276,6 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // رسم النجوم الفضائية المتحركة
             ctx.fillStyle = "#ffffff";
             stars.forEach(s => {
                 ctx.beginPath();
@@ -284,7 +283,6 @@
                 ctx.fill();
             });
 
-            // رسم الجواهر الفضائية (Glowing Gems)
             gems.forEach(g => {
                 ctx.save();
                 ctx.shadowBlur = 15;
@@ -296,7 +294,6 @@
                 ctx.restore();
             });
 
-            // رسم النيازك (Meteors)
             meteors.forEach(m => {
                 ctx.save();
                 ctx.shadowBlur = 12;
@@ -311,7 +308,6 @@
                 ctx.restore();
             });
 
-            // رسم سفينة الفضاء الاحترافية (Neon Ship)
             ctx.save();
             ctx.shadowBlur = 20;
             ctx.shadowColor = "#00d26a";
@@ -342,7 +338,6 @@
             document.getElementById('gameover-screen').style.display = 'flex';
 
             try {
-                // جلب السكور القديم ومقارنته لتحديث لوحة الشرف
                 const { data: oldData } = await client.from('game_scores').select('high_score').eq('user_id', userId).maybeSingle();
                 let currentHighest = oldData ? oldData.high_score : 0;
 
@@ -350,14 +345,21 @@
                     await client.from('game_scores').upsert({ user_id: userId, high_score: score }, { onConflict: 'user_id' });
                 }
 
-                // إضافة المكافأة المالية لرصيد نقاط المستخدم الأساسي في البوت
-                if (userData) {
-                    const bonusPoints = Math.floor(score / 4); // نقاط مالية لكل محاولة
-                    const newTotalPoints = (userData.points || 0) + bonusPoints;
-                    await client.from('users').update({ points: newTotalPoints }).eq('telegram_id', userId);
-                    userData.points = newTotalPoints;
-                    if (bonusPoints > 0) {
-                        tg.showAlert(`🚀 ممتاز!\nأداء فضي رائع، تمت إضافة مكافأة +${bonusPoints} نقطة لرصيدك الأساسي.`);
+                // حساب الألماس الممنوح بنسبة متوازنة (مثلاً كل 10 نقاط سكور = 1 ألماسة)
+                const earnedDiamonds = Math.floor(score / 10);
+                if (earnedDiamonds > 0) {
+                    let currentDiamonds = parseInt(localStorage.getItem(`megatask_diamonds_${userId}`) || '0');
+                    localStorage.setItem(`megatask_diamonds_${userId}`, currentDiamonds + earnedDiamonds);
+                    
+                    // إظهار إعلان عند جمع ومطالبة الألماس
+                    if (typeof show_10959333 === 'function') {
+                        show_10959333().then(() => {
+                            tg.showAlert(`🚀 ممتاز!\nأداء فضي رائع، تمت إضافة (+${earnedDiamonds} 💎 ألماسات) لرصيدك الموحد.`);
+                        }).catch(() => {
+                            tg.showAlert(`🚀 ممتاز!\nأداء فضي رائع، تمت إضافة (+${earnedDiamonds} 💎 ألماسات) لرصيدك الموحد.`);
+                        });
+                    } else {
+                        tg.showAlert(`🚀 ممتاز!\nأداء فضي رائع، تمت إضافة (+${earnedDiamonds} 💎 ألماسات) لرصيدك الموحد.`);
                     }
                 }
             } catch (e) {
@@ -372,4 +374,4 @@
         init();
     </script>
 </body>
-  </html>
+</html>
