@@ -194,6 +194,15 @@
     <div class="card task-card">
         <h3 onclick="toggleCard(this)">➕ إضافة مهمة جديدة مباشرة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
+            <label style="font-size: 12px; color: var(--text-gray);">اختر المنصة:</label>
+            <select id="task-platform" class="input-field">
+                <option value="telegram">📢 تيليجرام</option>
+                <option value="facebook">📘 فيسبوك</option>
+                <option value="youtube">▶️ يوتيوب</option>
+                <option value="tiktok">🎵 تيك توك</option>
+                <option value="instagram">📸 انستجرام</option>
+                <option value="website">🌐 موقع خارجي / إعلان</option>
+            </select>
             <input type="text" id="task-title" placeholder="عنوان المهمة">
             <input type="text" id="task-link" placeholder="رابط المهمة (URL)">
             <input type="number" id="task-reward" placeholder="عدد النقاط">
@@ -1080,7 +1089,7 @@
             div.innerHTML += `
                 <div class="item-row task-row" style="width:100%; box-sizing:border-box;">
                     <div>
-                        <b>${t.title}</b><br>
+                        <b>${t.title}</b> (${t.platform || 'telegram'})<br>
                         <span class="info-text">💰 ${t.reward} نقطة | 🔗 <a href="${t.link || t.url}" target="_blank" style="color:var(--neon-blue)">رابط المهمة</a></span>
                     </div>
                     <div style="display:flex; gap:8px;">
@@ -1126,12 +1135,25 @@
     }
 
     async function addTask() {
-        const title = document.getElementById('task-title').value;
-        const link = document.getElementById('task-link').value;
-        const reward = document.getElementById('task-reward').value;
-        if(!title || !link || !reward) return alert("املأ كافة الخانات!");
+        const platform = document.getElementById('task-platform').value;
+        const title = document.getElementById('task-title').value.trim();
+        const link = document.getElementById('task-link').value.trim();
+        const reward = parseInt(document.getElementById('task-reward').value);
+        if(!title || !link || isNaN(reward)) return alert("املأ كافة الخانات وبصورة صحيحة!");
 
-        const { error } = await client.from('tasks').insert([{ title, link, reward: parseInt(reward), status: 'Approved', target_count: 10 }]);
+        const { error } = await client.from('tasks').insert([{ 
+            platform: platform,
+            title: title, 
+            url: link, 
+            link: link, 
+            channel_id: platform === 'telegram' ? link : null,
+            reward: reward, 
+            status: 'Approved', 
+            target_count: 10,
+            completed_count: 0,
+            is_active: true 
+        }]);
+
         if (error) alert("خطأ: " + error.message);
         else { 
             await broadcastToAllUsers("📋 مهمة جديدة للربح!", `تم نشر مهمة جديدة: ${title} - اربح ${reward} نقطة فوراً!`);
