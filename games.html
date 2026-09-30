@@ -98,7 +98,7 @@
         </div>
     </div>
 
-    <!-- قسم الألعاب المتكاملة -->
+    <!-- قسم الـ 6 ألعاب المتكاملة -->
     <div class="other-games-section">
         <h3 class="section-title">جميع الألعاب المتاحة 🕹️</h3>
         <div class="games-grid">
@@ -139,10 +139,9 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('megatask_uid') || "").trim();
-        if (!userId || userId === "undefined" || userId === "null" || userId === "") {
-            userId = "123456789";
-        } else {
+        // ⭐ استخراج الأيدي بأكثر من طريقة لضمان عدم ضياعه أبدًا
+        let userId = String(params.get('id') || (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || localStorage.getItem('megatask_uid') || "").trim();
+        if (userId && userId !== "undefined" && userId !== "null" && userId !== "") {
             localStorage.setItem('megatask_uid', userId);
         }
 
@@ -158,6 +157,11 @@
         let cooldownInterval = null;
 
         async function init() {
+            if (!userId) {
+                document.getElementById('user-real-points').innerText = "0";
+                return;
+            }
+
             let savedDiamonds = parseInt(localStorage.getItem(`megatask_diamonds_${userId}`) || '0');
             clickerData.diamonds = savedDiamonds;
 
@@ -171,13 +175,17 @@
                 }
             }
 
-            // ⭐ جلب بيانات المستخدم بدقة (مع دعم النصوص والأرقام للبحث في telegram_id)
+            // ⭐ فحص وجلب بيانات المستخدم من سوبابيز مع دعم البحث بالنص أو الرقم
             try {
-                let { data: user, error } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-                if (!user) {
-                    // محاولة ثانية لو كان مخزن برقم
-                    const { data: userNum } = await client.from('users').select('*').eq('telegram_id', Number(userId)).maybeSingle();
-                    user = userNum;
+                let user = null;
+                // محاولة البحث كنص
+                let { data: u1 } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+                if (u1) {
+                    user = u1;
+                } else {
+                    // محاولة البحث كرقَم
+                    let { data: u2 } = await client.from('users').select('*').eq('telegram_id', Number(userId)).maybeSingle();
+                    if (u2) user = u2;
                 }
 
                 if (user) {
@@ -196,6 +204,7 @@
         }
 
         function saveClickerState() {
+            if (!userId) return;
             localStorage.setItem(`megatask_diamonds_${userId}`, clickerData.diamonds);
             localStorage.setItem(`clicker_game_${userId}`, JSON.stringify({
                 date: clickerData.date,
