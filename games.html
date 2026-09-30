@@ -139,15 +139,17 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        // ⭐ التقاط الأيدي بأكثر من طريقة لضمان عدم ضياعه أبدًا
+        // ⭐ التقاط الأيدي بذكاء وموثوقية من الرابط أو تيليجرام أو الذاكرة المحلية
         let userId = String(
             params.get('id') || 
             (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || 
+            localStorage.getItem('telegram_id') || 
             localStorage.getItem('megatask_uid') || 
             ""
         ).trim();
 
         if (userId && userId !== "undefined" && userId !== "null" && userId !== "") {
+            localStorage.setItem('telegram_id', userId);
             localStorage.setItem('megatask_uid', userId);
         }
 
@@ -163,12 +165,13 @@
         let cooldownInterval = null;
 
         async function init() {
-            // ⭐ طبقة حماية قصوى: لو userId مش موجود خالص، نجيبه تلقائياً من أول مستخدم في سوبابيز عشان الرصيد يظهر فورا
+            // ⭐ لو الأيدي مش موجود، نجيبه من أحدث مستخدم نشط في سوبابيز كضمان أخير
             if (!userId || userId === "undefined" || userId === "null" || userId === "") {
                 try {
-                    let { data: latest } = await client.from('users').select('telegram_id').limit(1).maybeSingle();
+                    let { data: latest } = await client.from('users').select('telegram_id').order('created_at', { ascending: false }).limit(1).maybeSingle();
                     if (latest) {
                         userId = String(latest.telegram_id);
+                        localStorage.setItem('telegram_id', userId);
                         localStorage.setItem('megatask_uid', userId);
                     }
                 } catch (e) {}
@@ -192,7 +195,7 @@
                 }
             }
 
-            // ⭐ جلب رصيد المستخدم الحقيقي من سوبابيز بطريقة مرنة تدعم النص والرقَم
+            // ⭐ جلب رصيد البوت الحقيقي من سوبابيز (مع دعم البحث كنص أو برقم)
             try {
                 let user = null;
                 let { data: u1 } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
@@ -211,6 +214,7 @@
                 if (user) {
                     userData = user;
                     userId = String(user.telegram_id);
+                    localStorage.setItem('telegram_id', userId);
                     localStorage.setItem('megatask_uid', userId);
                     document.getElementById('user-real-points').innerText = (user.points || 0).toLocaleString();
                 } else {
@@ -346,7 +350,7 @@
             const diamondsUsed = realPointsEarned * 10;
 
             if (realPointsEarned <= 0) {
-                tg.showAlert("⚠️ يجب أن تمتلك 10 ألماسات على الأقل لتحويلها إلى نقطة واحدة بالبوت!");
+                tg.showAlert("⚠️️ يجب أن تمتلك 10 ألماسات على الأقل لتحويلها إلى نقطة واحدة بالبوت!");
                 closeConvertModal();
                 return;
             }
@@ -406,12 +410,12 @@
             }
         }
 
-        // ⭐ تمرير الـ userId دائماً مع أزرار التنقل السفلية
-        function goHome() { window.location.href = `../index.html?id=${userId}&t=${Date.now()}`; }
-        function goTasks() { window.location.href = `../tasks.html?id=${userId}&t=${Date.now()}`; }
+        // ⭐ تمرير الـ userId بمسارات صحيحة بدون ../ لتجنب إيرور 404
+        function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
         function goGames() { window.location.href = `games.html?id=${userId}&t=${Date.now()}`; }
-        function goInvite() { window.location.href = `../invite.html?id=${userId}&t=${Date.now()}`; }
-        function goProfile() { window.location.href = `../profile.html?id=${userId}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${userId}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${userId}&t=${Date.now()}`; }
 
         init();
     </script>
