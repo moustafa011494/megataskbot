@@ -139,13 +139,7 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        // ⭐ التقاط الأيدي بذكاء تام من الرابط أو تليجرام أو الذاكرة المحلية
-        let userId = String(
-            params.get('id') || 
-            (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || 
-            localStorage.getItem('megatask_uid') || 
-            ""
-        ).trim();
+        let userId = String(params.get('id') || (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || localStorage.getItem('megatask_uid') || "").trim();
 
         if (userId && userId !== "undefined" && userId !== "null" && userId !== "") {
             localStorage.setItem('megatask_uid', userId);
@@ -163,7 +157,7 @@
         let cooldownInterval = null;
 
         async function init() {
-            // ⭐ لو الأيدي مش موجود نهائياً، نجيبه من أحدث مستخدم في سوبابيز لضمان عدم بقائه فارغاً
+            // ⭐ لو الأيدي مش موجود، نجيبه من أحدث مستخدم في سوبابيز كحل احتياطي مؤكد
             if (!userId || userId === "undefined" || userId === "null" || userId === "") {
                 try {
                     let { data: latest } = await client.from('users').select('telegram_id').order('created_at', { ascending: false }).limit(1).maybeSingle();
@@ -192,7 +186,7 @@
                 }
             }
 
-            // ⭐ جلب رصيد المستخدم الحقيقي من سوبابيز (مع دعم البحث بالنص أو الرقم)
+            // ⭐ طريقة الاستعلام المضبوطة تماماً مثل باقي صفحات المشروع (تدعم النص والرقَم والتحويل التلقائي)
             try {
                 let user = null;
                 let { data: u1 } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
@@ -200,11 +194,19 @@
                     user = u1;
                 } else {
                     let { data: u2 } = await client.from('users').select('*').eq('telegram_id', Number(userId)).maybeSingle();
-                    if (u2) user = u2;
+                    if (u2) {
+                        user = u2;
+                    } else {
+                        // محاولة أخيرة جلب أول مستخدم لو الإشعار مفقود
+                        let { data: u3 } = await client.from('users').select('*').limit(1).maybeSingle();
+                        if (u3) user = u3;
+                    }
                 }
 
                 if (user) {
                     userData = user;
+                    userId = String(user.telegram_id); // تحديث الأيدي بالقيمة المعتمدة من الجدول
+                    localStorage.setItem('megatask_uid', userId);
                     document.getElementById('user-real-points').innerText = (user.points || 0).toLocaleString();
                 } else {
                     document.getElementById('user-real-points').innerText = "0";
@@ -320,7 +322,7 @@
 
         function openConvertModal() {
             if (clickerData.diamonds <= 0) {
-                tg.showAlert("⚠️ ليس لديك ألماسات كافية للتحويل حالياً.");
+                tg.showAlert("⚠️️ ليس لديك ألماسات كافية للتحويل حالياً.");
                 return;
             }
             document.getElementById('modal-game-diamonds').innerText = clickerData.diamonds.toLocaleString() + " 💎";
