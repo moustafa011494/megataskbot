@@ -138,20 +138,8 @@
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        const params = new URLSearchParams(window.location.search);
-        let userId = String(
-            params.get('id') || 
-            (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || 
-            localStorage.getItem('telegram_id') || 
-            localStorage.getItem('megatask_uid') || 
-            ""
-        ).trim();
-
-        if (userId && userId !== "undefined" && userId !== "null" && userId !== "") {
-            localStorage.setItem('telegram_id', userId);
-            localStorage.setItem('megatask_uid', userId);
-        }
-
+        // ⭐ نفس طريقة جلب الـ tid الناجحة في صفحة البروفايل
+        const tid = new URLSearchParams(window.location.search).get('id') || tg.initDataUnsafe.user?.id;
         let userData = null;
         let clickerData = {
             date: new Date().toDateString(),
@@ -164,55 +152,21 @@
         let cooldownInterval = null;
 
         async function init() {
-            // ⭐ فحص دقيق وشامل لجلب بيانات المستخدم ورصيد البوت الحقيقي من سوبابيز
-            try {
-                let user = null;
+            if (!tid) return;
 
-                if (userId && userId !== "undefined" && userId !== "null") {
-                    // محاولة البحث بـ telegram_id كنص
-                    let { data: u1 } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-                    if (u1) {
-                        user = u1;
-                    } else {
-                        // محاولة البحث بـ telegram_id كرقم
-                        let { data: u2 } = await client.from('users').select('*').eq('telegram_id', Number(userId)).maybeSingle();
-                        if (u2) {
-                            user = u2;
-                        } else {
-                            // محاولة البحث بـ user_id لو العمود مختلف
-                            let { data: u3 } = await client.from('users').select('*').eq('user_id', userId).maybeSingle();
-                            if (u3) user = u3;
-                        }
-                    }
-                }
-
-                // لو لم يتم العثور عليه، نجلب أحدث مستخدم نشط كحل احتياطي لكي لا يظهر الرصيد صفر أبداً
-                if (!user) {
-                    let { data: latest } = await client.from('users').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
-                    if (latest) user = latest;
-                }
-
-                if (user) {
-                    userData = user;
-                    userId = String(user.telegram_id || user.user_id || userId);
-                    localStorage.setItem('telegram_id', userId);
-                    localStorage.setItem('megatask_uid', userId);
-                    
-                    // قراءة حقل النقاط أيا كان اسمه (points أو balance)
-                    const userPoints = user.points !== undefined ? user.points : (user.balance !== undefined ? user.balance : 0);
-                    document.getElementById('user-real-points').innerText = Number(userPoints).toLocaleString();
-                } else {
-                    document.getElementById('user-real-points').innerText = "0";
-                }
-            } catch (e) {
-                console.error("Fetch user error:", e);
+            // ⭐ جلب بيانات المستخدم بمدى مطابقة كود البروفايل بالضبط
+            let { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).single();
+            if (u) {
+                userData = u;
+                document.getElementById('user-real-points').innerText = (u.points || 0).toLocaleString();
+            } else {
                 document.getElementById('user-real-points').innerText = "0";
             }
 
-            let savedDiamonds = parseInt(localStorage.getItem(`megatask_diamonds_${userId}`) || '0');
+            let savedDiamonds = parseInt(localStorage.getItem(`megatask_diamonds_${tid}`) || '0');
             clickerData.diamonds = savedDiamonds;
 
-            const savedData = localStorage.getItem(`clicker_game_${userId}`);
+            const savedData = localStorage.getItem(`clicker_game_${tid}`);
             if (savedData) {
                 const parsed = JSON.parse(savedData);
                 if (parsed.date === new Date().toDateString()) {
@@ -227,9 +181,9 @@
         }
 
         function saveClickerState() {
-            if (!userId) return;
-            localStorage.setItem(`megatask_diamonds_${userId}`, clickerData.diamonds);
-            localStorage.setItem(`clicker_game_${userId}`, JSON.stringify({
+            if (!tid) return;
+            localStorage.setItem(`megatask_diamonds_${tid}`, clickerData.diamonds);
+            localStorage.setItem(`clicker_game_${tid}`, JSON.stringify({
                 date: clickerData.date,
                 dailyClicks: clickerData.dailyClicks,
                 batchClicks: clickerData.batchClicks,
@@ -356,22 +310,19 @@
 
             closeConvertModal();
 
-            const currentPoints = userData.points !== undefined ? userData.points : (userData.balance !== undefined ? userData.balance : 0);
-            const newTotalPoints = currentPoints + realPointsEarned;
+            const newTotalPoints = (userData.points || 0) + realPointsEarned;
             const newTotalEarned = (userData.total_earned || 0) + realPointsEarned;
 
             try {
-                const updateObj = {};
-                if (userData.points !== undefined) updateObj.points = newTotalPoints;
-                if (userData.balance !== undefined) updateObj.balance = newTotalPoints;
-                if (userData.total_earned !== undefined) updateObj.total_earned = newTotalEarned;
-
-                const { error } = await client.from('users').update(updateObj).eq('telegram_id', userData.telegram_id || userId);
+                const { error } = await client.from('users').update({
+                    points: newTotalPoints,
+                    total_earned: newTotalEarned
+                }).eq('telegram_id', String(tid));
 
                 if (error) throw error;
 
                 await client.from('transactions').insert([{
-                    telegram_id: String(userData.telegram_id || userId),
+                    telegram_id: String(tid),
                     type: 'points',
                     title: 'تحويل أرباح الألعاب (ألماس) لرصيد البوت',
                     amount: `+${realPointsEarned.toLocaleString()} نقطة`,
@@ -394,28 +345,28 @@
         }
 
         function openGame(gameType) {
-            if (!userId) userId = "123456789";
+            if (!tid) return;
             if (gameType === 'memory') {
-                window.location.href = `games/memory.html?id=${userId}`;
+                window.location.href = `games/memory.html?id=${tid}`;
             } else if (gameType === 'quiz') {
-                window.location.href = `games/quiz.html?id=${userId}`;
+                window.location.href = `games/quiz.html?id=${tid}`;
             } else if (gameType === 'chests') {
-                window.location.href = `games/chests.html?id=${userId}`;
+                window.location.href = `games/chests.html?id=${tid}`;
             } else if (gameType === 'tictactoe') {
-                window.location.href = `games/tictactoe.html?id=${userId}`;
+                window.location.href = `games/tictactoe.html?id=${tid}`;
             } else if (gameType === 'seahorse') {
-                window.location.href = `games/game-seahorse.html?id=${userId}`;
+                window.location.href = `games/game-seahorse.html?id=${tid}`;
             } else if (gameType === 'space') {
-                window.location.href = `games/game-space.html?id=${userId}`;
+                window.location.href = `games/game-space.html?id=${tid}`;
             }
         }
 
-        // ⭐ تمرير الـ userId بمسارات سليمة بدون أي إيرور 404
-        function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
-        function goGames() { window.location.href = `games.html?id=${userId}&t=${Date.now()}`; }
-        function goInvite() { window.location.href = `invite.html?id=${userId}&t=${Date.now()}`; }
-        function goProfile() { window.location.href = `profile.html?id=${userId}&t=${Date.now()}`; }
+        // ⭐ روابط التنقل السفلية مطابقة تماماً لطريقة البروفايل الناجحة
+        function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
+        function goGames() { window.location.href = `games.html?id=${tid}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
 
         init();
     </script>
