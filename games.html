@@ -98,7 +98,7 @@
         </div>
     </div>
 
-    <!-- قسم الـ 6 ألعاب المتكاملة -->
+    <!-- قسم الألعاب المتكاملة -->
     <div class="other-games-section">
         <h3 class="section-title">جميع الألعاب المتاحة 🕹️</h3>
         <div class="games-grid">
@@ -139,10 +139,16 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        // ⭐ الاستخراج المضمون 100% كما كان في الكود الأصلي الناجح
-        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-        if (!userId) {
-            userId = "123456789"; 
+        // ⭐ استخراج الأيدي بأكثر من طريقة ذكية لضمان جلب حسابك الحقيقي فوراً
+        let userId = String(
+            params.get('id') || 
+            (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || 
+            localStorage.getItem('megatask_uid') || 
+            ""
+        ).trim();
+
+        if (userId && userId !== "undefined" && userId !== "null" && userId !== "") {
+            localStorage.setItem('megatask_uid', userId);
         }
 
         let userData = null;
@@ -157,28 +163,43 @@
         let cooldownInterval = null;
 
         async function init() {
-            if (!userId) return;
+            if (!userId) {
+                document.getElementById('user-real-points').innerText = "0";
+                return;
+            }
 
             let savedDiamonds = parseInt(localStorage.getItem(`megatask_diamonds_${userId}`) || '0');
             clickerData.diamonds = savedDiamonds;
 
             const savedData = localStorage.getItem(`clicker_game_${userId}`);
             if (savedData) {
-                clickerData = JSON.parse(savedData);
-                if (clickerData.date !== new Date().toDateString()) {
-                    clickerData.date = new Date().toDateString();
-                    clickerData.dailyClicks = 0;
-                    clickerData.batchClicks = 0;
-                    clickerData.cooldownUntil = 0;
+                const parsed = JSON.parse(savedData);
+                if (parsed.date === new Date().toDateString()) {
+                    clickerData.dailyClicks = parsed.dailyClicks || 0;
+                    clickerData.batchClicks = parsed.batchClicks || 0;
+                    clickerData.cooldownUntil = parsed.cooldownUntil || 0;
                 }
             }
 
-            // ⭐ جلب رصيد المستخدم الحقيقي من سوبابيز بناءً على الكود الأصلي المعتمد
-            const { data: user, error } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-            if (user) {
-                userData = user;
-                document.getElementById('user-real-points').innerText = (user.points || 0).toLocaleString();
-            } else {
+            // ⭐ جلب بيانات المستخدم الحقيقي من سوبابيز بالطريقة المضمونة 100%
+            try {
+                let user = null;
+                let { data: u1 } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+                if (u1) {
+                    user = u1;
+                } else {
+                    let { data: u2 } = await client.from('users').select('*').eq('telegram_id', Number(userId)).maybeSingle();
+                    if (u2) user = u2;
+                }
+
+                if (user) {
+                    userData = user;
+                    document.getElementById('user-real-points').innerText = (user.points || 0).toLocaleString();
+                } else {
+                    document.getElementById('user-real-points').innerText = "0";
+                }
+            } catch (e) {
+                console.error("Fetch user error:", e);
                 document.getElementById('user-real-points').innerText = "0";
             }
 
@@ -187,8 +208,14 @@
         }
 
         function saveClickerState() {
+            if (!userId) return;
             localStorage.setItem(`megatask_diamonds_${userId}`, clickerData.diamonds);
-            localStorage.setItem(`clicker_game_${userId}`, JSON.stringify(clickerData));
+            localStorage.setItem(`clicker_game_${userId}`, JSON.stringify({
+                date: clickerData.date,
+                dailyClicks: clickerData.dailyClicks,
+                batchClicks: clickerData.batchClicks,
+                cooldownUntil: clickerData.cooldownUntil
+            }));
         }
 
         function updateClickerUI() {
@@ -317,12 +344,12 @@
                 const { error } = await client.from('users').update({
                     points: newTotalPoints,
                     total_earned: newTotalEarned
-                }).eq('telegram_id', userId);
+                }).eq('telegram_id', userData.telegram_id);
 
                 if (error) throw error;
 
                 await client.from('transactions').insert([{
-                    telegram_id: String(userId),
+                    telegram_id: String(userData.telegram_id),
                     type: 'points',
                     title: 'تحويل أرباح الألعاب (ألماس) لرصيد البوت',
                     amount: `+${realPointsEarned.toLocaleString()} نقطة`,
