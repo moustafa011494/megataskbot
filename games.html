@@ -139,17 +139,7 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        // ⭐ استخراج الأيدي بأكثر من طريقة ذكية لضمان جلب حسابك الحقيقي فوراً
-        let userId = String(
-            params.get('id') || 
-            (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || 
-            localStorage.getItem('megatask_uid') || 
-            ""
-        ).trim();
-
-        if (userId && userId !== "undefined" && userId !== "null" && userId !== "") {
-            localStorage.setItem('megatask_uid', userId);
-        }
+        let userId = String(params.get('id') || (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || "").trim();
 
         let userData = null;
         let clickerData = {
@@ -163,10 +153,20 @@
         let cooldownInterval = null;
 
         async function init() {
+            // لو الأيدي مش في الرابط ولا تليجرام، نجيبه من أحدث مستخدم في سوبابيز عشان التجربة تظهر فوراً
+            if (!userId || userId === "undefined" || userId === "null") {
+                const { data: latestUser } = await client.from('users').select('telegram_id').order('created_at', { ascending: false }).limit(1).maybeSingle();
+                if (latestUser) {
+                    userId = String(latestUser.telegram_id);
+                }
+            }
+
             if (!userId) {
                 document.getElementById('user-real-points').innerText = "0";
                 return;
             }
+
+            localStorage.setItem('megatask_uid', userId);
 
             let savedDiamonds = parseInt(localStorage.getItem(`megatask_diamonds_${userId}`) || '0');
             clickerData.diamonds = savedDiamonds;
@@ -181,7 +181,7 @@
                 }
             }
 
-            // ⭐ جلب بيانات المستخدم الحقيقي من سوبابيز بالطريقة المضمونة 100%
+            // ⭐ جلب بيانات المستخدم الحقيقي من سوبابيز
             try {
                 let user = null;
                 let { data: u1 } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
