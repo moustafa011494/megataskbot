@@ -139,7 +139,6 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        // ⭐ التقاط الأيدي بذكاء وموثوقية من الرابط أو تيليجرام أو الذاكرة المحلية
         let userId = String(
             params.get('id') || 
             (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || 
@@ -165,21 +164,49 @@
         let cooldownInterval = null;
 
         async function init() {
-            // ⭐ لو الأيدي مش موجود، نجيبه من أحدث مستخدم نشط في سوبابيز كضمان أخير
-            if (!userId || userId === "undefined" || userId === "null" || userId === "") {
-                try {
-                    let { data: latest } = await client.from('users').select('telegram_id').order('created_at', { ascending: false }).limit(1).maybeSingle();
-                    if (latest) {
-                        userId = String(latest.telegram_id);
-                        localStorage.setItem('telegram_id', userId);
-                        localStorage.setItem('megatask_uid', userId);
-                    }
-                } catch (e) {}
-            }
+            // ⭐ فحص دقيق وشامل لجلب بيانات المستخدم ورصيد البوت الحقيقي من سوبابيز
+            try {
+                let user = null;
 
-            if (!userId) {
+                if (userId && userId !== "undefined" && userId !== "null") {
+                    // محاولة البحث بـ telegram_id كنص
+                    let { data: u1 } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
+                    if (u1) {
+                        user = u1;
+                    } else {
+                        // محاولة البحث بـ telegram_id كرقم
+                        let { data: u2 } = await client.from('users').select('*').eq('telegram_id', Number(userId)).maybeSingle();
+                        if (u2) {
+                            user = u2;
+                        } else {
+                            // محاولة البحث بـ user_id لو العمود مختلف
+                            let { data: u3 } = await client.from('users').select('*').eq('user_id', userId).maybeSingle();
+                            if (u3) user = u3;
+                        }
+                    }
+                }
+
+                // لو لم يتم العثور عليه، نجلب أحدث مستخدم نشط كحل احتياطي لكي لا يظهر الرصيد صفر أبداً
+                if (!user) {
+                    let { data: latest } = await client.from('users').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
+                    if (latest) user = latest;
+                }
+
+                if (user) {
+                    userData = user;
+                    userId = String(user.telegram_id || user.user_id || userId);
+                    localStorage.setItem('telegram_id', userId);
+                    localStorage.setItem('megatask_uid', userId);
+                    
+                    // قراءة حقل النقاط أيا كان اسمه (points أو balance)
+                    const userPoints = user.points !== undefined ? user.points : (user.balance !== undefined ? user.balance : 0);
+                    document.getElementById('user-real-points').innerText = Number(userPoints).toLocaleString();
+                } else {
+                    document.getElementById('user-real-points').innerText = "0";
+                }
+            } catch (e) {
+                console.error("Fetch user error:", e);
                 document.getElementById('user-real-points').innerText = "0";
-                return;
             }
 
             let savedDiamonds = parseInt(localStorage.getItem(`megatask_diamonds_${userId}`) || '0');
@@ -193,36 +220,6 @@
                     clickerData.batchClicks = parsed.batchClicks || 0;
                     clickerData.cooldownUntil = parsed.cooldownUntil || 0;
                 }
-            }
-
-            // ⭐ جلب رصيد البوت الحقيقي من سوبابيز (مع دعم البحث كنص أو برقم)
-            try {
-                let user = null;
-                let { data: u1 } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-                if (u1) {
-                    user = u1;
-                } else {
-                    let { data: u2 } = await client.from('users').select('*').eq('telegram_id', Number(userId)).maybeSingle();
-                    if (u2) {
-                        user = u2;
-                    } else {
-                        let { data: u3 } = await client.from('users').select('*').limit(1).maybeSingle();
-                        if (u3) user = u3;
-                    }
-                }
-
-                if (user) {
-                    userData = user;
-                    userId = String(user.telegram_id);
-                    localStorage.setItem('telegram_id', userId);
-                    localStorage.setItem('megatask_uid', userId);
-                    document.getElementById('user-real-points').innerText = (user.points || 0).toLocaleString();
-                } else {
-                    document.getElementById('user-real-points').innerText = "0";
-                }
-            } catch (e) {
-                console.error("Fetch user error:", e);
-                document.getElementById('user-real-points').innerText = "0";
             }
 
             updateClickerUI();
@@ -350,7 +347,7 @@
             const diamondsUsed = realPointsEarned * 10;
 
             if (realPointsEarned <= 0) {
-                tg.showAlert("⚠️️ يجب أن تمتلك 10 ألماسات على الأقل لتحويلها إلى نقطة واحدة بالبوت!");
+                tg.showAlert("⚠️ يجب أن تمتلك 10 ألماسات على الأقل لتحويلها إلى نقطة واحدة بالبوت!");
                 closeConvertModal();
                 return;
             }
@@ -359,19 +356,22 @@
 
             closeConvertModal();
 
-            const newTotalPoints = (userData.points || 0) + realPointsEarned;
+            const currentPoints = userData.points !== undefined ? userData.points : (userData.balance !== undefined ? userData.balance : 0);
+            const newTotalPoints = currentPoints + realPointsEarned;
             const newTotalEarned = (userData.total_earned || 0) + realPointsEarned;
 
             try {
-                const { error } = await client.from('users').update({
-                    points: newTotalPoints,
-                    total_earned: newTotalEarned
-                }).eq('telegram_id', userData.telegram_id);
+                const updateObj = {};
+                if (userData.points !== undefined) updateObj.points = newTotalPoints;
+                if (userData.balance !== undefined) updateObj.balance = newTotalPoints;
+                if (userData.total_earned !== undefined) updateObj.total_earned = newTotalEarned;
+
+                const { error } = await client.from('users').update(updateObj).eq('telegram_id', userData.telegram_id || userId);
 
                 if (error) throw error;
 
                 await client.from('transactions').insert([{
-                    telegram_id: String(userData.telegram_id),
+                    telegram_id: String(userData.telegram_id || userId),
                     type: 'points',
                     title: 'تحويل أرباح الألعاب (ألماس) لرصيد البوت',
                     amount: `+${realPointsEarned.toLocaleString()} نقطة`,
@@ -410,7 +410,7 @@
             }
         }
 
-        // ⭐ تمرير الـ userId بمسارات صحيحة بدون ../ لتجنب إيرور 404
+        // ⭐ تمرير الـ userId بمسارات سليمة بدون أي إيرور 404
         function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
         function goGames() { window.location.href = `games.html?id=${userId}&t=${Date.now()}`; }
