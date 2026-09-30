@@ -2,180 +2,373 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - MegaTask</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MegaTask - Games Hub</title>
+    
+    <!-- إعلانات Monetag -->
+    <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <style>
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: sans-serif; margin: 0; padding: 20px; padding-bottom: 110px; }
-        .profile-header { text-align: center; margin: 25px 0; }
-        .avatar { width: 80px; height: 80px; background: var(--main-green); border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: black; font-size: 30px; font-weight: bold; }
-        .menu-list { background: var(--card-bg); border-radius: 15px; border: 1px solid #2d333d; margin-bottom: 20px; }
-        .menu-item { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid #2d333d; }
-        .menu-item:last-child { border-bottom: none; }
+        html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 110px; width: 100%; max-width: 100vw; overflow-x: hidden; }
         
-        /* تنسيقات الهيستوري والسجلات */
-        .history-section-title { font-size: 15px; font-weight: bold; color: var(--main-green); margin: 20px 0 10px; display: flex; align-items: center; gap: 6px; }
-        .history-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
-        .history-tab { background: var(--card-bg); border: 1px solid #2d333d; color: var(--text-gray); padding: 7px 14px; border-radius: 10px; font-size: 11px; cursor: pointer; white-space: nowrap; transition: 0.2s; }
-        .history-tab.active { background: var(--main-green); color: black; font-weight: bold; border-color: var(--main-green); }
+        .header { padding: 20px; text-align: center; }
+        .header h2 { margin: 0; color: var(--main-green); font-size: 22px; }
+        .header p { margin: 5px 0 0; font-size: 12px; color: var(--text-gray); }
+
+        .game-stats-bar { display: flex; justify-content: space-around; background: var(--card-bg); margin: 0 15px 15px; border: 1px solid #2d333d; border-radius: 16px; padding: 12px; }
+        .stat-box { text-align: center; }
+        .stat-box b { display: block; font-size: 18px; color: #00f2ff; }
+        .stat-box span { font-size: 11px; color: var(--text-gray); }
         
-        .history-container { display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto; }
-        .history-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 12px; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-        .history-info b { display: block; color: white; font-size: 13px; margin-bottom: 3px; }
-        .history-info span { color: var(--text-gray); font-size: 10px; }
-        .history-amount { font-weight: bold; font-size: 13px; }
-        .history-amount.positive { color: var(--main-green); }
-        .history-amount.negative { color: #ff3b30; }
+        .clickable-stat { cursor: pointer; transition: 0.2s; border-radius: 10px; padding: 4px 8px; }
+        .clickable-stat:active { background: rgba(0, 242, 255, 0.15); transform: scale(0.97); }
 
-        .status-box { text-align: center; padding: 25px; color: var(--text-gray); font-size: 12px; background: var(--card-bg); border-radius: 12px; border: 1px dashed #2d333d; }
+        .game-container { margin: 0 15px 20px; background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        .game-title { font-size: 16px; font-weight: bold; color: white; margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        
+        .clicker-target { width: 120px; height: 120px; background: linear-gradient(135deg, #00d26a, #009e4f); border-radius: 50%; margin: 15px auto; display: flex; align-items: center; justify-content: center; font-size: 36px; cursor: pointer; box-shadow: 0 5px 20px rgba(0, 210, 106, 0.4); transition: 0.1s; user-select: none; }
+        .clicker-target:active { transform: scale(0.92); }
 
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        .other-games-section { padding: 0 15px; margin-top: 25px; text-align: right; }
+        .section-title { color: var(--main-green); font-size: 14px; margin: 0 0 15px 0; border-right: 3px solid var(--main-green); padding-right: 10px; }
+        .games-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .game-card-item { background: #16191e; border: 1px solid #2d333d; padding: 20px 10px; border-radius: 20px; text-align: center; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .game-card-item span { font-size: 28px; display: block; margin-bottom: 8px; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
+        .modal-box { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 25px; width: 100%; max-width: 340px; text-align: center; }
+        .btn-confirm-modal { width: 100%; background: var(--main-green); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .btn-close-modal { width: 100%; background: #252932; color: #ccc; border: none; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: bold; cursor: pointer; margin-top: 8px; }
+
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
     </style>
 </head>
 <body>
 
-    <div class="profile-header">
-        <div class="avatar" id="avatar">U</div>
-        <div id="name" style="font-size: 20px; font-weight: bold;">تحميل...</div>
-        <div id="id-display" style="color: var(--text-gray); font-size: 12px;">ID: 00000</div>
+    <div class="header">
+        <h2>🎮 مركز ألعاب MegaTask</h2>
+        <p>العب الألعاب واجمع الألماس 💎 وحوله لرصيد حقيقي!</p>
     </div>
 
-    <div class="menu-list">
-        <div class="menu-item"><span>💎 النقاط</span><b id="p">0</b></div>
-        <div class="menu-item"><span>🎯 المهام</span><b id="t">0</b></div>
-        <div class="menu-item"><span>🤝 العمولات</span><b id="r">0</b></div>
+    <div class="game-stats-bar">
+        <div class="stat-box">
+            <b id="user-real-points" style="color: #ffaa00;">0</b>
+            <span>رصيدك الحقيقي بالبوت</span>
+        </div>
+        <div class="stat-box clickable-stat" onclick="openConvertModal()">
+            <b id="game-diamonds-counter">0 💎</b>
+            <span>رصيد الألماس (اضغط للتحويل ↗)</span>
+        </div>
     </div>
 
-    <!-- قسم السجلات والهيستوري -->
-    <div class="history-section-title">📜 سجل العمليات والهيستوري</div>
-    
-    <div class="history-tabs">
-        <div class="history-tab active" onclick="filterHistory('all', this)">الكل</div>
-        <div class="history-tab" onclick="filterHistory('withdraw', this)">السحب والإيداع</div>
-        <div class="history-tab" onclick="filterHistory('store', this)">المتجر</div>
-        <div class="history-tab" onclick="filterHistory('points', this)">النقاط</div>
+    <!-- اللعبة الأولى: لعبة النقرات السريعة -->
+    <div class="game-container">
+        <div class="game-title">⚡ لعبة النقرات السريعة</div>
+        <div style="font-size: 11px; color: #ffaa00; margin-bottom: 10px;">ضغطات اليوم: <span id="daily-clicks-count">0</span> / 100</div>
+        
+        <div class="clicker-target" id="clicker-btn" onclick="handleCardClick()">
+            🪙
+        </div>
+        
+        <div id="clicker-status-msg" style="font-size: 12px; color: var(--text-gray); margin-top: 8px; min-height: 20px;">
+            اضغط على الدائرة للبدء!
+        </div>
     </div>
 
-    <div id="history-container" class="history-container">
-        <div class="status-box">⏳ جاري جلب السجلات...</div>
+    <!-- نافذة تحويل الألماس (Modal) -->
+    <div id="convert-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color: #00f2ff; margin-top:0;">💎 تحويل الألماس لرصيد البوت</h3>
+            <p style="font-size: 13px; color: var(--text-gray); line-height: 1.6; margin-bottom: 15px;">
+                لديك <b id="modal-game-diamonds" style="color: #00f2ff;">0 💎</b> متاح تحويلها.<br>
+                قاعدة التحويل: <b style="color: #ffaa00;">10 ألماسات = 1 نقطة بوت حقيقية</b>.
+            </p>
+            <button class="btn-confirm-modal" onclick="confirmAndWatchAdConversion()">
+                📺 مشاهدة إعلان وتحويل الألماس الآن
+            </button>
+            <button class="btn-close-modal" onclick="closeConvertModal()">
+                إغلاق
+            </button>
+        </div>
+    </div>
+
+    <!-- قسم الألعاب المتكاملة -->
+    <div class="other-games-section">
+        <h3 class="section-title">جميع الألعاب المتاحة 🕹️</h3>
+        <div class="games-grid">
+            <div class="game-card-item" onclick="openGame('tictactoe')">
+                <span>❌</span>إكس أو الذكية
+            </div>
+            <div class="game-card-item" onclick="openGame('chests')">
+                <span>🎁</span>صناديق الحظ
+            </div>
+            <div class="game-card-item" onclick="openGame('memory')">
+                <span>🧠</span>لعبة الذاكرة
+            </div>
+            <div class="game-card-item" onclick="openGame('quiz')">
+                <span>❓</span>كويز ذكاء
+            </div>
+            <div class="game-card-item" onclick="openGame('seahorse')">
+                <span>🌊</span>مغامرة الحصان
+            </div>
+            <div class="game-card-item" onclick="openGame('space')">
+                <span>🚀</span>حرب الفضاء
+            </div>
+        </div>
     </div>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
         <div onclick="goTasks()" class="nav-item">📋<br>الربح من المهام</div>
-        <div onclick="goGames()" class="nav-item" style="background: var(--main-green); width: 40px; height: 40px; border-radius: 50%; color: black; line-height: 40px; margin-top: -20px; font-size: 20px; text-align: center; cursor: pointer;">🎮</div>
+        <div onclick="goGames()" class="nav-item active" style="color: var(--main-green); width: 40px; height: 40px; border-radius: 50%; background: var(--main-green); color: black !important; line-height: 40px; margin-top: -20px; font-size: 20px; text-align: center;">🎮</div>
         <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
-        <div onclick="goProfile()" class="nav-item active">👤<br>الملف الشخصي</div>
+        <div onclick="goProfile()" class="nav-item">👤<br>الملف الشخصي</div>
     </nav>
-
+    
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
+        // ⭐ نفس طريقة جلب الـ tid الناجحة في صفحة البروفايل
         const tid = new URLSearchParams(window.location.search).get('id') || tg.initDataUnsafe.user?.id;
-        let allTransactions = [];
+        let userData = null;
+        let clickerData = {
+            date: new Date().toDateString(),
+            dailyClicks: 0,
+            batchClicks: 0,
+            cooldownUntil: 0,
+            diamonds: 0
+        };
 
-        async function load() {
+        let cooldownInterval = null;
+
+        async function init() {
             if (!tid) return;
 
-            // جلب بيانات المستخدم الأساسية
+            // ⭐ جلب بيانات المستخدم بمدى مطابقة كود البروفايل بالضبط
             let { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).single();
-            if(u) {
-                document.getElementById('name').innerText = u.name || "User";
-                document.getElementById('id-display').innerText = "ID: " + tid;
-                document.getElementById('avatar').innerText = (u.name || "U")[0].toUpperCase();
-                document.getElementById('p').innerText = (u.points || 0).toLocaleString();
-                document.getElementById('t').innerText = u.total_tasks || 0;
-                document.getElementById('r').innerText = u.total_ref_commission || 0;
+            if (u) {
+                userData = u;
+                document.getElementById('user-real-points').innerText = (u.points || 0).toLocaleString();
+            } else {
+                document.getElementById('user-real-points').innerText = "0";
             }
 
-            // جلب الهيستوري والعمليات من قاعدة البيانات
-            await loadHistoryData();
-        }
+            let savedDiamonds = parseInt(localStorage.getItem(`megatask_diamonds_${tid}`) || '0');
+            clickerData.diamonds = savedDiamonds;
 
-        async function loadHistoryData() {
-            const container = document.getElementById('history-container');
-            try {
-                let { data: txs, error } = await client
-                    .from('transactions')
-                    .select('*')
-                    .eq('telegram_id', String(tid))
-                    .order('id', { ascending: false });
-
-                if (error) throw error;
-
-                allTransactions = txs || [];
-                renderHistory(allTransactions);
-
-            } catch (e) {
-                console.error("History load error:", e);
-                container.innerHTML = '<div class="status-box">⚠️ لا توجد سجلات مسجلة حتى الآن.</div>';
+            const savedData = localStorage.getItem(`clicker_game_${tid}`);
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                if (parsed.date === new Date().toDateString()) {
+                    clickerData.dailyClicks = parsed.dailyClicks || 0;
+                    clickerData.batchClicks = parsed.batchClicks || 0;
+                    clickerData.cooldownUntil = parsed.cooldownUntil || 0;
+                }
             }
+
+            updateClickerUI();
+            checkCooldownTimer();
         }
 
-        function filterHistory(type, tabElement) {
-            document.querySelectorAll('.history-tab').forEach(t => t.classList.remove('active'));
-            tabElement.classList.add('active');
-
-            if (type === 'all') {
-                renderHistory(allTransactions);
-            } else if (type === 'withdraw') {
-                const filtered = allTransactions.filter(t => t.type === 'withdraw' || t.type === 'deposit');
-                renderHistory(filtered);
-            } else if (type === 'store') {
-                const filtered = allTransactions.filter(t => t.type === 'store');
-                renderHistory(filtered);
-            } else if (type === 'points') {
-                const filtered = allTransactions.filter(t => t.type === 'points');
-                renderHistory(filtered);
-            }
+        function saveClickerState() {
+            if (!tid) return;
+            localStorage.setItem(`megatask_diamonds_${tid}`, clickerData.diamonds);
+            localStorage.setItem(`clicker_game_${tid}`, JSON.stringify({
+                date: clickerData.date,
+                dailyClicks: clickerData.dailyClicks,
+                batchClicks: clickerData.batchClicks,
+                cooldownUntil: clickerData.cooldownUntil
+            }));
         }
 
-        function renderHistory(list) {
-            const container = document.getElementById('history-container');
-            if (!list || list.length === 0) {
-                container.innerHTML = '<div class="status-box">📭 لا توجد عمليات في هذا القسم حالياً.</div>';
+        function updateClickerUI() {
+            document.getElementById('game-diamonds-counter').innerText = clickerData.diamonds.toLocaleString() + " 💎";
+            document.getElementById('daily-clicks-count').innerText = clickerData.dailyClicks;
+        }
+
+        function handleCardClick() {
+            const now = Date.now();
+            if (clickerData.cooldownUntil > now) return;
+
+            if (clickerData.dailyClicks >= 100) {
+                tg.showAlert("🛑 لقد وصلت الحد الأقصى للضغطات اليومية (100 ضغطة). عود غداً لمزيد من الأرباح!");
                 return;
             }
 
-            container.innerHTML = "";
-            list.forEach(tx => {
-                const dateStr = new Date(tx.created_at).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                const isPositive = String(tx.amount).startsWith('+') || (typeof tx.amount === 'number' && tx.amount > 0);
-                const amountClass = isPositive ? 'positive' : 'negative';
+            clickerData.dailyClicks++;
+            clickerData.batchClicks++;
+            saveClickerState();
+            updateClickerUI();
 
-                container.innerHTML += `
-                    <div class="history-card">
-                        <div class="history-info">
-                            <b>${escapeHtml(tx.title)}</b>
-                            <span>🕒 ${dateStr} • الحالة: ${escapeHtml(tx.status || 'مكتمل')}</span>
-                        </div>
-                        <div class="history-amount ${amountClass}">
-                            ${escapeHtml(tx.amount)}
-                        </div>
-                    </div>
-                `;
-            });
+            if (clickerData.batchClicks >= 10) {
+                triggerClickerAd();
+            } else {
+                document.getElementById('clicker-status-msg').innerText = `متبقي ${10 - clickerData.batchClicks} ضغطات للإعلان القادم`;
+            }
         }
 
-        function escapeHtml(str) {
-            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        function triggerClickerAd() {
+            document.getElementById('clicker-status-msg').innerText = "⏳ جاري عرض الإعلان للحصول على الـ 10 ألماسات...";
+            
+            if (typeof show_10959333 === 'function') {
+                show_10959333().then(() => {
+                    clickerData.diamonds += 10;
+                    clickerData.batchClicks = 0;
+                    clickerData.cooldownUntil = Date.now() + (5 * 60 * 1000);
+                    saveClickerState();
+                    updateClickerUI();
+                    startCooldownTimer();
+                    tg.showAlert("🎉 رائع! تم إتمام الـ 10 ضغطات وإضافة (+10 ألماسات 💎). بدأ مؤقت الـ 5 دقائق!");
+                }).catch((err) => {
+                    console.error("Ad error:", err);
+                    tg.showAlert("❌ يجب مشاهدة الإعلان بالكامل لاحتساب الألماس.");
+                    clickerData.batchClicks = 0;
+                    saveClickerState();
+                    updateClickerUI();
+                    document.getElementById('clicker-status-msg').innerText = "اضغط على الدائرة للمتابعة";
+                });
+            } else {
+                clickerData.diamonds += 10;
+                clickerData.batchClicks = 0;
+                clickerData.cooldownUntil = Date.now() + (5 * 60 * 1000);
+                saveClickerState();
+                updateClickerUI();
+                startCooldownTimer();
+                tg.showAlert("🎉 تم منح الـ 10 ألماسات (وضع تجريبي بدون إعلان). بدأ مؤقت الـ 5 دقائق!");
+            }
         }
 
+        function startCooldownTimer() {
+            if (cooldownInterval) clearInterval(cooldownInterval);
+            
+            const btn = document.getElementById('clicker-btn');
+            const statusMsg = document.getElementById('clicker-status-msg');
+            btn.style.opacity = "0.5";
+
+            cooldownInterval = setInterval(() => {
+                const now = Date.now();
+                const remaining = clickerData.cooldownUntil - now;
+
+                if (remaining <= 0) {
+                    clearInterval(cooldownInterval);
+                    btn.style.opacity = "1";
+                    statusMsg.innerText = "🟢 انتهى وقت الانتظار! يمكنك الضغط الآن.";
+                } else {
+                    const mins = Math.floor(remaining / (1000 * 60));
+                    const secs = Math.floor((remaining % (1000 * 60)) / 1000);
+                    statusMsg.innerText = `⏳ يرجى الانتظار: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                }
+            }, 1000);
+        }
+
+        function checkCooldownTimer() {
+            const now = Date.now();
+            if (clickerData.cooldownUntil > now) {
+                startCooldownTimer();
+            } else {
+                document.getElementById('clicker-status-msg').innerText = "اضغط على الدائرة للبدء!";
+            }
+        }
+
+        function openConvertModal() {
+            if (clickerData.diamonds <= 0) {
+                tg.showAlert("⚠️ ليس لديك ألماسات كافية للتحويل حالياً.");
+                return;
+            }
+            document.getElementById('modal-game-diamonds').innerText = clickerData.diamonds.toLocaleString() + " 💎";
+            document.getElementById('convert-modal').style.display = 'flex';
+        }
+
+        function closeConvertModal() {
+            document.getElementById('convert-modal').style.display = 'none';
+        }
+
+        async function confirmAndWatchAdConversion() {
+            if (clickerData.diamonds <= 0) return;
+
+            const diamondsToConvert = clickerData.diamonds;
+            const realPointsEarned = Math.floor(diamondsToConvert / 10);
+            const diamondsUsed = realPointsEarned * 10;
+
+            if (realPointsEarned <= 0) {
+                tg.showAlert("⚠️ يجب أن تمتلك 10 ألماسات على الأقل لتحويلها إلى نقطة واحدة بالبوت!");
+                closeConvertModal();
+                return;
+            }
+
+            if (!userData) return;
+
+            closeConvertModal();
+
+            const newTotalPoints = (userData.points || 0) + realPointsEarned;
+            const newTotalEarned = (userData.total_earned || 0) + realPointsEarned;
+
+            try {
+                const { error } = await client.from('users').update({
+                    points: newTotalPoints,
+                    total_earned: newTotalEarned
+                }).eq('telegram_id', String(tid));
+
+                if (error) throw error;
+
+                await client.from('transactions').insert([{
+                    telegram_id: String(tid),
+                    type: 'points',
+                    title: 'تحويل أرباح الألعاب (ألماس) لرصيد البوت',
+                    amount: `+${realPointsEarned.toLocaleString()} نقطة`,
+                    status: 'مكتمل'
+                }]);
+
+                userData.points = newTotalPoints;
+                document.getElementById('user-real-points').innerText = newTotalPoints.toLocaleString();
+
+                clickerData.diamonds -= diamondsUsed;
+                saveClickerState();
+                updateClickerUI();
+
+                tg.showAlert(`🎉 مبروك! تم بنجاح تحويل (${diamondsUsed} 💎) إلى (+${realPointsEarned.toLocaleString()} نقطة حقيقية) في رصيدك وفي الهيستوري!`);
+
+            } catch (e) {
+                console.error("Conversion error:", e);
+                tg.showAlert("❌ حدث خطأ أثناء تحويل النقاط، حاول مرة أخرى.");
+            }
+        }
+
+        function openGame(gameType) {
+            if (!tid) return;
+            if (gameType === 'memory') {
+                window.location.href = `games/memory.html?id=${tid}`;
+            } else if (gameType === 'quiz') {
+                window.location.href = `games/quiz.html?id=${tid}`;
+            } else if (gameType === 'chests') {
+                window.location.href = `games/chests.html?id=${tid}`;
+            } else if (gameType === 'tictactoe') {
+                window.location.href = `games/tictactoe.html?id=${tid}`;
+            } else if (gameType === 'seahorse') {
+                window.location.href = `games/game-seahorse.html?id=${tid}`;
+            } else if (gameType === 'space') {
+                window.location.href = `games/game-space.html?id=${tid}`;
+            }
+        }
+
+        // ⭐ روابط التنقل السفلية مطابقة تماماً لطريقة البروفايل الناجحة
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
         function goGames() { window.location.href = `games.html?id=${tid}&t=${Date.now()}`; }
         function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
-        
-        load();
+
+        init();
     </script>
 </body>
 </html>
