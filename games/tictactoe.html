@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MegaTask - Tic Tac Toe</title>
     
+    <!-- إعلانات Monetag -->
+    <script src="//libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
@@ -18,7 +21,7 @@
         .game-title { margin: 20px 0 5px; color: var(--main-green); font-size: 20px; }
         .game-desc { font-size: 12px; color: var(--text-gray); margin-bottom: 15px; }
 
-        .stat-badge { font-size: 13px; color: var(--main-green); font-weight: bold; margin-bottom: 15px; display: inline-block; background: rgba(0,210,106,0.1); padding: 6px 15px; border-radius: 10px; border: 1px solid var(--main-green); }
+        .stat-badge { font-size: 13px; color: #00f2ff; font-weight: bold; margin-bottom: 15px; display: inline-block; background: rgba(0,242,255,0.1); padding: 6px 15px; border-radius: 10px; border: 1px solid #00f2ff; }
 
         /* شبكة الإكس أو */
         .tictactoe-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto 20px; padding: 0 15px; }
@@ -39,11 +42,11 @@
     </div>
 
     <h2 class="game-title">تحدي الذكاء (Tic Tac Toe)</h2>
-    <p class="game-desc">اهزم الخصم واكسب ألماسات الولاء والتفوق!</p>
+    <p class="game-desc">الفوز يمنحك +5 ألماسات 💎 | الخسارة تخصم منك 5 ألماسات!</p>
 
-    <div class="stat-badge">ألماسات الجلسة: <span id="tictactoe-score">0</span> 💎</div>
+    <div class="stat-badge">ألماسات حسابك: <span id="user-diamonds-counter">0</span> 💎</div>
 
-    <div id="status-msg" style="font-size: 13px; color: #ffaa00; font-weight: bold; margin-bottom: 15px;">دورك (X)</div>
+    <div id="status-msg" style="font-size: 13px; color: #ffaa00; font-weight: bold; margin-bottom: 15px;">جاري تحميل الجولة...</div>
 
     <div class="tictactoe-grid" id="board">
         <div class="cell" onclick="makeMove(0)"></div>
@@ -57,29 +60,92 @@
         <div class="cell" onclick="makeMove(8)"></div>
     </div>
 
-    <button id="restart-btn" class="btn-action" onclick="resetBoard()">
-        🔄 جولة جديدة
+    <button id="restart-btn" class="btn-action" onclick="startNewRoundWithAd()">
+        🔄 جولة جديدة (مشاهدة إعلان)
     </button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
+
         const params = new URLSearchParams(window.location.search);
-        const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
 
-        document.getElementById('back-link').href = `../games.html?id=${userId}`;
+        document.getElementById('back-link').href = `../games.html?id=${tid}`;
 
+        let userData = null;
         let board = ["", "", "", "", "", "", "", "", ""];
-        let isGameActive = true;
-        let sessionDiamonds = 0;
-        let currentPlayer = "X"; // X للمستخدم، O للكمبيوتر
+        let isGameActive = false;
+        let currentPlayer = "X";
 
         const winningConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
             [0, 3, 6], [1, 4, 7], [2, 5, 8],
             [0, 4, 8], [2, 4, 6]
         ];
+
+        async function initUser() {
+            if (!tid) {
+                tg.showAlert("❌ لم يتم العثور على معرف المستخدم.");
+                return;
+            }
+
+            try {
+                const { data: user, error } = await client
+                    .from('users')
+                    .select('*')
+                    .eq('telegram_id', String(tid))
+                    .maybeSingle();
+
+                if (error || !user) {
+                    tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
+                    return;
+                }
+
+                userData = user;
+                updateUI();
+                
+                // بدء أول جولة بإعلان إلزامي عند فتح اللعبة
+                startNewRoundWithAd();
+
+            } catch (e) {
+                console.error("Init error:", e);
+            }
+        }
+
+        function updateUI() {
+            if (!userData) return;
+            const diamonds = Number(userData.gamepoints || 0);
+            document.getElementById('user-diamonds-counter').innerText = diamonds.toLocaleString();
+        }
+
+        async function startNewRoundWithAd() {
+            document.getElementById('status-msg').innerText = "⏳ جاري تحميل إعلان الجولة الجديدة...";
+            document.getElementById('restart-btn').style.display = 'none';
+
+            try {
+                if (typeof show_10959333 === 'function') {
+                    await show_10959333();
+                } else {
+                    console.warn("Monetag SDK not found, bypassing ad for testing.");
+                }
+
+                // بدء اللعبة بعد مشاهدة الإعلان بنجاح
+                resetBoard();
+                isGameActive = true;
+                document.getElementById('status-msg').innerText = "دورك (X)";
+
+            } catch (err) {
+                console.error("Ad error:", err);
+                tg.showAlert("❌ يجب مشاهدة الإعلان كاملاً لبدء الجولة الجديدة.");
+                document.getElementById('status-msg').innerText = "⚠️ لم يتم إكمال الإعلان.";
+                document.getElementById('restart-btn').style.display = 'inline-block';
+            }
+        }
 
         function makeMove(index) {
             if (board[index] !== "" || !isGameActive || currentPlayer !== "X") return;
@@ -89,14 +155,13 @@
             
             if (checkWin("X")) {
                 endGame("🎉 مبروك! فزت على الخصم وحصلت على +5 ألماسات 💎");
-                sessionDiamonds += 5;
-                document.getElementById('tictactoe-score').innerText = sessionDiamonds;
-                saveDiamonds(5);
+                updateUserDiamonds(5);
                 return;
             }
 
             if (board.every(cell => cell !== "")) {
-                endGame("🤝 تعادل! حاول مجدداً.");
+                endGame("🤝 تعادل! لا تغيير في رصيد الألماس.");
+                document.getElementById('restart-btn').style.display = 'inline-block';
                 return;
             }
 
@@ -108,7 +173,6 @@
         function computerMove() {
             if (!isGameActive) return;
 
-            // محاولة الفوز أو منع اللاعب
             let move = findBestMove();
             if (move === -1) {
                 let emptyCells = board.map((val, idx) => val === "" ? idx : null).filter(val => val !== null);
@@ -120,12 +184,14 @@
             updateBoardUI();
 
             if (checkWin("O")) {
-                endGame("❌ فاز الكمبيوتر! حظ أوفر في المرة القادمة.");
+                endGame("❌ فاز الكمبيوتر! تم خصم 5 ألماسات من رصيدك.");
+                updateUserDiamonds(-5);
                 return;
             }
 
             if (board.every(cell => cell !== "")) {
-                endGame("🤝 تعادل! حاول مجدداً.");
+                endGame("🤝 تعادل! لا تغيير في رصيد الألماس.");
+                document.getElementById('restart-btn').style.display = 'inline-block';
                 return;
             }
 
@@ -134,7 +200,6 @@
         }
 
         function findBestMove() {
-            // ذكاء اصطناعي بسيط لمنع الفوز أو تحقيق الفوز
             for (let condition of winningConditions) {
                 let [a, b, c] = condition;
                 let line = [board[a], board[b], board[c]];
@@ -162,25 +227,44 @@
             });
         }
 
+        async function updateUserDiamonds(amount) {
+            if (!userData) return;
+
+            let currentDiamonds = Number(userData.gamepoints || 0);
+            let newDiamonds = currentDiamonds + amount;
+            if (newDiamonds < 0) newDiamonds = 0; // عدم النزول تحت الصفر
+
+            try {
+                const { data: updated, error } = await client
+                    .from('users')
+                    .update({ gamepoints: newDiamonds })
+                    .eq('telegram_id', String(tid))
+                    .select('*')
+                    .single();
+
+                if (!error && updated) {
+                    userData = updated;
+                    updateUI();
+                }
+            } catch (e) {
+                console.error("Update diamonds error:", e);
+            }
+
+            document.getElementById('restart-btn').style.display = 'inline-block';
+        }
+
         function endGame(message) {
             isGameActive = false;
             document.getElementById('status-msg').innerText = message;
-            document.getElementById('restart-btn').style.display = 'inline-block';
         }
 
         function resetBoard() {
             board = ["", "", "", "", "", "", "", "", ""];
-            isGameActive = true;
             currentPlayer = "X";
-            document.getElementById('status-msg').innerText = "دورك (X)";
-            document.getElementById('restart-btn').style.display = 'none';
             updateBoardUI();
         }
 
-        function saveDiamonds(amount) {
-            let current = parseInt(localStorage.getItem(`megatask_diamonds_${userId}`) || '0');
-            localStorage.setItem(`megatask_diamonds_${userId}`, current + amount);
-        }
+        initUser();
     </script>
 </body>
 </html>
