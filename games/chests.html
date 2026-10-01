@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MegaTask - Lucky Chests</title>
     
+    <!-- إعلانات Monetag -->
+    <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
@@ -18,7 +21,7 @@
         .game-title { margin: 20px 0 5px; color: #ffaa00; font-size: 20px; }
         .game-desc { font-size: 12px; color: var(--text-gray); margin-bottom: 20px; }
 
-        .stat-badge { font-size: 13px; color: var(--main-green); font-weight: bold; margin-bottom: 20px; display: inline-block; background: rgba(0,210,106,0.1); padding: 6px 15px; border-radius: 10px; border: 1px solid var(--main-green); }
+        .stat-badge { font-size: 13px; color: #00f2ff; font-weight: bold; margin-bottom: 20px; display: inline-block; background: rgba(0,242,255,0.1); padding: 6px 15px; border-radius: 10px; border: 1px solid #00f2ff; }
 
         /* شبكة الصناديق */
         .chests-container { display: flex; justify-content: center; gap: 15px; margin: 20px auto 30px; padding: 0 15px; max-width: 350px; }
@@ -38,9 +41,9 @@
     </div>
 
     <h2 class="game-title">اختر صندوقاً واربح الجائزة!</h2>
-    <p class="game-desc">اضغط على أحد الصناديق الثلاثة لاكتشاف ما تخفيه داخله.</p>
+    <p class="game-desc">الفوز يمنحك +5 ألماسات 💎 | الخسارة تخصم منك 5 ألماسات!</p>
 
-    <div class="stat-badge">نقاط الجلسة: <span id="chests-score">0</span></div>
+    <div class="stat-badge">ألماسات حسابك: <span id="user-diamonds-counter">0</span> 💎</div>
 
     <div class="chests-container" id="chests-grid">
         <div class="chest-box" onclick="openChest(0)">📦</div>
@@ -48,66 +51,149 @@
         <div class="chest-box" onclick="openChest(2)">📦</div>
     </div>
 
-    <div id="result-msg" style="font-size: 14px; font-weight: bold; color: white; margin-bottom: 20px; min-height: 25px;"></div>
+    <div id="result-msg" style="font-size: 14px; font-weight: bold; color: white; margin-bottom: 20px; min-height: 25px;">جاري تحميل الجولة...</div>
 
-    <button id="next-round-btn" class="btn-action" onclick="resetChests()">
-        🔄 المحاولة مرة أخرى
+    <button id="next-round-btn" class="btn-action" onclick="startNewRoundWithAd()">
+        🔄 المحاولة مرة أخرى (مشاهدة إعلان)
     </button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
+
         const params = new URLSearchParams(window.location.search);
-        const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
 
-        document.getElementById('back-link').href = `../games.html?id=${userId}`;
+        document.getElementById('back-link').href = `../games.html?id=${tid}`;
 
-        let sessionPoints = 0;
+        let userData = null;
         let isOpened = false;
 
-        const prizes = [3, 5, 0]; // جوائز الصناديق (3 نقاط، 5 نقاط، أو حظ أوفر 0)
+        async function initUser() {
+            if (!tid) {
+                tg.showAlert("❌ لم يتم العثور على معرف المستخدم.");
+                return;
+            }
 
-        function openChest(index) {
-            if (isOpened) return;
+            try {
+                const { data: user, error } = await client
+                    .from('users')
+                    .select('*')
+                    .eq('telegram_id', String(tid))
+                    .maybeSingle();
+
+                if (error || !user) {
+                    tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
+                    return;
+                }
+
+                userData = user;
+                updateUI();
+
+                // بدء أول جولة بإعلان إلزامي
+                startNewRoundWithAd();
+
+            } catch (e) {
+                console.error("Init error:", e);
+            }
+        }
+
+        function updateUI() {
+            if (!userData) return;
+            const diamonds = Number(userData.gamepoints || 0);
+            document.getElementById('user-diamonds-counter').innerText = diamonds.toLocaleString();
+        }
+
+        async function startNewRoundWithAd() {
+            document.getElementById('result-msg').innerText = "⏳ جاري تحميل إعلان الجولة الجديدة...";
+            document.getElementById('next-round-btn').style.display = 'none';
+
+            try {
+                if (typeof show_10959333 === 'function') {
+                    await show_10959333();
+                } else {
+                    console.warn("Monetag SDK not found, bypassing ad for testing.");
+                }
+
+                resetChests();
+                isOpened = false;
+                document.getElementById('result-msg').innerText = "اختر أحد الصناديق الثلاثة لاكتشاف ما تخفيه داخله.";
+
+            } catch (err) {
+                console.error("Ad error:", err);
+                tg.showAlert("❌ يجب مشاهدة الإعلان كاملاً لبدء الجولة الجديدة.");
+                document.getElementById('result-msg').innerText = "⚠️ لم يتم إكمال الإعلان.";
+                document.getElementById('next-round-btn').style.display = 'inline-block';
+            }
+        }
+
+        async function openChest(index) {
+            if (isOpened || !userData) return;
             isOpened = true;
 
-            // خلط الجوائز عشوائياً ع الصناديق
-            const shuffledPrizes = [...prizes].sort(() => Math.random() - 0.5);
-            const boxes = document.querySelectorAll('.chest-box');
+            // تحديد ما إذا كانت المحاولة فوز (+5) أو خسارة (-5) بنسبة عشوائية
+            const isWin = Math.random() < 0.5; // 50% فرصة فوز أو خسارة
+            const prize = isWin ? 5 : -5;
 
+            const boxes = document.querySelectorAll('.chest-box');
             boxes.forEach((box, i) => {
                 box.classList.add('opened');
-                const prize = shuffledPrizes[i];
-                if (prize > 0) {
-                    box.innerText = `🎁\n+${prize}`;
-                    box.style.color = '#00d26a';
+                if (i === index) {
+                    if (isWin) {
+                        box.innerText = `🎁\n+${prize}`;
+                        box.style.color = '#00d26a';
+                    } else {
+                        box.innerText = `❌\n-5`;
+                        box.style.color = '#ff3b30';
+                    }
                 } else {
-                    box.innerText = `❌\nفارغ`;
-                    box.style.color = '#ff3b30';
+                    box.innerText = `📦`;
+                    box.style.color = 'var(--text-gray)';
                 }
             });
 
-            const userWon = shuffledPrizes[index];
             const msgEl = document.getElementById('result-msg');
 
-            if (userWon > 0) {
-                sessionPoints += userWon;
-                document.getElementById('chests-score').innerText = sessionPoints;
-                msgEl.innerHTML = `🎉 مبروك! اخترت الصندوق الصحيح وفزت بـ <span style="color: var(--main-green);">+${userWon} نقاط لعبة</span>!`;
-                
-                // حفظ النقاط في الـ LocalStorage لإضافتها لنقاط اللعبة الرئيسية
-                let savedGamePoints = parseInt(localStorage.getItem(`clicker_game_${userId}_points`) || '0');
-                localStorage.setItem(`clicker_game_${userId}_points`, savedGamePoints + userWon);
+            if (isWin) {
+                msgEl.innerHTML = `🎉 مبروك! اخترت الصندوق الصحيح وفزت بـ <span style="color: var(--main-green);">+5 ألماسات 💎</span>!`;
+                await updateUserDiamonds(5);
             } else {
-                msgEl.innerHTML = `💔 حظ أوفر هذه المرة! الصندوق كان فارغاً.`;
+                msgEl.innerHTML = `💔 حظ أوفر! الصندوق كان فارغاً وتم خصم <span style="color: #ff3b30;">5 ألماسات</span>.`;
+                await updateUserDiamonds(-5);
             }
 
             document.getElementById('next-round-btn').style.display = 'inline-block';
         }
 
+        async function updateUserDiamonds(amount) {
+            if (!userData) return;
+
+            let currentDiamonds = Number(userData.gamepoints || 0);
+            let newDiamonds = currentDiamonds + amount;
+            if (newDiamonds < 0) newDiamonds = 0; // عدم النزول تحت الصفر
+
+            try {
+                const { data: updated, error } = await client
+                    .from('users')
+                    .update({ gamepoints: newDiamonds })
+                    .eq('telegram_id', String(tid))
+                    .select('*')
+                    .single();
+
+                if (!error && updated) {
+                    userData = updated;
+                    updateUI();
+                }
+            } catch (e) {
+                console.error("Update diamonds error:", e);
+            }
+        }
+
         function resetChests() {
-            isOpened = false;
             const boxes = document.querySelectorAll('.chest-box');
             boxes.forEach(box => {
                 box.classList.remove('opened');
@@ -115,8 +201,9 @@
                 box.style.color = 'white';
             });
             document.getElementById('result-msg').innerText = '';
-            document.getElementById('next-round-btn').style.display = 'none';
         }
+
+        initUser();
     </script>
 </body>
 </html>
