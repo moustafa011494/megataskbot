@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MegaTask - Memory Game</title>
     
-    <!-- إعلانات Monetag (اختياري لو حابب تظهرها هنا كمان) -->
-    <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
+    <!-- إعلانات Monetag -->
+    <script src="//libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -15,101 +15,193 @@
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
         html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 50px; width: 100%; max-width: 100vw; overflow-x: hidden; text-align: center; }
         
-        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d333d; }
-        .back-btn { background: #252932; color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; text-decoration: none; }
+        .header { padding: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d333d; }
+        .back-link { background: #252932; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; text-decoration: none; }
         
-        .game-title { margin: 20px 0 5px; color: var(--main-green); font-size: 20px; }
-        .game-desc { font-size: 12px; color: var(--text-gray); margin-bottom: 20px; }
+        .game-title { margin: 10px 0 3px; color: var(--main-green); font-size: 16px; }
+        .game-desc { font-size: 10px; color: var(--text-gray); margin-bottom: 8px; }
 
-        .stats-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
-        .stat-card { background: var(--card-bg); border: 1px solid #2d333d; padding: 10px 20px; border-radius: 14px; }
-        .stat-card b { display: block; color: #ffaa00; font-size: 16px; }
-        .stat-card span { font-size: 11px; color: var(--text-gray); }
+        .stats-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 8px; }
+        .stat-card { background: var(--card-bg); border: 1px solid #2d333d; padding: 4px 10px; border-radius: 10px; }
+        .stat-card b { display: block; color: #00f2ff; font-size: 13px; }
+        .stat-card span { font-size: 9px; color: var(--text-gray); }
 
-        /* شبكة الكروت للعبة الذاكرة */
-        .memory-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 320px; margin: 0 auto 25px; padding: 0 15px; }
-        .memory-card { aspect-ratio: 1; background: #16191e; border: 2px solid #2d333d; border-radius: 16px; font-size: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; user-select: none; }
+        /* شبكة الكروت الـ 60 المصغرة (6 أعمدة × 10 صفوف) */
+        .memory-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; max-width: 380px; margin: 0 auto 10px; padding: 0 5px; }
+        .memory-card { aspect-ratio: 1; background: #16191e; border: 1px solid #2d333d; border-radius: 5px; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.1s; user-select: none; }
         .memory-card.flipped { background: #1a222c; border-color: var(--main-green); transform: rotateY(180deg); }
-        .memory-card.matched { background: rgba(0, 210, 106, 0.1); border-color: var(--main-green); opacity: 0.7; cursor: default; }
+        .memory-card.matched { background: rgba(0, 210, 106, 0.1); border-color: var(--main-green); opacity: 0.5; cursor: default; }
 
-        .btn-action { background: var(--main-green); color: black; border: none; padding: 14px 30px; border-radius: 14px; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); }
-        .btn-action:active { transform: scale(0.98); }
+        .btn-action { background: var(--main-green); color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); display: none; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
-        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">🧠 لعبة الذاكرة</span>
-        <div style="width: 60px;"></div>
+        <span style="font-size: 12px; font-weight: bold; color: var(--main-green);">🧠 الذاكرة الجهنمية (60 كارت)</span>
+        <div style="width: 50px;"></div>
     </div>
 
-    <h2 class="game-title">اختبر قوة ذاكرتك!</h2>
-    <p class="game-desc">طابق كروت الأ emojis المتشابهة لاكتساب نقاط اللعبة.</p>
+    <h2 class="game-title">تحدي الـ 60 كارت الخارق!</h2>
+    <p class="game-desc">الفوز يمنحك +5 ألماسات 💎 | كل خطأ يخصم 1 ألماسة!</p>
 
     <div class="stats-row">
         <div class="stat-card">
-            <b id="score-counter">0</b>
-            <span>نقاط الجلسة</span>
+            <b id="user-diamonds-counter">0</b>
+            <span>ألماسات حسابك</span>
         </div>
         <div class="stat-card">
-            <b id="moves-counter">0</b>
-            <span>عدد المحاولات</span>
+            <b id="mistakes-counter" style="color: #ff3b30;">0</b>
+            <span>الأخطاء (الخصومات)</span>
         </div>
     </div>
 
-    <div class="memory-grid" id="memory-grid">
-        <!-- يتم توليد الكروت ديناميكياً عبر الجافاسكريبت -->
-    </div>
+    <div id="status-msg" style="font-size: 11px; color: #ffaa00; font-weight: bold; margin-bottom: 8px;">جاري تحميل الجولة...</div>
 
-    <button id="restart-btn" class="btn-action" style="display: none;" onclick="startGame()">
-        🔄 لعب دورة جديدة
+    <div class="memory-grid" id="memory-grid"></div>
+
+    <button id="restart-btn" class="btn-action" onclick="startNewRoundWithAd()">
+        🔄 دورة جديدة (مشاهدة إعلان)
     </button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
+
         const params = new URLSearchParams(window.location.search);
-        const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
 
-        // ربط زر العودة لصفحة الألعاب الرئيسية مع الحفاظ على الـ ID
-        document.getElementById('back-link').href = `../games.html?id=${userId}`;
+        document.getElementById('back-link').href = `../games.html?id=${tid}`;
 
-        const emojis = ['🪙', '💎', '🚀', '🔥', '👑', '🎁'];
+        let userData = null;
+        // 30 زوج = 60 كارت موزعة على 6 أعمدة
+        const emojis = [
+            '🪙', '💎', '🚀', '🔥', '👑', '🎁', '⭐', '⚡', '🎈', '🎨', 
+            '🔮', '🍀', '🎯', '💡', '🏆', '⚓', '🍉', '🍕', '🐱', '🐶', 
+            '🦊', '🐼', '🦄', '🍎', '🍌', '⚽', '🏀', '🚗', '✈️', '🌵'
+        ];
         let cards = [];
         let flippedCards = [];
         let matchedPairs = 0;
-        let moves = 0;
-        let score = 0;
+        let mistakes = 0;
         let isLocked = false;
+        let gameStarted = false;
 
-        function startGame() {
+        async function initUser() {
+            if (!tid || tid === "undefined" || tid === "null") {
+                try {
+                    let { data: latest } = await client.from('users').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
+                    if (latest) {
+                        userData = latest;
+                        tid = String(latest.telegram_id);
+                    }
+                } catch (e) {}
+            }
+
+            try {
+                let { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).maybeSingle();
+                if (u) {
+                    userData = u;
+                } else {
+                    let { data: uNum } = await client.from('users').select('*').eq('telegram_id', Number(tid)).maybeSingle();
+                    if (uNum) {
+                        userData = uNum;
+                    } else {
+                        let { data: fallback } = await client.from('users').select('*').limit(1).maybeSingle();
+                        if (fallback) userData = fallback;
+                    }
+                }
+
+                if (!userData) {
+                    tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
+                    return;
+                }
+
+                tid = String(userData.telegram_id);
+                localStorage.setItem('telegram_id', tid);
+                updateUI();
+
+                startNewRoundWithAd();
+
+            } catch (e) {
+                console.error("Init error:", e);
+                tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
+            }
+        }
+
+        function updateUI() {
+            if (!userData) return;
+            const diamonds = Number(userData.gamepoints !== undefined ? userData.gamepoints : (userData.diamonds !== undefined ? userData.diamonds : 0));
+            document.getElementById('user-diamonds-counter').innerText = diamonds.toLocaleString();
+            document.getElementById('mistakes-counter').innerText = mistakes;
+        }
+
+        async function startNewRoundWithAd() {
+            document.getElementById('status-msg').innerText = "⏳ جاري تحميل إعلان الجولة الجديدة...";
+            document.getElementById('restart-btn').style.display = 'none';
+
+            try {
+                if (typeof show_10959333 === 'function') {
+                    await show_10959333();
+                } else {
+                    console.warn("Monetag SDK not found, bypassing ad for testing.");
+                }
+
+                setupGame();
+
+            } catch (err) {
+                console.error("Ad error:", err);
+                tg.showAlert("❌ يجب مشاهدة الإعلان كاملاً لبدء الجولة الجديدة.");
+                document.getElementById('status-msg').innerText = "⚠️ لم يتم إكمال الإعلان.";
+                document.getElementById('restart-btn').style.display = 'inline-block';
+            }
+        }
+
+        function setupGame() {
             const grid = document.getElementById('memory-grid');
             grid.innerHTML = '';
             flippedCards = [];
             matchedPairs = 0;
-            moves = 0;
-            document.getElementById('moves-counter').innerText = moves;
-            document.getElementById('restart-btn').style.display = 'none';
+            mistakes = 0;
+            isLocked = true;
+            updateUI();
 
-            // مضاعفة الرموز وتشكيل الكروت (6 أزواج = 12 كارت)
+            document.getElementById('status-msg').innerText = "👀 احفظ مكان الـ60 كارت بسرعة فائقة جداً...";
+
             cards = [...emojis, ...emojis]
                 .sort(() => Math.random() - 0.5)
-                .map((emoji, index) => ({ id: index, emoji, isFlipped: false, isMatched: false }));
+                .map((emoji, index) => ({ id: index, emoji, isFlipped: true, isMatched: false }));
 
             cards.forEach(card => {
                 const cardEl = document.createElement('div');
-                cardEl.classList.add('memory-card');
+                cardEl.classList.add('memory-card', 'flipped');
                 cardEl.dataset.id = card.id;
-                cardEl.innerText = '❓';
+                cardEl.innerText = card.emoji;
                 cardEl.onclick = () => flipCard(card.id, cardEl);
                 grid.appendChild(cardEl);
             });
+
+            // إخفاء فائق السرعة بعد 1.5 ثانية نظراً لضخامة العدد (60 كارت)
+            setTimeout(() => {
+                const cardElements = document.querySelectorAll('.memory-card');
+                cards.forEach((card, idx) => {
+                    card.isFlipped = false;
+                    cardElements[idx].innerText = '❓';
+                    cardElements[idx].classList.remove('flipped');
+                });
+                isLocked = false;
+                gameStarted = true;
+                document.getElementById('status-msg').innerText = "🧠 ابدأ التحدي الجهنمي الآن!";
+            }, 1500);
         }
 
         function flipCard(id, el) {
-            if (isLocked) return;
+            if (isLocked || !gameStarted) return;
             const clickedCard = cards.find(c => c.id === id);
 
             if (clickedCard.isFlipped || clickedCard.isMatched) return;
@@ -120,13 +212,11 @@
             flippedCards.push({ id, emoji: clickedCard.emoji, el });
 
             if (flippedCards.length === 2) {
-                moves++;
-                document.getElementById('moves-counter').innerText = moves;
                 checkMatch();
             }
         }
 
-        function checkMatch() {
+        async function checkMatch() {
             const [card1, card2] = flippedCards;
             
             if (card1.emoji === card2.emoji) {
@@ -140,18 +230,17 @@
                 flippedCards = [];
 
                 if (matchedPairs === emojis.length) {
-                    score += 5; // منح 5 نقاط لعبة عند الفوز
-                    document.getElementById('score-counter').innerText = score;
+                    gameStarted = false;
+                    document.getElementById('status-msg').innerText = "🏆 أسطورة الذاكرة! أكملت الـ60 كارت بنجاح وربحت +5 ألماسات 💎";
                     document.getElementById('restart-btn').style.display = 'inline-block';
-                    
-                    // حفظ النقاط في الـ LocalStorage عشان ترجع تضاف لنقاط اللعبة الرئيسية لو حابب
-                    let savedGamePoints = parseInt(localStorage.getItem(`clicker_game_${userId}_points`) || '0');
-                    localStorage.setItem(`clicker_game_${userId}_points`, savedGamePoints + 5);
-
-                    tg.showAlert("🎉 عاش يا بطل! أتممت اللعبة بنجاح وحصلت على +5 نقاط لعبة إضافية!");
+                    await updateUserDiamonds(5);
                 }
             } else {
                 isLocked = true;
+                mistakes++;
+                updateUI();
+                await updateUserDiamonds(-1);
+
                 setTimeout(() => {
                     cards.find(c => c.id === card1.id).isFlipped = false;
                     cards.find(c => c.id === card2.id).isFlipped = false;
@@ -163,11 +252,39 @@
                     
                     flippedCards = [];
                     isLocked = false;
-                }, 900);
+                }, 350); // إخفاء سريع جداً للخطأ
             }
         }
 
-        startGame();
+        async function updateUserDiamonds(amount) {
+            if (!userData) return;
+
+            const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
+            let currentDiamonds = Number(userData[gpField] || 0);
+            let newDiamonds = currentDiamonds + amount;
+            if (newDiamonds < 0) newDiamonds = 0;
+
+            try {
+                const updateObj = {};
+                updateObj[gpField] = newDiamonds;
+
+                const { data: updated, error } = await client
+                    .from('users')
+                    .update(updateObj)
+                    .eq('telegram_id', String(tid))
+                    .select('*')
+                    .single();
+
+                if (!error && updated) {
+                    userData = updated;
+                    updateUI();
+                }
+            } catch (e) {
+                console.error("Update diamonds error:", e);
+            }
+        }
+
+        initUser();
     </script>
 </body>
 </html>
