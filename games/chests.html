@@ -21,7 +21,7 @@
         .game-title { margin: 20px 0 5px; color: #ffaa00; font-size: 20px; }
         .game-desc { font-size: 12px; color: var(--text-gray); margin-bottom: 20px; }
 
-        .stat-badge { font-size: 13px; color: #00f2ff; font-weight: bold; margin-bottom: 20px; display: inline-block; background: rgba(0,242,255,0.1); padding: 6px 15px; border-radius: 10px; border: 1px solid #00f2ff; }
+        .stat-badge { font-size: 13px; color: var(--main-green); font-weight: bold; margin-bottom: 20px; display: inline-block; background: rgba(0,210,106,0.1); padding: 6px 15px; border-radius: 10px; border: 1px solid var(--main-green); }
 
         /* شبكة الصناديق */
         .chests-container { display: flex; justify-content: center; gap: 15px; margin: 20px auto 30px; padding: 0 15px; max-width: 350px; }
@@ -62,7 +62,7 @@
         tg.expand();
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
@@ -74,24 +74,37 @@
         let isOpened = false;
 
         async function initUser() {
-            if (!tid) {
-                tg.showAlert("❌ لم يتم العثور على معرف المستخدم.");
-                return;
+            if (!tid || tid === "undefined" || tid === "null") {
+                try {
+                    let { data: latest } = await client.from('users').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
+                    if (latest) {
+                        userData = latest;
+                        tid = String(latest.telegram_id);
+                    }
+                } catch (e) {}
             }
 
             try {
-                const { data: user, error } = await client
-                    .from('users')
-                    .select('*')
-                    .eq('telegram_id', String(tid))
-                    .maybeSingle();
+                let { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).maybeSingle();
+                if (u) {
+                    userData = u;
+                } else {
+                    let { data: uNum } = await client.from('users').select('*').eq('telegram_id', Number(tid)).maybeSingle();
+                    if (uNum) {
+                        userData = uNum;
+                    } else {
+                        let { data: fallback } = await client.from('users').select('*').limit(1).maybeSingle();
+                        if (fallback) userData = fallback;
+                    }
+                }
 
-                if (error || !user) {
-                    tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
+                if (!userData) {
+                    tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
                     return;
                 }
 
-                userData = user;
+                tid = String(userData.telegram_id);
+                localStorage.setItem('telegram_id', tid);
                 updateUI();
 
                 // بدء أول جولة بإعلان إلزامي
@@ -99,12 +112,13 @@
 
             } catch (e) {
                 console.error("Init error:", e);
+                tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
             }
         }
 
         function updateUI() {
             if (!userData) return;
-            const diamonds = Number(userData.gamepoints || 0);
+            const diamonds = Number(userData.gamepoints !== undefined ? userData.gamepoints : (userData.diamonds !== undefined ? userData.diamonds : 0));
             document.getElementById('user-diamonds-counter').innerText = diamonds.toLocaleString();
         }
 
@@ -135,7 +149,6 @@
             if (isOpened || !userData) return;
             isOpened = true;
 
-            // تحديد ما إذا كانت المحاولة فوز (+5) أو خسارة (-5) بنسبة عشوائية
             const isWin = Math.random() < 0.5; // 50% فرصة فوز أو خسارة
             const prize = isWin ? 5 : -5;
 
@@ -172,14 +185,18 @@
         async function updateUserDiamonds(amount) {
             if (!userData) return;
 
-            let currentDiamonds = Number(userData.gamepoints || 0);
+            const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
+            let currentDiamonds = Number(userData[gpField] || 0);
             let newDiamonds = currentDiamonds + amount;
             if (newDiamonds < 0) newDiamonds = 0; // عدم النزول تحت الصفر
 
             try {
+                const updateObj = {};
+                updateObj[gpField] = newDiamonds;
+
                 const { data: updated, error } = await client
                     .from('users')
-                    .update({ gamepoints: newDiamonds })
+                    .update(updateObj)
                     .eq('telegram_id', String(tid))
                     .select('*')
                     .single();
