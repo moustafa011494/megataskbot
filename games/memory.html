@@ -33,6 +33,11 @@
         .memory-card.matched { background: rgba(0, 210, 106, 0.1); border-color: var(--main-green); opacity: 0.5; cursor: default; }
 
         .btn-action { background: var(--main-green); color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); display: none; margin-bottom: 20px; }
+
+        /* تنسيق نافذة جمع الألماس (Modal) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .modal-box { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 25px; width: 100%; max-width: 340px; text-align: center; box-sizing: border-box; }
+        .btn-confirm-modal { width: 100%; background: var(--main-green); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -44,7 +49,7 @@
     </div>
 
     <h2 class="game-title">تحدي الـ 60 كارت الخارق!</h2>
-    <p class="game-desc">الفوز يمنحك +5 ألماسات 💎 | كل خطأ يخصم 1 ألماسة!</p>
+    <p class="game-desc">كل زوج تطابقه يمنحك +4 ألماسات (بعد مشاهدة الإعلان) | كل خطأ يخصم 1 ألماسة!</p>
 
     <div class="stats-row">
         <div class="stat-card">
@@ -65,12 +70,26 @@
         🔄 دورة جديدة (مشاهدة إعلان)
     </button>
 
+    <!-- نافذة جمع الألماس عند مطابقة كل زوج -->
+    <div id="claim-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color: #00f2ff; margin-top:0;">🎉 مطابقة ناجحة!</h3>
+            <p style="font-size: 13px; color: var(--text-gray); line-height: 1.6; margin-bottom: 15px;">
+                لقد طابقت زوجاً صحيحاً!<br>
+                لديك <b style="color: #ffaa00;">+4 ألماسات 💎</b> في انتظار الجمع.
+            </p>
+            <button class="btn-confirm-modal" onclick="claimMatchDiamonds()">
+                📺 جمع الألماس (مشاهدة إعلان)
+            </button>
+        </div>
+    </div>
+
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
@@ -83,7 +102,7 @@
         const emojis = [
             '🪙', '💎', '🚀', '🔥', '👑', '🎁', '⭐', '⚡', '🎈', '🎨', 
             '🔮', '🍀', '🎯', '💡', '🏆', '⚓', '🍉', '🍕', '🐱', '🐶', 
-            '🦊', '🐼', '🦄', '🍎', '🍌', '⚽', '🏀', '🚗', '✈️', '🌵'
+            '🦊', '🐼', '🦄', '🍎', '🍌', '⚽', '🏀', '🚗', '✈', '🌵'
         ];
         let cards = [];
         let flippedCards = [];
@@ -106,7 +125,6 @@
                     }
                 }
 
-                // طبقة حماية قصوى: لو الحساب مش موجود بالـ id، هات أحدث مستخدم نشط تلقائياً
                 if (!u) {
                     let { data: latest } = await client.from('users').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
                     if (latest) u = latest;
@@ -121,7 +139,6 @@
                     updateUI();
                     startNewRoundWithAd();
                 } else {
-                    // كحل نهائي لا يظهر إيرور أبداً
                     userData = { telegram_id: tid || "123456789", gamepoints: 0 };
                     updateUI();
                     startNewRoundWithAd();
@@ -229,11 +246,13 @@
                 matchedPairs++;
                 flippedCards = [];
 
+                // إيقاف اللعبة مؤقتاً وإظهار نافذة جمع الألماس والإعلان
+                isLocked = true;
+                document.getElementById('claim-modal').style.display = 'flex';
+
                 if (matchedPairs === emojis.length) {
                     gameStarted = false;
-                    document.getElementById('status-msg').innerText = "🏆 أسطورة الذاكرة! أكملت الـ60 كارت بنجاح وربحت +5 ألماسات 💎";
                     document.getElementById('restart-btn').style.display = 'inline-block';
-                    await updateUserDiamonds(5);
                 }
             } else {
                 isLocked = true;
@@ -253,6 +272,35 @@
                     flippedCards = [];
                     isLocked = false;
                 }, 350);
+            }
+        }
+
+        // عند الضغط على زر جمع الألماس ومشاهدة الإعلان
+        async function claimMatchDiamonds() {
+            document.getElementById('claim-modal').style.display = 'none';
+
+            try {
+                if (typeof show_10959333 === 'function') {
+                    await show_10959333();
+                } else {
+                    console.warn("Monetag SDK not found, bypassing ad.");
+                }
+
+                // إضافة 4 ألماسات بعد نجاح الإعلان
+                await updateUserDiamonds(4);
+
+                if (matchedPairs === emojis.length) {
+                    document.getElementById('status-msg').innerText = "🏆 أسطورة الذاكرة! أكملت الـ60 كارت بنجاح كامل!";
+                } else {
+                    document.getElementById('status-msg').innerText = "🟢 رائع! تابع اللعب وابحث عن مطابقة جديدة.";
+                    isLocked = false; // استئناف اللعب
+                }
+
+            } catch (err) {
+                console.error("Ad error:", err);
+                tg.showAlert("❌ يجب مشاهدة الإعلان لجمع الـ4 ألماسات.");
+                // إعادة فتح النافذة لو مشافش الإعلان عشان يقرر يشاهده
+                document.getElementById('claim-modal').style.display = 'flex';
             }
         }
 
