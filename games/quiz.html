@@ -104,7 +104,7 @@
         let userData = null;
         let questions = [];
         let currentQIndex = 0;
-        let sessionScore = 0; بنوك
+        let sessionScore = 0;
         let timerInterval = null;
         let timeLeft = 5;
 
@@ -116,7 +116,7 @@
             { q: "من هو واضع علم الجبر؟", options: ["الخوارزمي", "ابن سينا", "الزهراوي", "البيروني"], correct: 0 },
             { q: "ما هو أسرع حيوان بري في العالم؟", options: ["الأسد", "الفهد", "الغزال", "الحصان"], correct: 1 },
             { q: "في أي قارة تقع دولة مصر؟", options: ["أوروبا", "آسيا", "إفريقيا", "أمريكا الجنوبية"], correct: 2 },
-            { q: "ما هي عاصمة سلطنة عمان؟", options: ["مسقط", "الرياض", "دوحة", "صنعاء"], correct: 0 },
+            { q: "ما هي عاصمة سلطنة عمان؟", options: ["مسقط", "الرياض", "الدوحة", "صنعاء"], correct: 0 },
             { q: "كم عدد أركان الإسلام؟", options: ["4", "5", "6", "3"], correct: 1 },
             { q: "ما هو العنصر الكيميائي الذي يرمز له بـ (Au)؟", options: ["الفضة", "الحديد", "الذهب", "النحاس"], correct: 2 },
             { q: "من هو النبي الذي ألقي في النار؟", options: ["موسى", "إبراهيم", "عيسى", "يوسف"], correct: 1 },
@@ -163,7 +163,6 @@
             document.getElementById('session-score').innerText = sessionScore;
         }
 
-        // خلط الأسئلة عشوائياً لضمان عدم التكرار والملل
         function loadRandomQuestions() {
             questions = [...arabicBank].sort(() => Math.random() - 0.5);
             currentQIndex = 0;
@@ -172,7 +171,7 @@
 
         function loadQuestion() {
             if (currentQIndex >= questions.length) {
-                loadRandomQuestions(); // إعادة خلط بنك الأسئلة تلقائياً
+                loadRandomQuestions();
                 return;
             }
 
@@ -195,7 +194,7 @@
 
         function startTimer() {
             clearInterval(timerInterval);
-            timeLeft = 5; // 5 ثوانٍ فقط للتحدي السريع
+            timeLeft = 5;
             const bar = document.getElementById('timer-bar');
             bar.style.width = '100%';
 
@@ -215,7 +214,7 @@
             allBtns.forEach(b => b.disabled = true);
             document.getElementById('question-box').innerText = "⏰ انتهى الوقت! تم خصم ألماسة.";
             
-            await updateUserDiamonds(-1); // خصم ألماسة عند انتهاء الوقت
+            await updateUserDiamonds(-1);
 
             setTimeout(() => {
                 currentQIndex++;
@@ -233,13 +232,12 @@
                 sessionScore += 2;
                 updateUI();
 
-                // فتح نافذة جمع الألماس والإعلان
                 document.getElementById('claim-modal').style.display = 'flex';
             } else {
                 btn.classList.add('wrong');
                 allBtns[correct].classList.add('correct');
                 
-                await updateUserDiamonds(-1); // خصم ألماسة واحدة عند الخطأ
+                await updateUserDiamonds(-1);
 
                 setTimeout(() => {
                     currentQIndex++;
@@ -258,7 +256,7 @@
                     console.warn("Monetag SDK not found, bypassing ad.");
                 }
 
-                await updateUserDiamonds(2); // إضافة 2 ألماسة بعد مشاهدة الإعلان
+                await updateUserDiamonds(2);
 
                 currentQIndex++;
                 loadQuestion();
@@ -276,7 +274,7 @@
             const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
             let currentDiamonds = Number(userData[gpField] || 0);
             let newDiamonds = currentDiamonds + amount;
-            if (newDiamonds < 0) newDiamonds = 0; // عدم النزول تحت الصفر
+            if (newDiamonds < 0) newDiamonds = 0;
 
             try {
                 const updateObj = {};
