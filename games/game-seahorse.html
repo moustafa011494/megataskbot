@@ -54,13 +54,13 @@
 <body>
 
     <div class="game-top-bar">
-        <div class="top-info-box">💎 الألماسات المكتسبة: <span id="current-score">0</span></div>
+        <div class="top-info-box">💎 الألماسات المكتسبة بالجولة: <span id="current-score">0</span></div>
     </div>
 
     <div id="start-screen" class="overlay-screen">
         <div style="font-size: 55px; margin-bottom: 10px;">🌊🐴</div>
         <h1>حصان البحر السريع</h1>
-        <p>تكلفة الدخول للجولة: <b style="color:#00f2ff;">1 ألماسة 💎</b>.<br>كل 3 عقبات تتخطاها تمنحك ألماسة مباشرة! اللعبة تزداد سرعة وصعوبة كلما تقدمت.</p>
+        <p>تكلفة الدخول للجولة: <b style="color:#00f2ff;">1 ألماسة 💎</b>.<br>كل 3 عقبات تتخطاها تمنحك ألماسة مباشرة من سوبابيز!</p>
         <button class="btn-action-game" onclick="tryStartGame()">🎮 ابدأ الجولة الآن (1 💎)</button>
     </div>
 
@@ -82,7 +82,7 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
+        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -115,38 +115,75 @@
         let pipeGap = 195;
         let frameCount = 0;
 
-        async function init() {
+        // جلب بيانات المستخدم من سوبابيز مباشرة
+        async function fetchUserFromSupabase() {
+            if (!userId) return null;
             try {
-                const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-                if (user) userData = user;
-            } catch (e) {}
+                let { data: user, error } = await client
+                    .from('users')
+                    .select('*')
+                    .eq('telegram_id', userId)
+                    .maybeSingle();
+
+                if (user) return user;
+
+                // لو لم يُعثر عليه بالـ string، جرب بالـ number
+                let { data: userNum } = await client
+                    .from('users')
+                    .select('*')
+                    .eq('telegram_id', Number(userId))
+                    .maybeSingle();
+
+                if (userNum) return userNum;
+
+                // كاحتياطي أخير هات أحدث مستخدم
+                let { data: latest } = await client
+                    .from('users')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                return latest;
+            } catch (e) {
+                console.error("Fetch user error:", e);
+                return null;
+            }
         }
 
         async function tryStartGame() {
+            userData = await fetchUserFromSupabase();
+
             if (!userData) {
-                await init();
-            }
-
-            const currentDiamonds = userData ? Number(userData.gamepoints || 0) : 10;
-
-            if (currentDiamonds < 1) {
-                tg.showAlert("⚠️ ليس لديك ألماسات كافية! يلزمك 1 ألماسة على الأقل لبدء الجولة.");
+                tg.showAlert("❌ تعذر الاتصال بقاعدة البيانات لجلب الحساب.");
                 return;
             }
 
-            // خصم 1 ألماسة لبدء الجولة وتحديث عمود gamepoints فوراً
+            userId = String(userData.telegram_id);
+            const currentDiamonds = Number(userData.gamepoints || 0);
+
+            if (currentDiamonds < 1) {
+                tg.showAlert("⚠️ ليس لديك ألماسات كافية في حسابك! يلزمك 1 ألماسة على الأقل لبدء الجولة.");
+                return;
+            }
+
+            // خصم 1 ألماسة من سوبابيز لبدء الجولة
             try {
                 const newDiamonds = currentDiamonds - 1;
-                const { data: updated } = await client
+                const { data: updated, error } = await client
                     .from('users')
                     .update({ gamepoints: newDiamonds })
-                    .eq('telegram_id', String(userId))
+                    .eq('telegram_id', userId)
                     .select('*')
                     .single();
 
-                if (updated) userData = updated;
+                if (!error && updated) {
+                    userData = updated;
+                } else {
+                    userData.gamepoints = newDiamonds;
+                }
             } catch (e) {
-                console.error("Deduct entry fee error:", e);
+                console.error("Deduct error:", e);
             }
 
             startGame();
@@ -233,7 +270,6 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // رسم الجليد
             pipes.forEach(p => {
                 let grad = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
                 grad.addColorStop(0, "#00d26a");
@@ -245,7 +281,7 @@
                 ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
             });
 
-            // رسم حصان بحر طبيعي، جميل ومعدول تماماً
+            // رسم حصان البحر الطبيعي والمعدول
             ctx.save();
             ctx.translate(player.x, player.y);
             
@@ -305,18 +341,20 @@
 
         async function gameOver() {
             gameRunning = false;
-            document.getElementById('final-score-text').innerText = `تمت إضافة +${earnedDiamonds} ألماسة 💎 إلى حسابك!`;
+            document.getElementById('final-score-text').innerText = `تمت إضافة +${earnedDiamonds} ألماسة 💎 إلى حسابك في سوبابيز!`;
             document.getElementById('gameover-screen').style.display = 'flex';
 
             if (userData && earnedDiamonds > 0) {
                 try {
-                    const currentGp = Number(userData.gamepoints || 0);
-                    const newGp = currentGp + earnedDiamonds;
+                    // جلب أحدث رصيد مباشر من سوبابيز لضمان الدقة المطلقة
+                    let freshUser = await fetchUserFromSupabase();
+                    let currentGp = freshUser ? Number(freshUser.gamepoints || 0) : Number(userData.gamepoints || 0);
+                    let newGp = currentGp + earnedDiamonds;
 
                     const { data: updated, error } = await client
                         .from('users')
                         .update({ gamepoints: newGp })
-                        .eq('telegram_id', String(userId))
+                        .eq('telegram_id', userId)
                         .select('*')
                         .single();
 
@@ -325,7 +363,7 @@
                     }
 
                     await client.from('transactions').insert([{
-                        telegram_id: String(userId),
+                        telegram_id: userId,
                         type: 'points',
                         title: 'مكافأة أرباح لعبة حصان البحر',
                         amount: `+${earnedDiamonds} 💎`,
@@ -341,8 +379,6 @@
         function exitGame() {
             window.location.href = `../games.html?id=${userId}`;
         }
-
-        init();
     </script>
 </body>
 </html>
