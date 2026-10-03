@@ -15,24 +15,24 @@
         :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
         html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 50px; width: 100%; max-width: 100vw; overflow-x: hidden; text-align: center; }
         
-        .header { padding: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d333d; }
-        .back-link { background: #252932; color: white; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 11px; text-decoration: none; }
+        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d333d; }
+        .back-link { background: #252932; color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; text-decoration: none; }
         
-        .game-title { margin: 10px 0 3px; color: var(--main-green); font-size: 16px; }
-        .game-desc { font-size: 10px; color: var(--text-gray); margin-bottom: 8px; }
+        .game-title { margin: 15px 0 5px; color: var(--main-green); font-size: 18px; }
+        .game-desc { font-size: 11px; color: var(--text-gray); margin-bottom: 15px; }
 
-        .stats-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 8px; }
-        .stat-card { background: var(--card-bg); border: 1px solid #2d333d; padding: 4px 10px; border-radius: 10px; }
-        .stat-card b { display: block; color: #00f2ff; font-size: 13px; }
-        .stat-card span { font-size: 9px; color: var(--text-gray); }
+        .stats-row { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
+        .stat-card { background: var(--card-bg); border: 1px solid #2d333d; padding: 8px 15px; border-radius: 12px; }
+        .stat-card b { display: block; color: #00f2ff; font-size: 15px; }
+        .stat-card span { font-size: 10px; color: var(--text-gray); }
 
-        /* شبكة الكروت الـ 60 المصغرة (6 أعمدة × 10 صفوف) */
-        .memory-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; max-width: 380px; margin: 0 auto 10px; padding: 0 5px; }
-        .memory-card { aspect-ratio: 1; background: #16191e; border: 1px solid #2d333d; border-radius: 5px; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.1s; user-select: none; }
+        /* شبكة الكروت الـ 20 المريحة (4 أعمدة × 5 صفوف) */
+        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 340px; margin: 0 auto 20px; padding: 0 10px; }
+        .memory-card { aspect-ratio: 1; background: #16191e; border: 2px solid #2d333d; border-radius: 12px; font-size: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; user-select: none; }
         .memory-card.flipped { background: #1a222c; border-color: var(--main-green); transform: rotateY(180deg); }
-        .memory-card.matched { background: rgba(0, 210, 106, 0.1); border-color: var(--main-green); opacity: 0.5; cursor: default; }
+        .memory-card.matched { background: rgba(0, 210, 106, 0.1); border-color: var(--main-green); opacity: 0.6; cursor: default; }
 
-        .btn-action { background: var(--main-green); color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); display: none; margin-bottom: 20px; }
+        .btn-action { background: var(--main-green); color: black; border: none; padding: 12px 25px; border-radius: 14px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); display: none; margin-bottom: 20px; }
 
         /* تنسيق نافذة جمع الألماس (Modal) */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
@@ -44,11 +44,11 @@
 
     <div class="header">
         <a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
-        <span style="font-size: 12px; font-weight: bold; color: var(--main-green);">🧠 الذاكرة الجهنمية (60 كارت)</span>
-        <div style="width: 50px;"></div>
+        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">🧠 تحدي الـ 20 كارت</span>
+        <div style="width: 60px;"></div>
     </div>
 
-    <h2 class="game-title">تحدي الـ 60 كارت الخارق!</h2>
+    <h2 class="game-title">لعبة الذاكرة الممتعة!</h2>
     <p class="game-desc">كل زوج تطابقه يمنحك +4 ألماسات (بعد مشاهدة الإعلان) | كل خطأ يخصم 1 ألماسة!</p>
 
     <div class="stats-row">
@@ -62,7 +62,7 @@
         </div>
     </div>
 
-    <div id="status-msg" style="font-size: 11px; color: #ffaa00; font-weight: bold; margin-bottom: 8px;">جاري تحميل الجولة...</div>
+    <div id="status-msg" style="font-size: 12px; color: #ffaa00; font-weight: bold; margin-bottom: 12px;">جاري تحميل الجولة...</div>
 
     <div class="memory-grid" id="memory-grid"></div>
 
@@ -98,12 +98,8 @@
         document.getElementById('back-link').href = `../games.html?id=${tid}`;
 
         let userData = null;
-        // 30 زوج = 60 كارت موزعة على 6 أعمدة
-        const emojis = [
-            '🪙', '💎', '🚀', '🔥', '👑', '🎁', '⭐', '⚡', '🎈', '🎨', 
-            '🔮', '🍀', '🎯', '💡', '🏆', '⚓', '🍉', '🍕', '🐱', '🐶', 
-            '🦊', '🐼', '🦄', '🍎', '🍌', '⚽', '🏀', '🚗', '✈', '🌵'
-        ];
+        // 10 أزواج = 20 كارت موزعة على 4 أعمدة
+        const emojis = ['🪙', '💎', '🚀', '🔥', '👑', '🎁', '⭐', '⚡', '🎈', '🎨'];
         let cards = [];
         let flippedCards = [];
         let matchedPairs = 0;
@@ -189,7 +185,7 @@
             isLocked = true;
             updateUI();
 
-            document.getElementById('status-msg').innerText = "👀 احفظ مكان الـ60 كارت بسرعة فائقة جداً...";
+            document.getElementById('status-msg').innerText = "👀 احفظ مكان الـ20 كارت بسرعة...";
 
             cards = [...emojis, ...emojis]
                 .sort(() => Math.random() - 0.5)
@@ -213,8 +209,8 @@
                 });
                 isLocked = false;
                 gameStarted = true;
-                document.getElementById('status-msg').innerText = "🧠 ابدأ التحدي الجهنمي الآن!";
-            }, 1500);
+                document.getElementById('status-msg').innerText = "🧠 ابدأ المطابقة الآن!";
+            }, 1200);
         }
 
         function flipCard(id, el) {
@@ -271,7 +267,7 @@
                     
                     flippedCards = [];
                     isLocked = false;
-                }, 350);
+                }, 400);
             }
         }
 
@@ -290,7 +286,7 @@
                 await updateUserDiamonds(4);
 
                 if (matchedPairs === emojis.length) {
-                    document.getElementById('status-msg').innerText = "🏆 أسطورة الذاكرة! أكملت الـ60 كارت بنجاح كامل!";
+                    document.getElementById('status-msg').innerText = "🏆 مبروك! أكملت الـ20 كارت بنجاح كامل!";
                 } else {
                     document.getElementById('status-msg').innerText = "🟢 رائع! تابع اللعب وابحث عن مطابقة جديدة.";
                     isLocked = false; // استئناف اللعب
@@ -299,7 +295,6 @@
             } catch (err) {
                 console.error("Ad error:", err);
                 tg.showAlert("❌ يجب مشاهدة الإعلان لجمع الـ4 ألماسات.");
-                // إعادة فتح النافذة لو مشافش الإعلان عشان يقرر يشاهده
                 document.getElementById('claim-modal').style.display = 'flex';
             }
         }
