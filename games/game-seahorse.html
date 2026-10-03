@@ -127,23 +127,19 @@
                 await init();
             }
 
-            const gpField = userData && userData.gamepoints !== undefined ? 'gamepoints' : (userData && userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
-            const currentDiamonds = userData ? Number(userData[gpField] || 0) : 10;
+            const currentDiamonds = userData ? Number(userData.gamepoints || 0) : 10;
 
             if (currentDiamonds < 1) {
                 tg.showAlert("⚠️ ليس لديك ألماسات كافية! يلزمك 1 ألماسة على الأقل لبدء الجولة.");
                 return;
             }
 
-            // خصم 1 ألماسة لبدء الجولة وتحديث قاعدة البيانات فوراً
+            // خصم 1 ألماسة لبدء الجولة وتحديث عمود gamepoints فوراً
             try {
                 const newDiamonds = currentDiamonds - 1;
-                const updateObj = {};
-                updateObj[gpField] = newDiamonds;
-
                 const { data: updated } = await client
                     .from('users')
-                    .update(updateObj)
+                    .update({ gamepoints: newDiamonds })
                     .eq('telegram_id', String(userId))
                     .select('*')
                     .single();
@@ -212,18 +208,15 @@
                     obstaclesPassed += 1;
                     pipes[i].passed = true;
 
-                    // كل 3 عقبات يتم تخطيها يمنح اللاعب 1 ألماسة
                     if (obstaclesPassed % 3 === 0) {
                         earnedDiamonds += 1;
                         document.getElementById('current-score').innerText = earnedDiamonds;
                     }
 
-                    // زيادة سرعة اللعبة تدريجياً لتصبح أكثر صعوبة
                     gameSpeed += 0.12;
                     if (pipeGap > 155) pipeGap -= 0.8;
                 }
 
-                // التصادم الدقيق مع جسم حصان البحر الطبيعي
                 if (
                     player.x + player.radius > pipes[i].x &&
                     player.x - player.radius < pipes[i].x + pipeWidth &&
@@ -252,47 +245,50 @@
                 ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
             });
 
-            // رسم حصان البحر الطبيعي والاحترافي (بدون دوائر قبيحة)
+            // رسم حصان بحر طبيعي، جميل ومعدول تماماً
             ctx.save();
             ctx.translate(player.x, player.y);
             
-            ctx.shadowBlur = 12;
+            let tilt = Math.min(Math.max(player.velocity * 0.05, -0.4), 0.4);
+            ctx.rotate(tilt);
+
+            ctx.shadowBlur = 15;
             ctx.shadowColor = "#00f2ff";
 
-            // الجسم المنحني الحقيقي لحصان البحر
+            // الجسم
             ctx.beginPath();
-            ctx.ellipse(0, 2, 9, 18, Math.PI / 12, 0, Math.PI * 2);
+            ctx.ellipse(0, 4, 8, 16, 0, 0, Math.PI * 2);
             ctx.fillStyle = "#00ffcc";
             ctx.fill();
             ctx.lineWidth = 2;
             ctx.strokeStyle = "#ffffff";
             ctx.stroke();
 
-            // الرأس والخطم المميز لحصان البحر
+            // الرأس
             ctx.beginPath();
-            ctx.arc(-4, -14, 8, 0, Math.PI * 2);
+            ctx.arc(6, -10, 7, 0, Math.PI * 2);
             ctx.fillStyle = "#00d26a";
             ctx.fill();
             ctx.stroke();
 
-            // الأنف / الخطم الطويل
+            // الخطم (الأنف)
             ctx.beginPath();
-            ctx.moveTo(-10, -16);
-            ctx.lineTo(-18, -14);
+            ctx.moveTo(11, -12);
+            ctx.lineTo(18, -10);
             ctx.lineWidth = 3;
             ctx.strokeStyle = "#00ffcc";
             ctx.stroke();
 
-            // العين اللامعة
+            // العين
             ctx.beginPath();
-            ctx.arc(-6, -16, 2, 0, Math.PI * 2);
+            ctx.arc(8, -12, 2, 0, Math.PI * 2);
             ctx.fillStyle = "#000000";
             ctx.fill();
 
-            // الذيل الملتف في الأسفل
+            // الذيل
             ctx.beginPath();
-            ctx.moveTo(2, 18);
-            ctx.quadraticCurveTo(12, 26, 6, 22);
+            ctx.moveTo(0, 18);
+            ctx.quadraticCurveTo(-10, 26, -4, 22);
             ctx.lineWidth = 3.5;
             ctx.strokeStyle = "#00ffcc";
             ctx.stroke();
@@ -312,18 +308,14 @@
             document.getElementById('final-score-text').innerText = `تمت إضافة +${earnedDiamonds} ألماسة 💎 إلى حسابك!`;
             document.getElementById('gameover-screen').style.display = 'flex';
 
-            if (userData) {
+            if (userData && earnedDiamonds > 0) {
                 try {
-                    const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
-                    const currentDiamonds = Number(userData[gpField] || 0);
-                    const newDiamonds = currentDiamonds + earnedDiamonds;
-
-                    const updateObj = {};
-                    updateObj[gpField] = newDiamonds;
+                    const currentGp = Number(userData.gamepoints || 0);
+                    const newGp = currentGp + earnedDiamonds;
 
                     const { data: updated, error } = await client
                         .from('users')
-                        .update(updateObj)
+                        .update({ gamepoints: newGp })
                         .eq('telegram_id', String(userId))
                         .select('*')
                         .single();
@@ -332,15 +324,13 @@
                         userData = updated;
                     }
 
-                    if (earnedDiamonds > 0) {
-                        await client.from('transactions').insert([{
-                            telegram_id: String(userId),
-                            type: 'points',
-                            title: 'مكافأة أرباح لعبة حصان البحر',
-                            amount: `+${earnedDiamonds} 💎`,
-                            status: 'مكتمل'
-                        }]);
-                    }
+                    await client.from('transactions').insert([{
+                        telegram_id: String(userId),
+                        type: 'points',
+                        title: 'مكافأة أرباح لعبة حصان البحر',
+                        amount: `+${earnedDiamonds} 💎`,
+                        status: 'مكتمل'
+                    }]);
 
                 } catch (e) {
                     console.error("Save score error:", e);
