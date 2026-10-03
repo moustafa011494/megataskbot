@@ -35,17 +35,17 @@
         /* شاشة البداية والنهاية المنبثقة */
         .overlay-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5, 7, 10, 0.92); z-index: 30;
+            background: rgba(5, 7, 10, 0.95); z-index: 30;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 25px; text-align: center;
         }
-        .overlay-screen h1 { color: #00d26a; font-size: 28px; margin-bottom: 5px; text-shadow: 0 0 15px rgba(0,210,106,0.3); }
-        .overlay-screen p { color: #9ca3af; font-size: 14px; margin-bottom: 25px; line-height: 1.5; }
+        .overlay-screen h1 { color: #00d26a; font-size: 26px; margin-bottom: 5px; text-shadow: 0 0 15px rgba(0,210,106,0.3); }
+        .overlay-screen p { color: #9ca3af; font-size: 13px; margin-bottom: 20px; line-height: 1.5; }
         
         .btn-action-game {
             background: linear-gradient(135deg, #00d26a, #009e4f); color: #000;
-            border: none; width: 100%; max-width: 260px; padding: 15px; border-radius: 20px;
-            font-size: 16px; font-weight: bold; cursor: pointer;
+            border: none; width: 100%; max-width: 260px; padding: 14px; border-radius: 20px;
+            font-size: 15px; font-weight: bold; cursor: pointer;
             box-shadow: 0 5px 20px rgba(0, 210, 106, 0.35); transition: 0.2s;
         }
         .btn-action-game:active { transform: scale(0.96); }
@@ -58,18 +58,18 @@
     </div>
 
     <div id="start-screen" class="overlay-screen">
-        <div style="font-size: 60px; margin-bottom: 10px;">🌊🐴</div>
+        <div style="font-size: 55px; margin-bottom: 10px;">🌊🐴</div>
         <h1>حصان البحر السريع</h1>
-        <p>انقر في أي مكان لسباحة حصان البحر وتجنب العقبات الجليدية. كل عائق تتخطاه يمنحك ألماسة مباشرة وتزداد اللعبة سرعة وصعوبة!</p>
-        <button class="btn-action-game" onclick="startGame()">🎮 ابدأ التحدي الآن</button>
+        <p>تكلفة الدخول للجولة: <b style="color:#00f2ff;">1 ألماسة 💎</b>.<br>كل 3 عقبات تتخطاها تمنحك ألماسة مباشرة! اللعبة تزداد سرعة وصعوبة كلما تقدمت.</p>
+        <button class="btn-action-game" onclick="tryStartGame()">🎮 ابدأ الجولة الآن (1 💎)</button>
     </div>
 
     <div id="gameover-screen" class="overlay-screen" style="display: none;">
-        <div style="font-size: 60px; margin-bottom: 10px;">💥</div>
+        <div style="font-size: 55px; margin-bottom: 10px;">💥</div>
         <h1>انتهت الجولة!</h1>
-        <p id="final-score-text" style="color: white; font-size: 16px; font-weight: bold; margin-bottom: 20px;">الألماسات المجمعة: 0 💎</p>
-        <button class="btn-action-game" onclick="startGame()">🔄 اللعب مرة أخرى</button>
-        <button class="btn-action-game" style="background: #222630; color: #fff; margin-top: 12px;" onclick="exitGame()">🔙 العودة للبوت</button>
+        <p id="final-score-text" style="color: white; font-size: 15px; font-weight: bold; margin-bottom: 20px;">الماسات المضافة لرصيدك: +0 💎</p>
+        <button class="btn-action-game" onclick="tryStartGame()">🔄 اللعب مرة أخرى (1 💎)</button>
+        <button class="btn-action-game" style="background: #222630; color: #fff; margin-top: 10px;" onclick="exitGame()">🔙 العودة للبوت</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -95,15 +95,16 @@
             canvas.height = window.innerHeight;
         });
 
-        let score = 0;
+        let earnedDiamonds = 0;
+        let obstaclesPassed = 0;
         let userData = null;
         let gameRunning = false;
-        let gameSpeed = 3; // السرعة الابتدائية
+        let gameSpeed = 3.2;
 
         let player = {
             x: canvas.width * 0.25,
             y: canvas.height / 2,
-            radius: 20,
+            radius: 18,
             velocity: 0,
             gravity: 0.38,
             jump: -7.5
@@ -111,7 +112,7 @@
 
         let pipes = [];
         let pipeWidth = 60;
-        let pipeGap = 200;
+        let pipeGap = 195;
         let frameCount = 0;
 
         async function init() {
@@ -121,14 +122,49 @@
             } catch (e) {}
         }
 
+        async function tryStartGame() {
+            if (!userData) {
+                await init();
+            }
+
+            const gpField = userData && userData.gamepoints !== undefined ? 'gamepoints' : (userData && userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
+            const currentDiamonds = userData ? Number(userData[gpField] || 0) : 10;
+
+            if (currentDiamonds < 1) {
+                tg.showAlert("⚠️ ليس لديك ألماسات كافية! يلزمك 1 ألماسة على الأقل لبدء الجولة.");
+                return;
+            }
+
+            // خصم 1 ألماسة لبدء الجولة وتحديث قاعدة البيانات فوراً
+            try {
+                const newDiamonds = currentDiamonds - 1;
+                const updateObj = {};
+                updateObj[gpField] = newDiamonds;
+
+                const { data: updated } = await client
+                    .from('users')
+                    .update(updateObj)
+                    .eq('telegram_id', String(userId))
+                    .select('*')
+                    .single();
+
+                if (updated) userData = updated;
+            } catch (e) {
+                console.error("Deduct entry fee error:", e);
+            }
+
+            startGame();
+        }
+
         function startGame() {
             document.getElementById('start-screen').style.display = 'none';
             document.getElementById('gameover-screen').style.display = 'none';
             
             gameRunning = true;
-            score = 0;
-            gameSpeed = 3; // إعادة تعيين السرعة
-            document.getElementById('current-score').innerText = score;
+            earnedDiamonds = 0;
+            obstaclesPassed = 0;
+            gameSpeed = 3.2;
+            document.getElementById('current-score').innerText = earnedDiamonds;
 
             player.y = canvas.height / 2;
             player.velocity = 0;
@@ -156,7 +192,6 @@
                 gameOver();
             }
 
-            // توليد الأنابيب بمسافة تتناسب مع السرعة
             if (frameCount % 100 === 0) {
                 let minH = 70;
                 let maxH = canvas.height - pipeGap - 130;
@@ -171,19 +206,24 @@
             }
 
             for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= gameSpeed; // التحرك بالسرعة الحالية المتزايدة
+                pipes[i].x -= gameSpeed;
 
-                // احتساب كل عائق يتم تعديه بـ 1 ألماسة
                 if (!pipes[i].passed && pipes[i].x + pipeWidth < player.x) {
-                    score += 1; // السكور يتحسب بالواحدة
-                    document.getElementById('current-score').innerText = score;
+                    obstaclesPassed += 1;
                     pipes[i].passed = true;
 
-                    // زيادة السرعة كلما تقدم اللاعب وصعبت اللعبة أكثر
-                    gameSpeed += 0.15; 
-                    if (pipeGap > 150) pipeGap -= 1; // تقليل الفجوة تدريجياً لزيادة التحدي
+                    // كل 3 عقبات يتم تخطيها يمنح اللاعب 1 ألماسة
+                    if (obstaclesPassed % 3 === 0) {
+                        earnedDiamonds += 1;
+                        document.getElementById('current-score').innerText = earnedDiamonds;
+                    }
+
+                    // زيادة سرعة اللعبة تدريجياً لتصبح أكثر صعوبة
+                    gameSpeed += 0.12;
+                    if (pipeGap > 155) pipeGap -= 0.8;
                 }
 
+                // التصادم الدقيق مع جسم حصان البحر الطبيعي
                 if (
                     player.x + player.radius > pipes[i].x &&
                     player.x - player.radius < pipes[i].x + pipeWidth &&
@@ -200,7 +240,7 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // رسم العقبات الجليدية
+            // رسم الجليد
             pipes.forEach(p => {
                 let grad = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
                 grad.addColorStop(0, "#00d26a");
@@ -212,41 +252,48 @@
                 ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
             });
 
-            // رسم شكل حصان البحر بدقة واحترافية عالية داخل الـ Canvas
+            // رسم حصان البحر الطبيعي والاحترافي (بدون دوائر قبيحة)
             ctx.save();
             ctx.translate(player.x, player.y);
             
-            // توهج أحيائي مائي
-            ctx.shadowBlur = 18;
+            ctx.shadowBlur = 12;
             ctx.shadowColor = "#00f2ff";
 
-            // رأس وجسم حصان البحر المنحني
+            // الجسم المنحني الحقيقي لحصان البحر
             ctx.beginPath();
-            ctx.ellipse(0, 0, player.radius * 0.85, player.radius, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, 2, 9, 18, Math.PI / 12, 0, Math.PI * 2);
             ctx.fillStyle = "#00ffcc";
             ctx.fill();
-            ctx.lineWidth = 2.5;
+            ctx.lineWidth = 2;
             ctx.strokeStyle = "#ffffff";
             ctx.stroke();
 
-            // تاج أو رأس حصان البحر المميز
+            // الرأس والخطم المميز لحصان البحر
             ctx.beginPath();
-            ctx.arc(-6, -player.radius * 0.7, 7, 0, Math.PI * 2);
+            ctx.arc(-4, -14, 8, 0, Math.PI * 2);
             ctx.fillStyle = "#00d26a";
             ctx.fill();
             ctx.stroke();
 
+            // الأنف / الخطم الطويل
+            ctx.beginPath();
+            ctx.moveTo(-10, -16);
+            ctx.lineTo(-18, -14);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#00ffcc";
+            ctx.stroke();
+
             // العين اللامعة
             ctx.beginPath();
-            ctx.arc(-8, -player.radius * 0.75, 2.5, 0, Math.PI * 2);
+            ctx.arc(-6, -16, 2, 0, Math.PI * 2);
             ctx.fillStyle = "#000000";
             ctx.fill();
 
-            // الذيل المنحني للخلف
+            // الذيل الملتف في الأسفل
             ctx.beginPath();
-            ctx.moveTo(0, player.radius * 0.8);
-            ctx.quadraticCurveTo(player.radius, player.radius * 1.5, player.radius * 0.5, player.radius * 1.8);
-            ctx.lineWidth = 4;
+            ctx.moveTo(2, 18);
+            ctx.quadraticCurveTo(12, 26, 6, 22);
+            ctx.lineWidth = 3.5;
             ctx.strokeStyle = "#00ffcc";
             ctx.stroke();
 
@@ -262,14 +309,14 @@
 
         async function gameOver() {
             gameRunning = false;
-            document.getElementById('final-score-text').innerText = `الألماسات المكتسبة: ${score} 💎`;
+            document.getElementById('final-score-text').innerText = `تمت إضافة +${earnedDiamonds} ألماسة 💎 إلى حسابك!`;
             document.getElementById('gameover-screen').style.display = 'flex';
 
-            if (score > 0 && userData) {
+            if (userData) {
                 try {
                     const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
                     const currentDiamonds = Number(userData[gpField] || 0);
-                    const newDiamonds = currentDiamonds + score;
+                    const newDiamonds = currentDiamonds + earnedDiamonds;
 
                     const updateObj = {};
                     updateObj[gpField] = newDiamonds;
@@ -285,14 +332,15 @@
                         userData = updated;
                     }
 
-                    // تسجيل المعاملة في الهيستوري
-                    await client.from('transactions').insert([{
-                        telegram_id: String(userId),
-                        type: 'points',
-                        title: 'مكافأة لعبة حصان البحر',
-                        amount: `+${score} 💎`,
-                        status: 'مكتمل'
-                    }]);
+                    if (earnedDiamonds > 0) {
+                        await client.from('transactions').insert([{
+                            telegram_id: String(userId),
+                            type: 'points',
+                            title: 'مكافأة أرباح لعبة حصان البحر',
+                            amount: `+${earnedDiamonds} 💎`,
+                            status: 'مكتمل'
+                        }]);
+                    }
 
                 } catch (e) {
                     console.error("Save score error:", e);
