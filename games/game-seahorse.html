@@ -115,36 +115,17 @@
         let pipeGap = 195;
         let frameCount = 0;
 
-        // جلب بيانات المستخدم من سوبابيز مباشرة
+        // دالة جلب المستخدم المحدد بالـ ID الخاص به فقط من سوبابيز
         async function fetchUserFromSupabase() {
             if (!userId) return null;
             try {
-                let { data: user, error } = await client
-                    .from('users')
-                    .select('*')
-                    .eq('telegram_id', userId)
-                    .maybeSingle();
-
+                let { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
                 if (user) return user;
 
-                // لو لم يُعثر عليه بالـ string، جرب بالـ number
-                let { data: userNum } = await client
-                    .from('users')
-                    .select('*')
-                    .eq('telegram_id', Number(userId))
-                    .maybeSingle();
-
+                let { data: userNum } = await client.from('users').select('*').eq('telegram_id', Number(userId)).maybeSingle();
                 if (userNum) return userNum;
 
-                // كاحتياطي أخير هات أحدث مستخدم
-                let { data: latest } = await client
-                    .from('users')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
-
-                return latest;
+                return null;
             } catch (e) {
                 console.error("Fetch user error:", e);
                 return null;
@@ -152,14 +133,18 @@
         }
 
         async function tryStartGame() {
-            userData = await fetchUserFromSupabase();
-
-            if (!userData) {
-                tg.showAlert("❌ تعذر الاتصال بقاعدة البيانات لجلب الحساب.");
+            if (!userId) {
+                tg.showAlert("❌ لم يتم العثور على معرف المستخدم في الرابط.");
                 return;
             }
 
-            userId = String(userData.telegram_id);
+            userData = await fetchUserFromSupabase();
+
+            if (!userData) {
+                tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
+                return;
+            }
+
             const currentDiamonds = Number(userData.gamepoints || 0);
 
             if (currentDiamonds < 1) {
@@ -346,7 +331,6 @@
 
             if (userData && earnedDiamonds > 0) {
                 try {
-                    // جلب أحدث رصيد مباشر من سوبابيز لضمان الدقة المطلقة
                     let freshUser = await fetchUserFromSupabase();
                     let currentGp = freshUser ? Number(freshUser.gamepoints || 0) : Number(userData.gamepoints || 0);
                     let newGp = currentGp + earnedDiamonds;
