@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MegaTask - Quiz Game</title>
+    <title>MegaTask - Ultimate Quiz</title>
     
+    <!-- إعلانات Monetag -->
+    <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
@@ -16,66 +19,177 @@
         .back-link { background: #252932; color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; text-decoration: none; }
         
         .game-title { margin: 20px 0 5px; color: var(--main-green); font-size: 20px; }
-        .game-desc { font-size: 12px; color: var(--text-gray); margin-bottom: 20px; }
+        .game-desc { font-size: 12px; color: var(--text-gray); margin-bottom: 15px; }
 
-        .quiz-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; max-width: 350px; margin: 0 auto 20px; text-align: right; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
-        .question-text { font-size: 15px; font-weight: bold; margin-bottom: 15px; color: white; line-height: 1.6; text-align: center; }
+        .stats-row { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
+        .stat-card { background: var(--card-bg); border: 1px solid #2d333d; padding: 8px 15px; border-radius: 12px; }
+        .stat-card b { display: block; color: #00f2ff; font-size: 15px; }
+        .stat-card span { font-size: 10px; color: var(--text-gray); }
+
+        .timer-bar-container { width: 100%; max-width: 350px; background: #252932; height: 6px; border-radius: 3px; margin: 0 auto 15px; overflow: hidden; }
+        .timer-bar { width: 100%; height: 100%; background: #ff3b30; transition: width 1s linear; }
+
+        .quiz-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; max-width: 350px; margin: 0 auto 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+        .question-text { font-size: 15px; font-weight: bold; margin-bottom: 20px; color: white; line-height: 1.6; }
         
-        .option-btn { background: #16191e; border: 1px solid #2d333d; color: white; width: 100%; padding: 12px 15px; border-radius: 12px; font-size: 13px; font-weight: bold; margin-bottom: 10px; cursor: pointer; text-align: right; transition: 0.2s; }
+        .option-btn { background: #16191e; border: 1px solid #2d333d; color: white; width: 100%; padding: 12px 15px; border-radius: 12px; font-size: 13px; font-weight: bold; margin-bottom: 10px; cursor: pointer; text-align: center; transition: 0.2s; }
         .option-btn:active { transform: scale(0.98); border-color: var(--main-green); }
         .option-btn.correct { background: rgba(0, 210, 106, 0.2); border-color: var(--main-green); color: #00d26a; }
         .option-btn.wrong { background: rgba(255, 59, 48, 0.2); border-color: #ff3b30; color: #ff6b6b; }
 
-        .stat-badge { font-size: 13px; color: #ffaa00; font-weight: bold; margin-bottom: 15px; display: inline-block; background: rgba(255,170,0,0.1); padding: 6px 15px; border-radius: 10px; border: 1px solid #ffaa00; }
+        /* نافذة جمع الألماس (Modal) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .modal-box { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 25px; width: 100%; max-width: 340px; text-align: center; box-sizing: border-box; }
+        .btn-confirm-modal { width: 100%; background: var(--main-green); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
-        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">❓ كويز الذكاء</span>
+        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">❓ كويز السرعة الخارقة</span>
         <div style="width: 60px;"></div>
     </div>
 
-    <h2 class="game-title">تحدي المعلومات العامة</h2>
-    <p class="game-desc">أجب عن الأسئلة الصحيحة واكسب نقاط لعبة إضافية!</p>
+    <h2 class="game-title">تحدي الـ 5 ثوانٍ!</h2>
+    <p class="game-desc">أجب خلال 5 ثوانٍ فقط واربح +2 ألماسة لكل إجابة صحيحة (بعد الإعلان)!</p>
 
-    <div class="stat-badge">نقاط الجلسة: <span id="quiz-score">0</span></div>
+    <div class="stats-row">
+        <div class="stat-card">
+            <b id="user-diamonds-counter">0</b>
+            <span>ألماسات حسابك</span>
+        </div>
+        <div class="stat-card">
+            <b id="session-score" style="color: #ffaa00;">0</b>
+            <span>نقاط الجلسة</span>
+        </div>
+    </div>
+
+    <div class="timer-bar-container">
+        <div class="timer-bar" id="timer-bar"></div>
+    </div>
 
     <div class="quiz-card" id="quiz-container">
-        <div class="question-text" id="question-box">جاري تحميل السؤال...</div>
+        <div class="question-text" id="question-box">⏳ جاري جلب أسئلة ذكية من السيرفر...</div>
         <div id="options-box"></div>
+    </div>
+
+    <!-- نافذة جمع الألماس عند الإجابة الصحيحة -->
+    <div id="claim-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color: #00f2ff; margin-top:0;">🎯 إجابة صحيحة وفي الوقت المناسب!</h3>
+            <p style="font-size: 13px; color: var(--text-gray); line-height: 1.6; margin-bottom: 15px;">
+                أحسنت السرعة!<br>
+                لديك <b style="color: #ffaa00;">+2 ألماسة 💎</b> في انتظار الجمع.
+            </p>
+            <button class="btn-confirm-modal" onclick="claimQuizDiamonds()">
+                📺 جمع الألماس (مشاهدة إعلان)
+            </button>
+        </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
+
         const params = new URLSearchParams(window.location.search);
-        const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || localStorage.getItem('megatask_uid') || "").trim();
 
-        document.getElementById('back-link').href = `../games.html?id=${userId}`;
+        document.getElementById('back-link').href = `../games.html?id=${tid}`;
 
-        const questions = [
-            { q: "ما هو عاصمة دولة إيطاليا؟", options: ["مدريد", "روما", "باريس", "برلين"], correct: 1 },
-            { q: "كم عدد سور القرآن الكريم؟", options: ["112 سورة", "114 سورة", "120 سورة", "100 سورة"], correct: 1 },
-            { q: "أي كوكب يلقب بالكوكب الأحمر؟", options: ["المشتري", "المريخ", "زحل", "الزهرة"], correct: 1 },
-            { q: "من هو واضع علم الجبر؟", options: ["الخوارزمي", "ابن سينا", "الزهراوي", "البيروني"], correct: 0 },
-            { q: "ما هو أسرع حيوان بري في العالم؟", options: ["الأسد", "الفهد", "الغزال", "الحصان"], correct: 1 }
-        ];
-
+        let userData = null;
+        let questions = [];
         let currentQIndex = 0;
-        let sessionQuizPoints = 0;
+        let sessionScore = 0;
+        let timerInterval = null;
+        let timeLeft = 5; // تم تقليل الوقت إلى 5 ثوانٍ فقط
+
+        async function initUser() {
+            try {
+                let u = null;
+                if (tid && tid !== "undefined" && tid !== "null") {
+                    let { data: u1 } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
+                    if (u1) u = u1;
+                    else {
+                        let { data: u2 } = await client.from('users').select('*').eq('telegram_id', Number(tid)).maybeSingle();
+                        if (u2) u = u2;
+                    }
+                }
+                if (!u) {
+                    let { data: latest } = await client.from('users').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
+                    if (latest) u = latest;
+                }
+                if (u) {
+                    userData = u;
+                    tid = String(u.telegram_id || tid);
+                    localStorage.setItem('telegram_id', tid);
+                    localStorage.setItem('megatask_uid', tid);
+                    updateUI();
+                }
+            } catch (e) {
+                console.error("Init error:", e);
+            }
+
+            fetchQuestionsFromAPI();
+        }
+
+        function updateUI() {
+            if (!userData) return;
+            const diamonds = Number(userData.gamepoints !== undefined ? userData.gamepoints : (userData.diamonds !== undefined ? userData.diamonds : 0));
+            document.getElementById('user-diamonds-counter').innerText = diamonds.toLocaleString();
+            document.getElementById('session-score').innerText = sessionScore;
+        }
+
+        async function fetchQuestionsFromAPI() {
+            try {
+                const res = await fetch('https://opentdb.com/api.php?amount=15&type=multiple');
+                const data = await res.json();
+                
+                if (data && data.results && data.results.length > 0) {
+                    questions = data.results.map(item => {
+                        let options = [...item.incorrect_answers];
+                        const correctIdx = Math.floor(Math.random() * (options.length + 1));
+                        options.splice(correctIdx, 0, item.correct_answer);
+                        return {
+                            q: decodeHtml(item.question),
+                            options: options.map(o => decodeHtml(o)),
+                            correct: correctIdx
+                        };
+                    });
+                    currentQIndex = 0;
+                    loadQuestion();
+                } else {
+                    fallbackQuestions();
+                }
+            } catch (e) {
+                console.error("API fetch error:", e);
+                fallbackQuestions();
+            }
+        }
+
+        function fallbackQuestions() {
+            questions = [
+                { q: "What is the capital of France?", options: ["Madrid", "Paris", "Berlin", "Rome"], correct: 1 },
+                { q: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Jupiter", "Saturn"], correct: 1 },
+                { q: "What is 5 + 7 * 2 ?", options: ["24", "19", "17", "21"], correct: 1 }
+            ];
+            currentQIndex = 0;
+            loadQuestion();
+        }
+
+        function decodeHtml(html) {
+            const txt = document.createElement("textarea");
+            txt.innerHTML = html;
+            return txt.value;
+        }
 
         function loadQuestion() {
             if (currentQIndex >= questions.length) {
-                document.getElementById('quiz-container').innerHTML = `
-                    <div style="text-align: center; padding: 20px;">
-                        <h3>🏆 انتهى الكويز بنجاح!</h3>
-                        <p style="color: var(--text-gray); font-size: 13px;">جمعْتَ إجمالاً +${sessionQuizPoints} نقاط لعبة في هذه الجلسة.</p>
-                        <button class="option-btn" style="text-align: center; background: var(--main-green); color: black;" onclick="resetQuiz()">إعادة التحدي 🔄</button>
-                    </div>
-                `;
+                fetchQuestionsFromAPI();
                 return;
             }
 
@@ -92,25 +206,49 @@
                 btn.onclick = () => selectOption(idx, qObj.correct, btn);
                 optBox.appendChild(btn);
             });
+
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 5; // 5 ثوانٍ فقط لكل سؤال
+            const bar = document.getElementById('timer-bar');
+            bar.style.width = '100%';
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                bar.style.width = `${(timeLeft / 5) * 100}%`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function handleTimeOut() {
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(b => b.disabled = true);
+            document.getElementById('question-box').innerText = "⏰ انتهى الوقت! خسرت هذه الفرصة.";
+            
+            setTimeout(() => {
+                currentQIndex++;
+                loadQuestion();
+            }, 1200);
         }
 
         function selectOption(selected, correct, btn) {
+            clearInterval(timerInterval);
             const allBtns = document.querySelectorAll('.option-btn');
             allBtns.forEach(b => b.disabled = true);
 
             if (selected === correct) {
                 btn.classList.add('correct');
-                sessionQuizPoints += 2; // منح نقطتي لعبة لكل إجابة صحيحة
-                document.getElementById('quiz-score').innerText = sessionQuizPoints;
-                
-                // حفظ النقاط محلياً لتضاف لمركز الألعاب الرئيسي
-                let savedGamePoints = parseInt(localStorage.getItem(`clicker_game_${userId}_points`) || '0');
-                localStorage.setItem(`clicker_game_${userId}_points`, savedGamePoints + 2);
+                sessionScore += 2;
+                updateUI();
 
-                setTimeout(() => {
-                    currentQIndex++;
-                    loadQuestion();
-                }, 1000);
+                document.getElementById('claim-modal').style.display = 'flex';
             } else {
                 btn.classList.add('wrong');
                 allBtns[correct].classList.add('correct');
@@ -122,14 +260,57 @@
             }
         }
 
-        function resetQuiz() {
-            currentQIndex = 0;
-            sessionQuizPoints = 0;
-            document.getElementById('quiz-score').innerText = 0;
-            loadQuestion();
+        async function claimQuizDiamonds() {
+            document.getElementById('claim-modal').style.display = 'none';
+
+            try {
+                if (typeof show_10959333 === 'function') {
+                    await show_10959333();
+                } else {
+                    console.warn("Monetag SDK not found, bypassing ad.");
+                }
+
+                await updateUserDiamonds(2);
+
+                currentQIndex++;
+                loadQuestion();
+
+            } catch (err) {
+                console.error("Ad error:", err);
+                tg.showAlert("❌ يجب مشاهدة الإعلان لجمع الـ2 ألماسات.");
+                document.getElementById('claim-modal').style.display = 'flex';
+            }
         }
 
-        loadQuestion();
+        async function updateUserDiamonds(amount) {
+            if (!userData) return;
+
+            const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
+            let currentDiamonds = Number(userData[gpField] || 0);
+            let newDiamonds = currentDiamonds + amount;
+            if (newDiamonds < 0) newDiamonds = 0;
+
+            try {
+                const updateObj = {};
+                updateObj[gpField] = newDiamonds;
+
+                const { data: updated, error } = await client
+                    .from('users')
+                    .update(updateObj)
+                    .eq('telegram_id', String(tid))
+                    .select('*')
+                    .single();
+
+                if (!error && updated) {
+                    userData = updated;
+                    updateUI();
+                }
+            } catch (e) {
+                console.error("Update diamonds error:", e);
+            }
+        }
+
+        initUser();
     </script>
 </body>
 </html>
