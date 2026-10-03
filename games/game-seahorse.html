@@ -16,21 +16,18 @@
             overflow: hidden; user-select: none; -webkit-user-select: none;
         }
 
-        /* شريط العلوي (معلومات اللعبة والسكور) */
+        /* شريط العلوي (السكور في المنتصف) */
         .game-top-bar {
             position: absolute; top: 0; left: 0; width: 100%;
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; justify-content: center; align-items: center;
             padding: 15px 20px; z-index: 10; pointer-events: none;
-            background: linear-gradient(180deg, rgba(5,7,10,0.8) 0%, transparent 100%);
         }
-        .top-info-box { background: rgba(20, 23, 31, 0.85); border: 1px solid rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+        .top-info-box { 
+            background: rgba(20, 23, 31, 0.85); border: 1px solid rgba(0,242,255,0.3); 
+            padding: 8px 25px; border-radius: 25px; font-size: 16px; font-weight: bold; color: #00f2ff;
+            box-shadow: 0 4px 15px rgba(0,242,255,0.2);
+        }
         .top-info-box span { color: #ffaa00; }
-
-        .btn-exit {
-            position: absolute; top: 15px; right: 20px; z-index: 20;
-            background: rgba(255,59,48,0.2); border: 1px solid #ff3b30; color: #ff6b6b;
-            padding: 6px 14px; border-radius: 15px; font-size: 12px; font-weight: bold; cursor: pointer;
-        }
 
         /* ساحة اللعبة بملء الشاشة */
         canvas { display: block; width: 100vw; height: 100vh; background: linear-gradient(180deg, #070c14 0%, #0d1626 100%); }
@@ -57,25 +54,22 @@
 <body>
 
     <div class="game-top-bar">
-        <div class="top-info-box">السكور: <span id="current-score">0</span></div>
-        <div class="top-info-box" style="right: 80px; position: absolute;">الأعلى: <span id="high-score">0</span></div>
+        <div class="top-info-box">💎 الألماسات المكتسبة: <span id="current-score">0</span></div>
     </div>
-    
-    <button class="btn-exit" onclick="exitGame()">✖ خروج</button>
 
     <div id="start-screen" class="overlay-screen">
-        <div style="font-size: 50px; margin-bottom: 10px;">❄️</div>
-        <h1>FROST SEAHORSE</h1>
-        <p>انقر في أي مكان على الشاشة لقفز حصان البحر وتجنب العقبات الجليدية بملء الشاشة وبحركة فائقة السلاسة.</p>
-        <button class="btn-action-game" onclick="startGame()">🎮 ابدأ اللعب الآن</button>
+        <div style="font-size: 60px; margin-bottom: 10px;">🌊🐴</div>
+        <h1>حصان البحر السريع</h1>
+        <p>انقر في أي مكان لسباحة حصان البحر وتجنب العقبات الجليدية. كل عائق تتخطاه يمنحك ألماسة مباشرة وتزداد اللعبة سرعة وصعوبة!</p>
+        <button class="btn-action-game" onclick="startGame()">🎮 ابدأ التحدي الآن</button>
     </div>
 
     <div id="gameover-screen" class="overlay-screen" style="display: none;">
-        <div style="font-size: 50px; margin-bottom: 10px;">💥</div>
+        <div style="font-size: 60px; margin-bottom: 10px;">💥</div>
         <h1>انتهت الجولة!</h1>
-        <p id="final-score-text" style="color: white; font-size: 16px; font-weight: bold; margin-bottom: 20px;">السكور: 0</p>
+        <p id="final-score-text" style="color: white; font-size: 16px; font-weight: bold; margin-bottom: 20px;">الألماسات المجمعة: 0 💎</p>
         <button class="btn-action-game" onclick="startGame()">🔄 اللعب مرة أخرى</button>
-        <button class="btn-action-game" style="background: #222630; color: #fff; margin-top: 10px;" onclick="exitGame()">🔙 العودة للبوت</button>
+        <button class="btn-action-game" style="background: #222630; color: #fff; margin-top: 12px;" onclick="exitGame()">🔙 العودة للبوت</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -88,12 +82,11 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "123456789").trim();
+        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // ضبط قياسات الـ Canvas لملء الشاشة بالكامل بدقة عالية
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -103,34 +96,28 @@
         });
 
         let score = 0;
-        let highScore = 0;
         let userData = null;
         let gameRunning = false;
+        let gameSpeed = 3; // السرعة الابتدائية
 
         let player = {
-            x: canvas.width * 0.2,
+            x: canvas.width * 0.25,
             y: canvas.height / 2,
-            radius: 18,
+            radius: 20,
             velocity: 0,
-            gravity: 0.35,
-            jump: -7.2
+            gravity: 0.38,
+            jump: -7.5
         };
 
         let pipes = [];
-        let pipeWidth = 65;
-        let pipeGap = 190;
+        let pipeWidth = 60;
+        let pipeGap = 200;
         let frameCount = 0;
 
         async function init() {
             try {
                 const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
                 if (user) userData = user;
-
-                const { data: scoreData } = await client.from('game_scores').select('*').eq('user_id', userId).maybeSingle();
-                if (scoreData) {
-                    highScore = scoreData.high_score || 0;
-                    document.getElementById('high-score').innerText = highScore;
-                }
             } catch (e) {}
         }
 
@@ -140,6 +127,7 @@
             
             gameRunning = true;
             score = 0;
+            gameSpeed = 3; // إعادة تعيين السرعة
             document.getElementById('current-score').innerText = score;
 
             player.y = canvas.height / 2;
@@ -151,9 +139,7 @@
         }
 
         window.addEventListener('click', () => {
-            if (gameRunning) {
-                player.velocity = player.jump;
-            }
+            if (gameRunning) player.velocity = player.jump;
         });
         window.addEventListener('touchstart', (e) => {
             if (gameRunning) {
@@ -166,13 +152,14 @@
             player.velocity += player.gravity;
             player.y += player.velocity;
 
-            if (player.y + player.radius > canvas.height - 20 || player.y - player.radius < 0) {
+            if (player.y + player.radius > canvas.height - 15 || player.y - player.radius < 0) {
                 gameOver();
             }
 
-            if (frameCount % 110 === 0) {
-                let minH = 80;
-                let maxH = canvas.height - pipeGap - 150;
+            // توليد الأنابيب بمسافة تتناسب مع السرعة
+            if (frameCount % 100 === 0) {
+                let minH = 70;
+                let maxH = canvas.height - pipeGap - 130;
                 let topH = Math.floor(Math.random() * (maxH - minH + 1)) + minH;
 
                 pipes.push({
@@ -184,12 +171,17 @@
             }
 
             for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= 3;
+                pipes[i].x -= gameSpeed; // التحرك بالسرعة الحالية المتزايدة
 
+                // احتساب كل عائق يتم تعديه بـ 1 ألماسة
                 if (!pipes[i].passed && pipes[i].x + pipeWidth < player.x) {
-                    score += 10;
+                    score += 1; // السكور يتحسب بالواحدة
                     document.getElementById('current-score').innerText = score;
                     pipes[i].passed = true;
+
+                    // زيادة السرعة كلما تقدم اللاعب وصعبت اللعبة أكثر
+                    gameSpeed += 0.15; 
+                    if (pipeGap > 150) pipeGap -= 1; // تقليل الفجوة تدريجياً لزيادة التحدي
                 }
 
                 if (
@@ -208,11 +200,11 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // رسم الأنابيب الجليدية بتصميم فخم
+            // رسم العقبات الجليدية
             pipes.forEach(p => {
                 let grad = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
                 grad.addColorStop(0, "#00d26a");
-                grad.addColorStop(0.5, "#ffffff");
+                grad.addColorStop(0.5, "#00f2ff");
                 grad.addColorStop(1, "#009e4f");
 
                 ctx.fillStyle = grad;
@@ -220,17 +212,44 @@
                 ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
             });
 
-            // رسم حصان البحر المضيء
+            // رسم شكل حصان البحر بدقة واحترافية عالية داخل الـ Canvas
             ctx.save();
-            ctx.shadowBlur = 15;
-            ctx.shadowColor = "#00d26a";
+            ctx.translate(player.x, player.y);
+            
+            // توهج أحيائي مائي
+            ctx.shadowBlur = 18;
+            ctx.shadowColor = "#00f2ff";
+
+            // رأس وجسم حصان البحر المنحني
             ctx.beginPath();
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-            ctx.fillStyle = "#ffffff";
+            ctx.ellipse(0, 0, player.radius * 0.85, player.radius, 0, 0, Math.PI * 2);
+            ctx.fillStyle = "#00ffcc";
             ctx.fill();
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = "#00d26a";
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = "#ffffff";
             ctx.stroke();
+
+            // تاج أو رأس حصان البحر المميز
+            ctx.beginPath();
+            ctx.arc(-6, -player.radius * 0.7, 7, 0, Math.PI * 2);
+            ctx.fillStyle = "#00d26a";
+            ctx.fill();
+            ctx.stroke();
+
+            // العين اللامعة
+            ctx.beginPath();
+            ctx.arc(-8, -player.radius * 0.75, 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = "#000000";
+            ctx.fill();
+
+            // الذيل المنحني للخلف
+            ctx.beginPath();
+            ctx.moveTo(0, player.radius * 0.8);
+            ctx.quadraticCurveTo(player.radius, player.radius * 1.5, player.radius * 0.5, player.radius * 1.8);
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = "#00ffcc";
+            ctx.stroke();
+
             ctx.restore();
         }
 
@@ -243,27 +262,46 @@
 
         async function gameOver() {
             gameRunning = false;
-            document.getElementById('final-score-text').innerText = `السكور النهائي: ${score} نقطة`;
+            document.getElementById('final-score-text').innerText = `الألماسات المكتسبة: ${score} 💎`;
             document.getElementById('gameover-screen').style.display = 'flex';
 
-            if (score > highScore) {
-                highScore = score;
-                document.getElementById('high-score').innerText = highScore;
+            if (score > 0 && userData) {
                 try {
-                    await client.from('game_scores').upsert({ user_id: userId, high_score: highScore }, { onConflict: 'user_id' });
-                    if (userData) {
-                        const bonus = Math.floor(score / 5);
-                        const newPts = (userData.points || 0) + bonus;
-                        await client.from('users').update({ points: newPts }).eq('telegram_id', userId);
-                        userData.points = newPts;
-                        if (bonus > 0) tg.showAlert(`🏆 رقم قياسي جديد!\nحصلت على مكافأة +${bonus} نقطة لإنجازك.`);
+                    const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
+                    const currentDiamonds = Number(userData[gpField] || 0);
+                    const newDiamonds = currentDiamonds + score;
+
+                    const updateObj = {};
+                    updateObj[gpField] = newDiamonds;
+
+                    const { data: updated, error } = await client
+                        .from('users')
+                        .update(updateObj)
+                        .eq('telegram_id', String(userId))
+                        .select('*')
+                        .single();
+
+                    if (!error && updated) {
+                        userData = updated;
                     }
-                } catch (e) {}
+
+                    // تسجيل المعاملة في الهيستوري
+                    await client.from('transactions').insert([{
+                        telegram_id: String(userId),
+                        type: 'points',
+                        title: 'مكافأة لعبة حصان البحر',
+                        amount: `+${score} 💎`,
+                        status: 'مكتمل'
+                    }]);
+
+                } catch (e) {
+                    console.error("Save score error:", e);
+                }
             }
         }
 
         function exitGame() {
-            window.location.href = `games.html?id=${userId}`;
+            window.location.href = `../games.html?id=${userId}`;
         }
 
         init();
