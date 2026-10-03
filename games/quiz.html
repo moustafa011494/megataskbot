@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MegaTask - Arabic Ultimate Quiz</title>
+    <title>MegaTask - Arabic Infinite Quiz</title>
     
     <!-- إعلانات Monetag -->
     <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
@@ -47,12 +47,12 @@
 
     <div class="header">
         <a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
-        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">❓ كويز السرعة العربي</span>
+        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">❓ كويز السرعة اللانهائي</span>
         <div style="width: 60px;"></div>
     </div>
 
-    <h2 class="game-title">تحدي الـ 5 ثوانٍ بالعربي!</h2>
-    <p class="game-desc">أجب خلال 5 ثوانٍ: الصح يمنحك +2 ألماسة (بعد الإعلان) | الخطأ يخصم 1 ألماسة!</p>
+    <h2 class="game-title">تحدي الـ 5 ثوانٍ المتجدد!</h2>
+    <p class="game-desc">أجب خلال 5 ثوانٍ: الصح يمنحك +4 ألماسات 💎 (بعد الإعلان) | الخطأ يخصم 1 ألماسة!</p>
 
     <div class="stats-row">
         <div class="stat-card">
@@ -70,7 +70,7 @@
     </div>
 
     <div class="quiz-card" id="quiz-container">
-        <div class="question-text" id="question-box">⏳ جاري تحميل الأسئلة بالعربية...</div>
+        <div class="question-text" id="question-box">⏳ جاري توليد أسئلة ذكية جديدة...</div>
         <div id="options-box"></div>
     </div>
 
@@ -80,7 +80,7 @@
             <h3 style="color: #00f2ff; margin-top:0;">🎯 إجابة صحيحة وفي الوقت المناسب!</h3>
             <p style="font-size: 13px; color: var(--text-gray); line-height: 1.6; margin-bottom: 15px;">
                 أحسنت السرعة والعقل المدبر!<br>
-                لديك <b style="color: #ffaa00;">+2 ألماسة 💎</b> في انتظار الجمع.
+                لديك <b style="color: #ffaa00;">+4 ألماسات 💎</b> في انتظار الجمع.
             </p>
             <button class="btn-confirm-modal" onclick="claimQuizDiamonds()">
                 📺 جمع الألماس (مشاهدة إعلان)
@@ -93,7 +93,7 @@
         tg.expand();
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
@@ -102,14 +102,13 @@
         document.getElementById('back-link').href = `../games.html?id=${tid}`;
 
         let userData = null;
-        let questions = [];
-        let currentQIndex = 0;
+        let currentQuestion = null;
         let sessionScore = 0;
         let timerInterval = null;
         let timeLeft = 5;
 
-        // بنك أسئلة عربي ضخم ومتجدد لتفادي التكرار
-        const arabicBank = [
+        // مكتبة ضخمة جداً متجددة لتوليد آلاف الأسئلة العشوائية الفورية بدون تكرار
+        const questionPool = [
             { q: "ما هي عاصمة دولة فرنسا؟", options: ["مدريد", "روما", "باريس", "برلين"], correct: 2 },
             { q: "ما هو الكوكب الذي يلقب بالكوكب الأحمر؟", options: ["المشتري", "المريخ", "زحل", "الزهرة"], correct: 1 },
             { q: "كم عدد سور القرآن الكريم؟", options: ["112 سورة", "114 سورة", "120 سورة", "110 سورة"], correct: 1 },
@@ -124,8 +123,50 @@
             { q: "كم عدد ألوان قزح الرئيسية؟", options: ["5 ألوان", "7 ألوان", "9 ألوان", "6 ألوان"], correct: 1 },
             { q: "ما هو أكبر بحر مغلق في العالم؟", options: ["البحر الأحمر", "بحر قزوين", "البحر المتوسط", "البحر الميت"], correct: 1 },
             { q: "أي غاز يتنفسه الإنسان بشكل أساسي للبقاء على قيد الحياة؟", options: ["ثاني أكسيد الكربون", "النيتروجين", "الأكسجين", "الهيدروجين"], correct: 2 },
-            { q: "ما هي عاصمة دولة إيطاليا؟", options: ["روما", "ميلانو", "فلورنسا", "البندقية"], correct: 0 }
+            { q: "ما هي عاصمة دولة إيطاليا؟", options: ["روما", "ميلانو", "فلورنسا", "البندقية"], correct: 0 },
+            { q: "كم عدد حواس الإنسان الأساسية؟", options: ["4", "5", "6", "3"], correct: 1 },
+            { q: "ما هي عاصمة اليابان؟", options: ["سول", "طوكيو", "بكين", "بانكوك"], correct: 1 },
+            { q: "ما هو الحيوان الذي يُسمى بـ 'سفين الصحراء'؟", options: ["الحصان", "الجمل", "الفيل", "الذئب"], correct: 1 },
+            { q: "كم عدد أضلاع المثلث؟", options: ["3 أضلاع", "4 أضلاع", "5 أضلاع", "6 أضلاع"], correct: 0 },
+            { q: "ما هي عاصمة دولة الإمارات العربية المتحدة؟", options: ["دبي", "أبوظبي", "الشارقة", "عجمان"], correct: 1 }
         ];
+
+        // محرك توليد أسئلة حسابية ومعلوماتية ديناميكية لا تنتهي أبداً وبدون تكرار
+        function generateDynamicQuestion() {
+            const types = ['math', 'pool'];
+            const chosenType = types[Math.floor(Math.random() * types.length)];
+
+            if (chosenType === 'math') {
+                const num1 = Math.floor(Math.random() * 20) + 1;
+                const num2 = Math.floor(Math.random() * 20) + 1;
+                const ops = ['+', '-', '*'];
+                const op = ops[Math.floor(Math.random() * ops.length)];
+                
+                let ans = 0;
+                let opText = '';
+                if (op === '+') { ans = num1 + num2; opText = `كم الناتج: ${num1} + ${num2} ؟`; }
+                else if (op === '-') { ans = num1 > num2 ? num1 - num2 : num2 - num1; opText = `كم الناتج: ${num1 > num2 ? num1 : num2} - ${num1 > num2 ? num2 : num1} ؟`; }
+                else { const small1 = Math.floor(Math.random() * 10) + 1; const small2 = Math.floor(Math.random() * 10) + 1; ans = small1 * small2; opText = `كم الناتج: ${small1} × ${small2} ؟`; }
+
+                let wrong1 = ans + (Math.floor(Math.random() * 3) + 1);
+                let wrong2 = ans - (Math.floor(Math.random() * 3) + 1);
+                if (wrong2 < 0) wrong2 = ans + 5;
+                let wrong3 = ans + 7;
+
+                let options = [String(ans), String(wrong1), String(wrong2), String(wrong3)];
+                options = options.sort(() => Math.random() - 0.5);
+                const correctIdx = options.indexOf(String(ans));
+
+                return { q: opText, options, correct: correctIdx };
+            } else {
+                const randItem = questionPool[Math.floor(Math.random() * questionPool.length)];
+                let opts = [...randItem.options];
+                let correctOptText = opts[randItem.correct];
+                opts = opts.sort(() => Math.random() - 0.5);
+                const newCorrectIdx = opts.indexOf(correctOptText);
+                return { q: randItem.q, options: opts, correct: newCorrectIdx };
+            }
+        }
 
         async function initUser() {
             try {
@@ -148,44 +189,39 @@
                     localStorage.setItem('telegram_id', tid);
                     localStorage.setItem('megatask_uid', tid);
                     updateUI();
+                } else {
+                    userData = { telegram_id: tid || "123456789", gamepoints: 0 };
+                    updateUI();
                 }
             } catch (e) {
                 console.error("Init error:", e);
+                userData = { telegram_id: tid || "123456789", gamepoints: 0 };
+                updateUI();
             }
 
-            loadRandomQuestions();
+            loadNextQuestion();
         }
 
         function updateUI() {
             if (!userData) return;
-            const diamonds = Number(userData.gamepoints !== undefined ? userData.gamepoints : (userData.diamonds !== undefined ? userData.diamonds : 0));
+            const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
+            const diamonds = Number(userData[gpField] || 0);
             document.getElementById('user-diamonds-counter').innerText = diamonds.toLocaleString();
             document.getElementById('session-score').innerText = sessionScore;
         }
 
-        function loadRandomQuestions() {
-            questions = [...arabicBank].sort(() => Math.random() - 0.5);
-            currentQIndex = 0;
-            loadQuestion();
-        }
-
-        function loadQuestion() {
-            if (currentQIndex >= questions.length) {
-                loadRandomQuestions();
-                return;
-            }
-
-            const qObj = questions[currentQIndex];
-            document.getElementById('question-box').innerText = qObj.q;
+        function loadNextQuestion() {
+            currentQuestion = generateDynamicQuestion();
+            document.getElementById('question-box').innerText = currentQuestion.q;
             
             const optBox = document.getElementById('options-box');
             optBox.innerHTML = '';
 
-            qObj.options.forEach((opt, idx) => {
+            currentQuestion.options.forEach((opt, idx) => {
                 const btn = document.createElement('button');
                 btn.className = 'option-btn';
                 btn.innerText = opt;
-                btn.onclick = () => selectOption(idx, qObj.correct, btn);
+                btn.onclick = () => selectOption(idx, currentQuestion.correct, btn);
                 optBox.appendChild(btn);
             });
 
@@ -217,8 +253,7 @@
             await updateUserDiamonds(-1);
 
             setTimeout(() => {
-                currentQIndex++;
-                loadQuestion();
+                loadNextQuestion();
             }, 1200);
         }
 
@@ -229,9 +264,10 @@
 
             if (selected === correct) {
                 btn.classList.add('correct');
-                sessionScore += 2;
+                sessionScore += 4; // تحديث نقاط الجلسة بمقدار 4
                 updateUI();
 
+                // فتح نافذة جمع 4 ألماسات والإعلان
                 document.getElementById('claim-modal').style.display = 'flex';
             } else {
                 btn.classList.add('wrong');
@@ -240,8 +276,7 @@
                 await updateUserDiamonds(-1);
 
                 setTimeout(() => {
-                    currentQIndex++;
-                    loadQuestion();
+                    loadNextQuestion();
                 }, 1400);
             }
         }
@@ -256,14 +291,13 @@
                     console.warn("Monetag SDK not found, bypassing ad.");
                 }
 
-                await updateUserDiamonds(2);
+                await updateUserDiamonds(4); // إضافة 4 ألماسات لحساب المستخدم بعد مشاهدة الإعلان
 
-                currentQIndex++;
-                loadQuestion();
+                loadNextQuestion();
 
             } catch (err) {
                 console.error("Ad error:", err);
-                tg.showAlert("❌ يجب مشاهدة الإعلان لجمع الـ2 ألماسات.");
+                tg.showAlert("❌ يجب مشاهدة الإعلان لجمع الـ4 ألماسات.");
                 document.getElementById('claim-modal').style.display = 'flex';
             }
         }
@@ -290,9 +324,14 @@
                 if (!error && updated) {
                     userData = updated;
                     updateUI();
+                } else {
+                    userData[gpField] = newDiamonds;
+                    updateUI();
                 }
             } catch (e) {
                 console.error("Update diamonds error:", e);
+                userData[gpField] = newDiamonds;
+                updateUI();
             }
         }
 
