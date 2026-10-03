@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MegaTask - Ultimate Quiz</title>
+    <title>MegaTask - Arabic Ultimate Quiz</title>
     
     <!-- إعلانات Monetag -->
     <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
@@ -47,12 +47,12 @@
 
     <div class="header">
         <a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
-        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">❓ كويز السرعة الخارقة</span>
+        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">❓ كويز السرعة العربي</span>
         <div style="width: 60px;"></div>
     </div>
 
-    <h2 class="game-title">تحدي الـ 5 ثوانٍ!</h2>
-    <p class="game-desc">أجب خلال 5 ثوانٍ فقط واربح +2 ألماسة لكل إجابة صحيحة (بعد الإعلان)!</p>
+    <h2 class="game-title">تحدي الـ 5 ثوانٍ بالعربي!</h2>
+    <p class="game-desc">أجب خلال 5 ثوانٍ: الصح يمنحك +2 ألماسة (بعد الإعلان) | الخطأ يخصم 1 ألماسة!</p>
 
     <div class="stats-row">
         <div class="stat-card">
@@ -70,7 +70,7 @@
     </div>
 
     <div class="quiz-card" id="quiz-container">
-        <div class="question-text" id="question-box">⏳ جاري جلب أسئلة ذكية من السيرفر...</div>
+        <div class="question-text" id="question-box">⏳ جاري تحميل الأسئلة بالعربية...</div>
         <div id="options-box"></div>
     </div>
 
@@ -79,7 +79,7 @@
         <div class="modal-box">
             <h3 style="color: #00f2ff; margin-top:0;">🎯 إجابة صحيحة وفي الوقت المناسب!</h3>
             <p style="font-size: 13px; color: var(--text-gray); line-height: 1.6; margin-bottom: 15px;">
-                أحسنت السرعة!<br>
+                أحسنت السرعة والعقل المدبر!<br>
                 لديك <b style="color: #ffaa00;">+2 ألماسة 💎</b> في انتظار الجمع.
             </p>
             <button class="btn-confirm-modal" onclick="claimQuizDiamonds()">
@@ -93,7 +93,7 @@
         tg.expand();
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
@@ -104,9 +104,28 @@
         let userData = null;
         let questions = [];
         let currentQIndex = 0;
-        let sessionScore = 0;
+        let sessionScore = 0; بنوك
         let timerInterval = null;
-        let timeLeft = 5; // تم تقليل الوقت إلى 5 ثوانٍ فقط
+        let timeLeft = 5;
+
+        // بنك أسئلة عربي ضخم ومتجدد لتفادي التكرار
+        const arabicBank = [
+            { q: "ما هي عاصمة دولة فرنسا؟", options: ["مدريد", "روما", "باريس", "برلين"], correct: 2 },
+            { q: "ما هو الكوكب الذي يلقب بالكوكب الأحمر؟", options: ["المشتري", "المريخ", "زحل", "الزهرة"], correct: 1 },
+            { q: "كم عدد سور القرآن الكريم؟", options: ["112 سورة", "114 سورة", "120 سورة", "110 سورة"], correct: 1 },
+            { q: "من هو واضع علم الجبر؟", options: ["الخوارزمي", "ابن سينا", "الزهراوي", "البيروني"], correct: 0 },
+            { q: "ما هو أسرع حيوان بري في العالم؟", options: ["الأسد", "الفهد", "الغزال", "الحصان"], correct: 1 },
+            { q: "في أي قارة تقع دولة مصر؟", options: ["أوروبا", "آسيا", "إفريقيا", "أمريكا الجنوبية"], correct: 2 },
+            { q: "ما هي عاصمة سلطنة عمان؟", options: ["مسقط", "الرياض", "دوحة", "صنعاء"], correct: 0 },
+            { q: "كم عدد أركان الإسلام؟", options: ["4", "5", "6", "3"], correct: 1 },
+            { q: "ما هو العنصر الكيميائي الذي يرمز له بـ (Au)؟", options: ["الفضة", "الحديد", "الذهب", "النحاس"], correct: 2 },
+            { q: "من هو النبي الذي ألقي في النار؟", options: ["موسى", "إبراهيم", "عيسى", "يوسف"], correct: 1 },
+            { q: "ما هي عاصمة المملكة العربية السعودية؟", options: ["جدة", "الرياض", "الدمام", "مكة"], correct: 1 },
+            { q: "كم عدد ألوان قزح الرئيسية؟", options: ["5 ألوان", "7 ألوان", "9 ألوان", "6 ألوان"], correct: 1 },
+            { q: "ما هو أكبر بحر مغلق في العالم؟", options: ["البحر الأحمر", "بحر قزوين", "البحر المتوسط", "البحر الميت"], correct: 1 },
+            { q: "أي غاز يتنفسه الإنسان بشكل أساسي للبقاء على قيد الحياة؟", options: ["ثاني أكسيد الكربون", "النيتروجين", "الأكسجين", "الهيدروجين"], correct: 2 },
+            { q: "ما هي عاصمة دولة إيطاليا؟", options: ["روما", "ميلانو", "فلورنسا", "البندقية"], correct: 0 }
+        ];
 
         async function initUser() {
             try {
@@ -134,7 +153,7 @@
                 console.error("Init error:", e);
             }
 
-            fetchQuestionsFromAPI();
+            loadRandomQuestions();
         }
 
         function updateUI() {
@@ -144,52 +163,16 @@
             document.getElementById('session-score').innerText = sessionScore;
         }
 
-        async function fetchQuestionsFromAPI() {
-            try {
-                const res = await fetch('https://opentdb.com/api.php?amount=15&type=multiple');
-                const data = await res.json();
-                
-                if (data && data.results && data.results.length > 0) {
-                    questions = data.results.map(item => {
-                        let options = [...item.incorrect_answers];
-                        const correctIdx = Math.floor(Math.random() * (options.length + 1));
-                        options.splice(correctIdx, 0, item.correct_answer);
-                        return {
-                            q: decodeHtml(item.question),
-                            options: options.map(o => decodeHtml(o)),
-                            correct: correctIdx
-                        };
-                    });
-                    currentQIndex = 0;
-                    loadQuestion();
-                } else {
-                    fallbackQuestions();
-                }
-            } catch (e) {
-                console.error("API fetch error:", e);
-                fallbackQuestions();
-            }
-        }
-
-        function fallbackQuestions() {
-            questions = [
-                { q: "What is the capital of France?", options: ["Madrid", "Paris", "Berlin", "Rome"], correct: 1 },
-                { q: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Jupiter", "Saturn"], correct: 1 },
-                { q: "What is 5 + 7 * 2 ?", options: ["24", "19", "17", "21"], correct: 1 }
-            ];
+        // خلط الأسئلة عشوائياً لضمان عدم التكرار والملل
+        function loadRandomQuestions() {
+            questions = [...arabicBank].sort(() => Math.random() - 0.5);
             currentQIndex = 0;
             loadQuestion();
         }
 
-        function decodeHtml(html) {
-            const txt = document.createElement("textarea");
-            txt.innerHTML = html;
-            return txt.value;
-        }
-
         function loadQuestion() {
             if (currentQIndex >= questions.length) {
-                fetchQuestionsFromAPI();
+                loadRandomQuestions(); // إعادة خلط بنك الأسئلة تلقائياً
                 return;
             }
 
@@ -212,7 +195,7 @@
 
         function startTimer() {
             clearInterval(timerInterval);
-            timeLeft = 5; // 5 ثوانٍ فقط لكل سؤال
+            timeLeft = 5; // 5 ثوانٍ فقط للتحدي السريع
             const bar = document.getElementById('timer-bar');
             bar.style.width = '100%';
 
@@ -227,18 +210,20 @@
             }, 1000);
         }
 
-        function handleTimeOut() {
+        async function handleTimeOut() {
             const allBtns = document.querySelectorAll('.option-btn');
             allBtns.forEach(b => b.disabled = true);
-            document.getElementById('question-box').innerText = "⏰ انتهى الوقت! خسرت هذه الفرصة.";
+            document.getElementById('question-box').innerText = "⏰ انتهى الوقت! تم خصم ألماسة.";
             
+            await updateUserDiamonds(-1); // خصم ألماسة عند انتهاء الوقت
+
             setTimeout(() => {
                 currentQIndex++;
                 loadQuestion();
             }, 1200);
         }
 
-        function selectOption(selected, correct, btn) {
+        async function selectOption(selected, correct, btn) {
             clearInterval(timerInterval);
             const allBtns = document.querySelectorAll('.option-btn');
             allBtns.forEach(b => b.disabled = true);
@@ -248,11 +233,14 @@
                 sessionScore += 2;
                 updateUI();
 
+                // فتح نافذة جمع الألماس والإعلان
                 document.getElementById('claim-modal').style.display = 'flex';
             } else {
                 btn.classList.add('wrong');
                 allBtns[correct].classList.add('correct');
                 
+                await updateUserDiamonds(-1); // خصم ألماسة واحدة عند الخطأ
+
                 setTimeout(() => {
                     currentQIndex++;
                     loadQuestion();
@@ -270,7 +258,7 @@
                     console.warn("Monetag SDK not found, bypassing ad.");
                 }
 
-                await updateUserDiamonds(2);
+                await updateUserDiamonds(2); // إضافة 2 ألماسة بعد مشاهدة الإعلان
 
                 currentQIndex++;
                 loadQuestion();
@@ -288,7 +276,7 @@
             const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
             let currentDiamonds = Number(userData[gpField] || 0);
             let newDiamonds = currentDiamonds + amount;
-            if (newDiamonds < 0) newDiamonds = 0;
+            if (newDiamonds < 0) newDiamonds = 0; // عدم النزول تحت الصفر
 
             try {
                 const updateObj = {};
