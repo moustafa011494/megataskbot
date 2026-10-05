@@ -16,18 +16,19 @@
             overflow: hidden; user-select: none; -webkit-user-select: none;
         }
 
-        /* شريط العلوي (السكور في المنتصف) */
+        /* الشريط العلوي (نفس شارة الصناديق المطورة) */
         .game-top-bar {
             position: absolute; top: 0; left: 0; width: 100%;
-            display: flex; justify-content: center; align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             padding: 15px 20px; z-index: 10; pointer-events: none;
         }
-        .top-info-box { 
-            background: rgba(20, 23, 31, 0.85); border: 1px solid rgba(0,242,255,0.3); 
-            padding: 8px 25px; border-radius: 25px; font-size: 16px; font-weight: bold; color: #00f2ff;
-            box-shadow: 0 4px 15px rgba(0,242,255,0.2);
+        .stat-badge { 
+            font-size: 13px; color: #00f2ff; font-weight: bold; 
+            display: inline-block; background: rgba(0,242,255,0.1); 
+            padding: 6px 15px; border-radius: 10px; border: 1px solid #00f2ff;
+            pointer-events: auto;
         }
-        .top-info-box span { color: #ffaa00; }
+        .stat-badge span { color: #ffaa00; }
 
         /* ساحة اللعبة بملء الشاشة */
         canvas { display: block; width: 100vw; height: 100vh; background: linear-gradient(180deg, #070c14 0%, #0d1626 100%); }
@@ -54,14 +55,15 @@
 <body>
 
     <div class="game-top-bar">
-        <div class="top-info-box">💎 الألماسات المكتسبة بالجولة: <span id="current-score">0</span></div>
+        <div class="stat-badge">ألماسات حسابك: <span id="user-diamonds-counter">0</span> 💎</div>
+        <div class="stat-badge">الجولة: <span id="current-score">0</span> 💎</div>
     </div>
 
     <div id="start-screen" class="overlay-screen">
         <div style="font-size: 55px; margin-bottom: 10px;">🌊🐴</div>
         <h1>حصان البحر السريع</h1>
-        <p id="start-desc">جاري الاتصال بقاعدة البيانات...</p>
-        <button id="start-btn" class="btn-action-game" onclick="tryStartGame()" style="opacity: 0.5; pointer-events: none;">جاري التحميل...</button>
+        <p>تكلفة الدخول للجولة: <b style="color:#00f2ff;">1 ألماسة 💎</b>.<br>كل 3 عقبات تتخطها تمنحك ألماسة مباشرة من سوبابيز!</p>
+        <button class="btn-action-game" onclick="tryStartGame()">🎮 ابدأ الجولة الآن (1 💎)</button>
     </div>
 
     <div id="gameover-screen" class="overlay-screen" style="display: none;">
@@ -77,25 +79,19 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        // التقاط الـ ID بدقة تامة من كل الأماكن الممكنة وضبطه في الرابط لو ناقص
         const params = new URLSearchParams(window.location.search);
-        let userId = String(
-            params.get('id') || 
-            tg.initDataUnsafe.user?.id || 
-            localStorage.getItem('telegram_id') || 
-            localStorage.getItem('megatask_uid') || 
-            ""
-        ).trim();
+        let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
 
-        // لو الـ userId متاح ومش موجود في الرابط، بنحطه في الرابط أوتوماتيك عشان يثبت
-        if (userId && !params.has('id')) {
-            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?id=' + userId;
-            window.history.replaceState({path: newUrl}, '', newUrl);
-        }
+        let userData = null;
+        let earnedDiamonds = 0;
+        let obstaclesPassed = 0;
+        let gameRunning = false;
+        let gameSpeed = 3.2;
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -107,12 +103,6 @@
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         });
-
-        let earnedDiamonds = 0;
-        let obstaclesPassed = 0;
-        let userData = null;
-        let gameRunning = false;
-        let gameSpeed = 3.2;
 
         let player = {
             x: canvas.width * 0.25,
@@ -128,67 +118,86 @@
         let pipeGap = 195;
         let frameCount = 0;
 
+        // دالة الربط وجلب المستخدم بنفس طريقة لعبة الصناديق الناجحة تماماً
         async function initUser() {
-            if (!userId) {
-                document.getElementById('start-desc').innerHTML = "⚠️ خطأ في تمرير معرف المستخدم. رجاءً عد لصفحة الألعاب وافتح اللعبة مرة أخرى.";
-                return;
+            if (!tid || tid === "undefined" || tid === "null") {
+                try {
+                    let { data: latest } = await client.from('users').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
+                    if (latest) {
+                        userData = latest;
+                        tid = String(latest.telegram_id);
+                    }
+                } catch (e) {}
             }
 
             try {
-                let { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-                if (!user) {
-                    let { data: userNum } = await client.from('users').select('*').eq('telegram_id', Number(userId)).maybeSingle();
-                    if (userNum) user = userNum;
+                let { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).maybeSingle();
+                if (u) {
+                    userData = u;
+                } else {
+                    let { data: uNum } = await client.from('users').select('*').eq('telegram_id', Number(tid)).maybeSingle();
+                    if (uNum) {
+                        userData = uNum;
+                    } else {
+                        let { data: fallback } = await client.from('users').select('*').limit(1).maybeSingle();
+                        if (fallback) userData = fallback;
+                    }
                 }
 
-                if (user) {
-                    userData = user;
-                    const points = Number(user.gamepoints || 0);
-                    document.getElementById('start-desc').innerHTML = `تكلفة الدخول للجولة: <b style="color:#00f2ff;">1 ألماسة 💎</b>.<br>رصيدك الحالي: <b style="color:#ffaa00;">${points} ألماسة</b>.<br>كل 3 عقبات تتخطاها تمنحك ألماسة مباشرة من سوبابيز!`;
-                    
-                    const btn = document.getElementById('start-btn');
-                    btn.innerText = "🎮 ابدأ الجولة الآن (1 💎)";
-                    btn.style.opacity = "1";
-                    btn.style.pointerEvents = "auto";
-                } else {
-                    document.getElementById('start-desc').innerHTML = `❌ لم يتم العثور على حسابك (ID: ${userId}) في قاعدة البيانات!`;
+                if (!userData) {
+                    tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
+                    return;
                 }
+
+                tid = String(userData.telegram_id);
+                localStorage.setItem('telegram_id', tid);
+                updateUI();
+
             } catch (e) {
                 console.error("Init error:", e);
-                document.getElementById('start-desc').innerHTML = "❌ حدث خطأ أثناء الاتصال بقاعدة البيانات.";
             }
         }
 
-        async function tryStartGame() {
-            if (!userData) {
-                await initUser();
-                if (!userData) return;
-            }
+        function updateUI() {
+            if (!userData) return;
+            const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
+            const diamonds = Number(userData[gpField] || 0);
+            document.getElementById('user-diamonds-counter').innerText = diamonds.toLocaleString();
+        }
 
-            const currentDiamonds = Number(userData.gamepoints || 0);
+        async function tryStartGame() {
+            await initUser();
+            if (!userData) return;
+
+            const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
+            let currentDiamonds = Number(userData[gpField] || 0);
 
             if (currentDiamonds < 1) {
-                tg.showAlert("⚠️ ليس لديك ألماسات كافية في حسابك! يلزمك 1 ألماسة على الأقل لبدء الجولة.");
+                tg.showAlert("⚠️ ليس لديك ألماسات كافية! يلزمك 1 ألماسة على الأقل لبدء الجولة.");
                 return;
             }
 
+            // خصم 1 ألماسة من سوبابيز لبدء الجولة
             try {
                 const newDiamonds = currentDiamonds - 1;
+                const updateObj = {};
+                updateObj[gpField] = newDiamonds;
+
                 const { data: updated, error } = await client
                     .from('users')
-                    .update({ gamepoints: newDiamonds })
-                    .eq('telegram_id', userId)
+                    .update(updateObj)
+                    .eq('telegram_id', String(tid))
                     .select('*')
                     .single();
 
                 if (!error && updated) {
                     userData = updated;
                 } else {
-                    userData.gamepoints = newDiamonds;
+                    userData[gpField] = newDiamonds;
                 }
+                updateUI();
             } catch (e) {
                 console.error("Deduct error:", e);
-                userData.gamepoints = currentDiamonds - 1;
             }
 
             startGame();
@@ -351,23 +360,27 @@
 
             if (userData && earnedDiamonds > 0) {
                 try {
-                    let { data: freshUser } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-                    let currentGp = freshUser ? Number(freshUser.gamepoints || 0) : Number(userData.gamepoints || 0);
+                    const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
+                    let currentGp = Number(userData[gpField] || 0);
                     let newGp = currentGp + earnedDiamonds;
+
+                    const updateObj = {};
+                    updateObj[gpField] = newGp;
 
                     const { data: updated, error } = await client
                         .from('users')
-                        .update({ gamepoints: newGp })
-                        .eq('telegram_id', userId)
+                        .update(updateObj)
+                        .eq('telegram_id', String(tid))
                         .select('*')
                         .single();
 
                     if (!error && updated) {
                         userData = updated;
+                        updateUI();
                     }
 
                     await client.from('transactions').insert([{
-                        telegram_id: userId,
+                        telegram_id: String(tid),
                         type: 'points',
                         title: 'مكافأة أرباح لعبة حصان البحر',
                         amount: `+${earnedDiamonds} 💎`,
@@ -381,7 +394,7 @@
         }
 
         function exitGame() {
-            window.location.href = `../games.html?id=${userId}`;
+            window.location.href = `../games.html?id=${tid}`;
         }
 
         initUser();
