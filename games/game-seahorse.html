@@ -3,401 +3,1662 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <title>Frost Seahorse - MegaTask</title>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #05070a; }
-        * { box-sizing: border-box; }
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: var(--dark-bg); color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden; user-select: none; -webkit-user-select: none;
+        :root {
+            --main-green: #00d26a;
+            --dark-bg: #05070a;
         }
 
-        /* الشريط العلوي (نفس شارة الصناديق المطورة) */
-        .game-top-bar {
-            position: absolute; top: 0; left: 0; width: 100%;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 20px; z-index: 10; pointer-events: none;
+        * {
+            box-sizing: border-box;
         }
-        .stat-badge { 
-            font-size: 13px; color: #00f2ff; font-weight: bold; 
-            display: inline-block; background: rgba(0,242,255,0.1); 
-            padding: 6px 15px; border-radius: 10px; border: 1px solid #00f2ff;
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* الشريط العلوي */
+        .game-top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .stat-badge {
+            font-size: 13px;
+            color: #00f2ff;
+            font-weight: bold;
+            display: inline-block;
+            background: rgba(0, 242, 255, 0.1);
+            padding: 6px 15px;
+            border-radius: 10px;
+            border: 1px solid #00f2ff;
             pointer-events: auto;
         }
-        .stat-badge span { color: #ffaa00; }
 
-        /* ساحة اللعبة بملء الشاشة */
-        canvas { display: block; width: 100vw; height: 100vh; background: linear-gradient(180deg, #070c14 0%, #0d1626 100%); }
+        .stat-badge span {
+            color: #ffaa00;
+        }
 
-        /* شاشة البداية والنهاية المنبثقة */
+        /* اللعبة */
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(
+                180deg,
+                #070c14 0%,
+                #0d1626 100%
+            );
+        }
+
+        /* شاشات البداية والنهاية */
         .overlay-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(5, 7, 10, 0.95); z-index: 30;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 25px; text-align: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+
+            background: rgba(5, 7, 10, 0.95);
+
+            z-index: 30;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+
+            padding: 25px;
+            text-align: center;
         }
-        .overlay-screen h1 { color: #00d26a; font-size: 26px; margin-bottom: 5px; text-shadow: 0 0 15px rgba(0,210,106,0.3); }
-        .overlay-screen p { color: #9ca3af; font-size: 13px; margin-bottom: 20px; line-height: 1.5; }
-        
+
+        .overlay-screen h1 {
+            color: #00d26a;
+            font-size: 26px;
+            margin-bottom: 5px;
+            text-shadow: 0 0 15px rgba(0, 210, 106, 0.3);
+        }
+
+        .overlay-screen p {
+            color: #9ca3af;
+            font-size: 13px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
         .btn-action-game {
-            background: linear-gradient(135deg, #00d26a, #009e4f); color: #000;
-            border: none; width: 100%; max-width: 260px; padding: 14px; border-radius: 20px;
-            font-size: 15px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 5px 20px rgba(0, 210, 106, 0.35); transition: 0.2s;
+            background: linear-gradient(
+                135deg,
+                #00d26a,
+                #009e4f
+            );
+
+            color: #000;
+
+            border: none;
+
+            width: 100%;
+            max-width: 260px;
+
+            padding: 14px;
+
+            border-radius: 20px;
+
+            font-size: 15px;
+            font-weight: bold;
+
+            cursor: pointer;
+
+            box-shadow: 0 5px 20px rgba(0, 210, 106, 0.35);
+
+            transition: 0.2s;
         }
-        .btn-action-game:active { transform: scale(0.96); }
+
+        .btn-action-game:active {
+            transform: scale(0.96);
+        }
     </style>
 </head>
+
 <body>
 
+    <!-- الشريط العلوي -->
     <div class="game-top-bar">
-        <div class="stat-badge">ألماسات حسابك: <span id="user-diamonds-counter">0</span> 💎</div>
-        <div class="stat-badge">الجولة: <span id="current-score">0</span> 💎</div>
+
+        <div class="stat-badge">
+            ألماسات حسابك:
+            <span id="user-diamonds-counter">0</span>
+            💎
+        </div>
+
+        <div class="stat-badge">
+            الجولة:
+            <span id="current-score">0</span>
+            💎
+        </div>
+
     </div>
 
+
+    <!-- شاشة البداية -->
     <div id="start-screen" class="overlay-screen">
-        <div style="font-size: 55px; margin-bottom: 10px;">🌊🐴</div>
-        <h1>حصان البحر السريع</h1>
-        <p>تكلفة الدخول للجولة: <b style="color:#00f2ff;">1 ألماسة 💎</b>.<br>كل 3 عقبات تتخطها تمنحك ألماسة مباشرة من سوبابيز!</p>
-        <button class="btn-action-game" onclick="tryStartGame()">🎮 ابدأ الجولة الآن (1 💎)</button>
+
+        <div style="font-size:55px; margin-bottom:10px;">
+            🌊🐴
+        </div>
+
+        <h1>
+            حصان البحر السريع
+        </h1>
+
+        <p>
+            تكلفة الدخول للجولة:
+            <b style="color:#00f2ff;">
+                1 ألماسة 💎
+            </b>
+            <br>
+
+            كل 3 عقبات تتخطاها تمنحك ألماسة مباشرة من سوبابيز!
+        </p>
+
+        <button
+            id="start-game-btn"
+            class="btn-action-game"
+            onclick="tryStartGame()"
+        >
+            🎮 ابدأ الجولة الآن (1 💎)
+        </button>
+
     </div>
 
-    <div id="gameover-screen" class="overlay-screen" style="display: none;">
-        <div style="font-size: 55px; margin-bottom: 10px;">💥</div>
-        <h1>انتهت الجولة!</h1>
-        <p id="final-score-text" style="color: white; font-size: 15px; font-weight: bold; margin-bottom: 20px;">الماسات المضافة لرصيدك: +0 💎</p>
-        <button class="btn-action-game" onclick="tryStartGame()">🔄 اللعب مرة أخرى (1 💎)</button>
-        <button class="btn-action-game" style="background: #222630; color: #fff; margin-top: 10px;" onclick="exitGame()">🔙 العودة للبوت</button>
+
+    <!-- شاشة النهاية -->
+    <div
+        id="gameover-screen"
+        class="overlay-screen"
+        style="display:none;"
+    >
+
+        <div style="font-size:55px; margin-bottom:10px;">
+            💥
+        </div>
+
+        <h1>
+            انتهت الجولة!
+        </h1>
+
+        <p
+            id="final-score-text"
+            style="
+                color:white;
+                font-size:15px;
+                font-weight:bold;
+                margin-bottom:20px;
+            "
+        >
+            الماسات المضافة لرصيدك: +0 💎
+        </p>
+
+        <button
+            id="play-again-btn"
+            class="btn-action-game"
+            onclick="tryStartGame()"
+        >
+            🔄 اللعب مرة أخرى (1 💎)
+        </button>
+
+        <button
+            class="btn-action-game"
+            style="
+                background:#222630;
+                color:#fff;
+                margin-top:10px;
+            "
+            onclick="exitGame()"
+        >
+            🔙 العودة للبوت
+        </button>
+
     </div>
+
 
     <canvas id="gameCanvas"></canvas>
 
+
     <script>
+
+        /* =====================================================
+           TELEGRAM
+        ===================================================== */
+
         const tg = window.Telegram.WebApp;
+
         tg.expand();
 
-        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-        const client = supabase.createClient(S_URL, S_KEY);
 
-        const params = new URLSearchParams(window.location.search);
-        let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
+        /* =====================================================
+           SUPABASE
+        ===================================================== */
+
+        const S_URL =
+            "https://smukfrwnguvmxvfwqwrv.supabase.co";
+
+        const S_KEY =
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+
+        const client =
+            supabase.createClient(S_URL, S_KEY);
+
+
+        /* =====================================================
+           TELEGRAM ID
+           نفس طريقة لعبة الصناديق
+           ===================================================== */
+
+        const params =
+            new URLSearchParams(window.location.search);
+
+        let tid = String(
+            params.get('id') ||
+            tg.initDataUnsafe?.user?.id ||
+            localStorage.getItem('telegram_id') ||
+            ""
+        ).trim();
+
+
+        /* =====================================================
+           GAME VARIABLES
+           ===================================================== */
 
         let userData = null;
+
         let earnedDiamonds = 0;
+
         let obstaclesPassed = 0;
+
         let gameRunning = false;
+
+        let isStartingGame = false;
+
+        let isSavingScore = false;
+
         let gameSpeed = 3.2;
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        /* =====================================================
+           CANVAS
+           ===================================================== */
 
-        window.addEventListener('resize', () => {
+        const canvas =
+            document.getElementById('gameCanvas');
+
+        const ctx =
+            canvas.getContext('2d');
+
+
+        function resizeCanvas() {
+
             canvas.width = window.innerWidth;
+
             canvas.height = window.innerHeight;
-        });
+
+            if (player) {
+
+                player.x =
+                    canvas.width * 0.25;
+
+                if (!gameRunning) {
+
+                    player.y =
+                        canvas.height / 2;
+                }
+            }
+        }
+
+
+        canvas.width =
+            window.innerWidth;
+
+        canvas.height =
+            window.innerHeight;
+
+
+        window.addEventListener(
+            'resize',
+            resizeCanvas
+        );
+
+
+        /* =====================================================
+           PLAYER
+           ===================================================== */
 
         let player = {
+
             x: canvas.width * 0.25,
+
             y: canvas.height / 2,
+
             radius: 18,
+
             velocity: 0,
+
             gravity: 0.38,
+
             jump: -7.5
+
         };
 
+
+        /* =====================================================
+           PIPES
+           ===================================================== */
+
         let pipes = [];
+
         let pipeWidth = 60;
+
         let pipeGap = 195;
+
         let frameCount = 0;
 
-        // دالة الربط وجلب المستخدم بنفس طريقة لعبة الصناديق الناجحة تماماً
+
+        /* =====================================================
+           INIT USER
+           مطابقة لطريقة الصناديق
+           ===================================================== */
+
         async function initUser() {
-            if (!tid || tid === "undefined" || tid === "null") {
-                try {
-                    let { data: latest } = await client.from('users').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
-                    if (latest) {
-                        userData = latest;
-                        tid = String(latest.telegram_id);
-                    }
-                } catch (e) {}
+
+            /*
+             * لو مفيش Telegram ID
+             * نحاول استخدام آخر ID محفوظ
+             */
+
+            if (
+                !tid ||
+                tid === "undefined" ||
+                tid === "null"
+            ) {
+
+                tid = String(
+                    localStorage.getItem(
+                        'telegram_id'
+                    ) || ""
+                ).trim();
             }
+
+
+            /*
+             * لو لسه مفيش ID
+             * نستخدم Telegram WebApp
+             */
+
+            if (
+                !tid ||
+                tid === "undefined" ||
+                tid === "null"
+            ) {
+
+                try {
+
+                    const telegramUser =
+                        tg.initDataUnsafe?.user;
+
+                    if (telegramUser?.id) {
+
+                        tid =
+                            String(
+                                telegramUser.id
+                            ).trim();
+                    }
+
+                } catch (e) {
+
+                    console.error(
+                        "Telegram ID error:",
+                        e
+                    );
+
+                }
+            }
+
+
+            /*
+             * نفس fallback الموجود في لعبة الصناديق
+             */
+
+            if (
+                !tid ||
+                tid === "undefined" ||
+                tid === "null"
+            ) {
+
+                try {
+
+                    const {
+                        data: latest,
+                        error: latestError
+                    } = await client
+                        .from('users')
+                        .select('*')
+                        .order(
+                            'created_at',
+                            {
+                                ascending: false
+                            }
+                        )
+                        .limit(1)
+                        .maybeSingle();
+
+                    if (
+                        !latestError &&
+                        latest
+                    ) {
+
+                        userData = latest;
+
+                        tid =
+                            String(
+                                latest.telegram_id
+                            ).trim();
+                    }
+
+                } catch (e) {
+
+                    console.error(
+                        "Latest user error:",
+                        e
+                    );
+
+                }
+            }
+
+
+            /*
+             * التأكد من وجود ID
+             */
+
+            if (
+                !tid ||
+                tid === "undefined" ||
+                tid === "null"
+            ) {
+
+                tg.showAlert(
+                    "❌ لم يتم العثور على Telegram ID الخاص بك."
+                );
+
+                return false;
+            }
+
+
+            /*
+             * البحث عن المستخدم
+             * String
+             */
 
             try {
-                let { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).maybeSingle();
-                if (u) {
+
+                let {
+                    data: u,
+                    error: stringError
+                } = await client
+                    .from('users')
+                    .select('*')
+                    .eq(
+                        'telegram_id',
+                        String(tid)
+                    )
+                    .maybeSingle();
+
+
+                if (
+                    !stringError &&
+                    u
+                ) {
+
                     userData = u;
+
                 } else {
-                    let { data: uNum } = await client.from('users').select('*').eq('telegram_id', Number(tid)).maybeSingle();
-                    if (uNum) {
+
+                    /*
+                     * البحث كرقم
+                     */
+
+                    let {
+                        data: uNum,
+                        error: numberError
+                    } = await client
+                        .from('users')
+                        .select('*')
+                        .eq(
+                            'telegram_id',
+                            Number(tid)
+                        )
+                        .maybeSingle();
+
+
+                    if (
+                        !numberError &&
+                        uNum
+                    ) {
+
                         userData = uNum;
+
                     } else {
-                        let { data: fallback } = await client.from('users').select('*').limit(1).maybeSingle();
-                        if (fallback) userData = fallback;
+
+                        /*
+                         * fallback
+                         * نفس لعبة الصناديق
+                         */
+
+                        let {
+                            data: fallback
+                        } = await client
+                            .from('users')
+                            .select('*')
+                            .limit(1)
+                            .maybeSingle();
+
+                        if (fallback) {
+
+                            userData =
+                                fallback;
+
+                        }
+
                     }
                 }
 
+
+                /*
+                 * لم يتم العثور
+                 */
+
                 if (!userData) {
-                    tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
-                    return;
+
+                    console.error(
+                        "User not found. tid =",
+                        tid
+                    );
+
+                    tg.showAlert(
+                        "❌ لم يتم العثور على حسابك في قاعدة البيانات."
+                    );
+
+                    return false;
                 }
 
-                tid = String(userData.telegram_id);
-                localStorage.setItem('telegram_id', tid);
+
+                /*
+                 * تثبيت ID الحقيقي
+                 */
+
+                tid =
+                    String(
+                        userData.telegram_id
+                    ).trim();
+
+
+                localStorage.setItem(
+                    'telegram_id',
+                    tid
+                );
+
+
                 updateUI();
 
+
+                console.log(
+                    "MegaTask User Loaded:",
+                    userData
+                );
+
+                console.log(
+                    "Telegram ID:",
+                    tid
+                );
+
+
+                return true;
+
+
             } catch (e) {
-                console.error("Init error:", e);
+
+                console.error(
+                    "Init error:",
+                    e
+                );
+
+                tg.showAlert(
+                    "❌ حدث خطأ أثناء جلب بيانات المستخدم."
+                );
+
+                return false;
             }
         }
 
+
+        /* =====================================================
+           UPDATE UI
+           ===================================================== */
+
         function updateUI() {
+
             if (!userData) return;
-            const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
-            const diamonds = Number(userData[gpField] || 0);
-            document.getElementById('user-diamonds-counter').innerText = diamonds.toLocaleString();
+
+
+            const gpField =
+                userData.gamepoints !== undefined
+                    ? 'gamepoints'
+                    : (
+                        userData.diamonds !== undefined
+                            ? 'diamonds'
+                            : 'gamepoints'
+                    );
+
+
+            const diamonds =
+                Number(
+                    userData[gpField] || 0
+                );
+
+
+            document.getElementById(
+                'user-diamonds-counter'
+            ).innerText =
+                diamonds.toLocaleString();
         }
 
+
+        /* =====================================================
+           START GAME
+           ===================================================== */
+
         async function tryStartGame() {
-            await initUser();
-            if (!userData) return;
 
-            const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
-            let currentDiamonds = Number(userData[gpField] || 0);
+            if (isStartingGame) return;
 
-            if (currentDiamonds < 1) {
-                tg.showAlert("⚠️ ليس لديك ألماسات كافية! يلزمك 1 ألماسة على الأقل لبدء الجولة.");
+            if (gameRunning) return;
+
+
+            isStartingGame = true;
+
+
+            const startBtn =
+                document.getElementById(
+                    'start-game-btn'
+                );
+
+            const againBtn =
+                document.getElementById(
+                    'play-again-btn'
+                );
+
+
+            if (startBtn) {
+
+                startBtn.disabled = true;
+                startBtn.style.opacity = "0.6";
+            }
+
+
+            if (againBtn) {
+
+                againBtn.disabled = true;
+                againBtn.style.opacity = "0.6";
+            }
+
+
+            /*
+             * التأكد من المستخدم
+             */
+
+            const found =
+                await initUser();
+
+
+            if (!found) {
+
+                isStartingGame = false;
+
+                if (startBtn) {
+
+                    startBtn.disabled = false;
+                    startBtn.style.opacity = "1";
+                }
+
+                if (againBtn) {
+
+                    againBtn.disabled = false;
+                    againBtn.style.opacity = "1";
+                }
+
                 return;
             }
 
-            // خصم 1 ألماسة من سوبابيز لبدء الجولة
-            try {
-                const newDiamonds = currentDiamonds - 1;
-                const updateObj = {};
-                updateObj[gpField] = newDiamonds;
 
-                const { data: updated, error } = await client
+            /*
+             * تحديد عمود الألماسات
+             */
+
+            const gpField =
+                userData.gamepoints !== undefined
+                    ? 'gamepoints'
+                    : (
+                        userData.diamonds !== undefined
+                            ? 'diamonds'
+                            : 'gamepoints'
+                    );
+
+
+            let currentDiamonds =
+                Number(
+                    userData[gpField] || 0
+                );
+
+
+            /*
+             * التحقق من الرصيد
+             */
+
+            if (currentDiamonds < 1) {
+
+                tg.showAlert(
+                    "⚠️ ليس لديك ألماسات كافية! يلزمك 1 ألماسة على الأقل لبدء الجولة."
+                );
+
+                isStartingGame = false;
+
+                if (startBtn) {
+
+                    startBtn.disabled = false;
+                    startBtn.style.opacity = "1";
+                }
+
+                if (againBtn) {
+
+                    againBtn.disabled = false;
+                    againBtn.style.opacity = "1";
+                }
+
+                return;
+            }
+
+
+            /*
+             * خصم ألماسة
+             */
+
+            const newDiamonds =
+                currentDiamonds - 1;
+
+
+            const updateObj = {};
+
+            updateObj[gpField] =
+                newDiamonds;
+
+
+            try {
+
+                const {
+                    data: updated,
+                    error
+                } = await client
                     .from('users')
                     .update(updateObj)
-                    .eq('telegram_id', String(tid))
+                    .eq(
+                        'telegram_id',
+                        String(tid)
+                    )
                     .select('*')
                     .single();
 
-                if (!error && updated) {
-                    userData = updated;
-                } else {
-                    userData[gpField] = newDiamonds;
+
+                /*
+                 * لو حصل خطأ لا تبدأ اللعبة
+                 */
+
+                if (error || !updated) {
+
+                    console.error(
+                        "Deduct error:",
+                        error
+                    );
+
+                    tg.showAlert(
+                        "❌ لم يتم خصم الألماسة. حاول مرة أخرى."
+                    );
+
+                    isStartingGame = false;
+
+                    if (startBtn) {
+
+                        startBtn.disabled = false;
+                        startBtn.style.opacity = "1";
+                    }
+
+                    if (againBtn) {
+
+                        againBtn.disabled = false;
+                        againBtn.style.opacity = "1";
+                    }
+
+                    return;
                 }
+
+
+                /*
+                 * تحديث بيانات المستخدم
+                 */
+
+                userData =
+                    updated;
+
+
                 updateUI();
+
+
+                /*
+                 * بدء اللعبة
+                 */
+
+                startGame();
+
+
             } catch (e) {
-                console.error("Deduct error:", e);
+
+                console.error(
+                    "Deduct exception:",
+                    e
+                );
+
+                tg.showAlert(
+                    "❌ حدث خطأ أثناء خصم الألماسة."
+                );
+
             }
 
-            startGame();
+
+            isStartingGame = false;
+
+
+            if (startBtn) {
+
+                startBtn.disabled = false;
+                startBtn.style.opacity = "1";
+            }
+
+            if (againBtn) {
+
+                againBtn.disabled = false;
+                againBtn.style.opacity = "1";
+            }
         }
+
+
+        /* =====================================================
+           START GAME ENGINE
+           ===================================================== */
 
         function startGame() {
-            document.getElementById('start-screen').style.display = 'none';
-            document.getElementById('gameover-screen').style.display = 'none';
-            
-            gameRunning = true;
-            earnedDiamonds = 0;
-            obstaclesPassed = 0;
-            gameSpeed = 3.2;
-            document.getElementById('current-score').innerText = earnedDiamonds;
 
-            player.y = canvas.height / 2;
-            player.velocity = 0;
-            pipes = [];
+            document.getElementById(
+                'start-screen'
+            ).style.display = 'none';
+
+
+            document.getElementById(
+                'gameover-screen'
+            ).style.display = 'none';
+
+
+            gameRunning = true;
+
+
+            earnedDiamonds = 0;
+
+            obstaclesPassed = 0;
+
+            gameSpeed = 3.2;
+
+            pipeGap = 195;
+
             frameCount = 0;
 
-            loop();
+            pipes = [];
+
+
+            document.getElementById(
+                'current-score'
+            ).innerText = "0";
+
+
+            player.x =
+                canvas.width * 0.25;
+
+            player.y =
+                canvas.height / 2;
+
+            player.velocity = 0;
+
+
+            requestAnimationFrame(
+                loop
+            );
         }
 
-        window.addEventListener('click', () => {
-            if (gameRunning) player.velocity = player.jump;
-        });
-        window.addEventListener('touchstart', (e) => {
-            if (gameRunning) {
-                e.preventDefault();
-                player.velocity = player.jump;
+
+        /* =====================================================
+           CONTROLS
+           ===================================================== */
+
+        window.addEventListener(
+            'click',
+            function () {
+
+                if (gameRunning) {
+
+                    player.velocity =
+                        player.jump;
+                }
+
             }
-        }, { passive: false });
+        );
+
+
+        window.addEventListener(
+            'touchstart',
+            function (e) {
+
+                if (gameRunning) {
+
+                    e.preventDefault();
+
+                    player.velocity =
+                        player.jump;
+                }
+
+            },
+            {
+                passive: false
+            }
+        );
+
+
+        /* =====================================================
+           GAME UPDATE
+           ===================================================== */
 
         function update() {
-            player.velocity += player.gravity;
-            player.y += player.velocity;
 
-            if (player.y + player.radius > canvas.height - 15 || player.y - player.radius < 0) {
+            if (!gameRunning) return;
+
+
+            /*
+             * حركة اللاعب
+             */
+
+            player.velocity +=
+                player.gravity;
+
+            player.y +=
+                player.velocity;
+
+
+            /*
+             * اصطدام أعلى وأسفل الشاشة
+             */
+
+            if (
+                player.y +
+                    player.radius >
+                    canvas.height - 15 ||
+
+                player.y -
+                    player.radius <
+                    0
+            ) {
+
                 gameOver();
+
+                return;
             }
 
-            if (frameCount % 100 === 0) {
-                let minH = 70;
-                let maxH = canvas.height - pipeGap - 130;
-                let topH = Math.floor(Math.random() * (maxH - minH + 1)) + minH;
+
+            /*
+             * إنشاء العقبات
+             */
+
+            if (
+                frameCount % 100 === 0
+            ) {
+
+                const minH = 70;
+
+                const maxH =
+                    canvas.height -
+                    pipeGap -
+                    130;
+
+
+                const safeMax =
+                    Math.max(
+                        minH,
+                        maxH
+                    );
+
+
+                const topH =
+                    Math.floor(
+                        Math.random() *
+                        (
+                            safeMax -
+                            minH +
+                            1
+                        )
+                    ) +
+                    minH;
+
 
                 pipes.push({
+
                     x: canvas.width,
+
                     top: topH,
-                    bottom: canvas.height - topH - pipeGap,
+
+                    bottom:
+                        canvas.height -
+                        topH -
+                        pipeGap,
+
                     passed: false
+
                 });
             }
 
-            for (let i = pipes.length - 1; i >= 0; i--) {
-                pipes[i].x -= gameSpeed;
 
-                if (!pipes[i].passed && pipes[i].x + pipeWidth < player.x) {
-                    obstaclesPassed += 1;
-                    pipes[i].passed = true;
+            /*
+             * تحريك العقبات
+             */
 
-                    if (obstaclesPassed % 3 === 0) {
-                        earnedDiamonds += 1;
-                        document.getElementById('current-score').innerText = earnedDiamonds;
-                    }
+            for (
+                let i = pipes.length - 1;
+                i >= 0;
+                i--
+            ) {
 
-                    gameSpeed += 0.12;
-                    if (pipeGap > 155) pipeGap -= 0.8;
-                }
+                pipes[i].x -=
+                    gameSpeed;
+
+
+                /*
+                 * تجاوز العقبة
+                 */
 
                 if (
-                    player.x + player.radius > pipes[i].x &&
-                    player.x - player.radius < pipes[i].x + pipeWidth &&
-                    (player.y - player.radius < pipes[i].top || player.y + player.radius > canvas.height - pipes[i].bottom)
+                    !pipes[i].passed &&
+                    pipes[i].x +
+                        pipeWidth <
+                        player.x
                 ) {
-                    gameOver();
+
+                    obstaclesPassed += 1;
+
+                    pipes[i].passed =
+                        true;
+
+
+                    /*
+                     * كل 3 عقبات = ألماسة
+                     */
+
+                    if (
+                        obstaclesPassed % 3 === 0
+                    ) {
+
+                        earnedDiamonds += 1;
+
+                        document.getElementById(
+                            'current-score'
+                        ).innerText =
+                            earnedDiamonds;
+                    }
+
+
+                    /*
+                     * زيادة الصعوبة
+                     */
+
+                    gameSpeed += 0.12;
+
+
+                    if (
+                        pipeGap > 155
+                    ) {
+
+                        pipeGap -= 0.8;
+                    }
                 }
 
-                if (pipes[i].x + pipeWidth < 0) pipes.splice(i, 1);
+
+                /*
+                 * Collision
+                 */
+
+                if (
+
+                    player.x +
+                        player.radius >
+                        pipes[i].x &&
+
+                    player.x -
+                        player.radius <
+                        pipes[i].x +
+                        pipeWidth &&
+
+                    (
+                        player.y -
+                            player.radius <
+                            pipes[i].top ||
+
+                        player.y +
+                            player.radius >
+                            canvas.height -
+                            pipes[i].bottom
+                    )
+
+                ) {
+
+                    gameOver();
+
+                    return;
+                }
+
+
+                /*
+                 * حذف العقبات القديمة
+                 */
+
+                if (
+                    pipes[i].x +
+                        pipeWidth <
+                        0
+                ) {
+
+                    pipes.splice(
+                        i,
+                        1
+                    );
+                }
             }
+
+
             frameCount++;
         }
 
+
+        /* =====================================================
+           DRAW
+           ===================================================== */
+
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            pipes.forEach(p => {
-                let grad = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
-                grad.addColorStop(0, "#00d26a");
-                grad.addColorStop(0.5, "#00f2ff");
-                grad.addColorStop(1, "#009e4f");
+            ctx.clearRect(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
 
-                ctx.fillStyle = grad;
-                ctx.fillRect(p.x, 0, pipeWidth, p.top);
-                ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
-            });
 
-            // رسم حصان البحر الطبيعي والمعدول
+            /*
+             * رسم العقبات
+             */
+
+            pipes.forEach(
+                p => {
+
+                    const grad =
+                        ctx.createLinearGradient(
+                            p.x,
+                            0,
+                            p.x +
+                                pipeWidth,
+                            0
+                        );
+
+
+                    grad.addColorStop(
+                        0,
+                        "#00d26a"
+                    );
+
+                    grad.addColorStop(
+                        0.5,
+                        "#00f2ff"
+                    );
+
+                    grad.addColorStop(
+                        1,
+                        "#009e4f"
+                    );
+
+
+                    ctx.fillStyle =
+                        grad;
+
+
+                    ctx.fillRect(
+                        p.x,
+                        0,
+                        pipeWidth,
+                        p.top
+                    );
+
+
+                    ctx.fillRect(
+                        p.x,
+                        canvas.height -
+                            p.bottom,
+                        pipeWidth,
+                        p.bottom
+                    );
+
+                }
+            );
+
+
+            /*
+             * رسم حصان البحر
+             */
+
             ctx.save();
-            ctx.translate(player.x, player.y);
-            
-            let tilt = Math.min(Math.max(player.velocity * 0.05, -0.4), 0.4);
-            ctx.rotate(tilt);
+
+
+            ctx.translate(
+                player.x,
+                player.y
+            );
+
+
+            const tilt =
+                Math.min(
+                    Math.max(
+                        player.velocity *
+                            0.05,
+                        -0.4
+                    ),
+                    0.4
+                );
+
+
+            ctx.rotate(
+                tilt
+            );
+
 
             ctx.shadowBlur = 15;
-            ctx.shadowColor = "#00f2ff";
 
-            // الجسم
+            ctx.shadowColor =
+                "#00f2ff";
+
+
+            /*
+             * الجسم
+             */
+
             ctx.beginPath();
-            ctx.ellipse(0, 4, 8, 16, 0, 0, Math.PI * 2);
-            ctx.fillStyle = "#00ffcc";
+
+            ctx.ellipse(
+                0,
+                4,
+                8,
+                16,
+                0,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fillStyle =
+                "#00ffcc";
+
             ctx.fill();
+
             ctx.lineWidth = 2;
-            ctx.strokeStyle = "#ffffff";
+
+            ctx.strokeStyle =
+                "#ffffff";
+
             ctx.stroke();
 
-            // الرأس
+
+            /*
+             * الرأس
+             */
+
             ctx.beginPath();
-            ctx.arc(6, -10, 7, 0, Math.PI * 2);
-            ctx.fillStyle = "#00d26a";
+
+            ctx.arc(
+                6,
+                -10,
+                7,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fillStyle =
+                "#00d26a";
+
             ctx.fill();
+
             ctx.stroke();
 
-            // الخطم (الأنف)
+
+            /*
+             * الخطم
+             */
+
             ctx.beginPath();
-            ctx.moveTo(11, -12);
-            ctx.lineTo(18, -10);
+
+            ctx.moveTo(
+                11,
+                -12
+            );
+
+            ctx.lineTo(
+                18,
+                -10
+            );
+
             ctx.lineWidth = 3;
-            ctx.strokeStyle = "#00ffcc";
+
+            ctx.strokeStyle =
+                "#00ffcc";
+
             ctx.stroke();
 
-            // العين
+
+            /*
+             * العين
+             */
+
             ctx.beginPath();
-            ctx.arc(8, -12, 2, 0, Math.PI * 2);
-            ctx.fillStyle = "#000000";
+
+            ctx.arc(
+                8,
+                -12,
+                2,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fillStyle =
+                "#000000";
+
             ctx.fill();
 
-            // الذيل
+
+            /*
+             * الذيل
+             */
+
             ctx.beginPath();
-            ctx.moveTo(0, 18);
-            ctx.quadraticCurveTo(-10, 26, -4, 22);
+
+            ctx.moveTo(
+                0,
+                18
+            );
+
+            ctx.quadraticCurveTo(
+                -10,
+                26,
+                -4,
+                22
+            );
+
             ctx.lineWidth = 3.5;
-            ctx.strokeStyle = "#00ffcc";
+
+            ctx.strokeStyle =
+                "#00ffcc";
+
             ctx.stroke();
+
 
             ctx.restore();
         }
 
+
+        /* =====================================================
+           GAME LOOP
+           ===================================================== */
+
         function loop() {
-            if (!gameRunning) return;
+
+            if (!gameRunning)
+                return;
+
+
             update();
+
             draw();
-            requestAnimationFrame(loop);
+
+
+            requestAnimationFrame(
+                loop
+            );
         }
 
-        async function gameOver() {
-            gameRunning = false;
-            document.getElementById('final-score-text').innerText = `تمت إضافة +${earnedDiamonds} ألماسة 💎 إلى حسابك في سوبابيز!`;
-            document.getElementById('gameover-screen').style.display = 'flex';
 
-            if (userData && earnedDiamonds > 0) {
+        /* =====================================================
+           GAME OVER
+           ===================================================== */
+
+        async function gameOver() {
+
+            if (!gameRunning)
+                return;
+
+
+            gameRunning = false;
+
+
+            document.getElementById(
+                'final-score-text'
+            ).innerText =
+                `تمت إضافة +${earnedDiamonds} ألماسة 💎 إلى حسابك في سوبابيز!`;
+
+
+            document.getElementById(
+                'gameover-screen'
+            ).style.display =
+                'flex';
+
+
+            /*
+             * منع التكرار
+             */
+
+            if (
+                isSavingScore
+            )
+                return;
+
+
+            isSavingScore = true;
+
+
+            /*
+             * إضافة الأرباح
+             */
+
+            if (
+                userData &&
+                earnedDiamonds > 0
+            ) {
+
                 try {
-                    const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
-                    let currentGp = Number(userData[gpField] || 0);
-                    let newGp = currentGp + earnedDiamonds;
+
+                    const gpField =
+                        userData.gamepoints !== undefined
+                            ? 'gamepoints'
+                            : (
+                                userData.diamonds !== undefined
+                                    ? 'diamonds'
+                                    : 'gamepoints'
+                            );
+
+
+                    let currentGp =
+                        Number(
+                            userData[gpField] ||
+                            0
+                        );
+
+
+                    const newGp =
+                        currentGp +
+                        earnedDiamonds;
+
 
                     const updateObj = {};
-                    updateObj[gpField] = newGp;
 
-                    const { data: updated, error } = await client
+                    updateObj[gpField] =
+                        newGp;
+
+
+                    const {
+                        data: updated,
+                        error
+                    } = await client
                         .from('users')
                         .update(updateObj)
-                        .eq('telegram_id', String(tid))
+                        .eq(
+                            'telegram_id',
+                            String(tid)
+                        )
                         .select('*')
                         .single();
 
-                    if (!error && updated) {
-                        userData = updated;
+
+                    if (
+                        !error &&
+                        updated
+                    ) {
+
+                        userData =
+                            updated;
+
                         updateUI();
+
+                    } else {
+
+                        console.error(
+                            "Save score error:",
+                            error
+                        );
+
                     }
 
-                    await client.from('transactions').insert([{
-                        telegram_id: String(tid),
-                        type: 'points',
-                        title: 'مكافأة أرباح لعبة حصان البحر',
-                        amount: `+${earnedDiamonds} 💎`,
-                        status: 'مكتمل'
-                    }]);
+
+                    /*
+                     * تسجيل العملية
+                     */
+
+                    const {
+                        error: transactionError
+                    } = await client
+                        .from('transactions')
+                        .insert([{
+
+                            telegram_id:
+                                String(tid),
+
+                            type:
+                                'points',
+
+                            title:
+                                'مكافأة أرباح لعبة حصان البحر',
+
+                            amount:
+                                `+${earnedDiamonds} 💎`,
+
+                            status:
+                                'مكتمل'
+
+                        }]);
+
+
+                    if (
+                        transactionError
+                    ) {
+
+                        console.error(
+                            "Transaction error:",
+                            transactionError
+                        );
+                    }
+
 
                 } catch (e) {
-                    console.error("Save score error:", e);
+
+                    console.error(
+                        "Save score exception:",
+                        e
+                    );
+
                 }
             }
+
+
+            isSavingScore = false;
         }
+
+
+        /* =====================================================
+           EXIT
+           ===================================================== */
 
         function exitGame() {
-            window.location.href = `../games.html?id=${tid}`;
+
+            window.location.href =
+                `../games.html?id=${tid}`;
         }
 
+
+        /* =====================================================
+           INITIAL LOAD
+           ===================================================== */
+
         initUser();
+
     </script>
+
 </body>
 </html>
