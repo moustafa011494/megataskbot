@@ -1,1663 +1,657 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Space Dodge - MegaTask Arcade</title>
 
-    <title>Space Dodge - MegaTask Arcade</title>
+<script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-    <!-- Monetag -->
-    <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+<style>
+:root{--g:#00d26a;--bg:#030508}
+*{box-sizing:border-box}
+html,body{
+ margin:0;width:100%;height:100%;overflow:hidden;
+ background:var(--bg);color:#fff;
+ font-family:Segoe UI,Tahoma,sans-serif;
+ user-select:none;-webkit-user-select:none
+}
+canvas{display:block;width:100vw;height:100vh;background:#030508}
 
-    <!-- Telegram -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+.game-top-bar{
+ position:absolute;top:0;left:0;width:100%;z-index:10;
+ display:flex;align-items:center;gap:8px;padding:15px 20px;
+ background:linear-gradient(180deg,rgba(3,5,8,.95),transparent);
+ pointer-events:none
+}
+.info{
+ background:rgba(20,23,31,.9);
+ border:1px solid rgba(0,210,106,.35);
+ padding:8px 14px;border-radius:20px;
+ font-size:13px;font-weight:bold;
+ box-shadow:0 0 14px rgba(0,210,106,.12)
+}
+.info span{color:var(--g)}
 
-    <!-- Supabase -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+.exit{
+ position:absolute;top:15px;right:20px;z-index:20;
+ background:rgba(255,59,48,.18);
+ border:1px solid #ff3b30;color:#ff7777;
+ padding:7px 15px;border-radius:15px;
+ font-size:12px;font-weight:bold
+}
 
-    <style>
-        :root {
-            --main-green: #00d26a;
-            --dark-bg: #030508;
-        }
+.overlay{
+ position:absolute;inset:0;z-index:30;
+ display:flex;flex-direction:column;align-items:center;
+ justify-content:center;padding:25px;text-align:center;
+ background:rgba(3,5,8,.94)
+}
+.overlay h1{
+ color:var(--g);font-size:30px;margin:5px 0;
+ text-shadow:0 0 25px rgba(0,210,106,.5)
+}
+.overlay p{
+ color:#9ca3af;font-size:13px;line-height:1.6;
+ max-width:320px;margin:8px 0 20px
+}
+.btn{
+ width:100%;max-width:270px;padding:15px;border:0;
+ border-radius:20px;font-size:16px;font-weight:bold;
+ cursor:pointer;background:linear-gradient(135deg,#00d26a,#009e4f);
+ color:#001b0d;box-shadow:0 5px 30px rgba(0,210,106,.4);
+ transition:.2s
+}
+.btn:active{transform:scale(.95)}
+.btn:disabled{opacity:.5}
 
-        * {
-            box-sizing: border-box;
-        }
-
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--dark-bg);
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        .game-top-bar {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            z-index: 10;
-            pointer-events: none;
-            background: linear-gradient(
-                180deg,
-                rgba(3,5,8,0.9) 0%,
-                transparent 100%
-            );
-        }
-
-        .top-info-box {
-            background: rgba(20, 23, 31, 0.9);
-            border: 1px solid rgba(0,210,106,0.3);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: bold;
-            box-shadow: 0 0 10px rgba(0,210,106,0.1);
-        }
-
-        .top-info-box span {
-            color: #00d26a;
-        }
-
-        .btn-exit {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            z-index: 20;
-            background: rgba(255,59,48,0.2);
-            border: 1px solid #ff3b30;
-            color: #ff6b6b;
-            padding: 7px 15px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        canvas {
-            display: block;
-            width: 100vw;
-            height: 100vh;
-            background: #030508;
-        }
-
-        .overlay-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(3, 5, 8, 0.94);
-            z-index: 30;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 25px;
-            text-align: center;
-        }
-
-        .overlay-screen h1 {
-            color: #00d26a;
-            font-size: 30px;
-            margin-bottom: 5px;
-            text-shadow: 0 0 20px rgba(0,210,106,0.4);
-        }
-
-        .overlay-screen p {
-            color: #9ca3af;
-            font-size: 13px;
-            margin-bottom: 20px;
-            line-height: 1.6;
-            max-width: 320px;
-        }
-
-        .btn-action-game {
-            background: linear-gradient(135deg, #00d26a, #009e4f);
-            color: #000;
-            border: none;
-            width: 100%;
-            max-width: 260px;
-            padding: 15px;
-            border-radius: 20px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 5px 25px rgba(0, 210, 106, 0.4);
-            transition: 0.2s;
-        }
-
-        .btn-action-game:active {
-            transform: scale(0.96);
-        }
-
-        .leaderboard-box {
-            background: rgba(20, 23, 31, 0.8);
-            border: 1px solid #2d333f;
-            border-radius: 15px;
-            padding: 12px;
-            width: 100%;
-            max-width: 280px;
-            margin-bottom: 20px;
-            text-align: right;
-            font-size: 12px;
-        }
-
-        .leaderboard-title {
-            color: #ffaa00;
-            font-weight: bold;
-            margin-bottom: 6px;
-            text-align: center;
-        }
-
-        .lb-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 4px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            color: #ccc;
-        }
-
-        .diamond-info {
-            margin-top: 10px;
-            color: #00d26a;
-            font-size: 12px;
-            font-weight: bold;
-        }
-    </style>
+.lb{
+ background:rgba(20,23,31,.8);
+ border:1px solid #2d333f;border-radius:15px;
+ padding:12px;width:100%;max-width:280px;
+ margin-bottom:20px;font-size:12px
+}
+.lb-title{color:#ffaa00;font-weight:bold;text-align:center;margin-bottom:6px}
+.lb-row{
+ display:flex;justify-content:space-between;
+ padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);
+ color:#ccc
+}
+.reward{color:var(--g)!important;font-weight:bold}
+</style>
 </head>
 
 <body>
 
-    <div class="game-top-bar">
-        <div class="top-info-box">
-            النقاط: <span id="current-score">0</span>
-        </div>
-
-        <div class="top-info-box" style="margin-left:auto;margin-right:8px;">
-            💎 <span id="diamond-counter">0</span>
-        </div>
-    </div>
-
-    <button class="btn-exit" onclick="exitGame()">✖ خروج للألعاب</button>
-
-    <!-- Start -->
-    <div id="start-screen" class="overlay-screen">
-
-        <div style="font-size:55px;margin-bottom:10px;">🚀</div>
-
-        <h1>SPACE DODGE</h1>
-
-        <p>
-            تفادى النيازك السريعة واجمع الألماس الموحد 💎!
-        </p>
-
-        <div class="leaderboard-box">
-
-            <div class="leaderboard-title">
-                🏆 لوحة الشرف (أعلى السكورات)
-            </div>
-
-            <div id="lb-content">
-                جاري تحميل التصنيف...
-            </div>
-
-            <div class="diamond-info">
-                ☄️ كل 10 نيازك = +1 💎
-            </div>
-
-        </div>
-
-        <button
-            id="start-btn"
-            class="btn-action-game"
-            onclick="triggerAdAndStart()"
-        >
-            ⚡ بدء المهمة الفضائية — 1 💎
-        </button>
-
-    </div>
-
-    <!-- Game Over -->
-    <div id="gameover-screen" class="overlay-screen" style="display:none;">
-
-        <div style="font-size:55px;margin-bottom:10px;">💥</div>
-
-        <h1 style="color:#ff3b30;text-shadow:0 0 20px rgba(255,59,48,0.4);">
-            اصطدام مدمر!
-        </h1>
-
-        <p
-            id="final-score-text"
-            style="color:white;font-size:16px;font-weight:bold;margin-bottom:10px;"
-        >
-            النقاط المحققة: 0
-        </p>
-
-        <p
-            id="round-reward-text"
-            style="color:#00d26a;font-size:14px;font-weight:bold;margin-bottom:20px;"
-        >
-            مكافأة الجولة: 0 💎
-        </p>
-
-        <button
-            id="retry-btn"
-            class="btn-action-game"
-            onclick="triggerAdAndStart()"
-        >
-            🔄 محاولة أخرى — 1 💎
-        </button>
-
-        <button
-            class="btn-action-game"
-            style="background:#222630;color:#fff;margin-top:10px;"
-            onclick="exitGame()"
-        >
-            🔙 العودة لصفحة الألعاب
-        </button>
-
-    </div>
-
-    <canvas id="gameCanvas"></canvas>
-
-    <script>
-
-        /* =========================
-           Telegram + Supabase
-        ========================= */
-
-        const tg = window.Telegram.WebApp;
-
-        tg.expand();
-
-        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-
-        const S_KEY =
-            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-
-        const client = supabase.createClient(S_URL, S_KEY);
-
-
-        /* =========================
-           User ID
-        ========================= */
-
-        const params = new URLSearchParams(window.location.search);
-
-        let userId =
-            String(params.get("id") || "").trim();
-
-        let userData = null;
-        let diamondField = "gamepoints";
-
-
-        /* =========================
-           Canvas
-        ========================= */
-
-        const canvas = document.getElementById("gameCanvas");
-        const ctx = canvas.getContext("2d");
-
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-
-        window.addEventListener("resize", () => {
-
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-
-        });
-
-
-        /* =========================
-           Game Variables
-        ========================= */
-
-        let score = 0;
-
-        let gameRunning = false;
-
-        let meteorCount = 0;
-
-        let roundDiamonds = 0;
-
-        let completedRounds =
-            Number(
-                localStorage.getItem("space_dodge_completed_rounds") || "0"
-            );
-
-        let adLoading = false;
-
-        let isStarting = false;
-
-
-        let ship = {
-            x: canvas.width / 2,
-            y: canvas.height - 120,
-            width: 40,
-            height: 45
-        };
-
-
-        let meteors = [];
-        let gems = [];
-        let stars = [];
-
-        let frameCount = 0;
-
-
-        /* =========================
-           Stars
-        ========================= */
-
-        function initStars() {
-
-            stars = [];
-
-            for (let i = 0; i < 50; i++) {
-
-                stars.push({
-
-                    x: Math.random() * canvas.width,
-
-                    y: Math.random() * canvas.height,
-
-                    radius: Math.random() * 1.5,
-
-                    speed: Math.random() * 1 + 0.3
-
-                });
-
-            }
-
-        }
-
-
-        /* =========================
-           Find User
-        ========================= */
-
-        async function initUser() {
-
-            try {
-
-                /* 1 — URL */
-
-                if (!userId) {
-
-                    userId =
-                        String(
-                            tg.initDataUnsafe?.user?.id || ""
-                        ).trim();
-
-                }
-
-
-                /* 2 — LocalStorage */
-
-                if (!userId) {
-
-                    userId =
-                        String(
-                            localStorage.getItem("telegram_id") || ""
-                        ).trim();
-
-                }
-
-
-                /* 3 — Search latest user */
-
-                if (!userId) {
-
-                    const { data } =
-                        await client
-                            .from("users")
-                            .select("*")
-                            .order("created_at", {
-                                ascending: false
-                            })
-                            .limit(1)
-                            .maybeSingle();
-
-                    if (data) {
-
-                        userData = data;
-
-                        userId =
-                            String(data.telegram_id);
-
-                        localStorage.setItem(
-                            "telegram_id",
-                            userId
-                        );
-
-                    }
-
-                }
-
-
-                /* 4 — Search by Telegram ID */
-
-                if (!userData && userId) {
-
-                    const { data } =
-                        await client
-                            .from("users")
-                            .select("*")
-                            .eq("telegram_id", userId)
-                            .maybeSingle();
-
-                    if (data) {
-
-                        userData = data;
-
-                    }
-
-                }
-
-
-                /* 5 — Numeric fallback */
-
-                if (!userData && userId) {
-
-                    const numericId =
-                        Number(userId);
-
-                    if (!isNaN(numericId)) {
-
-                        const { data } =
-                            await client
-                                .from("users")
-                                .select("*")
-                                .eq("telegram_id", numericId)
-                                .maybeSingle();
-
-                        if (data) {
-
-                            userData = data;
-
-                        }
-
-                    }
-
-                }
-
-
-                /* 6 — Final fallback */
-
-                if (!userData) {
-
-                    const { data } =
-                        await client
-                            .from("users")
-                            .select("*")
-                            .limit(1)
-                            .maybeSingle();
-
-                    if (data) {
-
-                        userData = data;
-
-                        userId =
-                            String(data.telegram_id);
-
-                        localStorage.setItem(
-                            "telegram_id",
-                            userId
-                        );
-
-                    }
-
-                }
-
-
-                if (!userData) {
-
-                    tg.showAlert(
-                        "⚠️ لم يتم العثور على حسابك."
-                    );
-
-                    return false;
-
-                }
-
-
-                /* Detect diamond field */
-
-                if (
-                    userData.gamepoints !== undefined
-                ) {
-
-                    diamondField = "gamepoints";
-
-                } else if (
-                    userData.diamonds !== undefined
-                ) {
-
-                    diamondField = "diamonds";
-
-                } else {
-
-                    diamondField = "gamepoints";
-
-                }
-
-
-                updateDiamondUI();
-
-                return true;
-
-            } catch (e) {
-
-                console.error(
-                    "User initialization error:",
-                    e
-                );
-
-                tg.showAlert(
-                    "⚠️ حدث خطأ أثناء تحميل حسابك."
-                );
-
-                return false;
-
-            }
-
-        }
-
-
-        /* =========================
-           Diamond UI
-        ========================= */
-
-        function getDiamonds() {
-
-            if (!userData) return 0;
-
-            return Number(
-                userData[diamondField] || 0
-            );
-
-        }
-
-
-        function updateDiamondUI() {
-
-            document.getElementById(
-                "diamond-counter"
-            ).innerText = getDiamonds();
-
-        }
-
-
-        /* =========================
-           Change Diamonds
-        ========================= */
-
-        async function changeDiamonds(amount, title) {
-
-            if (!userData) return false;
-
-            let current =
-                Number(
-                    userData[diamondField] || 0
-                );
-
-            let newAmount =
-                Math.max(0, current + amount);
-
-
-            const { data, error } =
-                await client
-                    .from("users")
-                    .update({
-                        [diamondField]: newAmount
-                    })
-                    .eq("telegram_id", userData.telegram_id)
-                    .select()
-                    .maybeSingle();
-
-
-            if (error) {
-
-                console.error(
-                    "Diamond update error:",
-                    error
-                );
-
-                return false;
-
-            }
-
-
-            if (data) {
-
-                userData = data;
-
-            } else {
-
-                userData[diamondField] = newAmount;
-
-            }
-
-
-            updateDiamondUI();
-
-
-            /* Transaction */
-
-            try {
-
-                await client
-                    .from("transactions")
-                    .insert({
-
-                        telegram_id:
-                            String(userData.telegram_id),
-
-                        type: "points",
-
-                        title: title,
-
-                        amount:
-                            amount > 0
-                                ? `+${amount} 💎`
-                                : `${amount} 💎`,
-
-                        status: "مكتمل"
-
-                    });
-
-            } catch (txError) {
-
-                console.error(
-                    "Transaction error:",
-                    txError
-                );
-
-            }
-
-
-            return true;
-
-        }
-
-
-        /* =========================
-           Monetag
-        ========================= */
-
-        async function showAd() {
-
-            if (adLoading) return;
-
-            adLoading = true;
-
-            try {
-
-                if (
-                    typeof show_10959333 ===
-                    "function"
-                ) {
-
-                    await show_10959333();
-
-                } else {
-
-                    console.warn(
-                        "Monetag SDK not loaded."
-                    );
-
-                }
-
-            } catch (e) {
-
-                console.error(
-                    "Monetag error:",
-                    e
-                );
-
-            } finally {
-
-                adLoading = false;
-
-            }
-
-        }
-
-
-        /* =========================
-           Ad every 3 completed rounds
-        ========================= */
-
-        async function checkRoundAd() {
-
-            if (
-                completedRounds > 0 &&
-                completedRounds % 3 === 0
-            ) {
-
-                const retryBtn =
-                    document.getElementById(
-                        "retry-btn"
-                    );
-
-                if (retryBtn) {
-
-                    retryBtn.disabled = true;
-
-                    retryBtn.style.opacity = "0.55";
-
-                    retryBtn.innerText =
-                        "📺 جاري تحميل الإعلان...";
-
-                }
-
-
-                await showAd();
-
-
-                completedRounds = 0;
-
-                localStorage.setItem(
-                    "space_dodge_completed_rounds",
-                    "0"
-                );
-
-
-                if (retryBtn) {
-
-                    retryBtn.disabled = false;
-
-                    retryBtn.style.opacity = "1";
-
-                    retryBtn.innerText =
-                        "🔄 محاولة أخرى — 1 💎";
-
-                }
-
-            }
-
-        }
-
-
-        /* =========================
-           Leaderboard
-        ========================= */
-
-        async function loadLeaderboard() {
-
-            try {
-
-                const {
-                    data: topScores
-                } =
-                    await client
-                        .from("game_scores")
-                        .select("*")
-                        .order(
-                            "high_score",
-                            {
-                                ascending: false
-                            }
-                        )
-                        .limit(3);
-
-
-                const lbBox =
-                    document.getElementById(
-                        "lb-content"
-                    );
-
-
-                if (
-                    topScores &&
-                    topScores.length > 0
-                ) {
-
-                    lbBox.innerHTML = "";
-
-                    topScores.forEach(
-                        (s, idx) => {
-
-                            const sid =
-                                String(
-                                    s.user_id || ""
-                                );
-
-                            lbBox.innerHTML += `
-                                <div class="lb-row">
-                                    <span>
-                                        #${idx + 1}
-                                        لاعب
-                                        (${sid.slice(-4)})
-                                    </span>
-
-                                    <b style="color:#00d26a">
-                                        ${s.high_score} ن
-                                    </b>
-                                </div>
-                            `;
-
-                        }
-                    );
-
-                } else {
-
-                    lbBox.innerHTML =
-                        "لا توجد سكورات مسجلة بعد.";
-
-                }
-
-            } catch (e) {
-
-                document.getElementById(
-                    "lb-content"
-                ).innerHTML =
-                    "فشل تحميل لوحة الشرف";
-
-            }
-
-        }
-
-
-        /* =========================
-           Start Button
-        ========================= */
-
-        async function triggerAdAndStart() {
-
-            if (isStarting || gameRunning) return;
-
-            isStarting = true;
-
-
-            try {
-
-                /* Load user */
-
-                if (!userData) {
-
-                    const ok =
-                        await initUser();
-
-                    if (!ok) return;
-
-                }
-
-
-                /* Check diamonds */
-
-                const currentDiamonds =
-                    getDiamonds();
-
-
-                if (currentDiamonds < 1) {
-
-                    tg.showAlert(
-                        "⚠️ ليس لديك ألماسات كافية!\n\nيلزمك 1 💎 لبدء الجولة."
-                    );
-
-                    return;
-
-                }
-
-
-                /* Advertisement only after 3 completed rounds */
-
-                await checkRoundAd();
-
-
-                /*
-                   خصم ألماسة واحدة
-                   عند بداية الجولة
-                */
-
-                const deducted =
-                    await changeDiamonds(
-                        -1,
-                        "بدء جولة لعبة Space Dodge"
-                    );
-
-
-                if (!deducted) {
-
-                    tg.showAlert(
-                        "⚠️ تعذر خصم الألماسة، حاول مرة أخرى."
-                    );
-
-                    return;
-
-                }
-
-
-                startGame();
-
-            } finally {
-
-                isStarting = false;
-
-            }
-
-        }
-
-
-        /* =========================
-           Start Game
-        ========================= */
-
-        function startGame() {
-
-            document.getElementById(
-                "start-screen"
-            ).style.display = "none";
-
-            document.getElementById(
-                "gameover-screen"
-            ).style.display = "none";
-
-
-            gameRunning = true;
-
-            score = 0;
-
-            meteorCount = 0;
-
-            roundDiamonds = 0;
-
-            frameCount = 0;
-
-
-            document.getElementById(
-                "current-score"
-            ).innerText = "0";
-
-
-            ship.x =
-                canvas.width / 2;
-
-
-            meteors = [];
-
-            gems = [];
-
-
-            loop();
-
-        }
-
-
-        /* =========================
-           Touch Control
-        ========================= */
-
-        window.addEventListener(
-            "touchmove",
-            (e) => {
-
-                if (gameRunning) {
-
-                    ship.x =
-                        e.touches[0].clientX;
-
-
-                    if (ship.x < 30)
-                        ship.x = 30;
-
-
-                    if (
-                        ship.x >
-                        canvas.width - 30
-                    )
-                        ship.x =
-                            canvas.width - 30;
-
-                }
-
-            },
-            {
-                passive: true
-            }
-        );
-
-
-        /* =========================
-           Mouse Control
-        ========================= */
-
-        window.addEventListener(
-            "mousemove",
-            (e) => {
-
-                if (gameRunning) {
-
-                    ship.x = e.clientX;
-
-                }
-
-            }
-        );
-
-
-        /* =========================
-           Game Update
-        ========================= */
-
-        function update() {
-
-            /* Stars */
-
-            stars.forEach(s => {
-
-                s.y += s.speed;
-
-                if (s.y > canvas.height)
-                    s.y = 0;
-
-            });
-
-
-            /* Meteor spawn */
-
-            let spawnRate =
-                Math.max(
-                    20,
-                    50 -
-                    Math.floor(score / 30)
-                );
-
-
-            if (
-                frameCount % spawnRate ===
-                0
-            ) {
-
-                meteors.push({
-
-                    x:
-                        Math.random() *
-                        (canvas.width - 40) +
-                        20,
-
-                    y: -50,
-
-                    radius:
-                        Math.random() *
-                        20 +
-                        15,
-
-                    speed:
-                        Math.random() *
-                        4 +
-                        6 +
-                        (score / 100)
-
-                });
-
-            }
-
-
-            /* Gems */
-
-            if (
-                frameCount % 180 ===
-                0
-            ) {
-
-                gems.push({
-
-                    x:
-                        Math.random() *
-                        (canvas.width - 30) +
-                        15,
-
-                    y: -30,
-
-                    radius: 12,
-
-                    speed: 3
-
-                });
-
-            }
-
-
-            /* Meteors */
-
-            for (
-                let i = meteors.length - 1;
-                i >= 0;
-                i--
-            ) {
-
-                meteors[i].y +=
-                    meteors[i].speed;
-
-
-                let dx =
-                    ship.x -
-                    meteors[i].x;
-
-                let dy =
-                    ship.y -
-                    meteors[i].y;
-
-                let distance =
-                    Math.sqrt(
-                        dx * dx +
-                        dy * dy
-                    );
-
-
-                if (
-                    distance <
-                    ship.width / 2 +
-                    meteors[i].radius -
-                    8
-                ) {
-
-                    gameOver();
-
-                    return;
-
-                }
-
-
-                /*
-                   نيزك تم تفاديه
-                */
-
-                if (
-                    meteors[i].y >
-                    canvas.height + 50
-                ) {
-
-                    meteors.splice(i, 1);
-
-
-                    score += 1;
-
-                    meteorCount++;
-
-
-                    document.getElementById(
-                        "current-score"
-                    ).innerText =
-                        score;
-
-
-                    /*
-                       كل 10 نيازك = 1 ألماسة
-                    */
-
-                    if (
-                        meteorCount % 10 ===
-                        0
-                    ) {
-
-                        awardMeteorDiamond();
-
-                    }
-
-                }
-
-            }
-
-
-            /* Gems */
-
-            for (
-                let i = gems.length - 1;
-                i >= 0;
-                i--
-            ) {
-
-                gems[i].y +=
-                    gems[i].speed;
-
-
-                let dx =
-                    ship.x -
-                    gems[i].x;
-
-                let dy =
-                    ship.y -
-                    gems[i].y;
-
-                let distance =
-                    Math.sqrt(
-                        dx * dx +
-                        dy * dy
-                    );
-
-
-                if (
-                    distance <
-                    ship.width / 2 +
-                    gems[i].radius
-                ) {
-
-                    score += 5;
-
-                    document.getElementById(
-                        "current-score"
-                    ).innerText =
-                        score;
-
-                    gems.splice(i, 1);
-
-                    continue;
-
-                }
-
-
-                if (
-                    gems[i].y >
-                    canvas.height + 30
-                ) {
-
-                    gems.splice(i, 1);
-
-                }
-
-            }
-
-
-            frameCount++;
-
-        }
-
-
-        /* =========================
-           Diamond Reward
-        ========================= */
-
-        async function awardMeteorDiamond() {
-
-            /*
-               امنع تضاعف المكافأة
-               لو حدثت عدة مرات
-            */
-
-            if (!userData) return;
-
-
-            roundDiamonds++;
-
-
-            const success =
-                await changeDiamonds(
-                    1,
-                    "مكافأة 10 نيازك في لعبة Space Dodge"
-                );
-
-
-            if (success) {
-
-                tg.showAlert(
-                    "☄️ ممتاز!\n\n" +
-                    "عدّيت 10 نيازك!\n" +
-                    "تمت إضافة +1 💎 لرصيدك."
-                );
-
-            }
-
-        }
-
-
-        /* =========================
-           Draw
-        ========================= */
-
-        function draw() {
-
-            ctx.clearRect(
-                0,
-                0,
-                canvas.width,
-                canvas.height
-            );
-
-
-            /* Stars */
-
-            ctx.fillStyle = "#ffffff";
-
-            stars.forEach(s => {
-
-                ctx.beginPath();
-
-                ctx.arc(
-                    s.x,
-                    s.y,
-                    s.radius,
-                    0,
-                    Math.PI * 2
-                );
-
-                ctx.fill();
-
-            });
-
-
-            /* Gems */
-
-            gems.forEach(g => {
-
-                ctx.save();
-
-                ctx.shadowBlur = 15;
-
-                ctx.shadowColor =
-                    "#00d26a";
-
-                ctx.beginPath();
-
-                ctx.arc(
-                    g.x,
-                    g.y,
-                    g.radius,
-                    0,
-                    Math.PI * 2
-                );
-
-                ctx.fillStyle =
-                    "#00d26a";
-
-                ctx.fill();
-
-                ctx.restore();
-
-            });
-
-
-            /* Meteors */
-
-            meteors.forEach(m => {
-
-                ctx.save();
-
-                ctx.shadowBlur = 12;
-
-                ctx.shadowColor =
-                    "#ff3b30";
-
-                ctx.beginPath();
-
-                ctx.arc(
-                    m.x,
-                    m.y,
-                    m.radius,
-                    0,
-                    Math.PI * 2
-                );
-
-
-                let grad =
-                    ctx.createRadialGradient(
-                        m.x,
-                        m.y,
-                        2,
-                        m.x,
-                        m.y,
-                        m.radius
-                    );
-
-
-                grad.addColorStop(
-                    0,
-                    "#ffaa00"
-                );
-
-                grad.addColorStop(
-                    1,
-                    "#ff3b30"
-                );
-
-
-                ctx.fillStyle = grad;
-
-                ctx.fill();
-
-                ctx.restore();
-
-            });
-
-
-            /* Ship */
-
-            ctx.save();
-
-            ctx.shadowBlur = 20;
-
-            ctx.shadowColor =
-                "#00d26a";
-
-            ctx.beginPath();
-
-            ctx.moveTo(
-                ship.x,
-                ship.y -
-                ship.height / 2
-            );
-
-            ctx.lineTo(
-                ship.x -
-                ship.width / 2,
-                ship.y +
-                ship.height / 2
-            );
-
-            ctx.lineTo(
-                ship.x,
-                ship.y +
-                ship.height / 3
-            );
-
-            ctx.lineTo(
-                ship.x +
-                ship.width / 2,
-                ship.y +
-                ship.height / 2
-            );
-
-            ctx.closePath();
-
-            ctx.fillStyle =
-                "#ffffff";
-
-            ctx.fill();
-
-            ctx.lineWidth = 2;
-
-            ctx.strokeStyle =
-                "#00d26a";
-
-            ctx.stroke();
-
-            ctx.restore();
-
-        }
-
-
-        /* =========================
-           Game Loop
-        ========================= */
-
-        function loop() {
-
-            if (!gameRunning) return;
-
-            update();
-
-            draw();
-
-            requestAnimationFrame(loop);
-
-        }
-
-
-        /* =========================
-           Game Over
-        ========================= */
-
-        async function gameOver() {
-
-            if (!gameRunning) return;
-
-            gameRunning = false;
-
-
-            document.getElementById(
-                "final-score-text"
-            ).innerText =
-                `النقاط المحققة: ${score} نقطة`;
-
-
-            document.getElementById(
-                "round-reward-text"
-            ).innerText =
-                `💎 مكافأة هذه الجولة: ${roundDiamonds} ألماسة`;
-
-
-            document.getElementById(
-                "gameover-screen"
-            ).style.display =
-                "flex";
-
-
-            try {
-
-                /* Save high score */
-
-                const {
-                    data: oldData
-                } =
-                    await client
-                        .from("game_scores")
-                        .select("high_score")
-                        .eq(
-                            "user_id",
-                            userId
-                        )
-                        .maybeSingle();
-
-
-                let currentHighest =
-                    oldData
-                        ? oldData.high_score
-                        : 0;
-
-
-                if (
-                    score >
-                    currentHighest
-                ) {
-
-                    await client
-                        .from("game_scores")
-                        .upsert(
-                            {
-                                user_id:
-                                    userId,
-
-                                high_score:
-                                    score
-
-                            },
-                            {
-                                onConflict:
-                                    "user_id"
-                            }
-                        );
-
-                }
-
-
-                /*
-                   الجولة اكتملت
-                */
-
-                completedRounds++;
-
-
-                localStorage.setItem(
-                    "space_dodge_completed_rounds",
-                    String(completedRounds)
-                );
-
-
-                /*
-                   تحديث زر المحاولة
-                   حسب الجولة الثالثة
-                */
-
-                if (
-                    completedRounds > 0 &&
-                    completedRounds % 3 === 0
-                ) {
-
-                    document.getElementById(
-                        "retry-btn"
-                    ).innerText =
-                        "📺 شاهد الإعلان ثم العب";
-
-                }
-
-
-            } catch (e) {
-
-                console.error(
-                    "Score save error:",
-                    e
-                );
-
-            }
-
-        }
-
-
-        /* =========================
-           Exit
-        ========================= */
-
-        function exitGame() {
-
-            window.location.href =
-                `../games.html?id=${userId}`;
-
-        }
-
-
-        /* =========================
-           Initial Load
-        ========================= */
-
-        async function init() {
-
-            initStars();
-
-            await initUser();
-
-            await loadLeaderboard();
-
-        }
-
-
-        init();
-
-    </script>
-
+<div class="game-top-bar">
+ <div class="info">النقاط: <span id="score">0</span></div>
+ <div class="info">💎 <span id="diamonds">0</span></div>
+</div>
+
+<button class="exit" onclick="exitGame()">✖ خروج للألعاب</button>
+
+<div id="start" class="overlay">
+ <div style="font-size:55px">🚀</div>
+ <h1>SPACE DODGE</h1>
+ <p>تفادى النيازك السريعة واجمع الألماس الموحد 💎!</p>
+
+ <div class="lb">
+  <div class="lb-title">🏆 لوحة الشرف</div>
+  <div id="lb">جاري تحميل التصنيف...</div>
+  <div class="reward" style="margin-top:8px">☄️ كل 10 نيازك = +1 💎</div>
+ </div>
+
+ <button id="startBtn" class="btn" onclick="startRequest()">
+  ⚡ بدء المهمة — 1 💎
+ </button>
+</div>
+
+<div id="over" class="overlay" style="display:none">
+ <div style="font-size:55px">💥</div>
+ <h1 style="color:#ff3b30">اصطدام مدمر!</h1>
+ <p id="final" style="color:#fff;font-size:16px;font-weight:bold"></p>
+ <p id="reward" class="reward"></p>
+
+ <button id="retry" class="btn" onclick="startRequest()">
+  🔄 محاولة أخرى — 1 💎
+ </button>
+
+ <button class="btn" style="background:#222630;color:#fff;margin-top:10px"
+ onclick="exitGame()">🔙 العودة لصفحة الألعاب</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const tg=Telegram.WebApp;
+tg.expand();
+
+const URL="https://smukfrwnguvmxvfwqwrv.supabase.co";
+const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+const db=supabase.createClient(URL,KEY);
+
+const cv=document.getElementById("gameCanvas"),ctx=cv.getContext("2d");
+const q=id=>document.getElementById(id);
+
+let uid="",user=null,gp="gamepoints",running=false,saving=false;
+let score=0,meteorsPassed=0,roundDiamonds=0,frame=0,adBusy=false;
+let rounds=Number(localStorage.getItem("space_rounds")||0);
+
+let ship={x:0,y:0,w:40,h:45};
+let meteors=[],gems=[],stars=[],particles=[];
+
+function resize(){
+ cv.width=innerWidth;cv.height=innerHeight;
+ ship.x=cv.width/2;ship.y=cv.height-120;
+}
+addEventListener("resize",resize);
+resize();
+
+/* ================= USER ================= */
+
+async function initUser(){
+ try{
+  uid=String(
+   new URLSearchParams(location.search).get("id")||
+   tg.initDataUnsafe?.user?.id||
+   localStorage.getItem("telegram_id")||""
+  ).trim();
+
+  /* نفس نظام تحديد المستخدم الذي اشتغل في الألعاب السابقة */
+  if(uid){
+   let r=await db.from("users").select("*")
+    .eq("telegram_id",uid).maybeSingle();
+   user=r.data;
+  }
+
+  if(!user&&uid&&!isNaN(Number(uid))){
+   let r=await db.from("users").select("*")
+    .eq("telegram_id",Number(uid)).maybeSingle();
+   user=r.data;
+  }
+
+  if(!user){
+   let r=await db.from("users").select("*")
+    .order("created_at",{ascending:false})
+    .limit(1).maybeSingle();
+   user=r.data;
+  }
+
+  if(!user){
+   tg.showAlert("⚠️ لم يتم العثور على حسابك.");
+   return false;
+  }
+
+  uid=String(user.telegram_id);
+  localStorage.setItem("telegram_id",uid);
+
+  gp=user.gamepoints!==undefined?"gamepoints":
+     user.diamonds!==undefined?"diamonds":"gamepoints";
+
+  updateDiamonds();
+  return true;
+
+ }catch(e){
+  console.error(e);
+  tg.showAlert("⚠️ حدث خطأ أثناء تحميل حسابك.");
+  return false;
+}
+
+}
+
+/* ================= DIAMONDS ================= */
+
+function getD(){
+ return Number(user?.[gp]||0);
+}
+
+function updateDiamonds(){
+ q("diamonds").textContent=getD();
+}
+
+async function changeD(amount,title){
+ if(!user)return false;
+
+ const old=getD(),next=Math.max(0,old+amount);
+
+ const {data,error}=await db.from("users")
+  .update({[gp]:next})
+  .eq("telegram_id",user.telegram_id)
+  .select().maybeSingle();
+
+ if(error){
+  console.error("Diamond error:",error);
+  return false;
+ }
+
+ user=data||{...user,[gp]:next};
+ updateDiamonds();
+
+ try{
+  await db.from("transactions").insert({
+   telegram_id:String(user.telegram_id),
+   type:"points",
+   title,
+   amount:amount>0?`+${amount} 💎`:`${amount} 💎`,
+   status:"مكتمل"
+  });
+ }catch(e){console.error("Transaction:",e)}
+
+ return true;
+}
+
+/* ================= ADS ================= */
+
+async function showAd(){
+ if(adBusy)return;
+ adBusy=true;
+ try{
+  if(typeof show_10959333==="function")
+   await show_10959333();
+ }catch(e){
+  console.error("Monetag:",e);
+ }finally{
+  adBusy=false;
+ }
+}
+
+async function checkAd(){
+ if(rounds>0&&rounds%3===0){
+  const b=q("retry");
+  b.disabled=true;
+  b.textContent="📺 جاري تحميل الإعلان...";
+  await showAd();
+  rounds=0;
+  localStorage.setItem("space_rounds","0");
+  b.disabled=false;
+  b.textContent="🔄 محاولة أخرى — 1 💎";
+ }
+}
+
+/* ================= STARS ================= */
+
+function initStars(){
+ stars=[];
+ for(let i=0;i<90;i++)
+  stars.push({
+   x:Math.random()*cv.width,
+   y:Math.random()*cv.height,
+   r:Math.random()*1.7+.2,
+   s:Math.random()*2+.4
+  });
+}
+
+/* ================= LEADERBOARD ================= */
+
+async function leaderboard(){
+ try{
+  const {data}=await db.from("game_scores")
+   .select("*").order("high_score",{ascending:false}).limit(3);
+
+  q("lb").innerHTML=data?.length?data.map((x,i)=>`
+   <div class="lb-row">
+    <span>#${i+1} لاعب (${String(x.user_id).slice(-4)})</span>
+    <b style="color:#00d26a">${x.high_score} ن</b>
+   </div>`).join(""):"لا توجد سكورات مسجلة بعد.";
+ }catch(e){
+  q("lb").textContent="فشل تحميل لوحة الشرف";
+ }
+}
+
+/* ================= START ================= */
+
+async function startRequest(){
+ if(running||saving)return;
+
+ saving=true;
+
+ try{
+  if(!user&&!await initUser())return;
+
+  if(getD()<1){
+   tg.showAlert("⚠️ ليس لديك ألماسات كافية!\nيلزمك 1 💎 لبدء الجولة.");
+   return;
+  }
+
+  await checkAd();
+
+  if(!await changeD(-1,"بدء جولة لعبة Space Dodge")){
+   tg.showAlert("⚠️ تعذر خصم الألماسة.");
+   return;
+  }
+
+  startGame();
+
+ }finally{
+  saving=false;
+ }
+}
+
+function startGame(){
+ q("start").style.display="none";
+ q("over").style.display="none";
+
+ running=true;
+ score=0;
+ meteorsPassed=0;
+ roundDiamonds=0;
+ frame=0;
+ meteors=[];
+ gems=[];
+ particles=[];
+
+ ship.x=cv.width/2;
+ q("score").textContent=0;
+
+ loop();
+}
+
+/* ================= CONTROLS ================= */
+
+addEventListener("touchmove",e=>{
+ if(!running)return;
+ ship.x=Math.max(28,Math.min(cv.width-28,e.touches[0].clientX));
+},{passive:true});
+
+addEventListener("mousemove",e=>{
+ if(running)ship.x=e.clientX;
+});
+
+/* ================= PARTICLES ================= */
+
+function burst(x,y,color,n=15){
+ for(let i=0;i<n;i++)
+  particles.push({
+   x,y,
+   vx:(Math.random()-.5)*7,
+   vy:(Math.random()-.5)*7,
+   life:35+Math.random()*20,
+   color,
+   size:Math.random()*3+1
+  });
+}
+
+function updateParticles(){
+ for(let i=particles.length-1;i>=0;i--){
+  let p=particles[i];
+  p.x+=p.vx;p.y+=p.vy;p.vy+=.05;p.life--;
+  if(p.life<=0)particles.splice(i,1);
+ }
+}
+
+/* ================= GAME UPDATE ================= */
+
+function update(){
+ stars.forEach(s=>{
+  s.y+=s.s;
+  if(s.y>cv.height){s.y=0;s.x=Math.random()*cv.width}
+ });
+
+ updateParticles();
+
+ let rate=Math.max(18,50-Math.floor(score/30));
+
+ if(frame%rate===0)
+  meteors.push({
+   x:Math.random()*(cv.width-50)+25,
+   y:-60,
+   r:Math.random()*20+15,
+   s:Math.random()*4+6+score/100,
+   rot:Math.random()*6.28
+  });
+
+ if(frame%180===0)
+  gems.push({
+   x:Math.random()*(cv.width-30)+15,
+   y:-30,r:12,s:3
+  });
+
+ for(let i=meteors.length-1;i>=0;i--){
+  let m=meteors[i];
+  m.y+=m.s;m.rot+=.05;
+
+  let d=Math.hypot(ship.x-m.x,ship.y-m.y);
+
+  if(d<ship.w/2+m.r-8){
+   burst(ship.x,ship.y,"#ff3b30",45);
+   return gameOver();
+  }
+
+  if(m.y>cv.height+60){
+   meteors.splice(i,1);
+   score++;
+   meteorsPassed++;
+   q("score").textContent=score;
+
+   if(meteorsPassed%10===0)
+    awardDiamond();
+  }
+ }
+
+ for(let i=gems.length-1;i>=0;i--){
+  let g=gems[i];
+  g.y+=g.s;
+
+  if(Math.hypot(ship.x-g.x,ship.y-g.y)<ship.w/2+g.r){
+   score+=5;
+   q("score").textContent=score;
+   burst(g.x,g.y,"#00d26a",20);
+   gems.splice(i,1);
+  }else if(g.y>cv.height+30)
+   gems.splice(i,1);
+ }
+
+ frame++;
+}
+
+/* ================= REWARD ================= */
+
+async function awardDiamond(){
+ roundDiamonds++;
+
+ burst(ship.x,ship.y,"#00d26a",25);
+
+ const ok=await changeD(
+  1,
+  "مكافأة 10 نيازك في لعبة Space Dodge"
+ );
+
+ if(ok)
+  tg.showAlert("☄️ ممتاز!\nعدّيت 10 نيازك!\nتمت إضافة +1 💎 لرصيدك.");
+}
+
+/* ================= DRAW ================= */
+
+function draw(){
+ ctx.clearRect(0,0,cv.width,cv.height);
+
+ /* background glow */
+ let bg=ctx.createRadialGradient(
+  cv.width/2,cv.height*.65,10,
+  cv.width/2,cv.height*.65,cv.height
+ );
+ bg.addColorStop(0,"#071622");
+ bg.addColorStop(1,"#030508");
+ ctx.fillStyle=bg;
+ ctx.fillRect(0,0,cv.width,cv.height);
+
+ /* stars */
+ stars.forEach(s=>{
+  ctx.globalAlpha=.4+s.r/2;
+  ctx.fillStyle="#fff";
+  ctx.beginPath();
+  ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+  ctx.fill();
+ });
+ ctx.globalAlpha=1;
+
+ /* particles */
+ particles.forEach(p=>{
+  ctx.globalAlpha=Math.max(0,p.life/45);
+  ctx.fillStyle=p.color;
+  ctx.shadowBlur=10;
+  ctx.shadowColor=p.color;
+  ctx.beginPath();
+  ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+  ctx.fill();
+ });
+ ctx.globalAlpha=1;
+ ctx.shadowBlur=0;
+
+ /* gems */
+ gems.forEach(g=>{
+  ctx.save();
+  ctx.translate(g.x,g.y);
+  ctx.rotate(frame*.03);
+  ctx.shadowBlur=25;
+  ctx.shadowColor="#00d26a";
+  ctx.fillStyle="#00d26a";
+  ctx.beginPath();
+  ctx.moveTo(0,-g.r);
+  ctx.lineTo(g.r,0);
+  ctx.lineTo(0,g.r);
+  ctx.lineTo(-g.r,0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+ });
+
+ /* meteors */
+ meteors.forEach(m=>{
+  ctx.save();
+  ctx.translate(m.x,m.y);
+
+  /* fire tail */
+  let tail=ctx.createLinearGradient(0,-m.r*3,0,m.r);
+  tail.addColorStop(0,"rgba(255,59,48,0)");
+  tail.addColorStop(.5,"rgba(255,100,0,.4)");
+  tail.addColorStop(1,"rgba(255,170,0,.8)");
+
+  ctx.fillStyle=tail;
+  ctx.beginPath();
+  ctx.moveTo(-m.r*.45,-m.r*.5);
+  ctx.lineTo(m.r*.45,-m.r*.5);
+  ctx.lineTo(m.r*.8,m.r*3);
+  ctx.lineTo(-m.r*.8,m.r*3);
+  ctx.fill();
+
+  ctx.rotate(m.rot);
+
+  ctx.shadowBlur=18;
+  ctx.shadowColor="#ff3b30";
+
+  let g=ctx.createRadialGradient(
+   -m.r*.3,-m.r*.3,2,0,0,m.r
+  );
+  g.addColorStop(0,"#ffe08a");
+  g.addColorStop(.45,"#ffaa00");
+  g.addColorStop(1,"#ff3b30");
+
+  ctx.fillStyle=g;
+  ctx.beginPath();
+  ctx.arc(0,0,m.r,0,Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+ });
+
+ /* ship flame */
+ ctx.save();
+ ctx.translate(ship.x,ship.y);
+
+ let flame=ctx.createLinearGradient(0,15,0,42);
+ flame.addColorStop(0,"#fff");
+ flame.addColorStop(.35,"#00d26a");
+ flame.addColorStop(1,"rgba(0,210,106,0)");
+
+ ctx.fillStyle=flame;
+ ctx.shadowBlur=20;
+ ctx.shadowColor="#00d26a";
+ ctx.beginPath();
+ ctx.moveTo(-8,12);
+ ctx.lineTo(8,12);
+ ctx.lineTo(0,42+Math.sin(frame*.3)*8);
+ ctx.closePath();
+ ctx.fill();
+
+ /* ship */
+ ctx.shadowBlur=25;
+ ctx.shadowColor="#00d26a";
+ ctx.beginPath();
+ ctx.moveTo(0,-ship.h/2);
+ ctx.lineTo(-ship.w/2,ship.h/2);
+ ctx.lineTo(0,ship.h/3);
+ ctx.lineTo(ship.w/2,ship.h/2);
+ ctx.closePath();
+
+ ctx.fillStyle="#fff";
+ ctx.fill();
+ ctx.lineWidth=2;
+ ctx.strokeStyle="#00d26a";
+ ctx.stroke();
+
+ ctx.restore();
+}
+
+/* ================= LOOP ================= */
+
+function loop(){
+ if(!running)return;
+ update();
+ draw();
+ requestAnimationFrame(loop);
+}
+
+/* ================= GAME OVER ================= */
+
+async function gameOver(){
+ if(!running)return;
+ running=false;
+
+ q("final").textContent=`النقاط المحققة: ${score} نقطة`;
+ q("reward").textContent=`💎 مكافأة الجولة: ${roundDiamonds} ألماسة`;
+ q("over").style.display="flex";
+
+ rounds++;
+ localStorage.setItem("space_rounds",rounds);
+
+ try{
+  const {data:old}=await db.from("game_scores")
+   .select("high_score")
+   .eq("user_id",uid)
+   .maybeSingle();
+
+  if(score>(old?.high_score||0))
+   await db.from("game_scores").upsert(
+    {user_id:uid,high_score:score},
+    {onConflict:"user_id"}
+   );
+
+  q("retry").textContent=
+   rounds%3===0
+    ?"📺 شاهد الإعلان ثم العب"
+    :"🔄 محاولة أخرى — 1 💎";
+
+ }catch(e){
+  console.error("Score save:",e);
+ }
+}
+
+/* ================= EXIT ================= */
+
+function exitGame(){
+ location.href=`../games.html?id=${uid}`;
+}
+
+/* ================= INIT ================= */
+
+(async()=>{
+ initStars();
+ await initUser();
+ await leaderboard();
+})();
+</script>
 </body>
     </html>
