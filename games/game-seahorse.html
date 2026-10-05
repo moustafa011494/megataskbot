@@ -60,7 +60,7 @@
     <div id="start-screen" class="overlay-screen">
         <div style="font-size: 55px; margin-bottom: 10px;">🌊🐴</div>
         <h1>حصان البحر السريع</h1>
-        <p id="start-desc">🔍 جاري البحث عنك في أعماق السيرفر...</p>
+        <p id="start-desc">جاري الاتصال بقاعدة البيانات...</p>
         <button id="start-btn" class="btn-action-game" onclick="tryStartGame()" style="opacity: 0.5; pointer-events: none;">جاري التحميل...</button>
     </div>
 
@@ -81,6 +81,7 @@
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
+        // التقاط الـ ID بدقة تامة من كل الأماكن الممكنة وضبطه في الرابط لو ناقص
         const params = new URLSearchParams(window.location.search);
         let userId = String(
             params.get('id') || 
@@ -89,6 +90,12 @@
             localStorage.getItem('megatask_uid') || 
             ""
         ).trim();
+
+        // لو الـ userId متاح ومش موجود في الرابط، بنحطه في الرابط أوتوماتيك عشان يثبت
+        if (userId && !params.has('id')) {
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?id=' + userId;
+            window.history.replaceState({path: newUrl}, '', newUrl);
+        }
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -123,12 +130,7 @@
 
         async function initUser() {
             if (!userId) {
-                document.getElementById('start-desc').innerHTML = "🚨 عذراً يا بطل، الهوية بتاعتك تائهة في السكة ومش ظاهرة في الرابط! رجاءً افتح اللعبة من صفحة الألعاب الرئيسية.";
-                const btn = document.getElementById('start-btn');
-                btn.innerText = "🔙 العودة للصفحة الرئيسية";
-                btn.style.opacity = "1";
-                btn.style.pointerEvents = "auto";
-                btn.setAttribute("onclick", "exitGame()");
+                document.getElementById('start-desc').innerHTML = "⚠️ خطأ في تمرير معرف المستخدم. رجاءً عد لصفحة الألعاب وافتح اللعبة مرة أخرى.";
                 return;
             }
 
@@ -149,16 +151,11 @@
                     btn.style.opacity = "1";
                     btn.style.pointerEvents = "auto";
                 } else {
-                    document.getElementById('start-desc').innerHTML = `🕵️‍♂️ بص يا غالي، لفتنا الشاطئ وملاقيناش أثر لحسابك (ID: ${userId}) في الداتا بيز! جرب تسجل دخولك من الأول.`;
-                    const btn = document.getElementById('start-btn');
-                    btn.innerText = "🔙 العودة للصفحة الرئيسية";
-                    btn.style.opacity = "1";
-                    btn.style.pointerEvents = "auto";
-                    btn.setAttribute("onclick", "exitGame()");
+                    document.getElementById('start-desc').innerHTML = `❌ لم يتم العثور على حسابك (ID: ${userId}) في قاعدة البيانات!`;
                 }
             } catch (e) {
                 console.error("Init error:", e);
-                document.getElementById('start-desc').innerHTML = "⚠️ الإنترنت بيعاني أو السيرفر نايم، حاول تجدد الصفحة يا درش!";
+                document.getElementById('start-desc').innerHTML = "❌ حدث خطأ أثناء الاتصال بقاعدة البيانات.";
             }
         }
 
@@ -171,7 +168,7 @@
             const currentDiamonds = Number(userData.gamepoints || 0);
 
             if (currentDiamonds < 1) {
-                tg.showAlert("⚠️ جيبك فاضي يا وحش! معكش ألماسات كافية، العب الألعاب التانية عشان تجمع الأول.");
+                tg.showAlert("⚠️ ليس لديك ألماسات كافية في حسابك! يلزمك 1 ألماسة على الأقل لبدء الجولة.");
                 return;
             }
 
@@ -349,7 +346,7 @@
 
         async function gameOver() {
             gameRunning = false;
-            document.getElementById('final-score-text').innerText = `يا بطل! تم إضافة +${earnedDiamonds} ألماسة 💎 لحسابك في سوبابيز بنجاح!`;
+            document.getElementById('final-score-text').innerText = `تمت إضافة +${earnedDiamonds} ألماسة 💎 إلى حسابك في سوبابيز!`;
             document.getElementById('gameover-screen').style.display = 'flex';
 
             if (userData && earnedDiamonds > 0) {
