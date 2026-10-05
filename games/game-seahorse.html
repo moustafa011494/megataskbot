@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Frost Seahorse - MegaTask</title>
 
+<!-- إعلانات Monetag -->
+<script src="//libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
@@ -106,7 +109,7 @@ canvas{
 </div>
 
 <div id="gameover-screen" class="overlay-screen" style="display:none">
-    <div class="logo">💥❄️</div>
+    <div class="logo">💥❄️️</div>
     <h1>انتهت الجولة!</h1>
     <p id="final-score-text" style="color:white;font-size:15px;font-weight:bold">
         الماسات المضافة لرصيدك: +0 💎
@@ -128,7 +131,7 @@ const tg=window.Telegram.WebApp;
 tg.expand();
 
 const S_URL="https://smukfrwnguvmxvfwqwrv.supabase.co";
-const S_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+const S_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
 const client=supabase.createClient(S_URL,S_KEY);
 
 const params=new URLSearchParams(location.search);
@@ -232,7 +235,7 @@ function updateUI(){
 }
 
 
-/* ================= START ================= */
+/* ================= START WITH ADS EVERY 3 ROUNDS ================= */
 
 async function tryStartGame(){
     if(isStarting||gameRunning)return;
@@ -261,6 +264,22 @@ async function tryStartGame(){
             if(x){x.disabled=false;x.style.opacity="1"}
         });
         return;
+    }
+
+    // نظام عد الجولات وإظهار الإعلان كل 3 جولات
+    try {
+        let roundsPlayed = parseInt(localStorage.getItem(`seahorse_rounds_${tid}`) || '0') + 1;
+        localStorage.setItem(`seahorse_rounds_${tid}`, roundsPlayed);
+
+        if (roundsPlayed % 3 === 0) {
+            if (typeof show_10959333 === 'function') {
+                await show_10959333();
+            } else {
+                console.warn("Monetag SDK not found, skipping ad.");
+            }
+        }
+    } catch (adErr) {
+        console.error("Ad error:", adErr);
     }
 
     const update={};
