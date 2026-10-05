@@ -60,7 +60,7 @@
     <div id="start-screen" class="overlay-screen">
         <div style="font-size: 55px; margin-bottom: 10px;">🌊🐴</div>
         <h1>حصان البحر السريع</h1>
-        <p id="start-desc">جاري الاتصال بقاعدة البيانات وجلب رصيدك...</p>
+        <p id="start-desc">🔍 جاري البحث عنك في أعماق السيرفر...</p>
         <button id="start-btn" class="btn-action-game" onclick="tryStartGame()" style="opacity: 0.5; pointer-events: none;">جاري التحميل...</button>
     </div>
 
@@ -81,7 +81,6 @@
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        // جلب الـ userId من الرابط أو تليجرام أو التخزين المحلي بدقة تامة
         const params = new URLSearchParams(window.location.search);
         let userId = String(
             params.get('id') || 
@@ -122,26 +121,21 @@
         let pipeGap = 195;
         let frameCount = 0;
 
-        // التحقق الفوري من وجود المستخدم في سوبابيز عند فتح الصفحة
         async function initUser() {
             if (!userId) {
-                document.getElementById('start-desc').innerHTML = "❌ خطأ: لم يتم العثور على معرف المستخدم.";
+                document.getElementById('start-desc').innerHTML = "🚨 عذراً يا بطل، الهوية بتاعتك تائهة في السكة ومش ظاهرة في الرابط! رجاءً افتح اللعبة من صفحة الألعاب الرئيسية.";
+                const btn = document.getElementById('start-btn');
+                btn.innerText = "🔙 العودة للصفحة الرئيسية";
+                btn.style.opacity = "1";
+                btn.style.pointerEvents = "auto";
+                btn.setAttribute("onclick", "exitGame()");
                 return;
             }
 
             try {
-                let { data: user, error } = await client
-                    .from('users')
-                    .select('*')
-                    .eq('telegram_id', userId)
-                    .maybeSingle();
-
+                let { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
                 if (!user) {
-                    let { data: userNum } = await client
-                        .from('users')
-                        .select('*')
-                        .eq('telegram_id', Number(userId))
-                        .maybeSingle();
+                    let { data: userNum } = await client.from('users').select('*').eq('telegram_id', Number(userId)).maybeSingle();
                     if (userNum) user = userNum;
                 }
 
@@ -155,11 +149,16 @@
                     btn.style.opacity = "1";
                     btn.style.pointerEvents = "auto";
                 } else {
-                    document.getElementById('start-desc').innerHTML = "❌ لم يتم العثور على حسابك في قاعدة البيانات.";
+                    document.getElementById('start-desc').innerHTML = `🕵️‍♂️ بص يا غالي، لفتنا الشاطئ وملاقيناش أثر لحسابك (ID: ${userId}) في الداتا بيز! جرب تسجل دخولك من الأول.`;
+                    const btn = document.getElementById('start-btn');
+                    btn.innerText = "🔙 العودة للصفحة الرئيسية";
+                    btn.style.opacity = "1";
+                    btn.style.pointerEvents = "auto";
+                    btn.setAttribute("onclick", "exitGame()");
                 }
             } catch (e) {
                 console.error("Init error:", e);
-                document.getElementById('start-desc').innerHTML = "❌ حدث خطأ أثناء الاتصال بقاعدة البيانات.";
+                document.getElementById('start-desc').innerHTML = "⚠️ الإنترنت بيعاني أو السيرفر نايم، حاول تجدد الصفحة يا درش!";
             }
         }
 
@@ -172,11 +171,10 @@
             const currentDiamonds = Number(userData.gamepoints || 0);
 
             if (currentDiamonds < 1) {
-                tg.showAlert("⚠️ ليس لديك ألماسات كافية في حسابك! يلزمك 1 ألماسة على الأقل لبدء الجولة.");
+                tg.showAlert("⚠️ جيبك فاضي يا وحش! معكش ألماسات كافية، العب الألعاب التانية عشان تجمع الأول.");
                 return;
             }
 
-            // خصم 1 ألماسة من سوبابيز لبدء الجولة
             try {
                 const newDiamonds = currentDiamonds - 1;
                 const { data: updated, error } = await client
@@ -351,7 +349,7 @@
 
         async function gameOver() {
             gameRunning = false;
-            document.getElementById('final-score-text').innerText = `تمت إضافة +${earnedDiamonds} ألماسة 💎 إلى حسابك في سوبابيز!`;
+            document.getElementById('final-score-text').innerText = `يا بطل! تم إضافة +${earnedDiamonds} ألماسة 💎 لحسابك في سوبابيز بنجاح!`;
             document.getElementById('gameover-screen').style.display = 'flex';
 
             if (userData && earnedDiamonds > 0) {
@@ -389,7 +387,6 @@
             window.location.href = `../games.html?id=${userId}`;
         }
 
-        // بدء فحص جلب البيانات فور فتح الصفحة
         initUser();
     </script>
 </body>
