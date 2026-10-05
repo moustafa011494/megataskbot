@@ -60,8 +60,8 @@
     <div id="start-screen" class="overlay-screen">
         <div style="font-size: 55px; margin-bottom: 10px;">🌊🐴</div>
         <h1>حصان البحر السريع</h1>
-        <p>تكلفة الدخول للجولة: <b style="color:#00f2ff;">1 ألماسة 💎</b>.<br>كل 3 عقبات تتخطاها تمنحك ألماسة مباشرة من سوبابيز!</p>
-        <button class="btn-action-game" onclick="tryStartGame()">🎮 ابدأ الجولة الآن (1 💎)</button>
+        <p id="start-desc">جاري الاتصال بقاعدة البيانات وجلب رصيدك...</p>
+        <button id="start-btn" class="btn-action-game" onclick="tryStartGame()" style="opacity: 0.5; pointer-events: none;">جاري التحميل...</button>
     </div>
 
     <div id="gameover-screen" class="overlay-screen" style="display: none;">
@@ -81,8 +81,15 @@
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
+        // جلب الـ userId من الرابط أو تليجرام أو التخزين المحلي بدقة تامة
         const params = new URLSearchParams(window.location.search);
-        let userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        let userId = String(
+            params.get('id') || 
+            tg.initDataUnsafe.user?.id || 
+            localStorage.getItem('telegram_id') || 
+            localStorage.getItem('megatask_uid') || 
+            ""
+        ).trim();
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -115,34 +122,51 @@
         let pipeGap = 195;
         let frameCount = 0;
 
-        // دالة جلب المستخدم المحدد بالـ ID الخاص به فقط من سوبابيز
-        async function fetchUserFromSupabase() {
-            if (!userId) return null;
+        // التحقق الفوري من وجود المستخدم في سوبابيز عند فتح الصفحة
+        async function initUser() {
+            if (!userId) {
+                document.getElementById('start-desc').innerHTML = "❌ خطأ: لم يتم العثور على معرف المستخدم.";
+                return;
+            }
+
             try {
-                let { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
-                if (user) return user;
+                let { data: user, error } = await client
+                    .from('users')
+                    .select('*')
+                    .eq('telegram_id', userId)
+                    .maybeSingle();
 
-                let { data: userNum } = await client.from('users').select('*').eq('telegram_id', Number(userId)).maybeSingle();
-                if (userNum) return userNum;
+                if (!user) {
+                    let { data: userNum } = await client
+                        .from('users')
+                        .select('*')
+                        .eq('telegram_id', Number(userId))
+                        .maybeSingle();
+                    if (userNum) user = userNum;
+                }
 
-                return null;
+                if (user) {
+                    userData = user;
+                    const points = Number(user.gamepoints || 0);
+                    document.getElementById('start-desc').innerHTML = `تكلفة الدخول للجولة: <b style="color:#00f2ff;">1 ألماسة 💎</b>.<br>رصيدك الحالي: <b style="color:#ffaa00;">${points} ألماسة</b>.<br>كل 3 عقبات تتخطاها تمنحك ألماسة مباشرة من سوبابيز!`;
+                    
+                    const btn = document.getElementById('start-btn');
+                    btn.innerText = "🎮 ابدأ الجولة الآن (1 💎)";
+                    btn.style.opacity = "1";
+                    btn.style.pointerEvents = "auto";
+                } else {
+                    document.getElementById('start-desc').innerHTML = "❌ لم يتم العثور على حسابك في قاعدة البيانات.";
+                }
             } catch (e) {
-                console.error("Fetch user error:", e);
-                return null;
+                console.error("Init error:", e);
+                document.getElementById('start-desc').innerHTML = "❌ حدث خطأ أثناء الاتصال بقاعدة البيانات.";
             }
         }
 
         async function tryStartGame() {
-            if (!userId) {
-                tg.showAlert("❌ لم يتم العثور على معرف المستخدم في الرابط.");
-                return;
-            }
-
-            userData = await fetchUserFromSupabase();
-
             if (!userData) {
-                tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
-                return;
+                await initUser();
+                if (!userData) return;
             }
 
             const currentDiamonds = Number(userData.gamepoints || 0);
@@ -169,6 +193,7 @@
                 }
             } catch (e) {
                 console.error("Deduct error:", e);
+                userData.gamepoints = currentDiamonds - 1;
             }
 
             startGame();
@@ -331,7 +356,7 @@
 
             if (userData && earnedDiamonds > 0) {
                 try {
-                    let freshUser = await fetchUserFromSupabase();
+                    let { data: freshUser } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
                     let currentGp = freshUser ? Number(freshUser.gamepoints || 0) : Number(userData.gamepoints || 0);
                     let newGp = currentGp + earnedDiamonds;
 
@@ -363,6 +388,9 @@
         function exitGame() {
             window.location.href = `../games.html?id=${userId}`;
         }
+
+        // بدء فحص جلب البيانات فور فتح الصفحة
+        initUser();
     </script>
 </body>
 </html>
