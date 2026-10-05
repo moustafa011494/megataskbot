@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
 <title>Frost Seahorse - MegaTask</title>
 
-<!-- إعلانات Monetag -->
-<script src="//libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+<!-- Monetag -->
+<script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -16,67 +17,102 @@
     --ice:#00eaff;
     --blue:#4da6ff;
     --fire:#ff5a00;
-    --red:#ff2400;
     --bg:#030811;
 }
 *{box-sizing:border-box}
+
 html,body{
     margin:0;width:100%;height:100%;
     overflow:hidden;background:var(--bg);color:white;
     font-family:'Segoe UI',sans-serif;
     user-select:none;-webkit-user-select:none;
 }
+
 canvas{
     width:100vw;height:100vh;display:block;
     background:linear-gradient(#020914,#081a2c 60%,#02060d);
 }
+
 .game-top-bar{
     position:absolute;top:0;left:0;width:100%;
     padding:15px 18px;z-index:10;
     display:flex;justify-content:space-between;
     pointer-events:none;
 }
+
 .stat-badge{
-    color:var(--ice);font-size:13px;font-weight:bold;
+    color:var(--ice);
+    font-size:13px;
+    font-weight:bold;
     background:rgba(0,234,255,.08);
     border:1px solid rgba(0,234,255,.7);
-    border-radius:12px;padding:7px 14px;
+    border-radius:12px;
+    padding:7px 14px;
     box-shadow:0 0 15px rgba(0,234,255,.12);
 }
-.stat-badge span{color:#fff;text-shadow:0 0 8px var(--ice)}
+
+.stat-badge span{
+    color:#fff;
+    text-shadow:0 0 8px var(--ice);
+}
 
 .overlay-screen{
     position:absolute;inset:0;z-index:30;
-    display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
-    padding:25px;text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    padding:25px;
+    text-align:center;
     background:rgba(1,6,13,.91);
     backdrop-filter:blur(5px);
 }
+
 .logo{
-    font-size:60px;margin-bottom:8px;
+    font-size:60px;
+    margin-bottom:8px;
     filter:drop-shadow(0 0 18px #00eaff);
 }
+
 .overlay-screen h1{
-    color:var(--ice);font-size:27px;margin:5px 0 8px;
+    color:var(--ice);
+    font-size:27px;
+    margin:5px 0 8px;
     text-shadow:0 0 18px rgba(0,234,255,.55);
 }
+
 .overlay-screen p{
-    color:#9daabd;font-size:13px;line-height:1.6;
+    color:#9daabd;
+    font-size:13px;
+    line-height:1.6;
     margin:0 0 22px;
 }
+
 .btn{
-    width:100%;max-width:270px;padding:14px;
-    border:1px solid #00eaff;border-radius:18px;
+    width:100%;
+    max-width:270px;
+    padding:14px;
+    border:1px solid #00eaff;
+    border-radius:18px;
     background:linear-gradient(135deg,#00eaff,#0878ff);
-    color:#001018;font-size:15px;font-weight:bold;
+    color:#001018;
+    font-size:15px;
+    font-weight:bold;
     box-shadow:0 0 25px rgba(0,234,255,.3);
-    cursor:pointer;transition:.15s;
+    cursor:pointer;
+    transition:.15s;
 }
-.btn:active{transform:scale(.96)}
+
+.btn:active{
+    transform:scale(.96);
+}
+
 .btn.dark{
-    background:#151c28;color:white;
-    border-color:#344052;box-shadow:none;margin-top:10px;
+    background:#151c28;
+    color:white;
+    border-color:#344052;
+    box-shadow:none;
+    margin-top:10px;
 }
 </style>
 </head>
@@ -84,307 +120,792 @@ canvas{
 <body>
 
 <div class="game-top-bar">
+
     <div class="stat-badge">
         ألماسات حسابك:
         <span id="user-diamonds-counter">0</span> 💎
     </div>
+
     <div class="stat-badge">
         الجولة:
         <span id="current-score">0</span> 💎
     </div>
+
 </div>
+
+
+<!-- شاشة البداية -->
 
 <div id="start-screen" class="overlay-screen">
+
     <div class="logo">❄️🐴</div>
+
     <h1>Frost Seahorse</h1>
+
     <p>
-        اهرب بحصان البحر الجليدي من أعمدة النار! 🔥<br>
+        اهرب بحصان البحر الجليدي من أعمدة النار! 🔥
+        <br>
         تكلفة الدخول:
-        <b style="color:#00eaff">1 ألماسة 💎</b><br>
-        كل 3 عقبات تتخطاها = <b style="color:#00eaff">+1 💎</b>
+        <b style="color:#00eaff">1 ألماسة 💎</b>
+        <br>
+        كل 3 عقبات تتخطاها =
+        <b style="color:#00eaff">+1 💎</b>
     </p>
-    <button id="start-game-btn" class="btn" onclick="tryStartGame()">
+
+    <button
+        id="start-game-btn"
+        class="btn"
+        onclick="tryStartGame()"
+    >
         ❄️ ابدأ الجولة — 1 💎
     </button>
+
 </div>
 
-<div id="gameover-screen" class="overlay-screen" style="display:none">
-    <div class="logo">💥❄️️</div>
+
+<!-- شاشة النهاية -->
+
+<div
+    id="gameover-screen"
+    class="overlay-screen"
+    style="display:none"
+>
+
+    <div class="logo">💥❄️</div>
+
     <h1>انتهت الجولة!</h1>
-    <p id="final-score-text" style="color:white;font-size:15px;font-weight:bold">
+
+    <p
+        id="final-score-text"
+        style="
+            color:white;
+            font-size:15px;
+            font-weight:bold;
+        "
+    >
         الماسات المضافة لرصيدك: +0 💎
     </p>
 
-    <button id="play-again-btn" class="btn" onclick="tryStartGame()">
+    <button
+        id="play-again-btn"
+        class="btn"
+        onclick="tryStartGame()"
+    >
         🔥 جولة جديدة — 1 💎
     </button>
 
-    <button class="btn dark" onclick="exitGame()">
+    <button
+        class="btn dark"
+        onclick="exitGame()"
+    >
         🔙 العودة للبوت
     </button>
+
 </div>
+
 
 <canvas id="gameCanvas"></canvas>
 
+
 <script>
+
+/* =====================================================
+   TELEGRAM
+===================================================== */
+
 const tg=window.Telegram.WebApp;
 tg.expand();
 
-const S_URL="https://smukfrwnguvmxvfwqwrv.supabase.co";
-const S_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-const client=supabase.createClient(S_URL,S_KEY);
 
-const params=new URLSearchParams(location.search);
+/* =====================================================
+   SUPABASE
+===================================================== */
+
+const S_URL=
+"https://smukfrwnguvmxvfwqwrv.supabase.co";
+
+const S_KEY=
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+
+const client=
+supabase.createClient(S_URL,S_KEY);
+
+
+/* =====================================================
+   TELEGRAM ID
+===================================================== */
+
+const params=
+new URLSearchParams(location.search);
+
 let tid=String(
     params.get("id")||
     tg.initDataUnsafe?.user?.id||
-    localStorage.getItem("telegram_id")||""
+    localStorage.getItem("telegram_id")||
+    ""
 ).trim();
 
-let userData=null,gameRunning=false,isStarting=false,isSaving=false;
-let earned=0,passed=0,speed=3.2,frame=0,pipeGap=195;
-let pipes=[],particles=[];
 
-const canvas=document.getElementById("gameCanvas");
-const ctx=canvas.getContext("2d");
+/* =====================================================
+   GAME DATA
+===================================================== */
+
+let userData=null;
+
+let gameRunning=false;
+let isStarting=false;
+let isSaving=false;
+
+let earned=0;
+let passed=0;
+let speed=3.2;
+let frame=0;
+let pipeGap=195;
+
+let pipes=[];
+let particles=[];
+
+
+/* =====================================================
+   ADS
+   إعلان كل 3 جولات
+===================================================== */
+
+let completedRounds=
+Number(
+    localStorage.getItem("frost_completed_rounds")||0
+);
+
+
+/*
+   الجولة الحالية لا تُحسب إلا بعد انتهاء الجولة.
+*/
+
+let adLoading=false;
+
+
+/* =====================================================
+   CANVAS
+===================================================== */
+
+const canvas=
+document.getElementById("gameCanvas");
+
+const ctx=
+canvas.getContext("2d");
 
 let player={
-    x:0,y:0,radius:19,velocity:0,
-    gravity:.38,jump:-7.5
+    x:0,
+    y:0,
+    radius:19,
+    velocity:0,
+    gravity:.38,
+    jump:-7.5
 };
 
+
 function resize(){
+
     canvas.width=innerWidth;
     canvas.height=innerHeight;
+
     player.x=canvas.width*.25;
-    if(!gameRunning)player.y=canvas.height/2;
+
+    if(!gameRunning)
+        player.y=canvas.height/2;
 }
+
 resize();
+
 addEventListener("resize",resize);
 
 
-/* ================= USER ================= */
+/* =====================================================
+   USER
+===================================================== */
 
 async function initUser(){
-    if(!tid||tid==="undefined"||tid==="null")
-        tid=String(localStorage.getItem("telegram_id")||"").trim();
+
+    if(
+        !tid||
+        tid==="undefined"||
+        tid==="null"
+    ){
+        tid=
+        String(
+            localStorage.getItem("telegram_id")||""
+        ).trim();
+    }
+
 
     if(!tid){
+
         try{
+
             let {data:latest}=await client
-                .from("users").select("*")
-                .order("created_at",{ascending:false})
-                .limit(1).maybeSingle();
+                .from("users")
+                .select("*")
+                .order(
+                    "created_at",
+                    {ascending:false}
+                )
+                .limit(1)
+                .maybeSingle();
 
             if(latest){
+
                 userData=latest;
-                tid=String(latest.telegram_id).trim();
+
+                tid=
+                String(
+                    latest.telegram_id
+                ).trim();
             }
+
         }catch(e){}
     }
 
+
     if(!tid){
-        tg.showAlert("❌ لم يتم العثور على Telegram ID الخاص بك.");
+
+        tg.showAlert(
+            "❌ لم يتم العثور على Telegram ID الخاص بك."
+        );
+
         return false;
     }
 
+
     try{
-        let {data:u}=await client.from("users")
-            .select("*").eq("telegram_id",String(tid)).maybeSingle();
 
-        if(u) userData=u;
-        else{
-            let {data:n}=await client.from("users")
-                .select("*").eq("telegram_id",Number(tid)).maybeSingle();
+        let {data:u}=await client
+            .from("users")
+            .select("*")
+            .eq(
+                "telegram_id",
+                String(tid)
+            )
+            .maybeSingle();
 
-            if(n)userData=n;
-            else{
-                let {data:f}=await client.from("users")
-                    .select("*").limit(1).maybeSingle();
-                if(f)userData=f;
+
+        if(u){
+
+            userData=u;
+
+        }else{
+
+            let {data:n}=await client
+                .from("users")
+                .select("*")
+                .eq(
+                    "telegram_id",
+                    Number(tid)
+                )
+                .maybeSingle();
+
+
+            if(n){
+
+                userData=n;
+
+            }else{
+
+                let {data:f}=await client
+                    .from("users")
+                    .select("*")
+                    .limit(1)
+                    .maybeSingle();
+
+                if(f)
+                    userData=f;
             }
         }
 
+
         if(!userData){
-            tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
+
+            tg.showAlert(
+                "❌ لم يتم العثور على حسابك في قاعدة البيانات."
+            );
+
             return false;
         }
 
-        tid=String(userData.telegram_id).trim();
-        localStorage.setItem("telegram_id",tid);
+
+        tid=
+        String(
+            userData.telegram_id
+        ).trim();
+
+
+        localStorage.setItem(
+            "telegram_id",
+            tid
+        );
+
+
         updateUI();
 
         return true;
+
+
     }catch(e){
+
         console.error(e);
-        tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
+
+        tg.showAlert(
+            "❌ حدث خطأ أثناء جلب بيانات المستخدم."
+        );
+
         return false;
     }
 }
 
+
 function gpField(){
+
     return userData.gamepoints!==undefined
-        ?"gamepoints"
-        :(userData.diamonds!==undefined?"diamonds":"gamepoints");
+        ? "gamepoints"
+        : (
+            userData.diamonds!==undefined
+            ? "diamonds"
+            : "gamepoints"
+        );
 }
+
 
 function updateUI(){
+
     if(!userData)return;
-    document.getElementById("user-diamonds-counter").innerText=
-        Number(userData[gpField()]||0).toLocaleString();
+
+    document.getElementById(
+        "user-diamonds-counter"
+    ).innerText=
+        Number(
+            userData[gpField()]||0
+        ).toLocaleString();
 }
 
 
-/* ================= START WITH ADS EVERY 3 ROUNDS ================= */
+/* =====================================================
+   MONETAG
+===================================================== */
 
-async function tryStartGame(){
-    if(isStarting||gameRunning)return;
-    isStarting=true;
+async function showAd(){
 
-    const a=document.getElementById("start-game-btn");
-    const b=document.getElementById("play-again-btn");
-    [a,b].forEach(x=>{
-        if(x){x.disabled=true;x.style.opacity=".55"}
-    });
+    if(adLoading)return true;
 
-    if(!await initUser()){
-        isStarting=false;
-        [a,b].forEach(x=>{
-            if(x){x.disabled=false;x.style.opacity="1"}
-        });
-        return;
-    }
-
-    let current=Number(userData[gpField()]||0);
-
-    if(current<1){
-        tg.showAlert("⚠️ ليس لديك ألماسات كافية! يلزمك 1 ألماسة لبدء الجولة.");
-        isStarting=false;
-        [a,b].forEach(x=>{
-            if(x){x.disabled=false;x.style.opacity="1"}
-        });
-        return;
-    }
-
-    // نظام عد الجولات وإظهار الإعلان كل 3 جولات
-    try {
-        let roundsPlayed = parseInt(localStorage.getItem(`seahorse_rounds_${tid}`) || '0') + 1;
-        localStorage.setItem(`seahorse_rounds_${tid}`, roundsPlayed);
-
-        if (roundsPlayed % 3 === 0) {
-            if (typeof show_10959333 === 'function') {
-                await show_10959333();
-            } else {
-                console.warn("Monetag SDK not found, skipping ad.");
-            }
-        }
-    } catch (adErr) {
-        console.error("Ad error:", adErr);
-    }
-
-    const update={};
-    update[gpField()]=current-1;
+    adLoading=true;
 
     try{
-        const {data,error}=await client.from("users")
+
+        if(
+            typeof show_10959333==="function"
+        ){
+
+            await show_10959333();
+
+        }else{
+
+            console.warn(
+                "Monetag SDK not loaded."
+            );
+        }
+
+        return true;
+
+    }catch(e){
+
+        console.error(
+            "Monetag error:",
+            e
+        );
+
+        /*
+           لا نوقف اللعبة لو الإعلان
+           لم يتم تحميله.
+        */
+
+        return true;
+
+    }finally{
+
+        adLoading=false;
+    }
+}
+
+
+/* =====================================================
+   CHECK AD
+===================================================== */
+
+async function checkAdBeforeRound(){
+
+    /*
+       لو أكمل المستخدم 3 جولات
+       يظهر الإعلان قبل الجولة التالية.
+    */
+
+    if(
+        completedRounds>0 &&
+        completedRounds%3===0
+    ){
+
+        const btn=
+            document.getElementById(
+                "play-again-btn"
+            );
+
+        if(btn){
+
+            btn.disabled=true;
+            btn.style.opacity=".55";
+            btn.innerText=
+                "📺 جاري تحميل الإعلان...";
+        }
+
+
+        await showAd();
+
+
+        /*
+           تصفير العداد بعد عرض الإعلان
+           حتى ننتظر 3 جولات جديدة.
+        */
+
+        completedRounds=0;
+
+        localStorage.setItem(
+            "frost_completed_rounds",
+            "0"
+        );
+
+
+        if(btn){
+
+            btn.disabled=false;
+            btn.style.opacity="1";
+            btn.innerText=
+                "🔥 جولة جديدة — 1 💎";
+        }
+    }
+}
+
+
+/* =====================================================
+   START GAME
+===================================================== */
+
+async function tryStartGame(){
+
+    if(isStarting||gameRunning)return;
+
+    isStarting=true;
+
+
+    const a=
+        document.getElementById(
+            "start-game-btn"
+        );
+
+    const b=
+        document.getElementById(
+            "play-again-btn"
+        );
+
+
+    [a,b].forEach(x=>{
+
+        if(x){
+
+            x.disabled=true;
+            x.style.opacity=".55";
+        }
+
+    });
+
+
+    /*
+       إعلان كل 3 جولات
+    */
+
+    await checkAdBeforeRound();
+
+
+    if(!await initUser()){
+
+        isStarting=false;
+
+        [a,b].forEach(x=>{
+
+            if(x){
+
+                x.disabled=false;
+                x.style.opacity="1";
+            }
+
+        });
+
+        return;
+    }
+
+
+    let current=
+        Number(
+            userData[gpField()]||0
+        );
+
+
+    if(current<1){
+
+        tg.showAlert(
+            "⚠️ ليس لديك ألماسات كافية! يلزمك 1 ألماسة لبدء الجولة."
+        );
+
+        isStarting=false;
+
+        [a,b].forEach(x=>{
+
+            if(x){
+
+                x.disabled=false;
+                x.style.opacity="1";
+            }
+
+        });
+
+        return;
+    }
+
+
+    const update={};
+
+    update[gpField()]=
+        current-1;
+
+
+    try{
+
+        const {
+            data,
+            error
+        }=await client
+            .from("users")
             .update(update)
-            .eq("telegram_id",String(tid))
-            .select("*").single();
+            .eq(
+                "telegram_id",
+                String(tid)
+            )
+            .select("*")
+            .single();
+
 
         if(error||!data){
+
             console.error(error);
-            tg.showAlert("❌ لم يتم خصم الألماسة. حاول مرة أخرى.");
+
+            tg.showAlert(
+                "❌ لم يتم خصم الألماسة. حاول مرة أخرى."
+            );
+
             return;
         }
 
+
         userData=data;
+
         updateUI();
+
         startGame();
 
+
     }catch(e){
+
         console.error(e);
-        tg.showAlert("❌ حدث خطأ أثناء خصم الألماسة.");
+
+        tg.showAlert(
+            "❌ حدث خطأ أثناء خصم الألماسة."
+        );
+
     }finally{
+
         isStarting=false;
+
         [a,b].forEach(x=>{
-            if(x){x.disabled=false;x.style.opacity="1"}
+
+            if(x){
+
+                x.disabled=false;
+                x.style.opacity="1";
+            }
+
         });
     }
 }
 
+
+/* =====================================================
+   START GAME ENGINE
+===================================================== */
+
 function startGame(){
-    document.getElementById("start-screen").style.display="none";
-    document.getElementById("gameover-screen").style.display="none";
+
+    document.getElementById(
+        "start-screen"
+    ).style.display="none";
+
+
+    document.getElementById(
+        "gameover-screen"
+    ).style.display="none";
+
 
     gameRunning=true;
-    earned=passed=0;
+
+    earned=0;
+    passed=0;
     speed=3.2;
     pipeGap=195;
     frame=0;
+
     pipes=[];
     particles=[];
 
-    document.getElementById("current-score").innerText=0;
 
-    player.x=canvas.width*.25;
-    player.y=canvas.height/2;
+    document.getElementById(
+        "current-score"
+    ).innerText=0;
+
+
+    player.x=
+        canvas.width*.25;
+
+    player.y=
+        canvas.height/2;
+
     player.velocity=0;
+
 
     requestAnimationFrame(loop);
 }
 
 
-/* ================= CONTROLS ================= */
+/* =====================================================
+   CONTROLS
+===================================================== */
 
-addEventListener("click",()=>{
-    if(gameRunning)player.velocity=player.jump;
-});
-
-addEventListener("touchstart",e=>{
-    if(gameRunning){
-        e.preventDefault();
-        player.velocity=player.jump;
+addEventListener(
+    "click",
+    ()=>{
+        if(gameRunning)
+            player.velocity=player.jump;
     }
-},{passive:false});
+);
 
 
-/* ================= PARTICLES ================= */
+addEventListener(
+    "touchstart",
+    e=>{
+
+        if(gameRunning){
+
+            e.preventDefault();
+
+            player.velocity=
+                player.jump;
+        }
+
+    },
+    {passive:false}
+);
+
+
+/* =====================================================
+   PARTICLES
+===================================================== */
 
 function particle(x,y,type){
+
     particles.push({
+
         x,y,
-        vx:(Math.random()-.5)*(type==="fire"?2:1.5),
-        vy:(Math.random()-.5)*(type==="fire"?2:1.2),
+
+        vx:
+            (Math.random()-.5)*
+            (type==="fire"?2:1.5),
+
+        vy:
+            (Math.random()-.5)*
+            (type==="fire"?2:1.2),
+
         life:1,
-        size:Math.random()*3+1,
+
+        size:
+            Math.random()*3+1,
+
         type
     });
 }
 
+
 function updateParticles(){
-    for(let i=particles.length-1;i>=0;i--){
-        let p=particles[i];
+
+    for(
+        let i=particles.length-1;
+        i>=0;
+        i--
+    ){
+
+        const p=particles[i];
+
         p.x+=p.vx;
         p.y+=p.vy;
-        p.life-=.025;
-        p.vy+=p.type==="fire"?-.015:.01;
 
-        if(p.life<=0)particles.splice(i,1);
+        p.life-=.025;
+
+        p.vy+=
+            p.type==="fire"
+            ?-.015
+            :.01;
+
+
+        if(p.life<=0)
+            particles.splice(i,1);
     }
 }
 
+
 function drawParticles(){
+
     particles.forEach(p=>{
+
         ctx.save();
+
         ctx.globalAlpha=p.life;
 
         ctx.shadowBlur=10;
-        ctx.shadowColor=p.type==="fire"?"#ff4200":"#00eaff";
 
-        ctx.fillStyle=p.type==="fire"?"#ff8a00":"#bdfaff";
+        ctx.shadowColor=
+            p.type==="fire"
+            ?"#ff4200"
+            :"#00eaff";
+
+        ctx.fillStyle=
+            p.type==="fire"
+            ?"#ff8a00"
+            :"#bdfaff";
+
 
         ctx.beginPath();
-        ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.size,
+            0,
+            Math.PI*2
+        );
+
         ctx.fill();
 
         ctx.restore();
@@ -392,234 +913,541 @@ function drawParticles(){
 }
 
 
-/* ================= UPDATE ================= */
+/* =====================================================
+   UPDATE
+===================================================== */
 
 function update(){
+
     if(!gameRunning)return;
 
-    player.velocity+=player.gravity;
-    player.y+=player.velocity;
+
+    player.velocity+=
+        player.gravity;
+
+    player.y+=
+        player.velocity;
+
 
     if(
-        player.y+player.radius>canvas.height-15||
-        player.y-player.radius<0
+        player.y+
+        player.radius>
+        canvas.height-15||
+        player.y-
+        player.radius<0
     ){
+
         gameOver();
+
         return;
     }
 
+
     if(frame%100===0){
+
         const min=70;
-        const max=Math.max(min,canvas.height-pipeGap-130);
-        const top=Math.floor(Math.random()*(max-min+1))+min;
+
+        const max=
+            Math.max(
+                min,
+                canvas.height-
+                pipeGap-
+                130
+            );
+
+        const top=
+            Math.floor(
+                Math.random()*
+                (max-min+1)
+            )+min;
+
 
         pipes.push({
+
             x:canvas.width,
+
             top,
-            bottom:canvas.height-top-pipeGap,
+
+            bottom:
+                canvas.height-
+                top-
+                pipeGap,
+
             passed:false
         });
     }
 
-    for(let i=pipes.length-1;i>=0;i--){
+
+    for(
+        let i=pipes.length-1;
+        i>=0;
+        i--
+    ){
+
         const p=pipes[i];
+
         p.x-=speed;
 
-        /* نار متطايرة */
+
         if(Math.random()<.7){
+
             particle(
-                p.x+pipeWidth()/2,
-                Math.random()<.5?p.top:canvas.height-p.bottom,
+                p.x+31,
+                Math.random()<.5
+                    ?p.top
+                    :canvas.height-p.bottom,
                 "fire"
             );
         }
 
-        if(!p.passed&&p.x+pipeWidth()<player.x){
-            p.passed=true;
-            passed++;
-
-            if(passed%3===0){
-                earned++;
-                document.getElementById("current-score").innerText=earned;
-
-                /* مكافأة بصرية */
-                for(let n=0;n<18;n++)
-                    particle(player.x,player.y,"ice");
-            }
-
-            speed+=.12;
-            if(pipeGap>155)pipeGap-=.8;
-        }
 
         if(
-            player.x+player.radius>p.x&&
-            player.x-player.radius<p.x+pipeWidth()&&
+            !p.passed&&
+            p.x+62<
+            player.x
+        ){
+
+            p.passed=true;
+
+            passed++;
+
+
+            if(passed%3===0){
+
+                earned++;
+
+                document.getElementById(
+                    "current-score"
+                ).innerText=earned;
+
+
+                for(
+                    let n=0;
+                    n<18;
+                    n++
+                )
+                    particle(
+                        player.x,
+                        player.y,
+                        "ice"
+                    );
+            }
+
+
+            speed+=.12;
+
+            if(pipeGap>155)
+                pipeGap-=.8;
+        }
+
+
+        if(
+            player.x+
+            player.radius>
+            p.x&&
+
+            player.x-
+            player.radius<
+            p.x+62&&
+
             (
-                player.y-player.radius<p.top||
-                player.y+player.radius>canvas.height-p.bottom
+                player.y-
+                player.radius<
+                p.top||
+
+                player.y+
+                player.radius>
+                canvas.height-
+                p.bottom
             )
         ){
+
             gameOver();
+
             return;
         }
 
-        if(p.x+pipeWidth()<0)pipes.splice(i,1);
+
+        if(p.x+62<0)
+            pipes.splice(i,1);
     }
 
-    /* أثر جليدي خلف اللاعب */
+
     if(frame%2===0)
-        particle(player.x-12,player.y+8,"ice");
+        particle(
+            player.x-12,
+            player.y+8,
+            "ice"
+        );
+
 
     updateParticles();
+
     frame++;
 }
 
-function pipeWidth(){
-    return 62;
-}
 
-
-/* ================= DRAW ================= */
+/* =====================================================
+   DRAW
+===================================================== */
 
 function drawBackground(){
-    const g=ctx.createLinearGradient(0,0,0,canvas.height);
-    g.addColorStop(0,"#020914");
-    g.addColorStop(.55,"#07182a");
-    g.addColorStop(1,"#02060d");
+
+    const g=
+        ctx.createLinearGradient(
+            0,0,0,canvas.height
+        );
+
+    g.addColorStop(
+        0,
+        "#020914"
+    );
+
+    g.addColorStop(
+        .55,
+        "#07182a"
+    );
+
+    g.addColorStop(
+        1,
+        "#02060d"
+    );
+
 
     ctx.fillStyle=g;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    /* نجوم / ثلج */
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
     ctx.save();
-    for(let i=0;i<35;i++){
-        const x=(i*97)%canvas.width;
-        const y=(i*67+frame*.15)%canvas.height;
 
-        ctx.globalAlpha=.25+((i%3)/8);
+
+    for(
+        let i=0;
+        i<35;
+        i++
+    ){
+
+        const x=
+            (i*97)%
+            canvas.width;
+
+        const y=
+            (i*67+
+            frame*.15)%
+            canvas.height;
+
+
+        ctx.globalAlpha=
+            .25+(i%3)/8;
+
         ctx.fillStyle="#bdfaff";
+
+
         ctx.beginPath();
-        ctx.arc(x,y,(i%3)+.7,0,Math.PI*2);
+
+        ctx.arc(
+            x,
+            y,
+            (i%3)+.7,
+            0,
+            Math.PI*2
+        );
+
         ctx.fill();
     }
+
+
     ctx.restore();
 }
 
-function drawFirePipe(x,y,w,h,flip=false){
+
+function drawFirePipe(
+    x,y,w,h
+){
+
     ctx.save();
 
-    /* توهج */
     ctx.shadowBlur=25;
     ctx.shadowColor="#ff3600";
 
-    const g=ctx.createLinearGradient(x,0,x+w,0);
-    g.addColorStop(0,"#8c1700");
-    g.addColorStop(.3,"#ff3d00");
-    g.addColorStop(.55,"#ff9d00");
-    g.addColorStop(.75,"#ff3d00");
-    g.addColorStop(1,"#7d1000");
+
+    const g=
+        ctx.createLinearGradient(
+            x,0,x+w,0
+        );
+
+    g.addColorStop(
+        0,
+        "#8c1700"
+    );
+
+    g.addColorStop(
+        .3,
+        "#ff3d00"
+    );
+
+    g.addColorStop(
+        .55,
+        "#ff9d00"
+    );
+
+    g.addColorStop(
+        .75,
+        "#ff3d00"
+    );
+
+    g.addColorStop(
+        1,
+        "#7d1000"
+    );
+
 
     ctx.fillStyle=g;
-    ctx.fillRect(x,y,w,h);
 
-    /* قلب النار */
+    ctx.fillRect(
+        x,y,w,h
+    );
+
+
     ctx.shadowBlur=8;
-    ctx.fillStyle="rgba(255,220,90,.65)";
-    ctx.fillRect(x+w*.35,y,7,h);
 
-    /* شرارات */
-    for(let i=0;i<4;i++){
-        const sx=x+Math.random()*w;
-        const sy=flip?y+h-Math.random()*30:y+Math.random()*30;
+    ctx.fillStyle=
+        "rgba(255,220,90,.65)";
+
+
+    ctx.fillRect(
+        x+w*.35,
+        y,
+        7,
+        h
+    );
+
+
+    for(
+        let i=0;
+        i<4;
+        i++
+    ){
+
+        const sx=
+            x+
+            Math.random()*w;
+
+        const sy=
+            y+
+            Math.random()*h;
+
 
         ctx.fillStyle="#ffb000";
+
         ctx.beginPath();
-        ctx.arc(sx,sy,2,0,Math.PI*2);
+
+        ctx.arc(
+            sx,
+            sy,
+            2,
+            0,
+            Math.PI*2
+        );
+
         ctx.fill();
     }
+
 
     ctx.restore();
 }
 
+
 function drawPipes(){
+
     pipes.forEach(p=>{
-        drawFirePipe(p.x,0,pipeWidth(),p.top);
+
+        drawFirePipe(
+            p.x,
+            0,
+            62,
+            p.top
+        );
+
         drawFirePipe(
             p.x,
             canvas.height-p.bottom,
-            pipeWidth(),
-            p.bottom,
-            true
+            62,
+            p.bottom
         );
     });
 }
 
+
 function drawSeahorse(){
+
     ctx.save();
 
-    ctx.translate(player.x,player.y);
-
-    const tilt=Math.min(
-        Math.max(player.velocity*.055,-.45),
-        .45
+    ctx.translate(
+        player.x,
+        player.y
     );
+
+
+    const tilt=
+        Math.min(
+            Math.max(
+                player.velocity*.055,
+                -.45
+            ),
+            .45
+        );
+
 
     ctx.rotate(tilt);
 
-    /* توهج جليدي */
-    ctx.shadowBlur=22;
-    ctx.shadowColor="#00eaff";
 
     /* الذيل */
+
     ctx.beginPath();
+
     ctx.moveTo(-2,14);
-    ctx.bezierCurveTo(-15,20,-17,31,-7,29);
-    ctx.bezierCurveTo(2,27,-2,22,-8,24);
+
+    ctx.bezierCurveTo(
+        -15,20,
+        -17,31,
+        -7,29
+    );
+
+    ctx.bezierCurveTo(
+        2,27,
+        -2,22,
+        -8,24
+    );
 
     ctx.lineWidth=5;
+
     ctx.strokeStyle="#62f5ff";
+
     ctx.stroke();
 
-    /* جسم حصان البحر */
-    const body=ctx.createLinearGradient(-10,-5,10,18);
-    body.addColorStop(0,"#d9ffff");
-    body.addColorStop(.35,"#62eaff");
-    body.addColorStop(.7,"#168cff");
-    body.addColorStop(1,"#0751bd");
+
+    /* الجسم */
+
+    const body=
+        ctx.createLinearGradient(
+            -10,-5,
+            10,18
+        );
+
+    body.addColorStop(
+        0,
+        "#d9ffff"
+    );
+
+    body.addColorStop(
+        .35,
+        "#62eaff"
+    );
+
+    body.addColorStop(
+        .7,
+        "#168cff"
+    );
+
+    body.addColorStop(
+        1,
+        "#0751bd"
+    );
+
 
     ctx.fillStyle=body;
 
+    ctx.shadowBlur=22;
+    ctx.shadowColor="#00eaff";
+
+
     ctx.beginPath();
-    ctx.ellipse(0,5,9,17,0,0,Math.PI*2);
+
+    ctx.ellipse(
+        0,5,
+        9,17,
+        0,0,
+        Math.PI*2
+    );
+
     ctx.fill();
 
     ctx.lineWidth=2;
+
     ctx.strokeStyle="#dfffff";
+
     ctx.stroke();
 
-    /* بطن جليدي */
-    ctx.fillStyle="rgba(255,255,255,.4)";
+
+    /* البطن */
+
+    ctx.fillStyle=
+        "rgba(255,255,255,.4)";
+
     ctx.beginPath();
-    ctx.ellipse(-2,7,4,11,0,0,Math.PI*2);
+
+    ctx.ellipse(
+        -2,7,
+        4,11,
+        0,0,
+        Math.PI*2
+    );
+
     ctx.fill();
+
 
     /* الرأس */
-    ctx.beginPath();
-    ctx.arc(7,-10,8,0,Math.PI*2);
 
-    const head=ctx.createRadialGradient(
-        5,-13,1,7,-10,10
+    ctx.beginPath();
+
+    ctx.arc(
+        7,-10,
+        8,
+        0,
+        Math.PI*2
     );
-    head.addColorStop(0,"#e9ffff");
-    head.addColorStop(.5,"#37ddff");
-    head.addColorStop(1,"#0875e8");
+
+
+    const head=
+        ctx.createRadialGradient(
+            5,-13,1,
+            7,-10,10
+        );
+
+    head.addColorStop(
+        0,
+        "#e9ffff"
+    );
+
+    head.addColorStop(
+        .5,
+        "#37ddff"
+    );
+
+    head.addColorStop(
+        1,
+        "#0875e8"
+    );
+
 
     ctx.fillStyle=head;
+
     ctx.fill();
+
     ctx.stroke();
 
-    /* عرف جليدي */
+
+    /* العرف */
+
     ctx.beginPath();
+
     ctx.moveTo(3,-17);
     ctx.lineTo(0,-24);
     ctx.lineTo(5,-21);
@@ -627,128 +1455,273 @@ function drawSeahorse(){
     ctx.lineTo(10,-18);
 
     ctx.fillStyle="#bfffff";
+
     ctx.fill();
+
 
     /* الخطم */
+
     ctx.beginPath();
+
     ctx.moveTo(13,-12);
+
     ctx.lineTo(21,-9);
+
     ctx.lineWidth=3;
+
     ctx.strokeStyle="#8ff8ff";
+
     ctx.stroke();
 
+
     /* العين */
+
     ctx.shadowBlur=5;
+
     ctx.fillStyle="#02101b";
+
     ctx.beginPath();
-    ctx.arc(9,-13,2.2,0,Math.PI*2);
+
+    ctx.arc(
+        9,-13,
+        2.2,
+        0,
+        Math.PI*2
+    );
+
     ctx.fill();
 
-    /* لمعة العين */
+
+    /* لمعة */
+
     ctx.fillStyle="white";
+
     ctx.beginPath();
-    ctx.arc(9.5,-13.5,.7,0,Math.PI*2);
+
+    ctx.arc(
+        9.5,
+        -13.5,
+        .7,
+        0,
+        Math.PI*2
+    );
+
     ctx.fill();
 
-    /* زعانف */
+
+    /* الزعنفة */
+
     ctx.beginPath();
+
     ctx.moveTo(-6,-1);
     ctx.lineTo(-16,-7);
     ctx.lineTo(-10,4);
+
     ctx.closePath();
 
     ctx.fillStyle="#69f5ff";
+
     ctx.fill();
+
 
     ctx.restore();
 }
 
+
+/* =====================================================
+   LOOP
+===================================================== */
+
 function draw(){
+
     drawBackground();
     drawPipes();
     drawParticles();
     drawSeahorse();
 }
 
+
 function loop(){
+
     if(!gameRunning)return;
+
     update();
     draw();
+
     requestAnimationFrame(loop);
 }
 
 
-/* ================= GAME OVER ================= */
+/* =====================================================
+   GAME OVER
+===================================================== */
 
 async function gameOver(){
+
     if(!gameRunning)return;
 
     gameRunning=false;
 
-    /* انفجار جليدي */
-    for(let i=0;i<30;i++)
-        particle(player.x,player.y,"ice");
 
-    document.getElementById("final-score-text").innerText=
+    /*
+       الجولة أصبحت مكتملة
+    */
+
+    completedRounds++;
+
+
+    localStorage.setItem(
+        "frost_completed_rounds",
+        String(completedRounds)
+    );
+
+
+    for(
+        let i=0;
+        i<30;
+        i++
+    ){
+
+        particle(
+            player.x,
+            player.y,
+            "ice"
+        );
+    }
+
+
+    document.getElementById(
+        "final-score-text"
+    ).innerText=
         `تمت إضافة +${earned} ألماسة 💎 إلى حسابك في سوبابيز!`;
 
-    document.getElementById("gameover-screen").style.display="flex";
+
+    document.getElementById(
+        "gameover-screen"
+    ).style.display="flex";
+
 
     if(isSaving)return;
+
     isSaving=true;
 
-    if(userData&&earned>0){
-        try{
-            const field=gpField();
-            const current=Number(userData[field]||0);
-            const update={};
-            update[field]=current+earned;
 
-            const {data:updated,error}=await client
+    if(
+        userData&&
+        earned>0
+    ){
+
+        try{
+
+            const field=gpField();
+
+            const current=
+                Number(
+                    userData[field]||0
+                );
+
+
+            const update={};
+
+            update[field]=
+                current+earned;
+
+
+            const {
+                data:updated,
+                error
+            }=await client
                 .from("users")
                 .update(update)
-                .eq("telegram_id",String(tid))
-                .select("*").single();
+                .eq(
+                    "telegram_id",
+                    String(tid)
+                )
+                .select("*")
+                .single();
 
-            if(!error&&updated){
+
+            if(
+                !error&&
+                updated
+            ){
+
                 userData=updated;
+
                 updateUI();
+
             }else{
-                console.error("Save score:",error);
+
+                console.error(
+                    "Save score:",
+                    error
+                );
             }
 
-            const {error:txError}=await client
+
+            const {
+                error:txError
+            }=await client
                 .from("transactions")
                 .insert([{
-                    telegram_id:String(tid),
-                    type:"points",
-                    title:"مكافأة أرباح لعبة حصان البحر",
-                    amount:`+${earned} 💎`,
-                    status:"مكتمل"
+
+                    telegram_id:
+                        String(tid),
+
+                    type:
+                        "points",
+
+                    title:
+                        "مكافأة أرباح لعبة حصان البحر",
+
+                    amount:
+                        `+${earned} 💎`,
+
+                    status:
+                        "مكتمل"
+
                 }]);
 
-            if(txError)console.error("Transaction:",txError);
+
+            if(txError)
+                console.error(
+                    "Transaction:",
+                    txError
+                );
+
 
         }catch(e){
-            console.error("Save error:",e);
+
+            console.error(
+                "Save error:",
+                e
+            );
         }
     }
+
 
     isSaving=false;
 }
 
 
-/* ================= EXIT ================= */
+/* =====================================================
+   EXIT
+===================================================== */
 
 function exitGame(){
-    location.href=`../games.html?id=${tid}`;
+
+    location.href=
+        `../games.html?id=${tid}`;
 }
 
 
-/* ================= INIT ================= */
+/* =====================================================
+   INIT
+===================================================== */
 
 initUser();
 
 </script>
+
 </body>
-</html>
+    </html>
