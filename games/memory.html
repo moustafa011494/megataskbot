@@ -1,333 +1,812 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MegaTask - Memory Game</title>
-    
-    <!-- إعلانات Monetag -->
-    <script src="//libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>MegaTask - Memory Game</title>
+<script src="//libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 50px; width: 100%; max-width: 100vw; overflow-x: hidden; text-align: center; }
-        
-        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d333d; }
-        .back-link { background: #252932; color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; text-decoration: none; }
-        
-        .game-title { margin: 15px 0 5px; color: var(--main-green); font-size: 18px; }
-        .game-desc { font-size: 11px; color: var(--text-gray); margin-bottom: 15px; }
-
-        .stats-row { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
-        .stat-card { background: var(--card-bg); border: 1px solid #2d333d; padding: 8px 15px; border-radius: 12px; }
-        .stat-card b { display: block; color: #00f2ff; font-size: 15px; }
-        .stat-card span { font-size: 10px; color: var(--text-gray); }
-
-        /* شبكة الكروت الـ 20 المريحة (4 أعمدة × 5 صفوف) */
-        .memory-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 340px; margin: 0 auto 20px; padding: 0 10px; }
-        .memory-card { aspect-ratio: 1; background: #16191e; border: 2px solid #2d333d; border-radius: 12px; font-size: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; user-select: none; }
-        .memory-card.flipped { background: #1a222c; border-color: var(--main-green); transform: rotateY(180deg); }
-        .memory-card.matched { background: rgba(0, 210, 106, 0.1); border-color: var(--main-green); opacity: 0.6; cursor: default; }
-
-        .btn-action { background: var(--main-green); color: black; border: none; padding: 12px 25px; border-radius: 14px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); display: none; margin-bottom: 20px; }
-
-        /* تنسيق نافذة جمع الألماس (Modal) */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-        .modal-box { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 25px; width: 100%; max-width: 340px; text-align: center; box-sizing: border-box; }
-        .btn-confirm-modal { width: 100%; background: var(--main-green); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; }
-    </style>
+<style>
+:root{--main-green:#00d26a;--dark-bg:#0d0f12;--card-bg:#1a1d23;--text-gray:#9ca3af}
+html,body{background:var(--dark-bg);color:white;font-family:'Segoe UI',sans-serif;margin:0;padding:0 0 50px;width:100%;max-width:100vw;overflow-x:hidden;text-align:center}
+.header{padding:15px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2d333d}
+.back-link{background:#252932;color:white;border:none;padding:8px 15px;border-radius:10px;font-weight:bold;cursor:pointer;font-size:12px;text-decoration:none}
+.game-title{margin:15px 0 5px;color:var(--main-green);font-size:18px}
+.game-desc{font-size:11px;color:var(--text-gray);margin-bottom:15px}
+.stats-row{display:flex;justify-content:center;gap:15px;margin-bottom:15px}
+.stat-card{background:var(--card-bg);border:1px solid #2d333d;padding:8px 15px;border-radius:12px}
+.stat-card b{display:block;color:#00f2ff;font-size:15px}
+.stat-card span{font-size:10px;color:var(--text-gray)}
+.memory-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:340px;margin:0 auto 20px;padding:0 10px}
+.memory-card{aspect-ratio:1;background:#16191e;border:2px solid #2d333d;border-radius:12px;font-size:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;user-select:none}
+.memory-card.flipped{background:#1a222c;border-color:var(--main-green);transform:rotateY(180deg)}
+.memory-card.matched{background:rgba(0,210,106,.1);border-color:var(--main-green);opacity:.6;cursor:default}
+.btn-action{background:var(--main-green);color:#000;border:none;padding:12px 25px;border-radius:14px;font-weight:bold;font-size:13px;cursor:pointer;box-shadow:0 4px 15px rgba(0,210,106,.2);display:none;margin-bottom:20px}
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
+.modal-box{background:var(--card-bg);border:1px solid #2d333d;border-radius:20px;padding:25px;width:100%;max-width:340px;text-align:center;box-sizing:border-box}
+.btn-confirm-modal{width:100%;background:var(--main-green);color:#000;border:none;padding:13px;border-radius:12px;font-size:14px;font-weight:bold;cursor:pointer;margin-top:15px}
+</style>
 </head>
+
 <body>
 
-    <div class="header">
-        <a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
-        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">🧠 تحدي الـ 20 كارت</span>
-        <div style="width: 60px;"></div>
-    </div>
+<div class="header">
+<a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
+<span style="font-size:13px;font-weight:bold;color:var(--main-green)">🧠 تحدي الذاكرة</span>
+<div style="width:60px"></div>
+</div>
 
-    <h2 class="game-title">لعبة الذاكرة الممتعة!</h2>
-    <p class="game-desc">كل زوج تطابقه يمنحك +4 ألماسات (بعد مشاهدة الإعلان) | كل خطأ يخصم 1 ألماسة!</p>
+<h2 class="game-title">لعبة الذاكرة الممتعة!</h2>
 
-    <div class="stats-row">
-        <div class="stat-card">
-            <b id="user-diamonds-counter">0</b>
-            <span>ألماسات حسابك</span>
-        </div>
-        <div class="stat-card">
-            <b id="mistakes-counter" style="color: #ff3b30;">0</b>
-            <span>الأخطاء (الخصومات)</span>
-        </div>
-    </div>
+<p class="game-desc">
+كل 3 أزواج = 3 جولات ثم إعلان واحد +4 ألماسات 💎 | كل خطأ يخصم 1 ألماسة
+</p>
 
-    <div id="status-msg" style="font-size: 12px; color: #ffaa00; font-weight: bold; margin-bottom: 12px;">جاري تحميل الجولة...</div>
+<div class="stats-row">
+<div class="stat-card">
+<b id="user-diamonds-counter">0</b>
+<span>ألماسات حسابك</span>
+</div>
 
-    <div class="memory-grid" id="memory-grid"></div>
+<div class="stat-card">
+<b id="mistakes-counter" style="color:#ff3b30">0</b>
+<span>الأخطاء</span>
+</div>
+</div>
 
-    <button id="restart-btn" class="btn-action" onclick="startNewRoundWithAd()">
-        🔄 دورة جديدة (مشاهدة إعلان)
-    </button>
+<div id="status-msg" style="font-size:12px;color:#ffaa00;font-weight:bold;margin-bottom:12px">
+جاري تجهيز الحساب...
+</div>
 
-    <!-- نافذة جمع الألماس عند مطابقة كل زوج -->
-    <div id="claim-modal" class="modal-overlay">
-        <div class="modal-box">
-            <h3 style="color: #00f2ff; margin-top:0;">🎉 مطابقة ناجحة!</h3>
-            <p style="font-size: 13px; color: var(--text-gray); line-height: 1.6; margin-bottom: 15px;">
-                لقد طابقت زوجاً صحيحاً!<br>
-                لديك <b style="color: #ffaa00;">+4 ألماسات 💎</b> في انتظار الجمع.
-            </p>
-            <button class="btn-confirm-modal" onclick="claimMatchDiamonds()">
-                📺 جمع الألماس (مشاهدة إعلان)
-            </button>
-        </div>
-    </div>
+<div class="memory-grid" id="memory-grid"></div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+<button id="restart-btn" class="btn-action" onclick="nextAction()">
+🔄 بدء الجولة
+</button>
 
-        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-        const client = supabase.createClient(S_URL, S_KEY);
+<div id="claim-modal" class="modal-overlay">
+<div class="modal-box">
+<h3 style="color:#00f2ff;margin-top:0">🎉 أكملت 3 أزواج!</h3>
 
-        const params = new URLSearchParams(window.location.search);
-        let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || localStorage.getItem('megatask_uid') || "").trim();
+<p style="font-size:13px;color:var(--text-gray);line-height:1.6;margin-bottom:15px">
+أكملت <b style="color:#ffaa00">3 جولات</b> بنجاح!<br>
+شاهد الإعلان لتحصل على <b style="color:#00d26a">+4 ألماسات 💎</b>
+</p>
 
-        document.getElementById('back-link').href = `../games.html?id=${tid}`;
+<button class="btn-confirm-modal" onclick="claimThreePairs()">
+📺 مشاهدة الإعلان وجمع +4 💎
+</button>
+</div>
+</div>
 
-        let userData = null;
-        // 10 أزواج = 20 كارت موزعة على 4 أعمدة
-        const emojis = ['🪙', '💎', '🚀', '🔥', '👑', '🎁', '⭐', '⚡', '🎈', '🎨'];
-        let cards = [];
-        let flippedCards = [];
-        let matchedPairs = 0;
-        let mistakes = 0;
-        let isLocked = false;
-        let gameStarted = false;
+<script>
+const tg=window.Telegram.WebApp;
+tg.expand();
 
-        async function initUser() {
-            try {
-                let u = null;
+const S_URL="https://smukfrwnguvmxvfwqwrv.supabase.co";
 
-                if (tid && tid !== "undefined" && tid !== "null") {
-                    let { data: u1 } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
-                    if (u1) {
-                        u = u1;
-                    } else {
-                        let { data: u2 } = await client.from('users').select('*').eq('telegram_id', Number(tid)).maybeSingle();
-                        if (u2) u = u2;
-                    }
-                }
+const S_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
 
-                if (!u) {
-                    let { data: latest } = await client.from('users').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
-                    if (latest) u = latest;
-                }
+const client=supabase.createClient(S_URL,S_KEY);
 
-                if (u) {
-                    userData = u;
-                    tid = String(u.telegram_id || tid);
-                    localStorage.setItem('telegram_id', tid);
-                    localStorage.setItem('megatask_uid', tid);
-                    document.getElementById('back-link').href = `../games.html?id=${tid}`;
-                    updateUI();
-                    startNewRoundWithAd();
-                } else {
-                    userData = { telegram_id: tid || "123456789", gamepoints: 0 };
-                    updateUI();
-                    startNewRoundWithAd();
-                }
+const params=new URLSearchParams(location.search);
 
-            } catch (e) {
-                console.error("Init error:", e);
-                userData = { telegram_id: tid || "123456789", gamepoints: 0 };
-                updateUI();
-                startNewRoundWithAd();
-            }
-        }
+let tid=String(
+params.get("id")||
+tg.initDataUnsafe.user?.id||
+localStorage.getItem("telegram_id")||
+localStorage.getItem("megatask_uid")||
+""
+).trim();
 
-        function updateUI() {
-            if (!userData) return;
-            const diamonds = Number(userData.gamepoints !== undefined ? userData.gamepoints : (userData.diamonds !== undefined ? userData.diamonds : 0));
-            document.getElementById('user-diamonds-counter').innerText = diamonds.toLocaleString();
-            document.getElementById('mistakes-counter').innerText = mistakes;
-        }
+document.getElementById("back-link").href=`../games.html?id=${tid}`;
 
-        async function startNewRoundWithAd() {
-            document.getElementById('status-msg').innerText = "⏳ جاري تحميل إعلان الجولة الجديدة...";
-            document.getElementById('restart-btn').style.display = 'none';
+let userData=null;
 
-            try {
-                if (typeof show_10959333 === 'function') {
-                    await show_10959333();
-                } else {
-                    console.warn("Monetag SDK not found, bypassing ad for testing.");
-                }
+const emojis=[
+"🪙","💎","🚀","🔥","👑",
+"🎁","⭐","⚡","🎈","🎨"
+];
 
-                setupGame();
+let cards=[];
+let flippedCards=[];
+let matchedPairs=0;
+let mistakes=0;
+let isLocked=false;
+let gameStarted=false;
+let roundActive=false;
+let timer=null;
 
-            } catch (err) {
-                console.error("Ad error:", err);
-                tg.showAlert("❌ يجب مشاهدة الإعلان كاملاً لبدء الجولة الجديدة.");
-                document.getElementById('status-msg').innerText = "⚠️ لم يتم إكمال الإعلان.";
-                document.getElementById('restart-btn').style.display = 'inline-block';
-            }
-        }
+let rounds=0;
+let dailyUsed=0;
 
-        function setupGame() {
-            const grid = document.getElementById('memory-grid');
-            grid.innerHTML = '';
-            flippedCards = [];
-            matchedPairs = 0;
-            mistakes = 0;
-            isLocked = true;
-            updateUI();
+let roundKey="";
+let lockKey="";
 
-            document.getElementById('status-msg').innerText = "👀 احفظ مكان الـ20 كارت بسرعة...";
+function setKeys(){
+roundKey=`memory_rounds_${tid}`;
+lockKey=`memory_lock_${tid}`;
+}
 
-            cards = [...emojis, ...emojis]
-                .sort(() => Math.random() - 0.5)
-                .map((emoji, index) => ({ id: index, emoji, isFlipped: true, isMatched: false }));
+function cairoDate(){
+return new Intl.DateTimeFormat("en-CA",{
+timeZone:"Africa/Cairo",
+year:"numeric",
+month:"2-digit",
+day:"2-digit"
+}).format(new Date());
+}
 
-            cards.forEach(card => {
-                const cardEl = document.createElement('div');
-                cardEl.classList.add('memory-card', 'flipped');
-                cardEl.dataset.id = card.id;
-                cardEl.innerText = card.emoji;
-                cardEl.onclick = () => flipCard(card.id, cardEl);
-                grid.appendChild(cardEl);
-            });
+async function initUser(){
 
-            setTimeout(() => {
-                const cardElements = document.querySelectorAll('.memory-card');
-                cards.forEach((card, idx) => {
-                    card.isFlipped = false;
-                    cardElements[idx].innerText = '❓';
-                    cardElements[idx].classList.remove('flipped');
-                });
-                isLocked = false;
-                gameStarted = true;
-                document.getElementById('status-msg').innerText = "🧠 ابدأ المطابقة الآن!";
-            }, 1200);
-        }
+try{
 
-        function flipCard(id, el) {
-            if (isLocked || !gameStarted) return;
-            const clickedCard = cards.find(c => c.id === id);
+let u=null;
 
-            if (clickedCard.isFlipped || clickedCard.isMatched) return;
+if(tid&&tid!=="undefined"&&tid!=="null"){
 
-            clickedCard.isFlipped = true;
-            el.innerText = clickedCard.emoji;
-            el.classList.add('flipped');
-            flippedCards.push({ id, emoji: clickedCard.emoji, el });
+let{data:u1}=await client
+.from("users")
+.select("*")
+.eq("telegram_id",tid)
+.maybeSingle();
 
-            if (flippedCards.length === 2) {
-                checkMatch();
-            }
-        }
+if(u1)u=u1;
+else{
 
-        async function checkMatch() {
-            const [card1, card2] = flippedCards;
-            
-            if (card1.emoji === card2.emoji) {
-                cards.find(c => c.id === card1.id).isMatched = true;
-                cards.find(c => c.id === card2.id).isMatched = true;
-                
-                card1.el.classList.add('matched');
-                card2.el.classList.add('matched');
-                
-                matchedPairs++;
-                flippedCards = [];
+let{data:u2}=await client
+.from("users")
+.select("*")
+.eq("telegram_id",Number(tid))
+.maybeSingle();
 
-                // إيقاف اللعبة مؤقتاً وإظهار نافذة جمع الألماس والإعلان
-                isLocked = true;
-                document.getElementById('claim-modal').style.display = 'flex';
+if(u2)u=u2;
 
-                if (matchedPairs === emojis.length) {
-                    gameStarted = false;
-                    document.getElementById('restart-btn').style.display = 'inline-block';
-                }
-            } else {
-                isLocked = true;
-                mistakes++;
-                updateUI();
-                await updateUserDiamonds(-1);
+}
 
-                setTimeout(() => {
-                    cards.find(c => c.id === card1.id).isFlipped = false;
-                    cards.find(c => c.id === card2.id).isFlipped = false;
-                    
-                    card1.el.innerText = '❓';
-                    card2.el.innerText = '❓';
-                    card1.el.classList.remove('flipped');
-                    card2.el.classList.remove('flipped');
-                    
-                    flippedCards = [];
-                    isLocked = false;
-                }, 400);
-            }
-        }
+}
 
-        // عند الضغط على زر جمع الألماس ومشاهدة الإعلان
-        async function claimMatchDiamonds() {
-            document.getElementById('claim-modal').style.display = 'none';
+if(!u){
 
-            try {
-                if (typeof show_10959333 === 'function') {
-                    await show_10959333();
-                } else {
-                    console.warn("Monetag SDK not found, bypassing ad.");
-                }
+let{data:latest}=await client
+.from("users")
+.select("*")
+.order("created_at",{ascending:false})
+.limit(1)
+.maybeSingle();
 
-                // إضافة 4 ألماسات بعد نجاح الإعلان
-                await updateUserDiamonds(4);
+if(latest)u=latest;
 
-                if (matchedPairs === emojis.length) {
-                    document.getElementById('status-msg').innerText = "🏆 مبروك! أكملت الـ20 كارت بنجاح كامل!";
-                } else {
-                    document.getElementById('status-msg').innerText = "🟢 رائع! تابع اللعب وابحث عن مطابقة جديدة.";
-                    isLocked = false; // استئناف اللعب
-                }
+}
 
-            } catch (err) {
-                console.error("Ad error:", err);
-                tg.showAlert("❌ يجب مشاهدة الإعلان لجمع الـ4 ألماسات.");
-                document.getElementById('claim-modal').style.display = 'flex';
-            }
-        }
+if(!u){
 
-        async function updateUserDiamonds(amount) {
-            if (!userData) return;
+userData={
+telegram_id:tid||"123456789",
+gamepoints:0
+};
 
-            const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
-            let currentDiamonds = Number(userData[gpField] || 0);
-            let newDiamonds = currentDiamonds + amount;
-            if (newDiamonds < 0) newDiamonds = 0;
+}else{
 
-            try {
-                const updateObj = {};
-                updateObj[gpField] = newDiamonds;
+userData=u;
 
-                const { data: updated, error } = await client
-                    .from('users')
-                    .update(updateObj)
-                    .eq('telegram_id', String(tid))
-                    .select('*')
-                    .single();
+}
 
-                if (!error && updated) {
-                    userData = updated;
-                    updateUI();
-                }
-            } catch (e) {
-                console.error("Update diamonds error:", e);
-            }
-        }
+tid=String(userData.telegram_id||tid);
 
-        initUser();
-    </script>
+localStorage.setItem("telegram_id",tid);
+localStorage.setItem("megatask_uid",tid);
+
+setKeys();
+
+document.getElementById("back-link").href=`../games.html?id=${tid}`;
+
+updateUI();
+
+await prepareDaily();
+
+checkSavedState();
+
+}catch(e){
+
+console.error("Init error:",e);
+
+tg.showAlert("❌ حدث خطأ أثناء تجهيز الحساب.");
+
+}
+
+}
+
+function updateUI(){
+
+if(!userData)return;
+
+const diamonds=Number(
+userData.gamepoints!==undefined?
+userData.gamepoints:
+userData.diamonds!==undefined?
+userData.diamonds:
+0
+);
+
+document.getElementById("user-diamonds-counter").innerText=
+diamonds.toLocaleString();
+
+document.getElementById("mistakes-counter").innerText=mistakes;
+
+}
+
+async function prepareDaily(){
+
+if(!userData)return;
+
+let today=cairoDate();
+
+let used=Number(userData.daily_game_rounds||0);
+
+if(userData.daily_game_date!==today){
+
+let{data,error}=await client
+.from("users")
+.update({
+daily_game_rounds:0,
+daily_game_date:today
+})
+.eq("telegram_id",String(tid))
+.select("*")
+.single();
+
+if(!error&&data){
+
+userData=data;
+used=0;
+
+}
+
+}
+
+dailyUsed=used;
+
+}
+
+async function consumeDailyRound(){
+
+if(!userData)return false;
+
+if(dailyUsed>=30){
+
+showDailyLimit();
+
+return false;
+
+}
+
+let today=cairoDate();
+let next=dailyUsed+1;
+
+let{data,error}=await client
+.from("users")
+.update({
+daily_game_rounds:next,
+daily_game_date:today
+})
+.eq("telegram_id",String(tid))
+.select("*")
+.single();
+
+if(error){
+
+console.error("Daily round error:",error);
+
+return false;
+
+}
+
+if(data){
+
+userData=data;
+dailyUsed=Number(data.daily_game_rounds||next);
+
+}
+
+return true;
+
+}
+
+function showDailyLimit(){
+
+roundActive=false;
+gameStarted=false;
+isLocked=true;
+
+document.getElementById("restart-btn").style.display="none";
+
+document.getElementById("status-msg").innerText=
+"🚫 وصلت للحد الأقصى اليومي: 30 جولة.";
+
+}
+
+function checkSavedState(){
+
+rounds=Number(localStorage.getItem(roundKey)||0);
+
+let lock=Number(localStorage.getItem(lockKey)||0);
+
+if(lock){
+
+if(lock>Date.now()){
+
+roundActive=false;
+gameStarted=false;
+isLocked=true;
+
+showSavedTimer(lock);
+
+return;
+
+}
+
+localStorage.removeItem(lockKey);
+
+rounds=0;
+
+localStorage.setItem(roundKey,"0");
+
+}
+
+if(dailyUsed>=30){
+
+showDailyLimit();
+
+return;
+
+}
+
+resetBoard();
+
+if(rounds>=3){
+
+document.getElementById("status-msg").innerText=
+"📺 أكملت 3 جولات، يجب مشاهدة الإعلان قبل اللوحة الجديدة.";
+
+document.getElementById("restart-btn").style.display="inline-block";
+
+document.getElementById("restart-btn").innerText=
+"📺 مشاهدة الإعلان";
+
+return;
+
+}
+
+document.getElementById("status-msg").innerText=
+`جاهز للجولة ${rounds+1} من 3.`;
+
+document.getElementById("restart-btn").style.display="inline-block";
+
+document.getElementById("restart-btn").innerText=
+"🔄 بدء الجولة";
+
+}
+
+function nextAction(){
+
+if(timer||roundActive)return;
+
+rounds=Number(localStorage.getItem(roundKey)||0);
+
+if(dailyUsed>=30){
+
+showDailyLimit();
+
+return;
+
+}
+
+if(rounds>=3){
+
+showAd();
+
+return;
+
+}
+
+startRound();
+
+}
+
+async function startRound(){
+
+if(timer||roundActive)return;
+
+rounds=Number(localStorage.getItem(roundKey)||0);
+
+if(dailyUsed>=30){
+
+showDailyLimit();
+
+return;
+
+}
+
+if(rounds>=3){
+
+showAd();
+
+return;
+
+}
+
+let ok=await consumeDailyRound();
+
+if(!ok)return;
+
+/*
+الجولة تتحسب فور بدء الزوج.
+*/
+
+rounds++;
+
+localStorage.setItem(roundKey,String(rounds));
+
+roundActive=true;
+gameStarted=false;
+isLocked=true;
+
+setupGame();
+
+}
+
+function setupGame(){
+
+const grid=document.getElementById("memory-grid");
+
+grid.innerHTML="";
+
+flippedCards=[];
+matchedPairs=0;
+mistakes=0;
+
+isLocked=true;
+
+updateUI();
+
+document.getElementById("restart-btn").style.display="none";
+
+document.getElementById("status-msg").innerText=
+"👀 احفظ مكان الكروت بسرعة...";
+
+cards=[...emojis,...emojis]
+.sort(()=>Math.random()-.5)
+.map((emoji,index)=>({
+id:index,
+emoji,
+isFlipped:true,
+isMatched:false
+}));
+
+cards.forEach(card=>{
+
+const cardEl=document.createElement("div");
+
+cardEl.classList.add("memory-card","flipped");
+
+cardEl.dataset.id=card.id;
+
+cardEl.innerText=card.emoji;
+
+cardEl.onclick=()=>flipCard(card.id,cardEl);
+
+grid.appendChild(cardEl);
+
+});
+
+setTimeout(()=>{
+
+const cardElements=document.querySelectorAll(".memory-card");
+
+cards.forEach((card,idx)=>{
+
+card.isFlipped=false;
+
+cardElements[idx].innerText="❓";
+
+cardElements[idx].classList.remove("flipped");
+
+});
+
+isLocked=false;
+gameStarted=true;
+
+document.getElementById("status-msg").innerText=
+`🧠 الجولة ${rounds} من 3 — ابدأ المطابقة!`;
+
+},1200);
+
+}
+
+function flipCard(id,el){
+
+if(isLocked||!gameStarted||!roundActive)return;
+
+const clickedCard=cards.find(c=>c.id===id);
+
+if(!clickedCard||clickedCard.isFlipped||clickedCard.isMatched)return;
+
+clickedCard.isFlipped=true;
+
+el.innerText=clickedCard.emoji;
+
+el.classList.add("flipped");
+
+flippedCards.push({
+id,
+emoji:clickedCard.emoji,
+el
+});
+
+if(flippedCards.length===2){
+
+checkMatch();
+
+}
+
+}
+
+async function checkMatch(){
+
+const[card1,card2]=flippedCards;
+
+if(card1.emoji===card2.emoji){
+
+cards.find(c=>c.id===card1.id).isMatched=true;
+cards.find(c=>c.id===card2.id).isMatched=true;
+
+card1.el.classList.add("matched");
+card2.el.classList.add("matched");
+
+matchedPairs++;
+
+flippedCards=[];
+
+isLocked=true;
+
+document.getElementById("status-msg").innerText=
+`✅ زوج صحيح! ${matchedPairs}/3 أزواج للجولة الحالية.`;
+
+if(matchedPairs>=3){
+
+gameStarted=false;
+roundActive=false;
+
+document.getElementById("claim-modal").style.display="flex";
+
+return;
+
+}
+
+setTimeout(()=>{
+
+isLocked=false;
+
+},250);
+
+}else{
+
+isLocked=true;
+
+mistakes++;
+
+updateUI();
+
+await updateUserDiamonds(-1);
+
+setTimeout(()=>{
+
+cards.find(c=>c.id===card1.id).isFlipped=false;
+cards.find(c=>c.id===card2.id).isFlipped=false;
+
+card1.el.innerText="❓";
+card2.el.innerText="❓";
+
+card1.el.classList.remove("flipped");
+card2.el.classList.remove("flipped");
+
+flippedCards=[];
+
+isLocked=false;
+
+},400);
+
+}
+
+}
+
+async function claimThreePairs(){
+
+document.getElementById("claim-modal").style.display="none";
+
+document.getElementById("status-msg").innerText=
+"⏳ جاري تحميل الإعلان...";
+
+try{
+
+if(typeof show_10959333!=="function")
+throw new Error("Ad unavailable");
+
+await show_10959333();
+
+/*
+الإعلان الواحد بعد 3 أزواج.
+*/
+
+await updateUserDiamonds(4);
+
+document.getElementById("status-msg").innerText=
+"🎉 رائع! حصلت على +4 ألماسات 💎";
+
+let end=Date.now()+300000;
+
+localStorage.setItem(lockKey,String(end));
+
+rounds=0;
+
+localStorage.setItem(roundKey,"0");
+
+showSavedTimer(end);
+
+}catch(err){
+
+console.error("Ad error:",err);
+
+tg.showAlert("❌ يجب مشاهدة الإعلان كاملاً للحصول على المكافأة.");
+
+document.getElementById("claim-modal").style.display="flex";
+
+}
+
+}
+
+function showAd(){
+
+if(timer||roundActive)return;
+
+document.getElementById("restart-btn").style.display="none";
+
+document.getElementById("status-msg").innerText=
+"⏳ جاري تجهيز الإعلان...";
+
+document.getElementById("claim-modal").style.display="flex";
+
+}
+
+function showSavedTimer(end){
+
+if(timer)clearInterval(timer);
+
+roundActive=false;
+gameStarted=false;
+isLocked=true;
+
+timer=setInterval(()=>{
+
+let left=Math.max(0,end-Date.now());
+
+let s=Math.ceil(left/1000);
+
+let m=Math.floor(s/60);
+
+let sec=s%60;
+
+document.getElementById("status-msg").innerText=
+`⏱️ متاح اللعب بعد ${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+
+document.getElementById("restart-btn").style.display="none";
+
+if(!left){
+
+clearInterval(timer);
+
+timer=null;
+
+localStorage.removeItem(lockKey);
+
+rounds=0;
+
+localStorage.setItem(roundKey,"0");
+
+if(dailyUsed>=30){
+
+showDailyLimit();
+
+return;
+
+}
+
+resetBoard();
+
+document.getElementById("status-msg").innerText=
+"✅ انتهى وقت الانتظار، يمكنك بدء 3 جولات جديدة.";
+
+document.getElementById("restart-btn").style.display="inline-block";
+
+document.getElementById("restart-btn").innerText=
+"🔄 بدء الجولة";
+
+}
+
+},250);
+
+}
+
+function resetBoard(){
+
+document.getElementById("memory-grid").innerHTML="";
+
+cards=[];
+flippedCards=[];
+
+matchedPairs=0;
+
+gameStarted=false;
+roundActive=false;
+isLocked=true;
+
+mistakes=0;
+
+updateUI();
+
+}
+
+async function updateUserDiamonds(amount){
+
+if(!userData)return;
+
+const gpField=
+userData.gamepoints!==undefined?
+"gamepoints":
+userData.diamonds!==undefined?
+"diamonds":
+"gamepoints";
+
+let currentDiamonds=Number(userData[gpField]||0);
+
+let newDiamonds=currentDiamonds+amount;
+
+if(newDiamonds<0)newDiamonds=0;
+
+try{
+
+const updateObj={};
+
+updateObj[gpField]=newDiamonds;
+
+const{data:updated,error}=await client
+.from("users")
+.update(updateObj)
+.eq("telegram_id",String(tid))
+.select("*")
+.single();
+
+if(!error&&updated){
+
+userData=updated;
+
+updateUI();
+
+}
+
+}catch(e){
+
+console.error("Update diamonds error:",e);
+
+}
+
+}
+
+initUser();
+</script>
+
 </body>
 </html>
