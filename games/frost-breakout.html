@@ -58,7 +58,6 @@ canvas{
     border-radius:12px;
     background:rgba(3,18,36,.78);
     backdrop-filter:blur(10px);
-    box-shadow:0 0 15px rgba(0,170,255,.08);
     text-align:center;
 }
 
@@ -67,7 +66,6 @@ canvas{
     color:#8ba9bd;
     font-size:9px;
     font-weight:bold;
-    letter-spacing:.5px;
 }
 
 .stat b{
@@ -77,21 +75,10 @@ canvas{
     font-size:15px;
 }
 
-#score{
-    color:#62d9ff;
-}
-
-#level{
-    color:#b7f1ff;
-}
-
-#time{
-    color:#fff;
-}
-
-#balance{
-    color:#ffd95c;
-}
+#score{color:#62d9ff}
+#level{color:#b7f1ff}
+#time{color:#fff}
+#balance{color:#ffd95c}
 
 #message{
     position:fixed;
@@ -111,9 +98,7 @@ canvas{
     white-space:nowrap;
 }
 
-#message.show{
-    opacity:1;
-}
+#message.show{opacity:1}
 
 #overlay{
     position:fixed;
@@ -135,9 +120,7 @@ canvas{
     border:1px solid rgba(93,218,255,.22);
     border-radius:24px;
     background:linear-gradient(180deg,rgba(8,29,50,.96),rgba(2,12,24,.97));
-    box-shadow:
-        0 0 50px rgba(0,150,255,.12),
-        inset 0 1px 0 rgba(255,255,255,.05);
+    box-shadow:0 0 50px rgba(0,150,255,.12);
     text-align:center;
 }
 
@@ -195,9 +178,7 @@ button{
     box-shadow:0 7px 25px rgba(0,170,255,.18);
 }
 
-button:active{
-    transform:scale(.98);
-}
+button:active{transform:scale(.98)}
 
 button.secondary{
     color:#d4e7ef;
@@ -235,23 +216,6 @@ button:disabled{
     pointer-events:none;
     background:#fff;
     opacity:0;
-}
-
-.shake{
-    animation:shake .16s linear;
-}
-
-@keyframes shake{
-    0%{transform:translate(0,0)}
-    25%{transform:translate(4px,-2px)}
-    50%{transform:translate(-4px,2px)}
-    75%{transform:translate(3px,1px)}
-    100%{transform:translate(0,0)}
-}
-
-@media(max-width:380px){
-    .stat b{font-size:13px}
-    .stat small{font-size:8px}
 }
 </style>
 </head>
@@ -316,22 +280,17 @@ button:disabled{
 </div>
 
 <script>
-/* =========================================================
-   CONFIG
-========================================================= */
 
-const SUPABASE_URL =
-"https://smukfrwnguvmxvfwqwrv.supabase.co";
+const SUPABASE_URL="https://smukfrwnguvmxvfwqwrv.supabase.co";
 
-const SUPABASE_KEY =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcndnZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
 
-const db = supabase.createClient(
+const db=supabase.createClient(
     SUPABASE_URL,
     SUPABASE_KEY
 );
 
-const tg = window.Telegram?.WebApp || null;
+const tg=window.Telegram?.WebApp||null;
 
 if(tg){
     try{
@@ -340,105 +299,65 @@ if(tg){
     }catch(e){}
 }
 
+const params=new URLSearchParams(
+    window.location.search
+);
 
-/* =========================================================
-   ACCOUNT — نفس طريقة Lucky Chests
-========================================================= */
-
-const params = new URLSearchParams(window.location.search);
-
-let tid = String(
-    params.get("id") ||
-    tg?.initDataUnsafe?.user?.id ||
-    localStorage.getItem("telegram_id") ||
+let tid=String(
+    params.get("id")||
+    tg?.initDataUnsafe?.user?.id||
+    localStorage.getItem("telegram_id")||
     ""
 ).trim();
 
-let uid = null;
-let user = null;
-let diamondField = null;
+let uid=null;
+let user=null;
+let diamondField=null;
 
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
-/* =========================================================
-   ELEMENTS
-========================================================= */
+const scoreEl=document.getElementById("score");
+const levelEl=document.getElementById("level");
+const timeEl=document.getElementById("time");
+const balanceEl=document.getElementById("balance");
 
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const overlay=document.getElementById("overlay");
+const startBtn=document.getElementById("startBtn");
+const backBtn=document.getElementById("backBtn");
+const loading=document.getElementById("loading");
 
-const scoreEl = document.getElementById("score");
-const levelEl = document.getElementById("level");
-const timeEl = document.getElementById("time");
-const balanceEl = document.getElementById("balance");
+const resultBox=document.getElementById("result");
+const finalScore=document.getElementById("finalScore");
+const finalReward=document.getElementById("finalReward");
 
-const overlay = document.getElementById("overlay");
-const startBtn = document.getElementById("startBtn");
-const backBtn = document.getElementById("backBtn");
-const loading = document.getElementById("loading");
+const message=document.getElementById("message");
+const flash=document.getElementById("flash");
+const touchHint=document.getElementById("touchHint");
 
-const resultBox = document.getElementById("result");
-const finalScore = document.getElementById("finalScore");
-const finalReward = document.getElementById("finalReward");
+let W=innerWidth;
+let H=innerHeight;
+let DPR=Math.min(devicePixelRatio||1,2);
 
-const message = document.getElementById("message");
-const flash = document.getElementById("flash");
+let gameRunning=false;
+let animationId=null;
 
+let score=0;
+let level=1;
 
-/* =========================================================
-   CANVAS
-========================================================= */
+let startTime=0;
+let elapsed=0;
+let lastFrame=0;
 
-let W = innerWidth;
-let H = innerHeight;
-let DPR = Math.min(devicePixelRatio || 1,2);
-
-function resize(){
-
-    W = innerWidth;
-    H = innerHeight;
-
-    DPR = Math.min(devicePixelRatio || 1,2);
-
-    canvas.width = W * DPR;
-    canvas.height = H * DPR;
-
-    canvas.style.width = W + "px";
-    canvas.style.height = H + "px";
-
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-
-    if(!gameRunning){
-        paddle.y = H - 72;
-    }
-}
-
-addEventListener("resize",resize);
-
-
-/* =========================================================
-   GAME VARIABLES
-========================================================= */
-
-let gameRunning = false;
-let animationId = null;
-
-let score = 0;
-let level = 1;
-
-let startTime = 0;
-let elapsed = 0;
-
-let lastFrame = 0;
-
-let ball = {
+let ball={
     x:0,
     y:0,
     r:8,
-    vx:4,
-    vy:-4
+    vx:0,
+    vy:0
 };
 
-let paddle = {
+let paddle={
     x:0,
     y:0,
     w:110,
@@ -446,23 +365,55 @@ let paddle = {
     targetX:0
 };
 
-let bricks = [];
-let particles = [];
-let stars = [];
+let bricks=[];
+let particles=[];
+let stars=[];
 
-let roundReward = 0;
-let completedRounds = 0;
+let roundReward=0;
+let completedRounds=0;
 
 
-/* =========================================================
-   BACKGROUND STARS
-========================================================= */
+/* =========================
+   RESIZE
+========================= */
+
+function resize(){
+
+    W=innerWidth;
+    H=innerHeight;
+
+    DPR=Math.min(devicePixelRatio||1,2);
+
+    canvas.width=W*DPR;
+    canvas.height=H*DPR;
+
+    canvas.style.width=W+"px";
+    canvas.style.height=H+"px";
+
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+
+    if(!gameRunning){
+        paddle.y=H-92;
+    }
+
+    createStars();
+}
+
+addEventListener("resize",resize);
+
+
+/* =========================
+   STARS
+========================= */
 
 function createStars(){
 
-    stars = [];
+    stars=[];
 
-    const count = Math.max(35,Math.floor(W/10));
+    const count=Math.max(
+        35,
+        Math.floor(W/10)
+    );
 
     for(let i=0;i<count;i++){
 
@@ -476,172 +427,137 @@ function createStars(){
     }
 }
 
-createStars();
 
-
-/* =========================================================
-   USER LOOKUP
-   مطابق Lucky Chests
-========================================================= */
+/* =========================
+   USER
+========================= */
 
 async function initUser(){
 
     try{
 
         if(
-            !tid ||
-            tid === "undefined" ||
-            tid === "null"
+            !tid||
+            tid==="undefined"||
+            tid==="null"
         ){
 
-            const {data:latest,error:latestError} =
-                await db
+            const {data:latest}=await db
                 .from("users")
                 .select("*")
-                .order("created_at",{ascending:false})
+                .order(
+                    "created_at",
+                    {ascending:false}
+                )
                 .limit(1)
                 .maybeSingle();
 
-            if(latestError){
-                console.error("LATEST USER ERROR:",latestError);
-            }
-
             if(latest){
 
-                user = latest;
-                tid = String(latest.telegram_id);
+                user=latest;
+                tid=String(
+                    latest.telegram_id
+                );
             }
         }
 
-
         if(!user){
 
-            let r =
-                await db
+            let r=await db
                 .from("users")
                 .select("*")
-                .eq("telegram_id",String(tid))
+                .eq(
+                    "telegram_id",
+                    String(tid)
+                )
                 .maybeSingle();
 
-            console.log("STRING USER:",r.data,r.error);
-
             if(r.data){
-                user = r.data;
+                user=r.data;
             }
 
+            if(!user){
 
-            if(!user && !r.error){
-
-                const n = Number(tid);
+                const n=Number(tid);
 
                 if(Number.isFinite(n)){
 
-                    r =
-                        await db
+                    r=await db
                         .from("users")
                         .select("*")
-                        .eq("telegram_id",n)
+                        .eq(
+                            "telegram_id",
+                            n
+                        )
                         .maybeSingle();
 
-                    console.log("NUMBER USER:",r.data,r.error);
-
                     if(r.data){
-                        user = r.data;
+                        user=r.data;
                     }
                 }
             }
         }
 
-
-        /* آخر fallback مثل Lucky Chests */
-
         if(!user){
 
-            const {data:firstUser,error:firstError} =
-                await db
+            const {data:firstUser}=await db
                 .from("users")
                 .select("*")
                 .limit(1)
                 .maybeSingle();
 
-            console.log(
-                "FALLBACK USER:",
-                firstUser,
-                firstError
-            );
-
             if(firstUser){
-                user = firstUser;
-                tid = String(firstUser.telegram_id);
+
+                user=firstUser;
+                tid=String(
+                    firstUser.telegram_id
+                );
             }
         }
 
-
         if(!user){
 
-            loading.textContent =
+            loading.textContent=
                 "❌ لم يتم العثور على الحساب";
 
             return false;
         }
 
-
-        uid = String(user.telegram_id);
-
-        tid = uid;
+        uid=String(user.telegram_id);
+        tid=uid;
 
         localStorage.setItem(
             "telegram_id",
             uid
         );
 
-
-        /* تحديد خانة الرصيد */
-
-        diamondField =
-            user.gamepoints !== undefined
-                ? "gamepoints"
-                : user.diamonds !== undefined
-                    ? "diamonds"
-                    : null;
-
+        diamondField=
+            user.gamepoints!==undefined
+                ?"gamepoints"
+                :user.diamonds!==undefined
+                    ?"diamonds"
+                    :null;
 
         if(!diamondField){
 
-            loading.textContent =
+            loading.textContent=
                 "❌ لم يتم العثور على رصيد الألماس";
-
-            console.error(
-                "No gamepoints/diamonds field",
-                user
-            );
 
             return false;
         }
 
-
         updateDiamondUI();
 
-        loading.textContent =
+        loading.textContent=
             "✅ الحساب جاهز";
-
-        console.log(
-            "MEGATASK USER:",
-            uid,
-            diamondField,
-            user[diamondField]
-        );
 
         return true;
 
     }catch(e){
 
-        console.error(
-            "INIT USER ERROR:",
-            e
-        );
+        console.error(e);
 
-        loading.textContent =
+        loading.textContent=
             "❌ حدث خطأ في تحميل الحساب";
 
         return false;
@@ -649,47 +565,51 @@ async function initUser(){
 }
 
 
-/* =========================================================
-   BALANCE UI
-========================================================= */
+/* =========================
+   DIAMONDS
+========================= */
 
 function updateDiamondUI(){
 
-    if(!user || !diamondField){
-        balanceEl.textContent = "0 💎";
+    if(!user||!diamondField){
+
+        balanceEl.textContent="0 💎";
+
         return;
     }
 
-    const value =
-        Number(user[diamondField] || 0);
+    const value=
+        Number(
+            user[diamondField]||0
+        );
 
-    balanceEl.textContent =
-        `${value} 💎`;
+    balanceEl.textContent=
+        value+" 💎";
 }
 
 
-/* =========================================================
-   UPDATE DIAMONDS
-========================================================= */
-
 async function changeDiamonds(amount){
 
-    if(!user || !diamondField){
+    if(!user||!diamondField){
         return false;
     }
 
-    const current =
-        Number(user[diamondField] || 0);
+    const current=
+        Number(
+            user[diamondField]||0
+        );
 
-    const next =
-        Math.max(0,current + Number(amount));
+    const next=
+        Math.max(
+            0,
+            current+Number(amount)
+        );
 
-    const payload = {
-        [diamondField]: next
+    const payload={
+        [diamondField]:next
     };
 
-    let r =
-        await db
+    let r=await db
         .from("users")
         .update(payload)
         .eq(
@@ -699,17 +619,13 @@ async function changeDiamonds(amount){
         .select("*")
         .maybeSingle();
 
+    if(!r.data&&!r.error){
 
-    /* لو العمود telegram_id رقمي */
-
-    if(!r.data && !r.error){
-
-        const n = Number(uid);
+        const n=Number(uid);
 
         if(Number.isFinite(n)){
 
-            r =
-                await db
+            r=await db
                 .from("users")
                 .update(payload)
                 .eq(
@@ -721,27 +637,21 @@ async function changeDiamonds(amount){
         }
     }
 
-
     if(r.error){
 
         console.error(
-            "DIAMOND UPDATE:",
+            "DIAMOND UPDATE",
             r.error
         );
 
         return false;
     }
 
-
     if(r.data){
-
-        user = r.data;
-
+        user=r.data;
     }else{
-
-        user[diamondField] = next;
+        user[diamondField]=next;
     }
-
 
     updateDiamondUI();
 
@@ -749,38 +659,37 @@ async function changeDiamonds(amount){
 }
 
 
-/* =========================================================
+/* =========================
    TRANSACTION
-========================================================= */
+========================= */
 
-async function addTransaction(amount,title){
+async function addTransaction(
+    amount,
+    title
+){
 
     try{
 
-        if(!uid) return;
+        if(!uid)return;
 
         await db
-        .from("transactions")
-        .insert({
-            telegram_id:uid,
-            type:"points",
-            title:title,
-            amount:Number(amount)
-        });
+            .from("transactions")
+            .insert({
+                telegram_id:uid,
+                type:"points",
+                title:title,
+                amount:Number(amount)
+            });
 
     }catch(e){
-
-        console.warn(
-            "TRANSACTION:",
-            e
-        );
+        console.warn(e);
     }
 }
 
 
-/* =========================================================
+/* =========================
    TOAST
-========================================================= */
+========================= */
 
 let toastTimer;
 
@@ -788,58 +697,63 @@ function showToast(text){
 
     clearTimeout(toastTimer);
 
-    message.textContent = text;
+    message.textContent=text;
     message.classList.add("show");
 
-    toastTimer =
-        setTimeout(()=>{
+    toastTimer=setTimeout(
+        ()=>{
             message.classList.remove("show");
-        },2200);
+        },
+        2200
+    );
 }
 
 
-/* =========================================================
-   GAME SETUP
-========================================================= */
+/* =========================
+   RESET
+========================= */
 
 function resetGame(){
 
-    score = 0;
-    level = 1;
-    elapsed = 0;
-    roundReward = 0;
+    score=0;
+    level=1;
+    elapsed=0;
+    roundReward=0;
+    particles=[];
 
-    particles = [];
+    /* المضرب أعلى من الأول */
 
-    paddle.w = 110;
-    paddle.h = 12;
-    paddle.x = W/2 - paddle.w/2;
-    paddle.y = H - 72;
-    paddle.targetX = W/2;
+    paddle.w=110;
+    paddle.h=12;
+    paddle.x=W/2-paddle.w/2;
+    paddle.y=H-105;
+    paddle.targetX=W/2;
 
 
-    const speed = 4.1;
+    /*
+       سرعة بداية أعلى بكتير
+    */
 
-    const angle =
-        Math.random() > .5
-            ? 0.55
-            : -0.55;
+    const speed=7.2;
 
-    ball.x = W/2;
-    ball.y = H - 105;
+    const direction=
+        Math.random()>.5?1:-1;
 
-    ball.r = 8;
+    const angle=
+        (Math.random()*.55+.38)*
+        direction;
 
-    ball.vx =
-        Math.cos(angle) *
-        speed *
-        (Math.random()>.5?1:-1);
+    ball.x=W/2;
+    ball.y=paddle.y-35;
 
-    ball.vy =
-        -Math.abs(
-            Math.sin(angle) *
-            speed
-        );
+    ball.r=8;
+
+    ball.vx=
+        Math.sin(angle)*speed;
+
+    ball.vy=
+        -Math.cos(angle)*speed;
+
 
     createBricks();
 
@@ -847,34 +761,30 @@ function resetGame(){
 }
 
 
-/* =========================================================
+/* =========================
    BRICKS
-========================================================= */
+========================= */
 
 function createBricks(){
 
-    bricks = [];
+    bricks=[];
 
-    const cols =
-        W < 400 ? 6 : 7;
+    const cols=W<400?6:7;
 
-    const rows =
-        Math.min(
-            5 + Math.floor(level/2),
-            8
-        );
+    const rows=Math.min(
+        5+Math.floor(level/2),
+        8
+    );
 
-    const gap = 6;
+    const gap=6;
+    const side=12;
 
-    const side = 12;
+    const bw=
+        (W-side*2-gap*(cols-1))
+        /cols;
 
-    const bw =
-        (W - side*2 - gap*(cols-1))
-        / cols;
-
-    const bh = 21;
-
-    const top = 125;
+    const bh=21;
+    const top=125;
 
     for(let r=0;r<rows;r++){
 
@@ -883,11 +793,11 @@ function createBricks(){
             bricks.push({
 
                 x:
-                    side +
+                    side+
                     c*(bw+gap),
 
                 y:
-                    top +
+                    top+
                     r*(bh+gap),
 
                 w:bw,
@@ -896,80 +806,81 @@ function createBricks(){
                 alive:true,
 
                 hp:
-                    1 +
-                    Math.floor(
-                        level/5
-                    )
+                    1+
+                    Math.floor(level/5)
             });
         }
     }
 }
 
 
-/* =========================================================
+/* =========================
+   SPEED — أسرع بكتير
+========================= */
+
+function getBallSpeed(){
+
+    /*
+       البداية 7.2
+       وتزيد تدريجياً
+       حتى 14
+    */
+
+    return Math.min(
+        14,
+        7.2+
+        level*.45+
+        score/900
+    );
+}
+
+
+/* =========================
    LEVEL
-========================================================= */
+========================= */
 
 function calculateLevel(){
 
     return Math.min(
         15,
-        1 +
+        1+
         Math.floor(score/300)
     );
 }
 
 
-/* =========================================================
-   SPEED
-========================================================= */
-
-function getBallSpeed(){
-
-    const base = 4.1;
-
-    const bonus =
-        Math.min(
-            3.6,
-            score / 650
-        );
-
-    return base + bonus;
-}
-
-
-/* =========================================================
+/* =========================
    HUD
-========================================================= */
+========================= */
 
 function updateHUD(){
 
-    scoreEl.textContent =
+    scoreEl.textContent=
         Math.floor(score);
 
-    levelEl.textContent =
+    levelEl.textContent=
         level;
 
-    timeEl.textContent =
-        Math.floor(elapsed) + "s";
+    timeEl.textContent=
+        Math.floor(elapsed)+"s";
 
     updateDiamondUI();
 }
 
 
-/* =========================================================
+/* =========================
    PARTICLES
-========================================================= */
+========================= */
 
 function burst(x,y,count=8){
 
     for(let i=0;i<count;i++){
 
-        const a =
-            Math.random() *
+        const a=
+            Math.random()*
             Math.PI*2;
 
-        const speed =
+        const speed=
             Math.random()*3+1;
 
         particles.push({
@@ -994,16 +905,20 @@ function burst(x,y,count=8){
 
 function updateParticles(dt){
 
-    for(let i=particles.length-1;i>=0;i--){
+    for(
+        let i=particles.length-1;
+        i>=0;
+        i--
+    ){
 
-        const p = particles[i];
+        const p=particles[i];
 
-        p.x += p.vx;
-        p.y += p.vy;
+        p.x+=p.vx;
+        p.y+=p.vy;
 
-        p.vy += .04;
+        p.vy+=.04;
 
-        p.life -= dt*2.5;
+        p.life-=dt*2.5;
 
         if(p.life<=0){
             particles.splice(i,1);
@@ -1016,7 +931,7 @@ function drawParticles(){
 
     for(const p of particles){
 
-        ctx.globalAlpha =
+        ctx.globalAlpha=
             Math.max(0,p.life);
 
         ctx.beginPath();
@@ -1029,23 +944,22 @@ function drawParticles(){
             Math.PI*2
         );
 
-        ctx.fillStyle =
-            "#72ddff";
+        ctx.fillStyle="#72ddff";
 
         ctx.fill();
     }
 
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha=1;
 }
 
 
-/* =========================================================
+/* =========================
    BACKGROUND
-========================================================= */
+========================= */
 
 function drawBackground(){
 
-    const g =
+    const g=
         ctx.createLinearGradient(
             0,0,
             0,H
@@ -1066,7 +980,7 @@ function drawBackground(){
         "#01060d"
     );
 
-    ctx.fillStyle = g;
+    ctx.fillStyle=g;
 
     ctx.fillRect(
         0,0,W,H
@@ -1075,9 +989,10 @@ function drawBackground(){
 
     for(const s of stars){
 
-        s.y += s.s;
+        s.y+=s.s;
 
         if(s.y>H){
+
             s.y=0;
             s.x=Math.random()*W;
         }
@@ -1095,53 +1010,25 @@ function drawBackground(){
         );
 
         ctx.fillStyle="#bcefff";
+
         ctx.fill();
     }
 
     ctx.globalAlpha=1;
-
-
-    /* glow */
-
-    const glow =
-        ctx.createRadialGradient(
-            W/2,
-            H*.35,
-            10,
-            W/2,
-            H*.35,
-            H*.65
-        );
-
-    glow.addColorStop(
-        0,
-        "rgba(0,170,255,.07)"
-    );
-
-    glow.addColorStop(
-        1,
-        "rgba(0,0,0,0)"
-    );
-
-    ctx.fillStyle=glow;
-
-    ctx.fillRect(
-        0,0,W,H
-    );
 }
 
 
-/* =========================================================
+/* =========================
    DRAW BRICKS
-========================================================= */
+========================= */
 
 function drawBricks(){
 
     for(const b of bricks){
 
-        if(!b.alive) continue;
+        if(!b.alive)continue;
 
-        const g =
+        const g=
             ctx.createLinearGradient(
                 b.x,
                 b.y,
@@ -1173,33 +1060,34 @@ function drawBricks(){
 
         ctx.fill();
 
-
-        ctx.strokeStyle =
+        ctx.strokeStyle=
             "rgba(210,250,255,.45)";
 
         ctx.stroke();
 
-
-        ctx.fillStyle =
+        ctx.fillStyle=
             "rgba(255,255,255,.28)";
 
         ctx.fillRect(
             b.x+4,
             b.y+3,
-            Math.max(5,b.w*.35),
+            Math.max(
+                5,
+                b.w*.35
+            ),
             2
         );
     }
 }
 
 
-/* =========================================================
-   DRAW PADDLE
-========================================================= */
+/* =========================
+   PADDLE
+========================= */
 
 function drawPaddle(){
 
-    const g =
+    const g=
         ctx.createLinearGradient(
             paddle.x,
             paddle.y,
@@ -1222,10 +1110,10 @@ function drawPaddle(){
         "#1684b5"
     );
 
-    ctx.shadowColor =
+    ctx.shadowColor=
         "rgba(50,210,255,.65)";
 
-    ctx.shadowBlur = 14;
+    ctx.shadowBlur=14;
 
     ctx.fillStyle=g;
 
@@ -1245,13 +1133,13 @@ function drawPaddle(){
 }
 
 
-/* =========================================================
-   DRAW BALL
-========================================================= */
+/* =========================
+   BALL
+========================= */
 
 function drawBall(){
 
-    const g =
+    const g=
         ctx.createRadialGradient(
             ball.x-2,
             ball.y-2,
@@ -1290,7 +1178,6 @@ function drawBall(){
 
     ctx.fill();
 
-
     ctx.fillStyle="#f5fdff";
 
     ctx.beginPath();
@@ -1307,13 +1194,13 @@ function drawBall(){
 }
 
 
-/* =========================================================
+/* =========================
    COLLISION
-========================================================= */
+========================= */
 
 function circleRectCollision(c,r){
 
-    const closestX =
+    const closestX=
         Math.max(
             r.x,
             Math.min(
@@ -1322,7 +1209,7 @@ function circleRectCollision(c,r){
             )
         );
 
-    const closestY =
+    const closestY=
         Math.max(
             r.y,
             Math.min(
@@ -1331,42 +1218,34 @@ function circleRectCollision(c,r){
             )
         );
 
-    const dx =
-        c.x-closestX;
+    const dx=c.x-closestX;
+    const dy=c.y-closestY;
 
-    const dy =
-        c.y-closestY;
-
-    return (
-        dx*dx +
+    return(
+        dx*dx+
         dy*dy
-    ) <
-    c.r*c.r;
+    )<c.r*c.r;
 }
 
 
-/* =========================================================
-   BALL UPDATE
-========================================================= */
+/* =========================
+   BALL
+========================= */
 
 function updateBall(dt){
 
-    const speed =
-        getBallSpeed();
+    const speed=getBallSpeed();
 
-    const currentSpeed =
+    const currentSpeed=
         Math.sqrt(
-            ball.vx*ball.vx +
+            ball.vx*ball.vx+
             ball.vy*ball.vy
         );
 
-    if(
-        currentSpeed <
-        speed
-    ){
+    if(currentSpeed<speed){
 
-        const mul =
-            speed /
+        const mul=
+            speed/
             Math.max(
                 currentSpeed,
                 .001
@@ -1377,11 +1256,9 @@ function updateBall(dt){
     }
 
 
-    ball.x += ball.vx;
-    ball.y += ball.vy;
+    ball.x+=ball.vx;
+    ball.y+=ball.vy;
 
-
-    /* walls */
 
     if(ball.x-ball.r<=0){
 
@@ -1404,44 +1281,44 @@ function updateBall(dt){
     }
 
 
-    /* paddle */
+    /* المضرب */
 
     if(
-        ball.vy>0 &&
+        ball.vy>0&&
         circleRectCollision(
             ball,
             paddle
         )
     ){
 
-        ball.y =
-            paddle.y -
-            ball.r -
+        ball.y=
+            paddle.y-
+            ball.r-
             1;
 
-        const hit =
+        const hit=
             (
-                ball.x -
+                ball.x-
                 (
-                    paddle.x +
+                    paddle.x+
                     paddle.w/2
                 )
-            ) /
+            )/
             (paddle.w/2);
 
-        const maxAngle =
-            Math.PI*.42;
+        const maxAngle=
+            Math.PI*.43;
 
-        const angle =
+        const angle=
             hit*maxAngle;
 
-        const s =
+        const s=
             getBallSpeed();
 
-        ball.vx =
+        ball.vx=
             Math.sin(angle)*s;
 
-        ball.vy =
+        ball.vy=
             -Math.cos(angle)*s;
 
         burst(
@@ -1452,11 +1329,11 @@ function updateBall(dt){
     }
 
 
-    /* bricks */
+    /* الطوب */
 
     for(const b of bricks){
 
-        if(!b.alive) continue;
+        if(!b.alive)continue;
 
         if(
             circleRectCollision(
@@ -1471,7 +1348,11 @@ function updateBall(dt){
 
                 b.alive=false;
 
-                score += 25;
+                /*
+                   كل طوبة = 7 نقاط
+                */
+
+                score+=7;
 
                 burst(
                     ball.x,
@@ -1483,7 +1364,12 @@ function updateBall(dt){
 
             }else{
 
-                score += 10;
+                /*
+                   الطوبة القوية عند
+                   المستويات العالية
+                */
+
+                score+=3;
 
                 burst(
                     ball.x,
@@ -1493,30 +1379,28 @@ function updateBall(dt){
             }
 
 
-            /* choose bounce direction */
-
-            const centerX =
+            const centerX=
                 b.x+b.w/2;
 
-            const centerY =
+            const centerY=
                 b.y+b.h/2;
 
-            const dx =
+            const dx=
                 ball.x-centerX;
 
-            const dy =
+            const dy=
                 ball.y-centerY;
 
             if(
-                Math.abs(dx/b.w) >
+                Math.abs(dx/b.w)>
                 Math.abs(dy/b.h)
             ){
 
-                ball.vx *= -1;
+                ball.vx*=-1;
 
             }else{
 
-                ball.vy *= -1;
+                ball.vy*=-1;
             }
 
             break;
@@ -1524,7 +1408,7 @@ function updateBall(dt){
     }
 
 
-    /* clear level */
+    /* نهاية جميع الطوب */
 
     if(
         bricks.every(
@@ -1536,7 +1420,24 @@ function updateBall(dt){
 
         createBricks();
 
-        ball.vy *= 1.05;
+        const s=
+            getBallSpeed();
+
+        const current=
+            Math.sqrt(
+                ball.vx*ball.vx+
+                ball.vy*ball.vy
+            );
+
+        const mul=
+            s/
+            Math.max(
+                current,
+                .001
+            );
+
+        ball.vx*=mul;
+        ball.vy*=mul;
 
         showToast(
             "❄️ مستوى جديد!"
@@ -1544,29 +1445,17 @@ function updateBall(dt){
     }
 
 
-    /* game over */
-
-    if(
-        ball.y-ball.r>H
-    ){
-
-        endGame();
-
-        return;
-    }
-
-
-    const newLevel =
+    const newLevel=
         calculateLevel();
 
     if(newLevel!==level){
 
         level=newLevel;
 
-        paddle.w =
+        paddle.w=
             Math.max(
                 65,
-                110 -
+                110-
                 (level-1)*4
             );
 
@@ -1576,24 +1465,30 @@ function updateBall(dt){
             `🔥 Level ${level}`
         );
     }
+
+
+    if(
+        ball.y-ball.r>H
+    ){
+
+        endGame();
+    }
 }
 
 
-/* =========================================================
-   GAME LOOP
-========================================================= */
+/* =========================
+   LOOP
+========================= */
 
 function gameLoop(timestamp){
 
-    if(!gameRunning){
-        return;
-    }
+    if(!gameRunning)return;
 
     if(!lastFrame){
         lastFrame=timestamp;
     }
 
-    const dt =
+    const dt=
         Math.min(
             .033,
             (timestamp-lastFrame)/1000
@@ -1601,25 +1496,25 @@ function gameLoop(timestamp){
 
     lastFrame=timestamp;
 
-    elapsed =
+    elapsed=
         (Date.now()-startTime)/1000;
 
 
-    paddle.x +=
+    paddle.x+=
         (
-            paddle.targetX -
+            paddle.targetX-
             (
                 paddle.x+
                 paddle.w/2
             )
-        ) *
+        )*
         Math.min(
             1,
-            dt*14
+            dt*18
         );
 
 
-    paddle.x =
+    paddle.x=
         Math.max(
             0,
             Math.min(
@@ -1630,53 +1525,40 @@ function gameLoop(timestamp){
 
 
     updateBall(dt);
-
     updateParticles(dt);
-
     updateHUD();
 
 
     ctx.save();
 
     drawBackground();
-
     drawBricks();
-
     drawPaddle();
-
     drawBall();
-
     drawParticles();
 
     ctx.restore();
 
 
-    animationId =
+    animationId=
         requestAnimationFrame(
             gameLoop
         );
 }
 
 
-/* =========================================================
-   START GAME
-========================================================= */
+/* =========================
+   START REQUEST
+========================= */
 
 async function startGameRequest(){
 
-    if(gameRunning){
-        return;
-    }
+    if(gameRunning)return;
 
 
-    /* مهم جداً:
-       لا تستخدم
-       if(!user || !diamondField && ...)
-       */
+    if(!user||!diamondField){
 
-    if(!user || !diamondField){
-
-        const ok =
+        const ok=
             await initUser();
 
         if(!ok){
@@ -1690,9 +1572,9 @@ async function startGameRequest(){
     }
 
 
-    const balance =
+    const balance=
         Number(
-            user[diamondField] || 0
+            user[diamondField]||0
         );
 
 
@@ -1708,13 +1590,11 @@ async function startGameRequest(){
 
     startBtn.disabled=true;
 
-    loading.textContent =
+    loading.textContent=
         "جاري بدء الجولة...";
 
 
-    /* خصم 1 ألماسة */
-
-    const paid =
+    const paid=
         await changeDiamonds(-1);
 
 
@@ -1732,21 +1612,19 @@ async function startGameRequest(){
 
     completedRounds++;
 
-    /* إعلان كل 3 جولات */
 
     if(
-        completedRounds % 3 === 0
+        completedRounds%3===0
     ){
 
         try{
 
             if(
-                typeof show_10959333 ===
+                typeof show_10959333===
                 "function"
             ){
 
                 await show_10959333();
-
             }
 
         }catch(e){
@@ -1763,9 +1641,9 @@ async function startGameRequest(){
 }
 
 
-/* =========================================================
+/* =========================
    START ROUND
-========================================================= */
+========================= */
 
 function startRound(){
 
@@ -1783,22 +1661,20 @@ function startRound(){
 
     resetGame();
 
-    animationId =
+    animationId=
         requestAnimationFrame(
             gameLoop
         );
 }
 
 
-/* =========================================================
+/* =========================
    END GAME
-========================================================= */
+========================= */
 
 async function endGame(){
 
-    if(!gameRunning){
-        return;
-    }
+    if(!gameRunning)return;
 
     gameRunning=false;
 
@@ -1807,38 +1683,36 @@ async function endGame(){
     );
 
 
-    roundReward =
+    roundReward=
         Math.floor(
             score/100
         );
 
 
-    finalScore.textContent =
-        Math.floor(score) +
+    finalScore.textContent=
+        Math.floor(score)+
         " SCORE";
 
 
-    finalReward.textContent =
-        "+" +
-        roundReward +
+    finalReward.textContent=
+        "+"+
+        roundReward+
         " 💎";
 
 
-    resultBox.style.display =
+    resultBox.style.display=
         "block";
 
-
-    overlay.style.display =
+    overlay.style.display=
         "flex";
 
-
-    touchHint.style.display =
+    touchHint.style.display=
         "none";
 
 
     if(roundReward>0){
 
-        const rewarded =
+        const rewarded=
             await changeDiamonds(
                 roundReward
             );
@@ -1865,40 +1739,43 @@ async function endGame(){
 
     startBtn.disabled=false;
 
-    startBtn.textContent =
+    startBtn.textContent=
         "🎮 العب مرة أخرى — 1 💎";
 
-    loading.textContent =
+    loading.textContent=
         "الجولة انتهت";
 }
 
 
-/* =========================================================
+/* =========================
    FLASH
-========================================================= */
+========================= */
 
 function screenFlash(){
 
     flash.style.opacity=".12";
 
-    setTimeout(()=>{
-        flash.style.opacity="0";
-    },70);
+    setTimeout(
+        ()=>{
+            flash.style.opacity="0";
+        },
+        70
+    );
 }
 
 
-/* =========================================================
-   TOUCH / MOUSE
-========================================================= */
+/* =========================
+   CONTROLS
+========================= */
 
-function movePaddle(clientX){
+function movePaddle(x){
 
-    paddle.targetX =
+    paddle.targetX=
         Math.max(
             0,
             Math.min(
                 W,
-                clientX
+                x
             )
         );
 }
@@ -1908,9 +1785,10 @@ addEventListener(
     "touchstart",
     e=>{
 
-        if(!gameRunning) return;
+        if(!gameRunning)return;
 
         if(e.touches[0]){
+
             movePaddle(
                 e.touches[0].clientX
             );
@@ -1925,9 +1803,10 @@ addEventListener(
     "touchmove",
     e=>{
 
-        if(!gameRunning) return;
+        if(!gameRunning)return;
 
         if(e.touches[0]){
+
             movePaddle(
                 e.touches[0].clientX
             );
@@ -1942,43 +1821,41 @@ addEventListener(
     "mousemove",
     e=>{
 
-        if(!gameRunning) return;
+        if(!gameRunning)return;
 
         movePaddle(
             e.clientX
         );
-
     }
 );
 
 
-/* =========================================================
-   BUTTONS
-========================================================= */
+/* =========================
+   BACK
+========================= */
+
+function goBack(){
+
+    const id=
+        String(
+            uid||
+            tid||
+            localStorage.getItem(
+                "telegram_id"
+            )||
+            ""
+        );
+
+    window.location.href=
+        "../games.html?id="+
+        encodeURIComponent(id);
+}
+
 
 startBtn.addEventListener(
     "click",
     startGameRequest
 );
-
-
-function goBack(){
-
-    const id =
-        String(
-            uid ||
-            tid ||
-            localStorage.getItem(
-                "telegram_id"
-            ) ||
-            ""
-        );
-
-    window.location.href =
-        "../games.html?id=" +
-        encodeURIComponent(id);
-}
-
 
 backBtn.addEventListener(
     "click",
@@ -1986,33 +1863,33 @@ backBtn.addEventListener(
 );
 
 
-/* =========================================================
-   INITIAL LOAD
-========================================================= */
+/* =========================
+   INIT
+========================= */
 
 resize();
 
 (async()=>{
 
-    loading.textContent =
+    loading.textContent=
         "جاري تحميل الحساب...";
 
-    const ok =
+    const ok=
         await initUser();
 
     startBtn.disabled=false;
 
     if(ok){
 
-        startBtn.textContent =
+        startBtn.textContent=
             "🎮 ابدأ الجولة — 1 💎";
 
     }else{
 
-        startBtn.textContent =
+        startBtn.textContent=
             "🔄 حاول مرة أخرى";
 
-        loading.textContent =
+        loading.textContent=
             "تعذر تحميل الحساب — اضغط مرة أخرى";
     }
 
@@ -2020,4 +1897,4 @@ resize();
 </script>
 
 </body>
- </html>
+            </html>
