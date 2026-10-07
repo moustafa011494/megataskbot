@@ -6,121 +6,32 @@
 
 <title>Frost Seahorse - MegaTask</title>
 
-<!-- Monetag -->
 <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
-
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
-:root{
-    --ice:#00eaff;
-    --blue:#4da6ff;
-    --fire:#ff5a00;
-    --bg:#030811;
-}
+:root{--ice:#00eaff;--blue:#4da6ff;--fire:#ff5a00;--bg:#030811}
 *{box-sizing:border-box}
-
-html,body{
-    margin:0;width:100%;height:100%;
-    overflow:hidden;background:var(--bg);color:white;
-    font-family:'Segoe UI',sans-serif;
-    user-select:none;-webkit-user-select:none;
-}
-
-canvas{
-    width:100vw;height:100vh;display:block;
-    background:linear-gradient(#020914,#081a2c 60%,#02060d);
-}
-
-.game-top-bar{
-    position:absolute;top:0;left:0;width:100%;
-    padding:15px 18px;z-index:10;
-    display:flex;justify-content:space-between;
-    pointer-events:none;
-}
-
-.stat-badge{
-    color:var(--ice);
-    font-size:13px;
-    font-weight:bold;
-    background:rgba(0,234,255,.08);
-    border:1px solid rgba(0,234,255,.7);
-    border-radius:12px;
-    padding:7px 14px;
-    box-shadow:0 0 15px rgba(0,234,255,.12);
-}
-
-.stat-badge span{
-    color:#fff;
-    text-shadow:0 0 8px var(--ice);
-}
-
-.overlay-screen{
-    position:absolute;inset:0;z-index:30;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    padding:25px;
-    text-align:center;
-    background:rgba(1,6,13,.91);
-    backdrop-filter:blur(5px);
-}
-
-.logo{
-    font-size:60px;
-    margin-bottom:8px;
-    filter:drop-shadow(0 0 18px #00eaff);
-}
-
-.overlay-screen h1{
-    color:var(--ice);
-    font-size:27px;
-    margin:5px 0 8px;
-    text-shadow:0 0 18px rgba(0,234,255,.55);
-}
-
-.overlay-screen p{
-    color:#9daabd;
-    font-size:13px;
-    line-height:1.6;
-    margin:0 0 22px;
-}
-
-.btn{
-    width:100%;
-    max-width:270px;
-    padding:14px;
-    border:1px solid #00eaff;
-    border-radius:18px;
-    background:linear-gradient(135deg,#00eaff,#0878ff);
-    color:#001018;
-    font-size:15px;
-    font-weight:bold;
-    box-shadow:0 0 25px rgba(0,234,255,.3);
-    cursor:pointer;
-    transition:.15s;
-}
-
-.btn:active{
-    transform:scale(.96);
-}
-
-.btn.dark{
-    background:#151c28;
-    color:white;
-    border-color:#344052;
-    box-shadow:none;
-    margin-top:10px;
-}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:white;font-family:'Segoe UI',sans-serif;user-select:none;-webkit-user-select:none}
+canvas{width:100vw;height:100vh;display:block;background:linear-gradient(#020914,#081a2c 60%,#02060d)}
+.game-top-bar{position:absolute;top:0;left:0;width:100%;padding:15px 18px;z-index:10;display:flex;justify-content:space-between;pointer-events:none}
+.stat-badge{color:var(--ice);font-size:13px;font-weight:bold;background:rgba(0,234,255,.08);border:1px solid rgba(0,234,255,.7);border-radius:12px;padding:7px 14px;box-shadow:0 0 15px rgba(0,234,255,.12)}
+.stat-badge span{color:#fff;text-shadow:0 0 8px var(--ice)}
+.overlay-screen{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:25px;text-align:center;background:rgba(1,6,13,.91);backdrop-filter:blur(5px)}
+.logo{font-size:60px;margin-bottom:8px;filter:drop-shadow(0 0 18px #00eaff)}
+.overlay-screen h1{color:var(--ice);font-size:27px;margin:5px 0 8px;text-shadow:0 0 18px rgba(0,234,255,.55)}
+.overlay-screen p{color:#9daabd;font-size:13px;line-height:1.6;margin:0 0 22px}
+.btn{width:100%;max-width:270px;padding:14px;border:1px solid #00eaff;border-radius:18px;background:linear-gradient(135deg,#00eaff,#0878ff);color:#001018;font-size:15px;font-weight:bold;box-shadow:0 0 25px rgba(0,234,255,.3);cursor:pointer;transition:.15s}
+.btn:active{transform:scale(.96)}
+.btn.dark{background:#151c28;color:white;border-color:#344052;box-shadow:none;margin-top:10px}
+.timer{color:#00eaff;font-size:16px;font-weight:bold;margin-bottom:15px;text-shadow:0 0 10px #00eaff}
 </style>
 </head>
 
 <body>
 
 <div class="game-top-bar">
-
     <div class="stat-badge">
         ألماسات حسابك:
         <span id="user-diamonds-counter">0</span> 💎
@@ -130,11 +41,7 @@ canvas{
         الجولة:
         <span id="current-score">0</span> 💎
     </div>
-
 </div>
-
-
-<!-- شاشة البداية -->
 
 <div id="start-screen" class="overlay-screen">
 
@@ -152,91 +59,48 @@ canvas{
         <b style="color:#00eaff">+1 💎</b>
     </p>
 
-    <button
-        id="start-game-btn"
-        class="btn"
-        onclick="tryStartGame()"
-    >
+    <div id="start-timer" class="timer" style="display:none"></div>
+
+    <button id="start-game-btn" class="btn" onclick="tryStartGame()">
         ❄️ ابدأ الجولة — 1 💎
     </button>
 
 </div>
 
-
-<!-- شاشة النهاية -->
-
-<div
-    id="gameover-screen"
-    class="overlay-screen"
-    style="display:none"
->
+<div id="gameover-screen" class="overlay-screen" style="display:none">
 
     <div class="logo">💥❄️</div>
 
     <h1>انتهت الجولة!</h1>
 
-    <p
-        id="final-score-text"
-        style="
-            color:white;
-            font-size:15px;
-            font-weight:bold;
-        "
-    >
+    <p id="final-score-text" style="color:white;font-size:15px;font-weight:bold">
         الماسات المضافة لرصيدك: +0 💎
     </p>
 
-    <button
-        id="play-again-btn"
-        class="btn"
-        onclick="tryStartGame()"
-    >
+    <div id="gameover-timer" class="timer" style="display:none"></div>
+
+    <button id="play-again-btn" class="btn" onclick="tryStartGame()">
         🔥 جولة جديدة — 1 💎
     </button>
 
-    <button
-        class="btn dark"
-        onclick="exitGame()"
-    >
+    <button class="btn dark" onclick="exitGame()">
         🔙 العودة للبوت
     </button>
 
 </div>
 
-
 <canvas id="gameCanvas"></canvas>
 
-
 <script>
-
-/* =====================================================
-   TELEGRAM
-===================================================== */
 
 const tg=window.Telegram.WebApp;
 tg.expand();
 
+const S_URL="https://smukfrwnguvmxvfwqwrv.supabase.co";
+const S_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmxlIiwicmVmIjoic210a2Zyd25ndXZteHZmd3dxd3J2Iiwicm9sIjoiYW5vbiIsImlhdCI6MTc2OTUwODU2OCwiZXhwIjoyMDg1MDg0NTY4fQ.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+const client=supabase.createClient(S_URL,S_KEY);
 
-/* =====================================================
-   SUPABASE
-===================================================== */
-
-const S_URL=
-"https://smukfrwnguvmxvfwqwrv.supabase.co";
-
-const S_KEY=
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-
-const client=
-supabase.createClient(S_URL,S_KEY);
-
-
-/* =====================================================
-   TELEGRAM ID
-===================================================== */
-
-const params=
-new URLSearchParams(location.search);
+const params=new URLSearchParams(location.search);
 
 let tid=String(
     params.get("id")||
@@ -245,16 +109,11 @@ let tid=String(
     ""
 ).trim();
 
-
-/* =====================================================
-   GAME DATA
-===================================================== */
-
 let userData=null;
-
 let gameRunning=false;
 let isStarting=false;
 let isSaving=false;
+let adLoading=false;
 
 let earned=0;
 let passed=0;
@@ -265,34 +124,96 @@ let pipeGap=195;
 let pipes=[];
 let particles=[];
 
+let completedRounds=0;
+let lockUntil=0;
+let timerInterval=null;
 
-/* =====================================================
-   ADS
-   إعلان كل 3 جولات
-===================================================== */
+function roundKey(){
+    return `frost_rounds_${tid}`;
+}
 
-let completedRounds=
-Number(
-    localStorage.getItem("frost_completed_rounds")||0
-);
+function lockKey(){
+    return `frost_lock_${tid}`;
+}
 
+function cairoDate(){
+    return new Intl.DateTimeFormat("en-CA",{
+        timeZone:"Africa/Cairo",
+        year:"numeric",
+        month:"2-digit",
+        day:"2-digit"
+    }).format(new Date());
+}
 
-/*
-   الجولة الحالية لا تُحسب إلا بعد انتهاء الجولة.
-*/
+async function prepareDaily(){
 
-let adLoading=false;
+    if(!userData)return;
 
+    const today=cairoDate();
+    const oldDate=userData.daily_game_date;
 
-/* =====================================================
-   CANVAS
-===================================================== */
+    if(oldDate!==today){
 
-const canvas=
-document.getElementById("gameCanvas");
+        const {data,error}=await client
+            .from("users")
+            .update({
+                daily_game_date:today,
+                daily_game_rounds:0
+            })
+            .eq("telegram_id",String(tid))
+            .select("*")
+            .single();
 
-const ctx=
-canvas.getContext("2d");
+        if(!error&&data)
+            userData=data;
+    }
+}
+
+async function consumeDailyRound(){
+
+    await prepareDaily();
+
+    const used=Number(userData?.daily_game_rounds||0);
+
+    if(used>=30){
+
+        tg.showAlert(
+            "⚠️ وصلت للحد الأقصى للألعاب اليوم: 30 جولة."
+        );
+
+        return false;
+    }
+
+    const next=used+1;
+
+    const {data,error}=await client
+        .from("users")
+        .update({
+            daily_game_rounds:next,
+            daily_game_date:cairoDate()
+        })
+        .eq("telegram_id",String(tid))
+        .select("*")
+        .single();
+
+    if(error||!data){
+
+        console.error(error);
+
+        tg.showAlert(
+            "❌ تعذر تسجيل الجولة، حاول مرة أخرى."
+        );
+
+        return false;
+    }
+
+    userData=data;
+
+    return true;
+}
+
+const canvas=document.getElementById("gameCanvas");
+const ctx=canvas.getContext("2d");
 
 let player={
     x:0,
@@ -302,7 +223,6 @@ let player={
     gravity:.38,
     jump:-7.5
 };
-
 
 function resize(){
 
@@ -316,27 +236,12 @@ function resize(){
 }
 
 resize();
-
 addEventListener("resize",resize);
-
-
-/* =====================================================
-   USER
-===================================================== */
 
 async function initUser(){
 
-    if(
-        !tid||
-        tid==="undefined"||
-        tid==="null"
-    ){
-        tid=
-        String(
-            localStorage.getItem("telegram_id")||""
-        ).trim();
-    }
-
+    if(!tid||tid==="undefined"||tid==="null")
+        tid=String(localStorage.getItem("telegram_id")||"").trim();
 
     if(!tid){
 
@@ -345,48 +250,33 @@ async function initUser(){
             let {data:latest}=await client
                 .from("users")
                 .select("*")
-                .order(
-                    "created_at",
-                    {ascending:false}
-                )
+                .order("created_at",{ascending:false})
                 .limit(1)
                 .maybeSingle();
 
             if(latest){
 
                 userData=latest;
+                tid=String(latest.telegram_id).trim();
 
-                tid=
-                String(
-                    latest.telegram_id
-                ).trim();
             }
 
         }catch(e){}
     }
 
-
     if(!tid){
 
-        tg.showAlert(
-            "❌ لم يتم العثور على Telegram ID الخاص بك."
-        );
-
+        tg.showAlert("❌ لم يتم العثور على Telegram ID الخاص بك.");
         return false;
     }
-
 
     try{
 
         let {data:u}=await client
             .from("users")
             .select("*")
-            .eq(
-                "telegram_id",
-                String(tid)
-            )
+            .eq("telegram_id",String(tid))
             .maybeSingle();
-
 
         if(u){
 
@@ -397,12 +287,8 @@ async function initUser(){
             let {data:n}=await client
                 .from("users")
                 .select("*")
-                .eq(
-                    "telegram_id",
-                    Number(tid)
-                )
+                .eq("telegram_id",Number(tid))
                 .maybeSingle();
-
 
             if(n){
 
@@ -416,80 +302,60 @@ async function initUser(){
                     .limit(1)
                     .maybeSingle();
 
-                if(f)
-                    userData=f;
+                if(f)userData=f;
             }
         }
 
-
         if(!userData){
 
-            tg.showAlert(
-                "❌ لم يتم العثور على حسابك في قاعدة البيانات."
-            );
-
+            tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
             return false;
         }
 
+        tid=String(userData.telegram_id).trim();
 
-        tid=
-        String(
-            userData.telegram_id
-        ).trim();
+        localStorage.setItem("telegram_id",tid);
 
-
-        localStorage.setItem(
-            "telegram_id",
-            tid
+        completedRounds=Number(
+            localStorage.getItem(roundKey())||0
         );
 
+        lockUntil=Number(
+            localStorage.getItem(lockKey())||0
+        );
 
         updateUI();
 
-        return true;
+        await prepareDaily();
 
+        checkSavedState();
+
+        return true;
 
     }catch(e){
 
         console.error(e);
 
-        tg.showAlert(
-            "❌ حدث خطأ أثناء جلب بيانات المستخدم."
-        );
+        tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
 
         return false;
     }
 }
 
-
 function gpField(){
 
     return userData.gamepoints!==undefined
-        ? "gamepoints"
-        : (
-            userData.diamonds!==undefined
-            ? "diamonds"
-            : "gamepoints"
-        );
+        ?"gamepoints"
+        :(userData.diamonds!==undefined?"diamonds":"gamepoints");
 }
-
 
 function updateUI(){
 
     if(!userData)return;
 
-    document.getElementById(
-        "user-diamonds-counter"
-    ).innerText=
-        Number(
-            userData[gpField()]||0
-        ).toLocaleString();
+    document.getElementById("user-diamonds-counter").innerText=
+        Number(userData[gpField()]||0).toLocaleString();
 }
-
-
-/* =====================================================
-   MONETAG
-===================================================== */
 
 async function showAd(){
 
@@ -499,32 +365,16 @@ async function showAd(){
 
     try{
 
-        if(
-            typeof show_10959333==="function"
-        ){
-
+        if(typeof show_10959333==="function")
             await show_10959333();
-
-        }else{
-
-            console.warn(
-                "Monetag SDK not loaded."
-            );
-        }
+        else
+            console.warn("Monetag SDK not loaded.");
 
         return true;
 
     }catch(e){
 
-        console.error(
-            "Monetag error:",
-            e
-        );
-
-        /*
-           لا نوقف اللعبة لو الإعلان
-           لم يتم تحميله.
-        */
+        console.error("Monetag error:",e);
 
         return true;
 
@@ -534,67 +384,180 @@ async function showAd(){
     }
 }
 
+function setLock(){
 
-/* =====================================================
-   CHECK AD
-===================================================== */
+    lockUntil=Date.now()+300000;
 
-async function checkAdBeforeRound(){
-
-    /*
-       لو أكمل المستخدم 3 جولات
-       يظهر الإعلان قبل الجولة التالية.
-    */
-
-    if(
-        completedRounds>0 &&
-        completedRounds%3===0
-    ){
-
-        const btn=
-            document.getElementById(
-                "play-again-btn"
-            );
-
-        if(btn){
-
-            btn.disabled=true;
-            btn.style.opacity=".55";
-            btn.innerText=
-                "📺 جاري تحميل الإعلان...";
-        }
-
-
-        await showAd();
-
-
-        /*
-           تصفير العداد بعد عرض الإعلان
-           حتى ننتظر 3 جولات جديدة.
-        */
-
-        completedRounds=0;
-
-        localStorage.setItem(
-            "frost_completed_rounds",
-            "0"
-        );
-
-
-        if(btn){
-
-            btn.disabled=false;
-            btn.style.opacity="1";
-            btn.innerText=
-                "🔥 جولة جديدة — 1 💎";
-        }
-    }
+    localStorage.setItem(
+        lockKey(),
+        String(lockUntil)
+    );
 }
 
+function clearLock(){
 
-/* =====================================================
-   START GAME
-===================================================== */
+    lockUntil=0;
+
+    localStorage.removeItem(lockKey());
+}
+
+function resetRounds(){
+
+    completedRounds=0;
+
+    localStorage.setItem(
+        roundKey(),
+        "0"
+    );
+}
+
+function formatTime(ms){
+
+    const sec=Math.max(0,Math.ceil(ms/1000));
+    const m=Math.floor(sec/60);
+    const s=sec%60;
+
+    return `${m}:${String(s).padStart(2,"0")}`;
+}
+
+function showTimer(end){
+
+    clearInterval(timerInterval);
+
+    const startTimer=document.getElementById("start-timer");
+    const gameTimer=document.getElementById("gameover-timer");
+
+    startTimer.style.display="block";
+    gameTimer.style.display="block";
+
+    document.getElementById("start-game-btn").disabled=true;
+    document.getElementById("play-again-btn").disabled=true;
+
+    function tick(){
+
+        const left=end-Date.now();
+
+        if(left<=0){
+
+            clearInterval(timerInterval);
+
+            clearLock();
+            resetRounds();
+
+            startTimer.style.display="none";
+            gameTimer.style.display="none";
+
+            const a=document.getElementById("start-game-btn");
+            const b=document.getElementById("play-again-btn");
+
+            [a,b].forEach(x=>{
+
+                if(x){
+
+                    x.disabled=false;
+                    x.style.opacity="1";
+                    x.innerText="❄️ ابدأ الجولة — 1 💎";
+                }
+
+            });
+
+            return;
+        }
+
+        const txt=`⏳ متبقي على الجولة القادمة: ${formatTime(left)}`;
+
+        startTimer.innerText=txt;
+        gameTimer.innerText=txt;
+    }
+
+    tick();
+
+    timerInterval=setInterval(tick,1000);
+}
+
+function checkSavedState(){
+
+    const a=document.getElementById("start-game-btn");
+    const b=document.getElementById("play-again-btn");
+
+    if(lockUntil>Date.now()){
+
+        showTimer(lockUntil);
+
+        if(document.getElementById("gameover-screen").style.display==="flex"){
+
+            b.disabled=true;
+            b.style.opacity=".55";
+
+        }else{
+
+            a.disabled=true;
+            a.style.opacity=".55";
+        }
+
+        return;
+    }
+
+    if(lockUntil){
+
+        clearLock();
+        resetRounds();
+    }
+
+    if(completedRounds>=3){
+
+        a.disabled=false;
+        a.style.opacity="1";
+        a.innerText="📺 مشاهدة الإعلان";
+
+        b.disabled=false;
+        b.style.opacity="1";
+        b.innerText="📺 مشاهدة الإعلان";
+
+        return;
+    }
+
+    a.disabled=false;
+    a.style.opacity="1";
+    a.innerText="❄️ ابدأ الجولة — 1 💎";
+
+    b.disabled=false;
+    b.style.opacity="1";
+    b.innerText="🔥 جولة جديدة — 1 💎";
+}
+
+async function handleAdCycle(){
+
+    if(completedRounds<3)
+        return true;
+
+    const a=document.getElementById("start-game-btn");
+    const b=document.getElementById("play-again-btn");
+
+    [a,b].forEach(x=>{
+
+        if(x){
+
+            x.disabled=true;
+            x.style.opacity=".55";
+            x.innerText="📺 جاري تحميل الإعلان...";
+        }
+
+    });
+
+    await showAd();
+
+    resetRounds();
+
+    setLock();
+
+    document.getElementById("start-screen").style.display="flex";
+    document.getElementById("gameover-screen").style.display="none";
+
+    showTimer(lockUntil);
+
+    return false;
+}
 
 async function tryStartGame(){
 
@@ -602,17 +565,8 @@ async function tryStartGame(){
 
     isStarting=true;
 
-
-    const a=
-        document.getElementById(
-            "start-game-btn"
-        );
-
-    const b=
-        document.getElementById(
-            "play-again-btn"
-        );
-
+    const a=document.getElementById("start-game-btn");
+    const b=document.getElementById("play-again-btn");
 
     [a,b].forEach(x=>{
 
@@ -624,13 +578,27 @@ async function tryStartGame(){
 
     });
 
+    if(lockUntil>Date.now()){
 
-    /*
-       إعلان كل 3 جولات
-    */
+        showTimer(lockUntil);
 
-    await checkAdBeforeRound();
+        isStarting=false;
+        return;
+    }
 
+    if(lockUntil){
+
+        clearLock();
+        resetRounds();
+    }
+
+    if(completedRounds>=3){
+
+        await handleAdCycle();
+
+        isStarting=false;
+        return;
+    }
 
     if(!await initUser()){
 
@@ -649,12 +617,32 @@ async function tryStartGame(){
         return;
     }
 
+    if(completedRounds>=3){
 
-    let current=
-        Number(
-            userData[gpField()]||0
-        );
+        await handleAdCycle();
 
+        isStarting=false;
+        return;
+    }
+
+    if(!await consumeDailyRound()){
+
+        isStarting=false;
+
+        [a,b].forEach(x=>{
+
+            if(x){
+
+                x.disabled=false;
+                x.style.opacity="1";
+            }
+
+        });
+
+        return;
+    }
+
+    let current=Number(userData[gpField()]||0);
 
     if(current<1){
 
@@ -677,28 +665,17 @@ async function tryStartGame(){
         return;
     }
 
-
     const update={};
-
-    update[gpField()]=
-        current-1;
-
+    update[gpField()]=current-1;
 
     try{
 
-        const {
-            data,
-            error
-        }=await client
+        const {data,error}=await client
             .from("users")
             .update(update)
-            .eq(
-                "telegram_id",
-                String(tid)
-            )
+            .eq("telegram_id",String(tid))
             .select("*")
             .single();
-
 
         if(error||!data){
 
@@ -711,13 +688,17 @@ async function tryStartGame(){
             return;
         }
 
-
         userData=data;
-
         updateUI();
 
-        startGame();
+        completedRounds++;
 
+        localStorage.setItem(
+            roundKey(),
+            String(completedRounds)
+        );
+
+        startGame();
 
     }catch(e){
 
@@ -743,22 +724,10 @@ async function tryStartGame(){
     }
 }
 
-
-/* =====================================================
-   START GAME ENGINE
-===================================================== */
-
 function startGame(){
 
-    document.getElementById(
-        "start-screen"
-    ).style.display="none";
-
-
-    document.getElementById(
-        "gameover-screen"
-    ).style.display="none";
-
+    document.getElementById("start-screen").style.display="none";
+    document.getElementById("gameover-screen").style.display="none";
 
     gameRunning=true;
 
@@ -771,109 +740,59 @@ function startGame(){
     pipes=[];
     particles=[];
 
+    document.getElementById("current-score").innerText=0;
 
-    document.getElementById(
-        "current-score"
-    ).innerText=0;
-
-
-    player.x=
-        canvas.width*.25;
-
-    player.y=
-        canvas.height/2;
-
+    player.x=canvas.width*.25;
+    player.y=canvas.height/2;
     player.velocity=0;
-
 
     requestAnimationFrame(loop);
 }
 
+addEventListener("click",e=>{
 
-/* =====================================================
-   CONTROLS
-===================================================== */
+    if(gameRunning)
+        player.velocity=player.jump;
 
-addEventListener(
-    "click",
-    ()=>{
-        if(gameRunning)
-            player.velocity=player.jump;
+});
+
+addEventListener("touchstart",e=>{
+
+    if(gameRunning){
+
+        e.preventDefault();
+        player.velocity=player.jump;
     }
-);
 
-
-addEventListener(
-    "touchstart",
-    e=>{
-
-        if(gameRunning){
-
-            e.preventDefault();
-
-            player.velocity=
-                player.jump;
-        }
-
-    },
-    {passive:false}
-);
-
-
-/* =====================================================
-   PARTICLES
-===================================================== */
+},{passive:false});
 
 function particle(x,y,type){
 
     particles.push({
-
         x,y,
-
-        vx:
-            (Math.random()-.5)*
-            (type==="fire"?2:1.5),
-
-        vy:
-            (Math.random()-.5)*
-            (type==="fire"?2:1.2),
-
+        vx:(Math.random()-.5)*(type==="fire"?2:1.5),
+        vy:(Math.random()-.5)*(type==="fire"?2:1.2),
         life:1,
-
-        size:
-            Math.random()*3+1,
-
+        size:Math.random()*3+1,
         type
     });
 }
 
-
 function updateParticles(){
 
-    for(
-        let i=particles.length-1;
-        i>=0;
-        i--
-    ){
+    for(let i=particles.length-1;i>=0;i--){
 
         const p=particles[i];
 
         p.x+=p.vx;
         p.y+=p.vy;
-
         p.life-=.025;
-
-        p.vy+=
-            p.type==="fire"
-            ?-.015
-            :.01;
-
+        p.vy+=p.type==="fire"?-.015:.01;
 
         if(p.life<=0)
             particles.splice(i,1);
     }
 }
-
 
 function drawParticles(){
 
@@ -882,7 +801,6 @@ function drawParticles(){
         ctx.save();
 
         ctx.globalAlpha=p.life;
-
         ctx.shadowBlur=10;
 
         ctx.shadowColor=
@@ -895,7 +813,6 @@ function drawParticles(){
             ?"#ff8a00"
             :"#bdfaff";
 
-
         ctx.beginPath();
 
         ctx.arc(
@@ -907,132 +824,76 @@ function drawParticles(){
         );
 
         ctx.fill();
-
         ctx.restore();
     });
 }
-
-
-/* =====================================================
-   UPDATE
-===================================================== */
 
 function update(){
 
     if(!gameRunning)return;
 
-
-    player.velocity+=
-        player.gravity;
-
-    player.y+=
-        player.velocity;
-
+    player.velocity+=player.gravity;
+    player.y+=player.velocity;
 
     if(
-        player.y+
-        player.radius>
-        canvas.height-15||
-        player.y-
-        player.radius<0
+        player.y+player.radius>canvas.height-15||
+        player.y-player.radius<0
     ){
 
         gameOver();
-
         return;
     }
-
 
     if(frame%100===0){
 
         const min=70;
 
-        const max=
-            Math.max(
-                min,
-                canvas.height-
-                pipeGap-
-                130
-            );
+        const max=Math.max(
+            min,
+            canvas.height-pipeGap-130
+        );
 
-        const top=
-            Math.floor(
-                Math.random()*
-                (max-min+1)
-            )+min;
-
+        const top=Math.floor(
+            Math.random()*(max-min+1)
+        )+min;
 
         pipes.push({
-
             x:canvas.width,
-
             top,
-
-            bottom:
-                canvas.height-
-                top-
-                pipeGap,
-
+            bottom:canvas.height-top-pipeGap,
             passed:false
         });
     }
 
-
-    for(
-        let i=pipes.length-1;
-        i>=0;
-        i--
-    ){
+    for(let i=pipes.length-1;i>=0;i--){
 
         const p=pipes[i];
 
         p.x-=speed;
 
-
         if(Math.random()<.7){
 
             particle(
                 p.x+31,
-                Math.random()<.5
-                    ?p.top
-                    :canvas.height-p.bottom,
+                Math.random()<.5?p.top:canvas.height-p.bottom,
                 "fire"
             );
         }
 
-
-        if(
-            !p.passed&&
-            p.x+62<
-            player.x
-        ){
+        if(!p.passed&&p.x+62<player.x){
 
             p.passed=true;
-
             passed++;
-
 
             if(passed%3===0){
 
                 earned++;
 
-                document.getElementById(
-                    "current-score"
-                ).innerText=earned;
+                document.getElementById("current-score").innerText=earned;
 
-
-                for(
-                    let n=0;
-                    n<18;
-                    n++
-                )
-                    particle(
-                        player.x,
-                        player.y,
-                        "ice"
-                    );
+                for(let n=0;n<18;n++)
+                    particle(player.x,player.y,"ice");
             }
-
 
             speed+=.12;
 
@@ -1040,38 +901,22 @@ function update(){
                 pipeGap-=.8;
         }
 
-
         if(
-            player.x+
-            player.radius>
-            p.x&&
-
-            player.x-
-            player.radius<
-            p.x+62&&
-
+            player.x+player.radius>p.x&&
+            player.x-player.radius<p.x+62&&
             (
-                player.y-
-                player.radius<
-                p.top||
-
-                player.y+
-                player.radius>
-                canvas.height-
-                p.bottom
+                player.y-player.radius<p.top||
+                player.y+player.radius>canvas.height-p.bottom
             )
         ){
 
             gameOver();
-
             return;
         }
-
 
         if(p.x+62<0)
             pipes.splice(i,1);
     }
-
 
     if(frame%2===0)
         particle(
@@ -1080,39 +925,19 @@ function update(){
             "ice"
         );
 
-
     updateParticles();
-
     frame++;
 }
 
-
-/* =====================================================
-   DRAW
-===================================================== */
-
 function drawBackground(){
 
-    const g=
-        ctx.createLinearGradient(
-            0,0,0,canvas.height
-        );
-
-    g.addColorStop(
-        0,
-        "#020914"
+    const g=ctx.createLinearGradient(
+        0,0,0,canvas.height
     );
 
-    g.addColorStop(
-        .55,
-        "#07182a"
-    );
-
-    g.addColorStop(
-        1,
-        "#02060d"
-    );
-
+    g.addColorStop(0,"#020914");
+    g.addColorStop(.55,"#07182a");
+    g.addColorStop(1,"#02060d");
 
     ctx.fillStyle=g;
 
@@ -1123,31 +948,15 @@ function drawBackground(){
         canvas.height
     );
 
-
     ctx.save();
 
+    for(let i=0;i<35;i++){
 
-    for(
-        let i=0;
-        i<35;
-        i++
-    ){
+        const x=(i*97)%canvas.width;
+        const y=(i*67+frame*.15)%canvas.height;
 
-        const x=
-            (i*97)%
-            canvas.width;
-
-        const y=
-            (i*67+
-            frame*.15)%
-            canvas.height;
-
-
-        ctx.globalAlpha=
-            .25+(i%3)/8;
-
+        ctx.globalAlpha=.25+(i%3)/8;
         ctx.fillStyle="#bdfaff";
-
 
         ctx.beginPath();
 
@@ -1162,64 +971,31 @@ function drawBackground(){
         ctx.fill();
     }
 
-
     ctx.restore();
 }
 
-
-function drawFirePipe(
-    x,y,w,h
-){
+function drawFirePipe(x,y,w,h){
 
     ctx.save();
 
     ctx.shadowBlur=25;
     ctx.shadowColor="#ff3600";
 
-
-    const g=
-        ctx.createLinearGradient(
-            x,0,x+w,0
-        );
-
-    g.addColorStop(
-        0,
-        "#8c1700"
+    const g=ctx.createLinearGradient(
+        x,0,x+w,0
     );
 
-    g.addColorStop(
-        .3,
-        "#ff3d00"
-    );
-
-    g.addColorStop(
-        .55,
-        "#ff9d00"
-    );
-
-    g.addColorStop(
-        .75,
-        "#ff3d00"
-    );
-
-    g.addColorStop(
-        1,
-        "#7d1000"
-    );
-
+    g.addColorStop(0,"#8c1700");
+    g.addColorStop(.3,"#ff3d00");
+    g.addColorStop(.55,"#ff9d00");
+    g.addColorStop(.75,"#ff3d00");
+    g.addColorStop(1,"#7d1000");
 
     ctx.fillStyle=g;
-
-    ctx.fillRect(
-        x,y,w,h
-    );
-
+    ctx.fillRect(x,y,w,h);
 
     ctx.shadowBlur=8;
-
-    ctx.fillStyle=
-        "rgba(255,220,90,.65)";
-
+    ctx.fillStyle="rgba(255,220,90,.65)";
 
     ctx.fillRect(
         x+w*.35,
@@ -1228,21 +1004,10 @@ function drawFirePipe(
         h
     );
 
+    for(let i=0;i<4;i++){
 
-    for(
-        let i=0;
-        i<4;
-        i++
-    ){
-
-        const sx=
-            x+
-            Math.random()*w;
-
-        const sy=
-            y+
-            Math.random()*h;
-
+        const sx=x+Math.random()*w;
+        const sy=y+Math.random()*h;
 
         ctx.fillStyle="#ffb000";
 
@@ -1259,10 +1024,8 @@ function drawFirePipe(
         ctx.fill();
     }
 
-
     ctx.restore();
 }
-
 
 function drawPipes(){
 
@@ -1281,9 +1044,9 @@ function drawPipes(){
             62,
             p.bottom
         );
+
     });
 }
-
 
 function drawSeahorse(){
 
@@ -1294,21 +1057,15 @@ function drawSeahorse(){
         player.y
     );
 
-
-    const tilt=
-        Math.min(
-            Math.max(
-                player.velocity*.055,
-                -.45
-            ),
-            .45
-        );
-
+    const tilt=Math.min(
+        Math.max(
+            player.velocity*.055,
+            -.45
+        ),
+        .45
+    );
 
     ctx.rotate(tilt);
-
-
-    /* الذيل */
 
     ctx.beginPath();
 
@@ -1327,46 +1084,22 @@ function drawSeahorse(){
     );
 
     ctx.lineWidth=5;
-
     ctx.strokeStyle="#62f5ff";
-
     ctx.stroke();
 
-
-    /* الجسم */
-
-    const body=
-        ctx.createLinearGradient(
-            -10,-5,
-            10,18
-        );
-
-    body.addColorStop(
-        0,
-        "#d9ffff"
+    const body=ctx.createLinearGradient(
+        -10,-5,
+        10,18
     );
 
-    body.addColorStop(
-        .35,
-        "#62eaff"
-    );
-
-    body.addColorStop(
-        .7,
-        "#168cff"
-    );
-
-    body.addColorStop(
-        1,
-        "#0751bd"
-    );
-
+    body.addColorStop(0,"#d9ffff");
+    body.addColorStop(.35,"#62eaff");
+    body.addColorStop(.7,"#168cff");
+    body.addColorStop(1,"#0751bd");
 
     ctx.fillStyle=body;
-
     ctx.shadowBlur=22;
     ctx.shadowColor="#00eaff";
-
 
     ctx.beginPath();
 
@@ -1380,16 +1113,10 @@ function drawSeahorse(){
     ctx.fill();
 
     ctx.lineWidth=2;
-
     ctx.strokeStyle="#dfffff";
-
     ctx.stroke();
 
-
-    /* البطن */
-
-    ctx.fillStyle=
-        "rgba(255,255,255,.4)";
+    ctx.fillStyle="rgba(255,255,255,.4)";
 
     ctx.beginPath();
 
@@ -1402,9 +1129,6 @@ function drawSeahorse(){
 
     ctx.fill();
 
-
-    /* الرأس */
-
     ctx.beginPath();
 
     ctx.arc(
@@ -1414,37 +1138,18 @@ function drawSeahorse(){
         Math.PI*2
     );
 
-
-    const head=
-        ctx.createRadialGradient(
-            5,-13,1,
-            7,-10,10
-        );
-
-    head.addColorStop(
-        0,
-        "#e9ffff"
+    const head=ctx.createRadialGradient(
+        5,-13,1,
+        7,-10,10
     );
 
-    head.addColorStop(
-        .5,
-        "#37ddff"
-    );
-
-    head.addColorStop(
-        1,
-        "#0875e8"
-    );
-
+    head.addColorStop(0,"#e9ffff");
+    head.addColorStop(.5,"#37ddff");
+    head.addColorStop(1,"#0875e8");
 
     ctx.fillStyle=head;
-
     ctx.fill();
-
     ctx.stroke();
-
-
-    /* العرف */
 
     ctx.beginPath();
 
@@ -1455,29 +1160,18 @@ function drawSeahorse(){
     ctx.lineTo(10,-18);
 
     ctx.fillStyle="#bfffff";
-
     ctx.fill();
-
-
-    /* الخطم */
 
     ctx.beginPath();
 
     ctx.moveTo(13,-12);
-
     ctx.lineTo(21,-9);
 
     ctx.lineWidth=3;
-
     ctx.strokeStyle="#8ff8ff";
-
     ctx.stroke();
 
-
-    /* العين */
-
     ctx.shadowBlur=5;
-
     ctx.fillStyle="#02101b";
 
     ctx.beginPath();
@@ -1490,9 +1184,6 @@ function drawSeahorse(){
     );
 
     ctx.fill();
-
-
-    /* لمعة */
 
     ctx.fillStyle="white";
 
@@ -1508,9 +1199,6 @@ function drawSeahorse(){
 
     ctx.fill();
 
-
-    /* الزعنفة */
-
     ctx.beginPath();
 
     ctx.moveTo(-6,-1);
@@ -1520,17 +1208,10 @@ function drawSeahorse(){
     ctx.closePath();
 
     ctx.fillStyle="#69f5ff";
-
     ctx.fill();
-
 
     ctx.restore();
 }
-
-
-/* =====================================================
-   LOOP
-===================================================== */
 
 function draw(){
 
@@ -1539,7 +1220,6 @@ function draw(){
     drawParticles();
     drawSeahorse();
 }
-
 
 function loop(){
 
@@ -1551,81 +1231,41 @@ function loop(){
     requestAnimationFrame(loop);
 }
 
-
-/* =====================================================
-   GAME OVER
-===================================================== */
-
 async function gameOver(){
 
     if(!gameRunning)return;
 
     gameRunning=false;
 
-
-    /*
-       الجولة أصبحت مكتملة
-    */
-
-    completedRounds++;
-
-
-    localStorage.setItem(
-        "frost_completed_rounds",
-        String(completedRounds)
-    );
-
-
-    for(
-        let i=0;
-        i<30;
-        i++
-    ){
-
+    for(let i=0;i<30;i++)
         particle(
             player.x,
             player.y,
             "ice"
         );
-    }
 
-
-    document.getElementById(
-        "final-score-text"
-    ).innerText=
+    document.getElementById("final-score-text").innerText=
         `تمت إضافة +${earned} ألماسة 💎 إلى حسابك في سوبابيز!`;
 
-
-    document.getElementById(
-        "gameover-screen"
-    ).style.display="flex";
-
+    document.getElementById("gameover-screen").style.display="flex";
 
     if(isSaving)return;
 
     isSaving=true;
 
-
-    if(
-        userData&&
-        earned>0
-    ){
+    if(userData&&earned>0){
 
         try{
 
             const field=gpField();
 
-            const current=
-                Number(
-                    userData[field]||0
-                );
-
+            const current=Number(
+                userData[field]||0
+            );
 
             const update={};
 
-            update[field]=
-                current+earned;
-
+            update[field]=current+earned;
 
             const {
                 data:updated,
@@ -1633,21 +1273,13 @@ async function gameOver(){
             }=await client
                 .from("users")
                 .update(update)
-                .eq(
-                    "telegram_id",
-                    String(tid)
-                )
+                .eq("telegram_id",String(tid))
                 .select("*")
                 .single();
 
-
-            if(
-                !error&&
-                updated
-            ){
+            if(!error&&updated){
 
                 userData=updated;
-
                 updateUI();
 
             }else{
@@ -1658,37 +1290,21 @@ async function gameOver(){
                 );
             }
 
-
-            const {
-                error:txError
-            }=await client
+            const {error:txError}=await client
                 .from("transactions")
                 .insert([{
-
-                    telegram_id:
-                        String(tid),
-
-                    type:
-                        "points",
-
-                    title:
-                        "مكافأة أرباح لعبة حصان البحر",
-
-                    amount:
-                        `+${earned} 💎`,
-
-                    status:
-                        "مكتمل"
-
+                    telegram_id:String(tid),
+                    type:"points",
+                    title:"مكافأة أرباح لعبة حصان البحر",
+                    amount:`+${earned} 💎`,
+                    status:"مكتمل"
                 }]);
-
 
             if(txError)
                 console.error(
                     "Transaction:",
                     txError
                 );
-
 
         }catch(e){
 
@@ -1699,25 +1315,16 @@ async function gameOver(){
         }
     }
 
-
     isSaving=false;
+
+    checkSavedState();
 }
-
-
-/* =====================================================
-   EXIT
-===================================================== */
 
 function exitGame(){
 
     location.href=
         `../games.html?id=${tid}`;
 }
-
-
-/* =====================================================
-   INIT
-===================================================== */
 
 initUser();
 
