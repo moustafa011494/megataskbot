@@ -47,7 +47,7 @@ const tg=window.Telegram.WebApp;tg.expand();
 
 const client=supabase.createClient(
 "https://smukfrwnguvmxvfwqwrv.supabase.co",
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"
 );
 
 const p=new URLSearchParams(location.search);
@@ -57,6 +57,7 @@ localStorage.setItem("telegram_id",tid);
 document.getElementById("back-link").href=`../games.html?id=${tid}`;
 
 const roundKey=`tictactoe_rounds_${tid}`;
+const lockKey=`tictactoe_lock_${tid}`;
 
 let userData=null,board=["","","","","","","","",""],active=false,currentPlayer="X";
 let rounds=Number(localStorage.getItem(roundKey)||0),timer=null,dailyUsed=0;
@@ -69,8 +70,7 @@ const wins=[
 
 function cairoDate(){
 return new Intl.DateTimeFormat("en-CA",{
-timeZone:"Africa/Cairo",
-year:"numeric",month:"2-digit",day:"2-digit"
+timeZone:"Africa/Cairo",year:"numeric",month:"2-digit",day:"2-digit"
 }).format(new Date());
 }
 
@@ -81,10 +81,8 @@ document.getElementById("status-msg").innerText=t;
 async function getUser(){
 let r=await client.from("users").select("*").eq("telegram_id",String(tid)).maybeSingle();
 if(r.data)return r.data;
-
 r=await client.from("users").select("*").eq("telegram_id",Number(tid)).maybeSingle();
 if(r.data)return r.data;
-
 return null;
 }
 
@@ -110,12 +108,12 @@ setStatus("🚫 وصلت للحد الأقصى اليومي: 30 جولة.");
 return;
 }
 
-startRound();
+checkSavedState();
 
 }catch(e){
 console.error(e);
 ui();
-startRound();
+checkSavedState();
 }
 }
 
@@ -132,23 +130,14 @@ let used=Number(userData.daily_game_rounds||0);
 
 if(userData.daily_game_date!==today){
 
-const patch={
-daily_game_rounds:0,
-daily_game_date:today
-};
+const patch={daily_game_rounds:0,daily_game_date:today};
 
 let r=await client.from("users")
-.update(patch)
-.eq("telegram_id",String(tid))
-.select("*")
-.maybeSingle();
+.update(patch).eq("telegram_id",String(tid)).select("*").maybeSingle();
 
 if(!r.data){
 r=await client.from("users")
-.update(patch)
-.eq("telegram_id",Number(tid))
-.select("*")
-.maybeSingle();
+.update(patch).eq("telegram_id",Number(tid)).select("*").maybeSingle();
 }
 
 if(r.data)userData=r.data;
@@ -169,23 +158,19 @@ const today=cairoDate();
 
 let r=await client.from("users")
 .select("daily_game_rounds,daily_game_date")
-.eq("telegram_id",String(tid))
-.maybeSingle();
+.eq("telegram_id",String(tid)).maybeSingle();
 
 if(!r.data){
 r=await client.from("users")
 .select("daily_game_rounds,daily_game_date")
-.eq("telegram_id",Number(tid))
-.maybeSingle();
+.eq("telegram_id",Number(tid)).maybeSingle();
 }
 
 if(!r.data)return true;
 
 let used=Number(r.data.daily_game_rounds||0);
 
-if(r.data.daily_game_date!==today){
-used=0;
-}
+if(r.data.daily_game_date!==today)used=0;
 
 if(used>=30){
 dailyUsed=30;
@@ -194,24 +179,14 @@ return false;
 }
 
 const next=used+1;
-
-const patch={
-daily_game_rounds:next,
-daily_game_date:today
-};
+const patch={daily_game_rounds:next,daily_game_date:today};
 
 r=await client.from("users")
-.update(patch)
-.eq("telegram_id",String(tid))
-.select("*")
-.maybeSingle();
+.update(patch).eq("telegram_id",String(tid)).select("*").maybeSingle();
 
 if(!r.data){
 r=await client.from("users")
-.update(patch)
-.eq("telegram_id",Number(tid))
-.select("*")
-.maybeSingle();
+.update(patch).eq("telegram_id",Number(tid)).select("*").maybeSingle();
 }
 
 if(r.data){
@@ -228,8 +203,46 @@ return true;
 }
 }
 
+function checkSavedState(){
+
+rounds=Number(localStorage.getItem(roundKey)||0);
+
+const lockUntil=Number(localStorage.getItem(lockKey)||0);
+
+if(lockUntil>0){
+
+if(Date.now()<lockUntil){
+showSavedTimer(lockUntil);
+return;
+}
+
+localStorage.removeItem(lockKey);
+rounds=0;
+localStorage.setItem(roundKey,"0");
+}
+
+if(rounds>=3){
+document.getElementById("restart-btn").style.display="inline-block";
+document.getElementById("restart-btn").innerText="📺 مشاهدة الإعلان";
+setStatus("📺 لازم تشاهد الإعلان قبل بدء الـ3 جولات الجديدة.");
+return;
+}
+
+startRound();
+}
+
 async function startRound(){
+
 if(timer||active)return;
+
+rounds=Number(localStorage.getItem(roundKey)||0);
+
+if(rounds>=3){
+document.getElementById("restart-btn").style.display="inline-block";
+document.getElementById("restart-btn").innerText="📺 مشاهدة الإعلان";
+setStatus("📺 لازم تشاهد الإعلان قبل الجولة القادمة.");
+return;
+}
 
 if(dailyUsed>=30){
 setStatus("🚫 انتهت كل جولاتك اليوم (30/30).");
@@ -238,6 +251,7 @@ return;
 }
 
 const allowed=await consumeDailyRound();
+
 if(!allowed)return;
 
 document.getElementById("restart-btn").style.display="none";
@@ -248,7 +262,10 @@ setStatus("دورك (X)");
 }
 
 async function nextRound(){
+
 if(timer||active)return;
+
+rounds=Number(localStorage.getItem(roundKey)||0);
 
 if(dailyUsed>=30){
 setStatus("🚫 انتهت كل جولاتك اليوم (30/30).");
@@ -265,6 +282,7 @@ startRound();
 }
 
 async function showAd(){
+
 document.getElementById("restart-btn").style.display="none";
 setStatus("⏳ جاري تحميل الإعلان...");
 
@@ -276,7 +294,10 @@ await show_10959333();
 rounds=0;
 localStorage.setItem(roundKey,"0");
 
-startTimer();
+const lockUntil=Date.now()+300000;
+localStorage.setItem(lockKey,String(lockUntil));
+
+startTimer(lockUntil);
 
 }catch(e){
 
@@ -285,12 +306,11 @@ console.error(e);
 tg.showAlert("❌ يجب مشاهدة الإعلان كاملاً.");
 setStatus("⚠️ لم يتم إكمال الإعلان.");
 document.getElementById("restart-btn").style.display="inline-block";
+document.getElementById("restart-btn").innerText="📺 مشاهدة الإعلان";
 }
 }
 
-function startTimer(){
-
-const end=Date.now()+300000;
+function showSavedTimer(end){
 
 timer=setInterval(()=>{
 
@@ -308,6 +328,10 @@ if(left<=0){
 clearInterval(timer);
 timer=null;
 
+localStorage.removeItem(lockKey);
+rounds=0;
+localStorage.setItem(roundKey,"0");
+
 if(dailyUsed>=30){
 setStatus("🚫 انتهت كل جولاتك اليوم (30/30).");
 document.getElementById("restart-btn").style.display="none";
@@ -319,9 +343,14 @@ const leftRounds=Math.min(3,30-dailyUsed);
 setStatus(`✅ انتهى وقت الانتظار، يمكنك لعب ${leftRounds} جولات جديدة.`);
 document.getElementById("restart-btn").style.display="inline-block";
 document.getElementById("restart-btn").innerText="🔄 جولة جديدة";
+
 }
 
 },250);
+}
+
+function startTimer(end){
+showSavedTimer(end);
 }
 
 function makeMove(i){
@@ -339,7 +368,6 @@ return finish("🤝 تعادل! لا تغيير في رصيد الألماس.");
 
 currentPlayer="O";
 setStatus("دور الكمبيوتر (O)...");
-
 setTimeout(computer,500);
 }
 
@@ -382,6 +410,7 @@ return c[l.indexOf("")];
 
 if(l.filter(v=>v==="X").length===2&&l.includes(""))
 return c[l.indexOf("")];
+
 }
 
 return -1;
@@ -394,44 +423,37 @@ return wins.some(c=>c.every(i=>board[i]===x));
 function draw(){
 
 document.querySelectorAll(".cell").forEach((e,i)=>{
-
 e.innerText=board[i];
 e.className=`cell ${board[i].toLowerCase()}`;
-
 });
+
 }
 
 async function updateDiamonds(a){
 
 if(!userData)return;
 
-const n=Math.max(
-0,
-Number(userData.gamepoints||0)+a
-);
+const n=Math.max(0,Number(userData.gamepoints||0)+a);
 
 try{
 
 let r=await client.from("users")
 .update({gamepoints:n})
 .eq("telegram_id",String(tid))
-.select("*")
-.single();
+.select("*").single();
 
 if(!r.data){
 
 r=await client.from("users")
 .update({gamepoints:n})
 .eq("telegram_id",Number(tid))
-.select("*")
-.single();
+.select("*").single();
+
 }
 
 if(r.data){
-
 userData=r.data;
 ui();
-
 }
 
 }catch(e){
@@ -442,9 +464,8 @@ console.error(e);
 function finish(text,reward=0){
 
 active=false;
-rounds++;
 
-/* حفظ عداد الإعلانات حتى بعد الخروج من اللعبة */
+rounds++;
 localStorage.setItem(roundKey,String(rounds));
 
 setStatus(text);
@@ -462,7 +483,7 @@ document.getElementById("restart-btn").style.display="inline-block";
 
 document.getElementById("restart-btn").innerText=
 rounds>=3
-?"🔄 الجولة القادمة (مشاهدة إعلان)"
+?"📺 مشاهدة الإعلان"
 :"🔄 جولة جديدة";
 }
 
