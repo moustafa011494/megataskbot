@@ -4,73 +4,169 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Frost Seahorse - MegaTask</title>
+
 <script src="//libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06111c;color:#fff;font-family:Arial,sans-serif}
-body{touch-action:none}
-canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
-#top{position:fixed;top:12px;left:10px;right:10px;z-index:5;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
-.badge{background:rgba(10,20,32,.82);border:1px solid rgba(0,220,255,.35);border-radius:13px;padding:7px 13px;text-align:center;backdrop-filter:blur(7px);min-width:105px}
-.badge b{display:block;color:#00f2ff;font-size:15px}
-.badge span{font-size:10px;color:#aebdca}
-#score{font-size:18px!important;color:#fff!important}
-#overlay{position:fixed;inset:0;z-index:10;background:rgba(2,9,16,.78);display:flex;align-items:center;justify-content:center;padding:20px}
-.box{width:min(350px,92vw);background:rgba(12,25,38,.96);border:1px solid rgba(0,220,255,.35);border-radius:22px;padding:25px;text-align:center;box-shadow:0 15px 50px #000}
-h1{margin:0 0 8px;color:#00eaff;font-size:25px}
-p{font-size:13px;color:#aebdca;line-height:1.7;margin:8px 0 18px}
-button{border:0;border-radius:14px;padding:13px 22px;background:#00d26a;color:#00150b;font-size:14px;font-weight:bold;width:100%;cursor:pointer}
-.exit{margin-top:10px;background:#252d36;color:#fff}
-#status{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:6;color:#d8f8ff;font-size:11px;background:rgba(4,15,24,.7);padding:7px 13px;border-radius:12px;display:none}
+html,body{
+margin:0;width:100%;height:100%;overflow:hidden;
+background:#06111c;color:#fff;
+font-family:Arial,sans-serif;
+touch-action:none
+}
+canvas{
+position:fixed;inset:0;width:100%;height:100%;display:block
+}
+#top{
+position:fixed;top:12px;left:10px;right:10px;
+z-index:5;display:flex;
+justify-content:space-between;align-items:center;
+pointer-events:none
+}
+.badge{
+background:rgba(10,20,32,.82);
+border:1px solid rgba(0,220,255,.35);
+border-radius:13px;
+padding:7px 13px;
+text-align:center;
+backdrop-filter:blur(7px);
+min-width:105px
+}
+.badge b{
+display:block;color:#00f2ff;font-size:15px
+}
+.badge span{
+font-size:10px;color:#aebdca
+}
+#score{
+font-size:18px!important;
+color:#fff!important
+}
+#overlay{
+position:fixed;inset:0;z-index:10;
+background:rgba(2,9,16,.78);
+display:flex;align-items:center;
+justify-content:center;
+padding:20px
+}
+.box{
+width:min(350px,92vw);
+background:rgba(12,25,38,.96);
+border:1px solid rgba(0,220,255,.35);
+border-radius:22px;
+padding:25px;
+text-align:center;
+box-shadow:0 15px 50px #000
+}
+h1{
+margin:0 0 8px;
+color:#00eaff;
+font-size:25px
+}
+p{
+font-size:13px;
+color:#aebdca;
+line-height:1.7;
+margin:8px 0 18px
+}
+button{
+border:0;
+border-radius:14px;
+padding:13px 22px;
+background:#00d26a;
+color:#00150b;
+font-size:14px;
+font-weight:bold;
+width:100%;
+cursor:pointer
+}
+.exit{
+margin-top:10px;
+background:#252d36;
+color:#fff
+}
+#status{
+position:fixed;
+bottom:14px;
+left:50%;
+transform:translateX(-50%);
+z-index:6;
+color:#d8f8ff;
+font-size:11px;
+background:rgba(4,15,24,.7);
+padding:7px 13px;
+border-radius:12px;
+display:none
+}
 </style>
 </head>
+
 <body>
 
 <canvas id="game"></canvas>
 
 <div id="top">
-  <div class="badge">
-    <b id="diamonds">0</b>
-    <span>ألماسات حسابك 💎</span>
-  </div>
-  <div class="badge">
-    <b id="score">0</b>
-    <span>الجولة</span>
-  </div>
+
+<div class="badge">
+<b id="diamonds">0</b>
+<span>ألماسات حسابك 💎</span>
+</div>
+
+<div class="badge">
+<b id="score">0</b>
+<span>الجولة</span>
+</div>
+
 </div>
 
 <div id="status"></div>
 
 <div id="overlay">
-  <div class="box">
-    <h1>🐴 Frost Seahorse</h1>
-    <p id="msg">جاري تجهيز الحساب...</p>
-    <button id="mainBtn" style="display:none">ابدأ الجولة الآن (1 💎)</button>
-    <button class="exit" onclick="goBack()">العودة للألعاب</button>
-  </div>
+
+<div class="box">
+
+<h1>🐴 Frost Seahorse</h1>
+
+<p id="msg">جاري تجهيز الحساب...</p>
+
+<button id="mainBtn" style="display:none">
+ابدأ الجولة الآن (1 💎)
+</button>
+
+<button class="exit" onclick="goBack()">
+العودة للألعاب
+</button>
+
+</div>
+
 </div>
 
 <script>
+
 const tg=window.Telegram.WebApp;
 tg.expand();
 
 const S_URL="https://smukfrwnguvmxvfwqwrv.supabase.co";
-const S_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzY5NTA4NTY4LCJleHAiOjIwODUwODQ1Njh9.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+
+const S_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+
 const client=supabase.createClient(S_URL,S_KEY);
 
 const params=new URLSearchParams(location.search);
 
 let tid=String(
-  params.get("id")||
-  tg.initDataUnsafe.user?.id||
-  localStorage.getItem("telegram_id")||
-  localStorage.getItem("megatask_uid")||
-  ""
+params.get("id")||
+tg.initDataUnsafe.user?.id||
+localStorage.getItem("telegram_id")||
+localStorage.getItem("megatask_uid")||
+""
 ).trim();
 
 let userData=null;
+
 let rounds=0;
 let dailyUsed=0;
 let lockUntil=0;
@@ -82,352 +178,565 @@ let lockKey="";
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
 
-let W=innerWidth,H=innerHeight,dpr=Math.min(devicePixelRatio||1,2);
+let W=innerWidth;
+let H=innerHeight;
+let dpr=Math.min(devicePixelRatio||1,2);
 
 function resize(){
-  W=innerWidth;
-  H=innerHeight;
-  canvas.width=W*dpr;
-  canvas.height=H*dpr;
-  canvas.style.width=W+"px";
-  canvas.style.height=H+"px";
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+W=innerWidth;
+H=innerHeight;
+
+canvas.width=W*dpr;
+canvas.height=H*dpr;
+
+canvas.style.width=W+"px";
+canvas.style.height=H+"px";
+
+ctx.setTransform(dpr,0,0,dpr,0,0);
+
 }
+
 addEventListener("resize",resize);
 resize();
 
 function cairoDate(){
-  return new Intl.DateTimeFormat("en-CA",{
-    timeZone:"Africa/Cairo",
-    year:"numeric",
-    month:"2-digit",
-    day:"2-digit"
-  }).format(new Date());
+
+return new Intl.DateTimeFormat("en-CA",{
+timeZone:"Africa/Cairo",
+year:"numeric",
+month:"2-digit",
+day:"2-digit"
+}).format(new Date());
+
 }
 
 function setKeys(){
-  roundKey=`frost_rounds_${tid}`;
-  lockKey=`frost_lock_${tid}`;
+
+roundKey=`frost_rounds_${tid}`;
+lockKey=`frost_lock_${tid}`;
+
 }
 
+/* تحديد خانة الألماسات بنفس نظام لعبة الذاكرة */
+
 function gpField(){
-  if(userData&&userData.gamepoints!==undefined)return"gamepoints";
-  if(userData&&userData.diamonds!==undefined)return"diamonds";
-  return"gamepoints";
+
+if(userData){
+
+if(
+userData.gamepoints!==undefined &&
+userData.gamepoints!==null
+){
+return "gamepoints";
+}
+
+if(
+userData.diamonds!==undefined &&
+userData.diamonds!==null
+){
+return "diamonds";
+}
+
+}
+
+return "gamepoints";
+
+}
+
+function getDiamonds(){
+
+if(!userData)return 0;
+
+let field=gpField();
+
+let value=Number(userData[field]);
+
+if(Number.isFinite(value))return value;
+
+return 0;
+
 }
 
 function updateUI(){
-  if(!userData)return;
-  document.getElementById("diamonds").innerText=
-    Number(userData[gpField()]||0).toLocaleString();
+
+if(!userData)return;
+
+document.getElementById("diamonds").innerText=
+getDiamonds().toLocaleString();
+
 }
 
+/* نفس طريقة ربط لعبة الذاكرة */
+
 async function initUser(){
-  try{
-    let u=null;
 
-    if(tid&&tid!=="undefined"&&tid!=="null"){
-      let{data:u1}=await client
-        .from("users")
-        .select("*")
-        .eq("telegram_id",tid)
-        .maybeSingle();
+try{
 
-      if(u1)u=u1;
-      else{
-        let{data:u2}=await client
-          .from("users")
-          .select("*")
-          .eq("telegram_id",Number(tid))
-          .maybeSingle();
+let u=null;
 
-        if(u2)u=u2;
-      }
-    }
+if(
+tid &&
+tid!=="undefined" &&
+tid!=="null"
+){
 
-    if(!u){
-      let{data:latest}=await client
-        .from("users")
-        .select("*")
-        .order("created_at",{ascending:false})
-        .limit(1)
-        .maybeSingle();
+let{data:u1}=await client
+.from("users")
+.select("*")
+.eq("telegram_id",tid)
+.maybeSingle();
 
-      if(latest)u=latest;
-    }
+if(u1){
 
-    if(!u){
-      userData={
-        telegram_id:tid||"123456789",
-        gamepoints:0
-      };
-    }else{
-      userData=u;
-    }
+u=u1;
 
-    tid=String(userData.telegram_id||tid);
+}else{
 
-    localStorage.setItem("telegram_id",tid);
-    localStorage.setItem("megatask_uid",tid);
+let{data:u2}=await client
+.from("users")
+.select("*")
+.eq("telegram_id",Number(tid))
+.maybeSingle();
 
-    setKeys();
-    updateUI();
+if(u2)u=u2;
 
-    await prepareDaily();
-    checkSavedState();
+}
 
-  }catch(e){
-    console.error("Init error:",e);
-    document.getElementById("msg").innerText="❌ حدث خطأ أثناء تجهيز الحساب";
-    document.getElementById("mainBtn").style.display="none";
-  }
+}
+
+if(!u){
+
+let{data:latest}=await client
+.from("users")
+.select("*")
+.order("created_at",{ascending:false})
+.limit(1)
+.maybeSingle();
+
+if(latest)u=latest;
+
+}
+
+if(!u){
+
+userData={
+telegram_id:tid||"123456789",
+gamepoints:0
+};
+
+}else{
+
+userData=u;
+
+}
+
+tid=String(userData.telegram_id||tid);
+
+localStorage.setItem("telegram_id",tid);
+localStorage.setItem("megatask_uid",tid);
+
+setKeys();
+
+updateUI();
+
+await prepareDaily();
+
+checkSavedState();
+
+}catch(e){
+
+console.error("Init error:",e);
+
+document.getElementById("msg").innerText=
+"❌ حدث خطأ أثناء تجهيز الحساب";
+
+document.getElementById("mainBtn").style.display="none";
+
+}
+
 }
 
 async function prepareDaily(){
-  if(!userData)return;
 
-  let today=cairoDate();
-  let used=Number(userData.daily_game_rounds||0);
+if(!userData)return;
 
-  if(userData.daily_game_date!==today){
-    let{data,error}=await client
-      .from("users")
-      .update({
-        daily_game_rounds:0,
-        daily_game_date:today
-      })
-      .eq("telegram_id",String(tid))
-      .select("*")
-      .single();
+let today=cairoDate();
 
-    if(!error&&data){
-      userData=data;
-      used=0;
-    }
-  }
+let used=Number(userData.daily_game_rounds||0);
 
-  dailyUsed=used;
+if(userData.daily_game_date!==today){
+
+let{data,error}=await client
+.from("users")
+.update({
+daily_game_rounds:0,
+daily_game_date:today
+})
+.eq("telegram_id",String(tid))
+.select("*")
+.single();
+
+if(!error&&data){
+
+userData=data;
+used=0;
+
+}
+
+}
+
+dailyUsed=used;
+
 }
 
 async function consumeDailyRound(){
-  if(!userData)return false;
 
-  if(dailyUsed>=30){
-    showDailyLimit();
-    return false;
-  }
+if(!userData)return false;
 
-  let today=cairoDate();
-  let next=dailyUsed+1;
+if(dailyUsed>=30){
 
-  let{data,error}=await client
-    .from("users")
-    .update({
-      daily_game_rounds:next,
-      daily_game_date:today
-    })
-    .eq("telegram_id",String(tid))
-    .select("*")
-    .single();
+showDailyLimit();
 
-  if(error){
-    console.error(error);
-    return false;
-  }
+return false;
 
-  if(data){
-    userData=data;
-    dailyUsed=Number(data.daily_game_rounds||next);
-    updateUI();
-  }
+}
 
-  return true;
+let today=cairoDate();
+let next=dailyUsed+1;
+
+let{data,error}=await client
+.from("users")
+.update({
+daily_game_rounds:next,
+daily_game_date:today
+})
+.eq("telegram_id",String(tid))
+.select("*")
+.single();
+
+if(error){
+
+console.error("Daily round error:",error);
+
+return false;
+
+}
+
+if(data){
+
+userData=data;
+
+dailyUsed=
+Number(data.daily_game_rounds||next);
+
+updateUI();
+
+}
+
+return true;
+
 }
 
 function showDailyLimit(){
-  stopGame();
-  document.getElementById("overlay").style.display="flex";
-  document.getElementById("msg").innerText=
-    "🚫 وصلت للحد الأقصى اليومي: 30 جولة.";
-  document.getElementById("mainBtn").style.display="none";
+
+stopGame();
+
+document.getElementById("overlay").style.display="flex";
+
+document.getElementById("msg").innerText=
+"🚫 وصلت للحد الأقصى اليومي: 30 جولة.";
+
+document.getElementById("mainBtn").style.display="none";
+
 }
 
 function checkSavedState(){
-  rounds=Number(localStorage.getItem(roundKey)||0);
-  lockUntil=Number(localStorage.getItem(lockKey)||0);
 
-  if(lockUntil){
-    if(lockUntil>Date.now()){
-      showTimer(lockUntil);
-      return;
-    }
+rounds=
+Number(localStorage.getItem(roundKey)||0);
 
-    localStorage.removeItem(lockKey);
-    lockUntil=0;
-    rounds=0;
-    localStorage.setItem(roundKey,"0");
-  }
+lockUntil=
+Number(localStorage.getItem(lockKey)||0);
 
-  if(dailyUsed>=30){
-    showDailyLimit();
-    return;
-  }
+if(lockUntil){
 
-  if(rounds>=3){
-    document.getElementById("overlay").style.display="flex";
-    document.getElementById("msg").innerText=
-      "📺 أكملت 3 جولات. شاهد الإعلان لفتح 3 جولات جديدة.";
-    document.getElementById("mainBtn").innerText="📺 مشاهدة الإعلان";
-    document.getElementById("mainBtn").style.display="block";
-    document.getElementById("mainBtn").onclick=showAd;
-    return;
-  }
+if(lockUntil>Date.now()){
 
-  showStart();
+showTimer(lockUntil);
+
+return;
+
+}
+
+localStorage.removeItem(lockKey);
+
+lockUntil=0;
+
+rounds=0;
+
+localStorage.setItem(roundKey,"0");
+
+}
+
+if(dailyUsed>=30){
+
+showDailyLimit();
+
+return;
+
+}
+
+if(rounds>=3){
+
+document.getElementById("overlay").style.display="flex";
+
+document.getElementById("msg").innerText=
+"📺 أكملت 3 جولات. شاهد الإعلان لفتح 3 جولات جديدة.";
+
+document.getElementById("mainBtn").innerText=
+"📺 مشاهدة الإعلان";
+
+document.getElementById("mainBtn").style.display="block";
+
+document.getElementById("mainBtn").onclick=showAd;
+
+return;
+
+}
+
+showStart();
+
 }
 
 function showStart(){
-  document.getElementById("overlay").style.display="flex";
-  document.getElementById("msg").innerText=
-    `جاهز للجولة ${rounds+1} من 3\nتكلفة الجولة: 1 💎`;
-  document.getElementById("mainBtn").innerText="ابدأ الجولة الآن (1 💎)";
-  document.getElementById("mainBtn").style.display="block";
-  document.getElementById("mainBtn").onclick=startRound;
+
+document.getElementById("overlay").style.display="flex";
+
+document.getElementById("msg").innerText=
+`جاهز للجولة ${rounds+1} من 3
+تكلفة الجولة: 1 💎`;
+
+document.getElementById("mainBtn").innerText=
+"ابدأ الجولة الآن (1 💎)";
+
+document.getElementById("mainBtn").style.display="block";
+
+document.getElementById("mainBtn").onclick=startRound;
+
 }
 
 async function startRound(){
-  if(gameRunning||timer)return;
 
-  rounds=Number(localStorage.getItem(roundKey)||0);
+if(gameRunning||timer)return;
 
-  if(rounds>=3){
-    showAd();
-    return;
-  }
+rounds=
+Number(localStorage.getItem(roundKey)||0);
 
-  if(dailyUsed>=30){
-    showDailyLimit();
-    return;
-  }
+if(rounds>=3){
 
-  let field=gpField();
-  let balance=Number(userData[field]||0);
+showAd();
 
-  if(balance<1){
-    document.getElementById("overlay").style.display="flex";
-    document.getElementById("msg").innerText="❌ لا يوجد لديك ألماسة كافية لبدء الجولة.";
-    document.getElementById("mainBtn").style.display="none";
-    return;
-  }
+return;
 
-  let ok=await consumeDailyRound();
-  if(!ok)return;
+}
 
-  let newBalance=balance-1;
+if(dailyUsed>=30){
 
-  let obj={};
-  obj[field]=newBalance;
+showDailyLimit();
 
-  let{data,error}=await client
-    .from("users")
-    .update(obj)
-    .eq("telegram_id",String(tid))
-    .select("*")
-    .single();
+return;
 
-  if(error){
-    console.error(error);
-    return;
-  }
+}
 
-  if(data)userData=data;
+/* خصم 1 ألماسة */
 
-  updateUI();
+let field=gpField();
 
-  rounds++;
-  localStorage.setItem(roundKey,String(rounds));
+let balance=getDiamonds();
 
-  document.getElementById("overlay").style.display="none";
+if(balance<1){
 
-  resetGame();
-  startGame();
+document.getElementById("overlay").style.display="flex";
+
+document.getElementById("msg").innerText=
+"❌ لا يوجد لديك ألماسة كافية لبدء الجولة.";
+
+document.getElementById("mainBtn").style.display="none";
+
+return;
+
+}
+
+let ok=await consumeDailyRound();
+
+if(!ok)return;
+
+let newBalance=balance-1;
+
+let updateObj={};
+
+updateObj[field]=newBalance;
+
+let{data,error}=await client
+.from("users")
+.update(updateObj)
+.eq("telegram_id",String(tid))
+.select("*")
+.single();
+
+if(error){
+
+console.error("Diamond deduction error:",error);
+
+return;
+
+}
+
+if(data){
+
+userData=data;
+
+}
+
+updateUI();
+
+/* الجولة تتحسب فور بدء اللعب */
+
+rounds++;
+
+localStorage.setItem(
+roundKey,
+String(rounds)
+);
+
+document.getElementById("overlay").style.display="none";
+
+resetGame();
+
+startGame();
+
 }
 
 async function showAd(){
-  if(timer)return;
 
-  document.getElementById("mainBtn").style.display="none";
-  document.getElementById("msg").innerText="⏳ جاري تجهيز الإعلان...";
+if(timer)return;
 
-  try{
-    if(typeof show_10959333!=="function")
-      throw new Error("Ad unavailable");
+document.getElementById("mainBtn").style.display="none";
 
-    await show_10959333();
+document.getElementById("msg").innerText=
+"⏳ جاري تجهيز الإعلان...";
 
-    rounds=0;
-    localStorage.setItem(roundKey,"0");
+try{
 
-    lockUntil=Date.now()+300000;
-    localStorage.setItem(lockKey,String(lockUntil));
+if(typeof show_10959333!=="function")
+throw new Error("Ad unavailable");
 
-    showTimer(lockUntil);
+await show_10959333();
 
-  }catch(e){
-    console.error(e);
-    document.getElementById("msg").innerText=
-      "❌ يجب مشاهدة الإعلان لفتح الجولات الجديدة.";
-    document.getElementById("mainBtn").innerText="📺 مشاهدة الإعلان";
-    document.getElementById("mainBtn").style.display="block";
-    document.getElementById("mainBtn").onclick=showAd;
-  }
+rounds=0;
+
+localStorage.setItem(
+roundKey,
+"0"
+);
+
+lockUntil=Date.now()+300000;
+
+localStorage.setItem(
+lockKey,
+String(lockUntil)
+);
+
+showTimer(lockUntil);
+
+}catch(e){
+
+console.error("Ad error:",e);
+
+document.getElementById("msg").innerText=
+"❌ يجب مشاهدة الإعلان لفتح الجولات الجديدة.";
+
+document.getElementById("mainBtn").innerText=
+"📺 مشاهدة الإعلان";
+
+document.getElementById("mainBtn").style.display="block";
+
+document.getElementById("mainBtn").onclick=showAd;
+
+}
+
 }
 
 function showTimer(end){
-  stopGame();
 
-  document.getElementById("overlay").style.display="flex";
-  document.getElementById("mainBtn").style.display="none";
+stopGame();
 
-  if(timer)clearInterval(timer);
+document.getElementById("overlay").style.display="flex";
 
-  timer=setInterval(()=>{
-    let left=Math.max(0,end-Date.now());
-    let s=Math.ceil(left/1000);
-    let m=Math.floor(s/60);
-    let sec=s%60;
+document.getElementById("mainBtn").style.display="none";
 
-    document.getElementById("msg").innerText=
-      `⏱️ متاح اللعب بعد ${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+if(timer)clearInterval(timer);
 
-    if(!left){
-      clearInterval(timer);
-      timer=null;
+timer=setInterval(()=>{
 
-      localStorage.removeItem(lockKey);
-      lockUntil=0;
-      rounds=0;
-      localStorage.setItem(roundKey,"0");
+let left=Math.max(0,end-Date.now());
 
-      if(dailyUsed>=30){
-        showDailyLimit();
-        return;
-      }
+let s=Math.ceil(left/1000);
 
-      showStart();
-    }
-  },250);
+let m=Math.floor(s/60);
+
+let sec=s%60;
+
+document.getElementById("msg").innerText=
+`⏱️ متاح اللعب بعد ${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+
+if(!left){
+
+clearInterval(timer);
+
+timer=null;
+
+localStorage.removeItem(lockKey);
+
+lockUntil=0;
+
+rounds=0;
+
+localStorage.setItem(roundKey,"0");
+
+if(dailyUsed>=30){
+
+showDailyLimit();
+
+return;
+
+}
+
+showStart();
+
+}
+
+},250);
+
 }
 
 function goBack(){
-  location.href=`../games.html?id=${tid}`;
+
+location.href=
+`../games.html?id=${tid}`;
+
 }
 
-let player;
+/* ================= GAME ================= */
+
+let player=null;
 let pipes=[];
 let particles=[];
+
 let gameRunning=false;
 let animationId=0;
+
 let earned=0;
 let passed=0;
 let speed=3.2;
@@ -436,339 +745,657 @@ let pipeGap=195;
 let gameOverDone=false;
 
 function resetGame(){
-  cancelAnimationFrame(animationId);
 
-  earned=0;
-  passed=0;
-  speed=3.2;
-  frame=0;
-  pipeGap=195;
-  pipes=[];
-  particles=[];
-  gameOverDone=false;
+cancelAnimationFrame(animationId);
 
-  player={
-    x:W*.25,
-    y:H*.5,
-    r:19,
-    vy:0
-  };
+earned=0;
+passed=0;
+speed=3.2;
+frame=0;
+pipeGap=195;
+pipes=[];
+particles=[];
+gameOverDone=false;
 
-  document.getElementById("score").innerText="0";
+player={
+x:W*.25,
+y:H*.5,
+r:19,
+vy:0
+};
+
+document.getElementById("score").innerText="0";
+
 }
 
 function startGame(){
-  gameRunning=true;
-  gameOverDone=false;
-  document.getElementById("status").style.display="block";
-  document.getElementById("status").innerText="اضغط على الشاشة للقفز 🐴";
-  jump();
-  loop();
+
+gameRunning=true;
+gameOverDone=false;
+
+document.getElementById("status").style.display="block";
+
+document.getElementById("status").innerText=
+"اضغط على الشاشة للقفز 🐴";
+
+jump();
+
+loop();
+
 }
 
 function stopGame(){
-  gameRunning=false;
-  cancelAnimationFrame(animationId);
+
+gameRunning=false;
+
+cancelAnimationFrame(animationId);
+
 }
 
 function jump(){
-  if(!gameRunning||!player)return;
-  player.vy=-7.5;
+
+if(!gameRunning||!player)return;
+
+player.vy=-7.5;
+
 }
 
 addEventListener("pointerdown",e=>{
-  if(e.target.tagName==="BUTTON")return;
-  if(gameRunning)jump();
+
+if(e.target.tagName==="BUTTON")return;
+
+if(gameRunning)jump();
+
 });
 
 addEventListener("keydown",e=>{
-  if(e.code==="Space"&&gameRunning){
-    e.preventDefault();
-    jump();
-  }
+
+if(e.code==="Space"&&gameRunning){
+
+e.preventDefault();
+
+jump();
+
+}
+
 });
 
 function addPipe(){
-  let minTop=95;
-  let maxTop=Math.max(minTop,H-pipeGap-130);
-  let top=minTop+Math.random()*Math.max(30,maxTop-minTop);
 
-  pipes.push({
-    x:W+80,
-    w:62,
-    top,
-    gap:pipeGap,
-    passed:false
-  });
+let minTop=95;
+
+let maxTop=
+Math.max(minTop,H-pipeGap-130);
+
+let top=
+minTop+
+Math.random()*
+Math.max(30,maxTop-minTop);
+
+pipes.push({
+x:W+80,
+w:62,
+top,
+gap:pipeGap,
+passed:false
+});
+
 }
 
 function loop(){
-  if(!gameRunning)return;
 
-  update();
-  draw();
+if(!gameRunning)return;
 
-  animationId=requestAnimationFrame(loop);
+update();
+draw();
+
+animationId=requestAnimationFrame(loop);
+
 }
 
 function update(){
-  frame++;
 
-  player.vy+=.38;
-  player.y+=player.vy;
+frame++;
 
-  if(frame%100===0)addPipe();
+player.vy+=.38;
+player.y+=player.vy;
 
-  pipes.forEach(p=>{
-    p.x-=speed;
+if(frame%100===0)addPipe();
 
-    if(!p.passed&&p.x+p.w<player.x){
-      p.passed=true;
-      passed++;
-      document.getElementById("score").innerText=passed;
+pipes.forEach(p=>{
 
-      if(passed%3===0){
-        earned++;
-        createParticles(player.x,player.y,12);
-      }
+p.x-=speed;
 
-      speed+=.12;
+if(
+!p.passed &&
+p.x+p.w<player.x
+){
 
-      if(pipeGap>155)pipeGap-=.8;
-    }
-  });
+p.passed=true;
 
-  pipes=pipes.filter(p=>p.x+p.w>-30);
+passed++;
 
-  particles.forEach(p=>{
-    p.x+=p.vx;
-    p.y+=p.vy;
-    p.vy+=.08;
-    p.life--;
-  });
+document.getElementById("score").innerText=
+passed;
 
-  particles=particles.filter(p=>p.life>0);
+/* كل 3 عوائق = ألماسة */
 
-  let hit=false;
+if(passed%3===0){
 
-  if(player.y-player.r<0||player.y+player.r>H)hit=true;
+earned++;
 
-  for(const p of pipes){
-    let inX=player.x+player.r>p.x&&player.x-player.r<p.x+p.w;
-    if(inX){
-      if(player.y-player.r<p.top||
-         player.y+player.r>p.top+p.gap){
-        hit=true;
-        break;
-      }
-    }
-  }
+createParticles(
+player.x,
+player.y,
+12
+);
 
-  if(hit)gameOver();
 }
 
-function gameOver(){
-  if(gameOverDone)return;
+speed+=.12;
 
-  gameOverDone=true;
-  stopGame();
+if(pipeGap>155)
+pipeGap-=.8;
 
-  document.getElementById("status").style.display="none";
+}
 
-  addEarned();
+});
 
-  setTimeout(()=>{
-    document.getElementById("overlay").style.display="flex";
+pipes=pipes.filter(
+p=>p.x+p.w>-30
+);
 
-    document.getElementById("msg").innerHTML=
-      `انتهت الجولة 🐴<br>
-       النتيجة: <b style="color:#00f2ff">${passed}</b><br>
-       حصلت على <b style="color:#00d26a">${earned} 💎</b>`;
+particles.forEach(p=>{
 
-    document.getElementById("mainBtn").innerText=
-      rounds>=3?"📺 مشاهدة الإعلان":"اللعب مرة أخرى (1 💎)";
+p.x+=p.vx;
+p.y+=p.vy;
+p.vy+=.08;
+p.life--;
 
-    document.getElementById("mainBtn").style.display="block";
-    document.getElementById("mainBtn").onclick=
-      rounds>=3?showAd:startRound;
-  },350);
+});
+
+particles=particles.filter(
+p=>p.life>0
+);
+
+let hit=false;
+
+if(
+player.y-player.r<0 ||
+player.y+player.r>H
+){
+
+hit=true;
+
+}
+
+for(const p of pipes){
+
+let inX=
+player.x+player.r>p.x &&
+player.x-player.r<p.x+p.w;
+
+if(inX){
+
+if(
+player.y-player.r<p.top ||
+player.y+player.r>p.top+p.gap
+){
+
+hit=true;
+break;
+
+}
+
+}
+
+}
+
+if(hit)gameOver();
+
+}
+
+async function gameOver(){
+
+if(gameOverDone)return;
+
+gameOverDone=true;
+
+stopGame();
+
+document.getElementById("status").style.display="none";
+
+/* حفظ مكافآت العوائق */
+
+await addEarned();
+
+setTimeout(()=>{
+
+document.getElementById("overlay").style.display="flex";
+
+document.getElementById("msg").innerHTML=
+`انتهت الجولة 🐴<br>
+النتيجة:
+<b style="color:#00f2ff">${passed}</b><br>
+حصلت على:
+<b style="color:#00d26a">${earned} 💎</b>`;
+
+document.getElementById("mainBtn").innerText=
+rounds>=3?
+"📺 مشاهدة الإعلان":
+"اللعب مرة أخرى (1 💎)";
+
+document.getElementById("mainBtn").style.display="block";
+
+document.getElementById("mainBtn").onclick=
+rounds>=3?
+showAd:
+startRound;
+
+},350);
+
 }
 
 async function addEarned(){
-  if(!userData||earned<=0)return;
 
-  const field=gpField();
-  const current=Number(userData[field]||0);
-  const value=current+earned;
+if(!userData||earned<=0)return;
 
-  let obj={};
-  obj[field]=value;
+const field=gpField();
 
-  let{data,error}=await client
-    .from("users")
-    .update(obj)
-    .eq("telegram_id",String(tid))
-    .select("*")
-    .single();
+const current=getDiamonds();
 
-  if(!error&&data){
-    userData=data;
-    updateUI();
+const value=current+earned;
 
-    await client.from("transactions").insert({
-      telegram_id:String(tid),
-      type:"points",
-      title:"مكافأة أرباح لعبة حصان البحر",
-      amount:`+${earned} 💎`,
-      status:"مكتمل"
-    });
-  }
+let updateObj={};
+
+updateObj[field]=value;
+
+let{data,error}=await client
+.from("users")
+.update(updateObj)
+.eq("telegram_id",String(tid))
+.select("*")
+.single();
+
+if(!error&&data){
+
+userData=data;
+
+updateUI();
+
+/* تسجيل المعاملة */
+
+try{
+
+await client
+.from("transactions")
+.insert({
+telegram_id:String(tid),
+type:"points",
+title:"مكافأة أرباح لعبة حصان البحر",
+amount:`+${earned} 💎`,
+status:"مكتمل"
+});
+
+}catch(e){
+
+console.error("Transaction error:",e);
+
+}
+
+}
+
 }
 
 function createParticles(x,y,n){
-  for(let i=0;i<n;i++){
-    particles.push({
-      x,y,
-      vx:(Math.random()-.5)*4,
-      vy:(Math.random()-.8)*4,
-      life:30+Math.random()*25,
-      size:2+Math.random()*4
-    });
-  }
+
+for(let i=0;i<n;i++){
+
+particles.push({
+x,
+y,
+vx:(Math.random()-.5)*4,
+vy:(Math.random()-.8)*4,
+life:30+Math.random()*25,
+size:2+Math.random()*4
+});
+
+}
+
 }
 
 function draw(){
-  ctx.clearRect(0,0,W,H);
 
-  let g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,"#061c31");
-  g.addColorStop(.55,"#082b42");
-  g.addColorStop(1,"#03111d");
-  ctx.fillStyle=g;
-  ctx.fillRect(0,0,W,H);
+ctx.clearRect(0,0,W,H);
 
-  drawBubbles();
-  drawPipes();
+let g=ctx.createLinearGradient(
+0,0,0,H
+);
 
-  if(player)drawSeahorse(player.x,player.y,player.r);
+g.addColorStop(0,"#061c31");
+g.addColorStop(.55,"#082b42");
+g.addColorStop(1,"#03111d");
 
-  particles.forEach(p=>{
-    ctx.globalAlpha=Math.max(0,p.life/55);
-    ctx.fillStyle="#00eaff";
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
-    ctx.fill();
-  });
+ctx.fillStyle=g;
+ctx.fillRect(0,0,W,H);
 
-  ctx.globalAlpha=1;
+drawBubbles();
+drawPipes();
+
+if(player)
+drawSeahorse(
+player.x,
+player.y,
+player.r
+);
+
+particles.forEach(p=>{
+
+ctx.globalAlpha=
+Math.max(0,p.life/55);
+
+ctx.fillStyle="#00eaff";
+
+ctx.beginPath();
+
+ctx.arc(
+p.x,
+p.y,
+p.size,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+});
+
+ctx.globalAlpha=1;
+
 }
 
 function drawBubbles(){
-  for(let i=0;i<22;i++){
-    let x=(i*83+frame*.18)%W;
-    let y=(i*137-frame*.35)%(H+50);
-    if(y<0)y+=H+50;
 
-    ctx.globalAlpha=.15;
-    ctx.strokeStyle="#8cefff";
-    ctx.lineWidth=1;
-    ctx.beginPath();
-    ctx.arc(x,y,2+(i%4),0,Math.PI*2);
-    ctx.stroke();
-  }
-  ctx.globalAlpha=1;
+for(let i=0;i<22;i++){
+
+let x=
+(i*83+frame*.18)%W;
+
+let y=
+(i*137-frame*.35)%(H+50);
+
+if(y<0)y+=H+50;
+
+ctx.globalAlpha=.15;
+
+ctx.strokeStyle="#8cefff";
+
+ctx.lineWidth=1;
+
+ctx.beginPath();
+
+ctx.arc(
+x,
+y,
+2+(i%4),
+0,
+Math.PI*2
+);
+
+ctx.stroke();
+
+}
+
+ctx.globalAlpha=1;
+
 }
 
 function drawPipes(){
-  pipes.forEach(p=>{
-    drawPipe(p.x,0,p.w,p.top,true);
-    drawPipe(p.x,p.top+p.gap,p.w,H-(p.top+p.gap),false);
-  });
+
+pipes.forEach(p=>{
+
+drawPipe(
+p.x,
+0,
+p.w,
+p.top,
+true
+);
+
+drawPipe(
+p.x,
+p.top+p.gap,
+p.w,
+H-(p.top+p.gap),
+false
+);
+
+});
+
 }
 
 function drawPipe(x,y,w,h,top){
-  if(h<=0)return;
 
-  let g=ctx.createLinearGradient(x,0,x+w,0);
-  g.addColorStop(0,"#083f59");
-  g.addColorStop(.45,"#00a6c7");
-  g.addColorStop(1,"#06354e");
+if(h<=0)return;
 
-  ctx.fillStyle=g;
-  ctx.fillRect(x,y,w,h);
+let g=ctx.createLinearGradient(
+x,0,x+w,0
+);
 
-  ctx.strokeStyle="#00eaff";
-  ctx.lineWidth=2;
-  ctx.strokeRect(x,y,w,h);
+g.addColorStop(0,"#083f59");
+g.addColorStop(.45,"#00a6c7");
+g.addColorStop(1,"#06354e");
 
-  ctx.fillStyle="#08cbe8";
+ctx.fillStyle=g;
 
-  if(top){
-    ctx.fillRect(x-7,h-15,w+14,15);
-    ctx.strokeRect(x-7,h-15,w+14,15);
-  }else{
-    ctx.fillRect(x-7,y,w+14,15);
-    ctx.strokeRect(x-7,y,w+14,15);
-  }
+ctx.fillRect(
+x,
+y,
+w,
+h
+);
+
+ctx.strokeStyle="#00eaff";
+ctx.lineWidth=2;
+
+ctx.strokeRect(
+x,
+y,
+w,
+h
+);
+
+ctx.fillStyle="#08cbe8";
+
+if(top){
+
+ctx.fillRect(
+x-7,
+h-15,
+w+14,
+15
+);
+
+ctx.strokeRect(
+x-7,
+h-15,
+w+14,
+15
+);
+
+}else{
+
+ctx.fillRect(
+x-7,
+y,
+w+14,
+15
+);
+
+ctx.strokeRect(
+x-7,
+y,
+w+14,
+15
+);
+
+}
+
 }
 
 function drawSeahorse(x,y,r){
-  ctx.save();
-  ctx.translate(x,y);
 
-  let rot=Math.max(-.35,Math.min(.35,player.vy*.035));
-  ctx.rotate(rot);
+ctx.save();
 
-  ctx.shadowColor="#00eaff";
-  ctx.shadowBlur=12;
+ctx.translate(x,y);
 
-  ctx.fillStyle="#19d9ee";
-  ctx.beginPath();
-  ctx.ellipse(0,0,r*.82,r,0,0,Math.PI*2);
-  ctx.fill();
+let rot=
+Math.max(
+-.35,
+Math.min(
+.35,
+player.vy*.035
+)
+);
 
-  ctx.fillStyle="#0b8eb0";
-  ctx.beginPath();
-  ctx.arc(r*.55,-r*.22,r*.58,0,Math.PI*2);
-  ctx.fill();
+ctx.rotate(rot);
 
-  ctx.fillStyle="#b8f9ff";
-  ctx.beginPath();
-  ctx.arc(r*.73,-r*.38,r*.13,0,Math.PI*2);
-  ctx.fill();
+ctx.shadowColor="#00eaff";
+ctx.shadowBlur=12;
 
-  ctx.fillStyle="#063c54";
-  ctx.beginPath();
-  ctx.arc(r*.76,-r*.4,r*.055,0,Math.PI*2);
-  ctx.fill();
+ctx.fillStyle="#19d9ee";
 
-  ctx.strokeStyle="#78f5ff";
-  ctx.lineWidth=3;
-  ctx.beginPath();
-  ctx.moveTo(-r*.35,r*.55);
-  ctx.quadraticCurveTo(-r*1.1,r*1.15,-r*.35,r*1.35);
-  ctx.quadraticCurveTo(r*.15,r*1.48,r*.05,r*1.05);
-  ctx.stroke();
+ctx.beginPath();
 
-  ctx.strokeStyle="#54edff";
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  ctx.moveTo(-r*.55,-r*.25);
-  ctx.lineTo(-r*1.05,-r*.65);
-  ctx.moveTo(-r*.55,r*.05);
-  ctx.lineTo(-r*1.1,r*.35);
-  ctx.stroke();
+ctx.ellipse(
+0,
+0,
+r*.82,
+r,
+0,
+0,
+Math.PI*2
+);
 
-  ctx.restore();
+ctx.fill();
+
+ctx.fillStyle="#0b8eb0";
+
+ctx.beginPath();
+
+ctx.arc(
+r*.55,
+-r*.22,
+r*.58,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+ctx.fillStyle="#b8f9ff";
+
+ctx.beginPath();
+
+ctx.arc(
+r*.73,
+-r*.38,
+r*.13,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+ctx.fillStyle="#063c54";
+
+ctx.beginPath();
+
+ctx.arc(
+r*.76,
+-r*.4,
+r*.055,
+0,
+Math.PI*2
+);
+
+ctx.fill();
+
+ctx.strokeStyle="#78f5ff";
+ctx.lineWidth=3;
+
+ctx.beginPath();
+
+ctx.moveTo(
+-r*.35,
+r*.55
+);
+
+ctx.quadraticCurveTo(
+-r*1.1,
+r*1.15,
+-r*.35,
+r*1.35
+);
+
+ctx.quadraticCurveTo(
+r*.15,
+r*1.48,
+r*.05,
+r*1.05
+);
+
+ctx.stroke();
+
+ctx.strokeStyle="#54edff";
+ctx.lineWidth=2;
+
+ctx.beginPath();
+
+ctx.moveTo(
+-r*.55,
+-r*.25
+);
+
+ctx.lineTo(
+-r*1.05,
+-r*.65
+);
+
+ctx.moveTo(
+-r*.55,
+r*.05
+);
+
+ctx.lineTo(
+-r*1.1,
+r*.35
+);
+
+ctx.stroke();
+
+ctx.restore();
+
 }
 
-document.addEventListener("visibilitychange",()=>{
-  if(document.hidden&&gameRunning){
-    stopGame();
-  }
+document.addEventListener(
+"visibilitychange",
+()=>{
+
+if(
+document.hidden &&
+gameRunning
+){
+
+stopGame();
+
+}
+
 });
 
 initUser();
+
 </script>
+
 </body>
-  </html>
+</html>
