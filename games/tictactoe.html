@@ -1,270 +1,169 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MegaTask - Tic Tac Toe</title>
-    
-    <!-- إعلانات Monetag -->
-    <script src="//libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
-
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    
-    <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 50px; width: 100%; max-width: 100vw; overflow-x: hidden; text-align: center; }
-        
-        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d333d; }
-        .back-link { background: #252932; color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; text-decoration: none; }
-        
-        .game-title { margin: 20px 0 5px; color: var(--main-green); font-size: 20px; }
-        .game-desc { font-size: 12px; color: var(--text-gray); margin-bottom: 15px; }
-
-        .stat-badge { font-size: 13px; color: #00f2ff; font-weight: bold; margin-bottom: 15px; display: inline-block; background: rgba(0,242,255,0.1); padding: 6px 15px; border-radius: 10px; border: 1px solid #00f2ff; }
-
-        /* شبكة الإكس أو */
-        .tictactoe-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 300px; margin: 0 auto 20px; padding: 0 15px; }
-        .cell { aspect-ratio: 1; background: var(--card-bg); border: 2px solid #2d333d; border-radius: 16px; font-size: 40px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; user-select: none; }
-        .cell:active { background: #252932; }
-        .cell.x { color: #00f2ff; }
-        .cell.o { color: #ff3b30; }
-
-        .btn-action { background: var(--main-green); color: black; border: none; padding: 12px 25px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); display: none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>MegaTask - Tic Tac Toe</title>
+<script src="//libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<style>
+:root{--g:#00d26a;--bg:#0d0f12;--card:#1a1d23;--gray:#9ca3af}
+html,body{background:var(--bg);color:#fff;font-family:'Segoe UI',sans-serif;margin:0;padding:0 0 50px;width:100%;max-width:100vw;overflow-x:hidden;text-align:center}
+.header{padding:15px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2d333d}
+.back-link{background:#252932;color:#fff;border:0;padding:8px 15px;border-radius:10px;font-weight:bold;cursor:pointer;font-size:12px;text-decoration:none}
+.game-title{margin:20px 0 5px;color:var(--g);font-size:20px}.game-desc{font-size:12px;color:var(--gray);margin-bottom:15px}
+.stat-badge{font-size:13px;color:#00f2ff;font-weight:bold;margin-bottom:15px;display:inline-block;background:#00f2ff1a;padding:6px 15px;border-radius:10px;border:1px solid #00f2ff}
+.tictactoe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:300px;margin:0 auto 20px;padding:0 15px}
+.cell{aspect-ratio:1;background:var(--card);border:2px solid #2d333d;border-radius:16px;font-size:40px;font-weight:bold;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;user-select:none}
+.cell:active{background:#252932}.cell.x{color:#00f2ff}.cell.o{color:#ff3b30}
+.btn-action{background:var(--g);color:#000;border:0;padding:12px 25px;border-radius:12px;font-weight:bold;font-size:13px;cursor:pointer;box-shadow:0 4px 15px #00d26a33}
+#restart-btn{display:none}
+</style>
 </head>
 <body>
 
-    <div class="header">
-        <a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
-        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">❌ إكس أو الذكية ⭕</span>
-        <div style="width: 60px;"></div>
-    </div>
+<div class="header">
+<a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
+<span style="font-size:13px;font-weight:bold;color:var(--g)">❌ إكس أو الذكية ⭕</span>
+<div style="width:60px"></div>
+</div>
 
-    <h2 class="game-title">تحدي الذكاء (Tic Tac Toe)</h2>
-    <p class="game-desc">الفوز يمنحك +5 ألماسات 💎 | الخسارة تخصم منك 5 ألماسات!</p>
+<h2 class="game-title">تحدي الذكاء (Tic Tac Toe)</h2>
+<p class="game-desc">الفوز يمنحك +5 ألماسات 💎 | الخسارة تخصم منك 5 ألماسات!</p>
+<div class="stat-badge">ألماسات حسابك: <span id="user-diamonds-counter">0</span> 💎</div>
+<div id="status-msg" style="font-size:13px;color:#ffaa00;font-weight:bold;margin-bottom:15px">جاري تحميل الجولة...</div>
 
-    <div class="stat-badge">ألماسات حسابك: <span id="user-diamonds-counter">0</span> 💎</div>
+<div class="tictactoe-grid" id="board">
+<div class="cell" onclick="makeMove(0)"></div><div class="cell" onclick="makeMove(1)"></div><div class="cell" onclick="makeMove(2)"></div>
+<div class="cell" onclick="makeMove(3)"></div><div class="cell" onclick="makeMove(4)"></div><div class="cell" onclick="makeMove(5)"></div>
+<div class="cell" onclick="makeMove(6)"></div><div class="cell" onclick="makeMove(7)"></div><div class="cell" onclick="makeMove(8)"></div>
+</div>
 
-    <div id="status-msg" style="font-size: 13px; color: #ffaa00; font-weight: bold; margin-bottom: 15px;">جاري تحميل الجولة...</div>
+<button id="restart-btn" class="btn-action" onclick="nextRound()">🔄 جولة جديدة</button>
 
-    <div class="tictactoe-grid" id="board">
-        <div class="cell" onclick="makeMove(0)"></div>
-        <div class="cell" onclick="makeMove(1)"></div>
-        <div class="cell" onclick="makeMove(2)"></div>
-        <div class="cell" onclick="makeMove(3)"></div>
-        <div class="cell" onclick="makeMove(4)"></div>
-        <div class="cell" onclick="makeMove(5)"></div>
-        <div class="cell" onclick="makeMove(6)"></div>
-        <div class="cell" onclick="makeMove(7)"></div>
-        <div class="cell" onclick="makeMove(8)"></div>
-    </div>
+<script>
+const tg=window.Telegram.WebApp;tg.expand();
+const client=supabase.createClient(
+"https://smukfrwnguvmxvfwqwrv.supabase.co",
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"
+);
 
-    <button id="restart-btn" class="btn-action" onclick="startNewRoundWithAd()">
-        🔄 جولة جديدة (مشاهدة إعلان)
-    </button>
+const p=new URLSearchParams(location.search);
+let tid=String(p.get("id")||tg.initDataUnsafe.user?.id||localStorage.getItem("telegram_id")||"").trim();
+document.getElementById("back-link").href=`../games.html?id=${tid}`;
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+let userData=null,board=["","","","","","","","",""],active=false,currentPlayer="X";
+let rounds=0,timer=null;
+const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
 
-        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-        const client = supabase.createClient(S_URL, S_KEY);
+async function initUser(){
+if(!tid)return tg.showAlert("❌ لم يتم العثور على معرف المستخدم.");
+try{
+const{data:user,error}=await client.from("users").select("*").eq("telegram_id",String(tid)).maybeSingle();
+if(error||!user)return tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
+userData=user;ui();startRound();
+}catch(e){console.error(e)}
+}
 
-        const params = new URLSearchParams(window.location.search);
-        let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
+function ui(){
+if(userData)document.getElementById("user-diamonds-counter").innerText=Number(userData.gamepoints||0).toLocaleString();
+}
 
-        document.getElementById('back-link').href = `../games.html?id=${tid}`;
+async function startRound(){
+if(timer)return;
+document.getElementById("restart-btn").style.display="none";
+reset();active=true;document.getElementById("status-msg").innerText="دورك (X)";
+}
 
-        let userData = null;
-        let board = ["", "", "", "", "", "", "", "", ""];
-        let isGameActive = false;
-        let currentPlayer = "X";
+async function nextRound(){
+if(timer)return;
+if(rounds>=3)return showAd();
+startRound();
+}
 
-        const winningConditions = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8],
-            [0, 3, 6], [1, 4, 7], [2, 5, 8],
-            [0, 4, 8], [2, 4, 6]
-        ];
+async function showAd(){
+document.getElementById("restart-btn").style.display="none";
+document.getElementById("status-msg").innerText="⏳ جاري تحميل الإعلان...";
+try{
+if(typeof show_10959333==="function")await show_10959333();
+rounds=0;startTimer();
+}catch(e){
+console.error(e);
+tg.showAlert("❌ يجب مشاهدة الإعلان كاملاً.");
+document.getElementById("status-msg").innerText="⚠️ لم يتم إكمال الإعلان.";
+document.getElementById("restart-btn").style.display="inline-block";
+}
+}
 
-        async function initUser() {
-            if (!tid) {
-                tg.showAlert("❌ لم يتم العثور على معرف المستخدم.");
-                return;
-            }
+function startTimer(){
+let end=Date.now()+300000;
+timer=setInterval(()=>{
+let left=Math.max(0,end-Date.now()),s=Math.ceil(left/1000),m=Math.floor(s/60),sec=s%60;
+document.getElementById("status-msg").innerText=`⏱️ متاح اللعب بعد ${String(m).padStart(2,"0")}:${String(sec%60).padStart(2,"0")}`;
+if(!left){
+clearInterval(timer);timer=null;
+document.getElementById("status-msg").innerText="✅ انتهى وقت الانتظار، يمكنك لعب 3 جولات جديدة.";
+document.getElementById("restart-btn").style.display="inline-block";
+}
+},250);
+}
 
-            try {
-                const { data: user, error } = await client
-                    .from('users')
-                    .select('*')
-                    .eq('telegram_id', String(tid))
-                    .maybeSingle();
+function makeMove(i){
+if(board[i]||!active||currentPlayer!=="X")return;
+board[i]="X";draw();
+if(check("X"))return finish("🎉 مبروك! فزت على الخصم وحصلت على +5 ألماسات 💎",5);
+if(board.every(Boolean))return finish("🤝 تعادل! لا تغيير في رصيد الألماس.");
+currentPlayer="O";document.getElementById("status-msg").innerText="دور الكمبيوتر (O)...";
+setTimeout(computer,500);
+}
 
-                if (error || !user) {
-                    tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
-                    return;
-                }
+function computer(){
+if(!active)return;
+let move=best();
+if(move<0){
+let e=board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+if(!e.length)return;move=e[Math.floor(Math.random()*e.length)];
+}
+board[move]="O";draw();
+if(check("O"))return finish("❌ فاز الكمبيوتر! تم خصم 5 ألماسات من رصيدك.",-5);
+if(board.every(Boolean))return finish("🤝 تعادل! لا تغيير في رصيد الألماس.");
+currentPlayer="X";document.getElementById("status-msg").innerText="دورك (X)";
+}
 
-                userData = user;
-                updateUI();
-                
-                // بدء أول جولة بإعلان إلزامي عند فتح اللعبة
-                startNewRoundWithAd();
+function best(){
+for(const c of wins){
+let l=c.map(i=>board[i]);
+if(l.filter(v=>v==="O").length===2&&l.includes(""))return c[l.indexOf("")];
+if(l.filter(v=>v==="X").length===2&&l.includes(""))return c[l.indexOf("")];
+}
+return -1;
+}
 
-            } catch (e) {
-                console.error("Init error:", e);
-            }
-        }
+function check(x){return wins.some(c=>c.every(i=>board[i]===x))}
+function draw(){document.querySelectorAll(".cell").forEach((e,i)=>{e.innerText=board[i];e.className=`cell ${board[i].toLowerCase()}`})}
 
-        function updateUI() {
-            if (!userData) return;
-            const diamonds = Number(userData.gamepoints || 0);
-            document.getElementById('user-diamonds-counter').innerText = diamonds.toLocaleString();
-        }
+async function updateDiamonds(a){
+if(!userData)return;
+let n=Math.max(0,Number(userData.gamepoints||0)+a);
+try{
+const{data,error}=await client.from("users").update({gamepoints:n}).eq("telegram_id",String(tid)).select("*").single();
+if(!error&&data){userData=data;ui()}
+}catch(e){console.error(e)}
+}
 
-        async function startNewRoundWithAd() {
-            document.getElementById('status-msg').innerText = "⏳ جاري تحميل إعلان الجولة الجديدة...";
-            document.getElementById('restart-btn').style.display = 'none';
+function finish(msg,reward=0){
+active=false;rounds++;document.getElementById("status-msg").innerText=msg;
+if(reward)updateDiamonds(reward);
+document.getElementById("restart-btn").style.display="inline-block";
+document.getElementById("restart-btn").innerText=rounds>=3?"🔄 الجولة القادمة (مشاهدة إعلان)":"🔄 جولة جديدة";
+}
 
-            try {
-                if (typeof show_10959333 === 'function') {
-                    await show_10959333();
-                } else {
-                    console.warn("Monetag SDK not found, bypassing ad for testing.");
-                }
+function reset(){
+board=["","","","","","","","",""];currentPlayer="X";draw();
+}
 
-                // بدء اللعبة بعد مشاهدة الإعلان بنجاح
-                resetBoard();
-                isGameActive = true;
-                document.getElementById('status-msg').innerText = "دورك (X)";
-
-            } catch (err) {
-                console.error("Ad error:", err);
-                tg.showAlert("❌ يجب مشاهدة الإعلان كاملاً لبدء الجولة الجديدة.");
-                document.getElementById('status-msg').innerText = "⚠️ لم يتم إكمال الإعلان.";
-                document.getElementById('restart-btn').style.display = 'inline-block';
-            }
-        }
-
-        function makeMove(index) {
-            if (board[index] !== "" || !isGameActive || currentPlayer !== "X") return;
-
-            board[index] = "X";
-            updateBoardUI();
-            
-            if (checkWin("X")) {
-                endGame("🎉 مبروك! فزت على الخصم وحصلت على +5 ألماسات 💎");
-                updateUserDiamonds(5);
-                return;
-            }
-
-            if (board.every(cell => cell !== "")) {
-                endGame("🤝 تعادل! لا تغيير في رصيد الألماس.");
-                document.getElementById('restart-btn').style.display = 'inline-block';
-                return;
-            }
-
-            currentPlayer = "O";
-            document.getElementById('status-msg').innerText = "دور الكمبيوتر (O)...";
-            setTimeout(computerMove, 500);
-        }
-
-        function computerMove() {
-            if (!isGameActive) return;
-
-            let move = findBestMove();
-            if (move === -1) {
-                let emptyCells = board.map((val, idx) => val === "" ? idx : null).filter(val => val !== null);
-                if (emptyCells.length === 0) return;
-                move = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-            }
-
-            board[move] = "O";
-            updateBoardUI();
-
-            if (checkWin("O")) {
-                endGame("❌ فاز الكمبيوتر! تم خصم 5 ألماسات من رصيدك.");
-                updateUserDiamonds(-5);
-                return;
-            }
-
-            if (board.every(cell => cell !== "")) {
-                endGame("🤝 تعادل! لا تغيير في رصيد الألماس.");
-                document.getElementById('restart-btn').style.display = 'inline-block';
-                return;
-            }
-
-            currentPlayer = "X";
-            document.getElementById('status-msg').innerText = "دورك (X)";
-        }
-
-        function findBestMove() {
-            for (let condition of winningConditions) {
-                let [a, b, c] = condition;
-                let line = [board[a], board[b], board[c]];
-                if (line.filter(v => v === "O").length === 2 && line.includes("")) {
-                    return condition[line.indexOf("")];
-                }
-                if (line.filter(v => v === "X").length === 2 && line.includes("")) {
-                    return condition[line.indexOf("")];
-                }
-            }
-            return -1;
-        }
-
-        function checkWin(player) {
-            return winningConditions.some(condition => {
-                return condition.every(index => board[index] === player);
-            });
-        }
-
-        function updateBoardUI() {
-            const cells = document.querySelectorAll('.cell');
-            board.forEach((val, idx) => {
-                cells[idx].innerText = val;
-                cells[idx].className = `cell ${val.toLowerCase()}`;
-            });
-        }
-
-        async function updateUserDiamonds(amount) {
-            if (!userData) return;
-
-            let currentDiamonds = Number(userData.gamepoints || 0);
-            let newDiamonds = currentDiamonds + amount;
-            if (newDiamonds < 0) newDiamonds = 0; // عدم النزول تحت الصفر
-
-            try {
-                const { data: updated, error } = await client
-                    .from('users')
-                    .update({ gamepoints: newDiamonds })
-                    .eq('telegram_id', String(tid))
-                    .select('*')
-                    .single();
-
-                if (!error && updated) {
-                    userData = updated;
-                    updateUI();
-                }
-            } catch (e) {
-                console.error("Update diamonds error:", e);
-            }
-
-            document.getElementById('restart-btn').style.display = 'inline-block';
-        }
-
-        function endGame(message) {
-            isGameActive = false;
-            document.getElementById('status-msg').innerText = message;
-        }
-
-        function resetBoard() {
-            board = ["", "", "", "", "", "", "", "", ""];
-            currentPlayer = "X";
-            updateBoardUI();
-        }
-
-        initUser();
-    </script>
+initUser();
+</script>
 </body>
 </html>
