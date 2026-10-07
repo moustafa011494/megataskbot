@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>MegaTask - Tic Tac Toe</title>
-<script src="//libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+<script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
@@ -47,18 +47,12 @@ const tg=window.Telegram.WebApp;tg.expand();
 
 const client=supabase.createClient(
 "https://smukfrwnguvmxvfwqwrv.supabase.co",
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"
 );
 
 const p=new URLSearchParams(location.search);
-let tid=String(
-p.get("id")||
-tg.initDataUnsafe?.user?.id||
-localStorage.getItem("telegram_id")||
-""
-).trim();
+let tid=String(p.get("id")||tg.initDataUnsafe.user?.id||localStorage.getItem("telegram_id")||"").trim();
 
-if(tid)localStorage.setItem("telegram_id",tid);
 document.getElementById("back-link").href=`../games.html?id=${tid}`;
 
 const roundKey=`tictactoe_rounds_${tid}`;
@@ -79,42 +73,49 @@ timeZone:"Africa/Cairo",year:"numeric",month:"2-digit",day:"2-digit"
 }).format(new Date());
 }
 
-function setStatus(t){document.getElementById("status-msg").innerText=t}
-
-async function getUser(){
-if(!tid)return null;
-
-let r=await client.from("users").select("*").eq("telegram_id",String(tid)).maybeSingle();
-if(r.data)return r.data;
-
-r=await client.from("users").select("*").eq("telegram_id",Number(tid)).maybeSingle();
-if(r.data)return r.data;
-
-/* fallback مثل الألعاب التي تعمل عندك */
-r=await client.from("users").select("*").order("created_at",{ascending:false}).limit(1).maybeSingle();
-if(r.data)return r.data;
-
-r=await client.from("users").select("*").limit(1).maybeSingle();
-return r.data||null;
+function setStatus(t){
+document.getElementById("status-msg").innerText=t;
 }
 
+/* نفس طريقة ربط Lucky Chests بالضبط */
 async function initUser(){
-if(!tid){
-tg.showAlert("❌ لم يتم العثور على معرف المستخدم.");
-setStatus("❌ لم يتم العثور على معرف المستخدم.");
-return;
+if(!tid||tid==="undefined"||tid==="null"){
+try{
+let{data:x}=await client.from("users")
+.select("*").order("created_at",{ascending:false}).limit(1).maybeSingle();
+
+if(x){
+userData=x;
+tid=String(x.telegram_id);
+}
+}catch(e){}
 }
 
 try{
-userData=await getUser();
+let{data:u}=await client.from("users")
+.select("*").eq("telegram_id",String(tid)).maybeSingle();
 
-if(!userData){
-tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
-setStatus("❌ تعذر جلب بيانات المستخدم.");
-return;
+if(u)userData=u;
+else{
+let{data:n}=await client.from("users")
+.select("*").eq("telegram_id",Number(tid)).maybeSingle();
+
+if(n)userData=n;
+else{
+let{data:f}=await client.from("users")
+.select("*").limit(1).maybeSingle();
+
+if(f)userData=f;
+}
 }
 
-ui();
+if(!userData)
+return tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
+
+tid=String(userData.telegram_id);
+localStorage.setItem("telegram_id",tid);
+
+updateUI();
 await prepareDaily();
 
 if(dailyUsed>=30){
@@ -122,18 +123,19 @@ setStatus("🚫 وصلت للحد الأقصى اليومي: 30 جولة.");
 return;
 }
 
+/* مهم: قراءة الحالة فقط — لا تبدأ الجولة تلقائياً */
 checkSavedState();
 
 }catch(e){
-console.error("INIT:",e);
-setStatus("❌ حدث خطأ أثناء تجهيز الحساب.");
+console.error(e);
+tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
 }
 }
 
-function ui(){
-if(userData)
-document.getElementById("user-diamonds-counter").innerText=
-Number(userData.gamepoints||0).toLocaleString();
+function updateUI(){
+if(!userData)return;
+let d=Number(userData.gamepoints!==undefined?userData.gamepoints:userData.diamonds||0);
+document.getElementById("user-diamonds-counter").innerText=d.toLocaleString();
 }
 
 async function prepareDaily(){
@@ -182,6 +184,7 @@ r=await client.from("users")
 if(!r.data)return true;
 
 let used=Number(r.data.daily_game_rounds||0);
+
 if(r.data.daily_game_date!==today)used=0;
 
 if(used>=30){
@@ -216,11 +219,13 @@ return true;
 }
 
 function checkSavedState(){
+
 rounds=Number(localStorage.getItem(roundKey)||0);
 
 const lockUntil=Number(localStorage.getItem(lockKey)||0);
 
 if(lockUntil>0){
+
 if(Date.now()<lockUntil){
 showSavedTimer(lockUntil);
 return;
@@ -244,13 +249,14 @@ document.getElementById("restart-btn").style.display="none";
 return;
 }
 
-/* لا تبدأ الجولة تلقائياً */
+/* لا تبدأ الجولة عند فتح اللعبة */
 document.getElementById("restart-btn").style.display="inline-block";
 document.getElementById("restart-btn").innerText="🔄 بدء الجولة";
 setStatus(`جاهز للجولة ${rounds+1} من 3`);
 }
 
 async function startRound(){
+
 if(timer||active)return;
 
 rounds=Number(localStorage.getItem(roundKey)||0);
@@ -269,15 +275,18 @@ return;
 }
 
 const allowed=await consumeDailyRound();
+
 if(!allowed)return;
 
 document.getElementById("restart-btn").style.display="none";
+
 reset();
 active=true;
 setStatus("دورك (X)");
 }
 
 async function nextRound(){
+
 if(timer||active)return;
 
 rounds=Number(localStorage.getItem(roundKey)||0);
@@ -297,12 +306,14 @@ startRound();
 }
 
 async function showAd(){
+
 document.getElementById("restart-btn").style.display="none";
 setStatus("⏳ جاري تحميل الإعلان...");
 
 try{
+
 if(typeof show_10959333!=="function")
-throw new Error("Ad function unavailable");
+throw new Error("Ad unavailable");
 
 await show_10959333();
 
@@ -315,7 +326,9 @@ localStorage.setItem(lockKey,String(lockUntil));
 startTimer(lockUntil);
 
 }catch(e){
-console.error("AD:",e);
+
+console.error(e);
+
 tg.showAlert("❌ يجب مشاهدة الإعلان كاملاً.");
 setStatus("⚠️ لم يتم إكمال الإعلان.");
 document.getElementById("restart-btn").style.display="inline-block";
@@ -324,14 +337,20 @@ document.getElementById("restart-btn").innerText="📺 مشاهدة الإعلا
 }
 
 function showSavedTimer(end){
+
 timer=setInterval(()=>{
+
 const left=Math.max(0,end-Date.now());
 const s=Math.ceil(left/1000);
-const m=Math.floor(s/60),sec=s%60;
+const m=Math.floor(s/60);
+const sec=s%60;
 
-setStatus(`⏱️ متاح اللعب بعد ${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`);
+setStatus(
+`⏱️ متاح اللعب بعد ${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`
+);
 
 if(left<=0){
+
 clearInterval(timer);
 timer=null;
 
@@ -346,22 +365,31 @@ return;
 }
 
 const leftRounds=Math.min(3,30-dailyUsed);
+
 setStatus(`✅ انتهى وقت الانتظار، يمكنك لعب ${leftRounds} جولات جديدة.`);
 document.getElementById("restart-btn").style.display="inline-block";
 document.getElementById("restart-btn").innerText="🔄 بدء الجولة";
 }
+
 },250);
 }
 
-function startTimer(end){showSavedTimer(end)}
+function startTimer(end){
+showSavedTimer(end);
+}
 
 function makeMove(i){
+
 if(board[i]||!active||currentPlayer!=="X")return;
 
-board[i]="X";draw();
+board[i]="X";
+draw();
 
-if(check("X"))return finish("🎉 مبروك! فزت على الخصم وحصلت على +5 ألماسات 💎",5);
-if(board.every(Boolean))return finish("🤝 تعادل! لا تغيير في رصيد الألماس.");
+if(check("X"))
+return finish("🎉 مبروك! فزت على الخصم وحصلت على +5 ألماسات 💎",5);
+
+if(board.every(Boolean))
+return finish("🤝 تعادل! لا تغيير في رصيد الألماس.");
 
 currentPlayer="O";
 setStatus("دور الكمبيوتر (O)...");
@@ -369,27 +397,37 @@ setTimeout(computer,500);
 }
 
 function computer(){
+
 if(!active)return;
 
 let move=best();
 
 if(move<0){
+
 let e=board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
+
 if(!e.length)return;
+
 move=e[Math.floor(Math.random()*e.length)];
 }
 
-board[move]="O";draw();
+board[move]="O";
+draw();
 
-if(check("O"))return finish("❌ فاز الكمبيوتر! تم خصم 5 ألماسات من رصيدك.",-5);
-if(board.every(Boolean))return finish("🤝 تعادل! لا تغيير في رصيد الألماس.");
+if(check("O"))
+return finish("❌ فاز الكمبيوتر! تم خصم 5 ألماسات من رصيدك.",-5);
+
+if(board.every(Boolean))
+return finish("🤝 تعادل! لا تغيير في رصيد الألماس.");
 
 currentPlayer="X";
 setStatus("دورك (X)");
 }
 
 function best(){
+
 for(const c of wins){
+
 let l=c.map(i=>board[i]);
 
 if(l.filter(v=>v==="O").length===2&&l.includes(""))
@@ -397,7 +435,9 @@ return c[l.indexOf("")];
 
 if(l.filter(v=>v==="X").length===2&&l.includes(""))
 return c[l.indexOf("")];
+
 }
+
 return -1;
 }
 
@@ -406,34 +446,53 @@ return wins.some(c=>c.every(i=>board[i]===x));
 }
 
 function draw(){
+
 document.querySelectorAll(".cell").forEach((e,i)=>{
 e.innerText=board[i];
 e.className=`cell ${board[i].toLowerCase()}`;
 });
+
 }
 
 async function updateDiamonds(a){
+
 if(!userData)return;
 
-const n=Math.max(0,Number(userData.gamepoints||0)+a);
+const field=userData.gamepoints!==undefined?"gamepoints":
+userData.diamonds!==undefined?"diamonds":"gamepoints";
+
+const n=Math.max(0,Number(userData[field]||0)+a);
 
 try{
-let r=await client.from("users").update({gamepoints:n})
-.eq("telegram_id",String(tid)).select("*").single();
+
+let obj={[field]:n};
+
+let r=await client.from("users")
+.update(obj)
+.eq("telegram_id",String(tid))
+.select("*").single();
 
 if(!r.data){
-r=await client.from("users").update({gamepoints:n})
-.eq("telegram_id",Number(tid)).select("*").single();
+
+r=await client.from("users")
+.update(obj)
+.eq("telegram_id",Number(tid))
+.select("*").single();
+
 }
 
 if(r.data){
 userData=r.data;
-ui();
+updateUI();
 }
-}catch(e){console.error("diamonds:",e)}
+
+}catch(e){
+console.error("Update diamonds:",e);
+}
 }
 
 function finish(text,reward=0){
+
 active=false;
 
 rounds++;
@@ -441,25 +500,32 @@ localStorage.setItem(roundKey,String(rounds));
 
 setStatus(text);
 
-if(reward)updateDiamonds(reward);
+if(reward)
+updateDiamonds(reward);
 
 if(dailyUsed>=30){
+
 document.getElementById("restart-btn").style.display="none";
 return;
 }
 
 document.getElementById("restart-btn").style.display="inline-block";
+
 document.getElementById("restart-btn").innerText=
-rounds>=3?"📺 مشاهدة الإعلان":"🔄 جولة جديدة";
+rounds>=3
+?"📺 مشاهدة الإعلان"
+:"🔄 جولة جديدة";
 }
 
 function reset(){
+
 board=["","","","","","","","",""];
 currentPlayer="X";
 draw();
+
 }
 
 initUser();
 </script>
 </body>
-</html>
+  </html>
