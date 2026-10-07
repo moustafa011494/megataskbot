@@ -145,6 +145,11 @@ html, body {
     display: block;
     margin-bottom: 8px;
 }
+.game-card-full {
+    grid-column: span 2;
+    background: linear-gradient(135deg, #16191e, #1a2634);
+    border-color: #00f2ff55;
+}
 .modal-overlay {
     display: none;
     position: fixed;
@@ -269,6 +274,11 @@ html, body {
 <div class="other-games-section">
     <h3 class="section-title">جميع الألعاب المتاحة 🕹️</h3>
     <div class="games-grid">
+        <!-- زر لعبة Frost Breakout الجديد (بعرض الصفحة بالكامل / بحجم زرارين) -->
+        <div class="game-card-item game-card-full" onclick="openGame('frost-breakout')">
+            <span>❄️</span>
+            فرست بريك آوت (Frost Breakout)
+        </div>
         <div class="game-card-item" onclick="openGame('tictactoe')">
             <span>❌</span>
             إكس أو الذكية
@@ -705,6 +715,8 @@ function openGame(gameType) {
         window.location.href = `games/game-seahorse.html?id=${tid}`;
     } else if (gameType === 'space') {
         window.location.href = `games/game-space.html?id=${tid}`;
+    } else if (gameType === 'frost-breakout') {
+        window.location.href = `games/frost-breakout.html?id=${tid}`;
     }
 }
 
