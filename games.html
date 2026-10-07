@@ -2,748 +2,251 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>MegaTask - Games Hub</title>
 <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <style>
-:root {
-    --main-green: #00d26a;
-    --dark-bg: #0d0f12;
-    --card-bg: #1a1d23;
-    --text-gray: #9ca3af;
-    --cyan: #00f2ff;
-    --gold: #ffaa00;
-}
-html, body {
-    background-color: var(--dark-bg);
-    color: white;
-    font-family: 'Segoe UI', sans-serif;
-    margin: 0;
-    padding: 0;
-    padding-bottom: 110px;
-    width: 100%;
-    max-width: 100vw;
-    overflow-x: hidden;
-}
-.header {
-    padding: 20px;
-    text-align: center;
-}
-.header h2 {
-    margin: 0;
-    color: var(--main-green);
-    font-size: 22px;
-}
-.header p {
-    margin: 5px 0 0;
-    font-size: 12px;
-    color: var(--text-gray);
-}
-.game-stats-bar {
-    display: flex;
-    justify-content: space-around;
-    background: var(--card-bg);
-    margin: 0 15px 15px;
-    border: 1px solid #2d333d;
-    border-radius: 16px;
-    padding: 12px;
-}
-.stat-box {
-    text-align: center;
-    flex: 1;
-}
-.stat-box b {
-    display: block;
-    font-size: 18px;
-}
-.stat-box span {
-    font-size: 11px;
-    color: var(--text-gray);
-}
-.clickable-stat {
-    cursor: pointer;
-    transition: 0.2s;
-    border-radius: 10px;
-    padding: 4px 8px;
-}
-.clickable-stat:active {
-    background: rgba(0, 242, 255, 0.15);
-    transform: scale(0.97);
-}
-.game-container {
-    margin: 0 15px 20px;
-    background: var(--card-bg);
-    border: 1px solid #2d333d;
-    border-radius: 20px;
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-}
-.game-title {
-    font-size: 16px;
-    font-weight: bold;
-    color: white;
-    margin-bottom: 5px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-.clicker-target {
-    width: 120px;
-    height: 120px;
-    background: linear-gradient(135deg, #00d26a, #009e4f);
-    border-radius: 50%;
-    margin: 15px auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 36px;
-    cursor: pointer;
-    box-shadow: 0 5px 20px rgba(0, 210, 106, 0.4);
-    transition: 0.1s;
-    user-select: none;
-}
-.clicker-target:active {
-    transform: scale(0.92);
-}
-.other-games-section {
-    padding: 0 15px;
-    margin-top: 25px;
-    text-align: right;
-}
-.section-title {
-    color: var(--main-green);
-    font-size: 14px;
-    margin: 0 0 15px 0;
-    border-right: 3px solid var(--main-green);
-    padding-right: 10px;
-}
-.games-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
-.game-card-item {
-    background: #16191e;
-    border: 1px solid #2d333d;
-    padding: 20px 10px;
-    border-radius: 20px;
-    text-align: center;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
-}
-.game-card-item:active {
-    transform: scale(0.97);
-}
-.game-card-item span {
-    font-size: 28px;
-    display: block;
-    margin-bottom: 8px;
-}
-.game-card-full {
-    grid-column: span 2;
-    background: linear-gradient(135deg, #16191e, #1a2634);
-    border-color: #00f2ff55;
-}
-.modal-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.85);
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    box-sizing: border-box;
-}
-.modal-box {
-    background: var(--card-bg);
-    border: 1px solid #2d333d;
-    border-radius: 20px;
-    padding: 25px;
-    width: 100%;
-    max-width: 340px;
-    text-align: center;
-    box-sizing: border-box;
-}
-.btn-confirm-modal {
-    width: 100%;
-    background: var(--main-green);
-    color: #000;
-    border: none;
-    padding: 13px;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 15px;
-}
-.btn-close-modal {
-    width: 100%;
-    background: #252932;
-    color: #ccc;
-    border: none;
-    padding: 10px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 8px;
-}
-.navbar {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: rgba(26, 29, 35, 0.98);
-    display: flex;
-    justify-content: space-around;
-    padding: 12px 0;
-    border-top: 1px solid #2d333d;
-    z-index: 1000;
-}
-.nav-item {
-    text-align: center;
-    color: var(--text-gray);
-    font-size: 11px;
-    text-decoration: none;
-    cursor: pointer;
-}
-.nav-item.active {
-    color: var(--main-green);
-}
+:root{--g:#00d26a;--bg:#0d0f12;--card:#1a1d23;--gray:#9ca3af;--cyan:#00f2ff;--gold:#ffaa00}
+html,body{background:var(--bg);color:#fff;font-family:'Segoe UI',sans-serif;margin:0;padding:0 0 110px;width:100%;max-width:100vw;overflow-x:hidden}
+.header{padding:20px;text-align:center}.header h2{margin:0;color:var(--g);font-size:22px}.header p{margin:5px 0 0;font-size:12px;color:var(--gray)}
+.game-stats-bar{display:flex;justify-content:space-around;background:var(--card);margin:0 15px 15px;border:1px solid #2d333d;border-radius:16px;padding:12px}
+.stat-box{text-align:center;flex:1}.stat-box b{display:block;font-size:18px}.stat-box span{font-size:11px;color:var(--gray)}
+.clickable-stat{cursor:pointer;transition:.2s;border-radius:10px;padding:4px 8px}.clickable-stat:active{background:#00f2ff26;transform:scale(.97)}
+.daily-games-box{margin:0 15px 15px;background:linear-gradient(135deg,#16191e,#18251f);border:1px solid #00d26a66;border-radius:16px;padding:14px;text-align:center}
+.daily-games-title{font-size:13px;font-weight:bold;color:var(--g)}.daily-games-count{font-size:24px;font-weight:bold;margin:5px 0}.daily-games-count span{color:var(--cyan)}
+.daily-games-timer{font-size:11px;color:var(--gray)}.daily-progress{height:6px;background:#252932;border-radius:10px;overflow:hidden;margin-top:9px}.daily-progress-bar{height:100%;width:0;background:var(--g);transition:.3s}
+.game-container{margin:0 15px 20px;background:var(--card);border:1px solid #2d333d;border-radius:20px;padding:20px;text-align:center;box-shadow:0 10px 20px #0006}
+.game-title{font-size:16px;font-weight:bold;color:#fff;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:8px}
+.clicker-target{width:120px;height:120px;background:linear-gradient(135deg,#00d26a,#009e4f);border-radius:50%;margin:15px auto;display:flex;align-items:center;justify-content:center;font-size:36px;cursor:pointer;box-shadow:0 5px 20px #00d26a66;transition:.1s;user-select:none}.clicker-target:active{transform:scale(.92)}
+.other-games-section{padding:0 15px;margin-top:25px;text-align:right}.section-title{color:var(--g);font-size:14px;margin:0 0 15px;border-right:3px solid var(--g);padding-right:10px}
+.games-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.game-card-item{background:#16191e;border:1px solid #2d333d;padding:20px 10px;border-radius:20px;text-align:center;font-size:13px;font-weight:bold;cursor:pointer;transition:.3s}.game-card-item:active{transform:scale(.97)}.game-card-item span{font-size:28px;display:block;margin-bottom:8px}.game-card-full{grid-column:span 2;background:linear-gradient(135deg,#16191e,#1a2634);border-color:#00f2ff55}
+.modal-overlay{display:none;position:fixed;inset:0;background:#000d;z-index:9999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}.modal-box{background:var(--card);border:1px solid #2d333d;border-radius:20px;padding:25px;width:100%;max-width:340px;text-align:center;box-sizing:border-box}
+.btn-confirm-modal,.btn-close-modal{width:100%;border:0;padding:13px;border-radius:12px;font-size:14px;font-weight:bold;cursor:pointer;margin-top:15px}.btn-confirm-modal{background:var(--g);color:#000}.btn-close-modal{background:#252932;color:#ccc;padding:10px;font-size:13px;margin-top:8px}
+.navbar{position:fixed;bottom:0;left:0;width:100%;background:#1a1d23fa;display:flex;justify-content:space-around;padding:12px 0;border-top:1px solid #2d333d;z-index:1000}.nav-item{text-align:center;color:var(--gray);font-size:11px;text-decoration:none;cursor:pointer}.nav-item.active{color:var(--g)}
 </style>
 </head>
 <body>
 
 <div class="header">
-    <h2>🎮 مركز ألعاب MegaTask</h2>
-    <p>العب الألعاب واجمع الألماس 💎 وحوله لرصيد حقيقي!</p>
+<h2>🎮 مركز ألعاب MegaTask</h2>
+<p>العب الألعاب واجمع الألماس 💎 وحوله لرصيد حقيقي!</p>
 </div>
 
 <div class="game-stats-bar">
-    <div class="stat-box">
-        <b id="user-real-points" style="color:#ffaa00;">0</b>
-        <span>رصيدك الحقيقي بالبوت</span>
-    </div>
-    <div class="stat-box clickable-stat" onclick="openConvertModal()">
-        <b id="game-diamonds-counter" style="color:#00f2ff;">0 💎</b>
-        <span>رصيد الألماس (اضغط للتحويل ↗)</span>
-    </div>
+<div class="stat-box"><b id="user-real-points" style="color:#ffaa00">0</b><span>رصيدك الحقيقي بالبوت</span></div>
+<div class="stat-box clickable-stat" onclick="openConvertModal()"><b id="game-diamonds-counter" style="color:#00f2ff">0 💎</b><span>رصيد الألماس (اضغط للتحويل ↗)</span></div>
+</div>
+
+<div class="daily-games-box">
+<div class="daily-games-title">🎮 جولات الألعاب اليوم</div>
+<div class="daily-games-count"><span id="daily-rounds">0</span> / 30</div>
+<div class="daily-progress"><div id="daily-progress-bar" class="daily-progress-bar"></div></div>
+<div id="daily-rounds-timer" class="daily-games-timer">⏱️ تتجدد الجولات عند منتصف الليل</div>
 </div>
 
 <div class="game-container">
-    <div class="game-title">⚡ لعبة النقرات السريعة</div>
-    <div style="font-size:11px;color:#ffaa00;margin-bottom:10px;">
-        ضغطات اليوم:
-        <span id="daily-clicks-count">0</span>
-        / 100
-    </div>
-    <div class="clicker-target" id="clicker-btn" onclick="handleCardClick()">🪙</div>
-    <div id="clicker-status-msg" style="font-size:12px;color:var(--text-gray);margin-top:8px;min-height:20px;">
-        اضغط على الدائرة للبدء!
-    </div>
+<div class="game-title">⚡ لعبة النقرات السريعة</div>
+<div style="font-size:11px;color:#ffaa00;margin-bottom:10px">ضغطات اليوم: <span id="daily-clicks-count">0</span> / 100</div>
+<div class="clicker-target" id="clicker-btn" onclick="handleCardClick()">🪙</div>
+<div id="clicker-status-msg" style="font-size:12px;color:var(--gray);margin-top:8px;min-height:20px">اضغط على الدائرة للبدء!</div>
 </div>
 
 <div id="convert-modal" class="modal-overlay">
-    <div class="modal-box">
-        <h3 style="color:#00f2ff;margin-top:0;">💎 تحويل الألماس لرصيد البوت</h3>
-        <p style="font-size:13px;color:var(--text-gray);line-height:1.6;margin-bottom:15px;">
-            لديك
-            <b id="modal-game-diamonds" style="color:#00f2ff;">0 💎</b>
-            متاح تحويلها.
-            <br>
-            قاعدة التحويل:
-            <b style="color:#ffaa00;">10 ألماسات = 1 نقطة بوت حقيقية</b>
-        </p>
-        <button class="btn-confirm-modal" onclick="confirmAndWatchAdConversion()">
-            📺 مشاهدة إعلان وتحويل الألماس الآن
-        </button>
-        <button class="btn-close-modal" onclick="closeConvertModal()">إغلاق</button>
-    </div>
+<div class="modal-box">
+<h3 style="color:#00f2ff;margin-top:0">💎 تحويل الألماس لرصيد البوت</h3>
+<p style="font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:15px">لديك <b id="modal-game-diamonds" style="color:#00f2ff">0 💎</b> متاح تحويلها.<br>قاعدة التحويل: <b style="color:#ffaa00">10 ألماسات = 1 نقطة بوت حقيقية</b></p>
+<button class="btn-confirm-modal" onclick="confirmAndWatchAdConversion()">📺 مشاهدة إعلان وتحويل الألماس الآن</button>
+<button class="btn-close-modal" onclick="closeConvertModal()">إغلاق</button>
+</div>
 </div>
 
 <div class="other-games-section">
-    <h3 class="section-title">جميع الألعاب المتاحة 🕹️</h3>
-    <div class="games-grid">
-        <div class="game-card-item" onclick="openGame('tictactoe')">
-            <span>❌</span>
-            إكس أو الذكية
-        </div>
-        <div class="game-card-item" onclick="openGame('chests')">
-            <span>🎁</span>
-            صناديق الحظ
-        </div>
-        <div class="game-card-item" onclick="openGame('memory')">
-            <span>🧠</span>
-            لعبة الذاكرة
-        </div>
-        <div class="game-card-item" onclick="openGame('quiz')">
-            <span>❓</span>
-            كويز ذكاء
-        </div>
-        <div class="game-card-item" onclick="openGame('seahorse')">
-            <span>🌊</span>
-            مغامرة الحصان
-        </div>
-        <div class="game-card-item" onclick="openGame('space')">
-            <span>🚀</span>
-            حرب الفضاء
-        </div>
-        <!-- زر لعبة Frost Breakout في الأسفل بعرض الصفحة بالكامل لتفادي أي تداخل في اللمس -->
-        <div class="game-card-item game-card-full" onclick="openGame('frost-breakout')">
-            <span>❄️</span>
-            فرست بريك آوت (Frost Breakout)
-        </div>
-    </div>
+<h3 class="section-title">جميع الألعاب المتاحة 🕹️</h3>
+<div class="games-grid">
+<div class="game-card-item" onclick="openGame('tictactoe')"><span>❌</span>إكس أو الذكية</div>
+<div class="game-card-item" onclick="openGame('chests')"><span>🎁</span>صناديق الحظ</div>
+<div class="game-card-item" onclick="openGame('memory')"><span>🧠</span>لعبة الذاكرة</div>
+<div class="game-card-item" onclick="openGame('quiz')"><span>❓</span>كويز ذكاء</div>
+<div class="game-card-item" onclick="openGame('seahorse')"><span>🌊</span>مغامرة الحصان</div>
+<div class="game-card-item" onclick="openGame('space')"><span>🚀</span>حرب الفضاء</div>
+<div class="game-card-item game-card-full" onclick="openGame('frost-breakout')"><span>❄️</span>فرست بريك آوت (Frost Breakout)</div>
+</div>
 </div>
 
 <nav class="navbar">
-    <div onclick="goHome()" class="nav-item">
-        🏠<br>
-        الرئيسية
-    </div>
-    <div onclick="goTasks()" class="nav-item">
-        📋<br>
-        الربح من المهام
-    </div>
-    <div onclick="goGames()" class="nav-item active" style="color:var(--main-green);width:40px;height:40px;border-radius:50%;background:var(--main-green);color:black !important;line-height:40px;margin-top:-20px;font-size:20px;text-align:center;">
-        🎮
-    </div>
-    <div onclick="goInvite()" class="nav-item">
-        👥<br>
-        الدعوات
-    </div>
-    <div onclick="goProfile()" class="nav-item">
-        👤<br>
-        الملف الشخصي
-    </div>
+<div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
+<div onclick="goTasks()" class="nav-item">📋<br>الربح من المهام</div>
+<div onclick="goGames()" class="nav-item active" style="width:40px;height:40px;border-radius:50%;background:var(--g);color:#000!important;line-height:40px;margin-top:-20px;font-size:20px;text-align:center">🎮</div>
+<div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
+<div onclick="goProfile()" class="nav-item">👤<br>الملف الشخصي</div>
 </nav>
 
 <script>
-const tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand();
+const tg=window.Telegram.WebApp;tg.ready();tg.expand();
+const client=supabase.createClient(
+"https://smukfrwnguvmxvfwqwrv.supabase.co",
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"
+);
 
-const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-const client = supabase.createClient(S_URL, S_KEY);
+let tid=new URLSearchParams(location.search).get("id")||tg.initDataUnsafe?.user?.id||localStorage.getItem("telegram_id")||localStorage.getItem("megatask_uid");
+if(tid&&tid!=="undefined"&&tid!=="null"){tid=String(tid);localStorage.setItem("telegram_id",tid);localStorage.setItem("megatask_uid",tid)}
 
-let tid =
-    new URLSearchParams(window.location.search).get('id') ||
-    tg.initDataUnsafe?.user?.id ||
-    localStorage.getItem('telegram_id') ||
-    localStorage.getItem('megatask_uid');
+let userData=null,dailyRoundTimer=null,cooldownInterval=null;
+let clickerData={date:new Date().toDateString(),dailyClicks:0,batchClicks:0,cooldownUntil:0};
 
-if (tid && tid !== "undefined" && tid !== "null") {
-    tid = String(tid);
-    localStorage.setItem('telegram_id', tid);
-    localStorage.setItem('megatask_uid', tid);
+async function init(){
+if(!tid)return tg.showAlert("❌ لم يتم العثور على Telegram ID. افتح الصفحة من داخل Telegram.");
+try{
+const{data:u,error}=await client.from("users").select("telegram_id,points,gamepoints,total_earned,daily_game_rounds,daily_game_date").eq("telegram_id",String(tid)).maybeSingle();
+if(error)return tg.showAlert("❌ حدث خطأ أثناء تحميل بيانات الحساب:\n\n"+error.message);
+if(!u)return tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
+userData=u;tid=String(u.telegram_id);
+localStorage.setItem("telegram_id",tid);localStorage.setItem("megatask_uid",tid);
+
+await prepareDailyRounds();
+
+document.getElementById("user-real-points").innerText=Number(userData.points||0).toLocaleString();
+document.getElementById("game-diamonds-counter").innerText=Number(userData.gamepoints||0).toLocaleString()+" 💎";
+
+const saved=localStorage.getItem(`clicker_game_${tid}`);
+if(saved)try{
+const x=JSON.parse(saved);
+if(x.date===new Date().toDateString()){clickerData.dailyClicks=+x.dailyClicks||0;clickerData.batchClicks=+x.batchClicks||0;clickerData.cooldownUntil=+x.cooldownUntil||0}
+}catch(e){}
+
+updateClickerUI();checkCooldownTimer();
+}catch(e){console.error(e);tg.showAlert("❌ حدث خطأ أثناء تحميل بيانات الحساب:\n\n"+e.message)}
 }
 
-let userData = null;
-let clickerData = {
-    date: new Date().toDateString(),
-    dailyClicks: 0,
-    batchClicks: 0,
-    cooldownUntil: 0
+async function prepareDailyRounds(){
+const today=new Date().toISOString().slice(0,10);
+let used=Number(userData.daily_game_rounds||0);
+
+if(userData.daily_game_date!==today){
+used=0;
+const{data,error}=await client.from("users").update({daily_game_rounds:0,daily_game_date:today}).eq("telegram_id",String(tid)).select("telegram_id,points,gamepoints,total_earned,daily_game_rounds,daily_game_date").single();
+if(!error&&data)userData=data;
+}
+updateDailyRounds();
+startDailyTimer();
+}
+
+function updateDailyRounds(){
+let n=Math.min(30,Number(userData?.daily_game_rounds||0));
+document.getElementById("daily-rounds").innerText=n;
+document.getElementById("daily-progress-bar").style.width=(n/30*100)+"%";
+}
+
+function startDailyTimer(){
+if(dailyRoundTimer)clearInterval(dailyRoundTimer);
+const tick=()=>{
+const now=new Date(),next=new Date(now);
+next.setHours(24,0,0,0);
+let x=Math.max(0,next-now),s=Math.floor(x/1000),h=Math.floor(s/3600);
+s%=3600;let m=Math.floor(s/60);s%=60;
+document.getElementById("daily-rounds-timer").innerText=`⏱️ تتجدد الجولات بعد ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
 };
-let cooldownInterval = null;
-
-async function init() {
-    if (!tid) {
-        tg.showAlert("❌ لم يتم العثور على Telegram ID. افتح الصفحة من داخل Telegram.");
-        return;
-    }
-
-    try {
-        const { data: u, error } = await client
-            .from('users')
-            .select('telegram_id, points, gamepoints, total_earned')
-            .eq('telegram_id', String(tid))
-            .maybeSingle();
-
-        if (error) {
-            console.error("Supabase error:", error);
-            tg.showAlert("❌ حدث خطأ أثناء تحميل بيانات الحساب:\n\n" + error.message);
-            return;
-        }
-
-        if (!u) {
-            console.error("User not found. Telegram ID:", tid);
-            tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.\n\nTelegram ID:\n" + tid);
-            return;
-        }
-
-        userData = u;
-        tid = String(u.telegram_id);
-
-        localStorage.setItem('telegram_id', tid);
-        localStorage.setItem('megatask_uid', tid);
-
-        document.getElementById('user-real-points').innerText =
-            Number(userData.points || 0).toLocaleString();
-
-        document.getElementById('game-diamonds-counter').innerText =
-            Number(userData.gamepoints || 0).toLocaleString() + " 💎";
-
-        const savedData = localStorage.getItem(`clicker_game_${tid}`);
-
-        if (savedData) {
-            try {
-                const parsed = JSON.parse(savedData);
-
-                if (parsed.date === new Date().toDateString()) {
-                    clickerData.dailyClicks = Number(parsed.dailyClicks || 0);
-                    clickerData.batchClicks = Number(parsed.batchClicks || 0);
-                    clickerData.cooldownUntil = Number(parsed.cooldownUntil || 0);
-                }
-            } catch (e) {
-                console.error("Local data error:", e);
-            }
-        }
-
-        updateClickerUI();
-        checkCooldownTimer();
-    } catch (e) {
-        console.error("Init error:", e);
-        tg.showAlert("❌ حدث خطأ أثناء تحميل بيانات الحساب:\n\n" + e.message);
-    }
+tick();dailyRoundTimer=setInterval(tick,1000);
 }
 
-function saveClickerState() {
-    if (!tid) return;
+function saveClickerState(){if(tid)localStorage.setItem(`clicker_game_${tid}`,JSON.stringify({date:new Date().toDateString(),dailyClicks:clickerData.dailyClicks,batchClicks:clickerData.batchClicks,cooldownUntil:clickerData.cooldownUntil}))}
 
-    localStorage.setItem(
-        `clicker_game_${tid}`,
-        JSON.stringify({
-            date: new Date().toDateString(),
-            dailyClicks: clickerData.dailyClicks,
-            batchClicks: clickerData.batchClicks,
-            cooldownUntil: clickerData.cooldownUntil
-        })
-    );
+function updateClickerUI(){
+document.getElementById("daily-clicks-count").innerText=clickerData.dailyClicks;
+if(userData){
+document.getElementById("game-diamonds-counter").innerText=Number(userData.gamepoints||0).toLocaleString()+" 💎";
+document.getElementById("user-real-points").innerText=Number(userData.points||0).toLocaleString();
+}
 }
 
-function updateClickerUI() {
-    document.getElementById('daily-clicks-count').innerText =
-        clickerData.dailyClicks;
-
-    if (userData) {
-        document.getElementById('game-diamonds-counter').innerText =
-            Number(userData.gamepoints || 0).toLocaleString() + " 💎";
-
-        document.getElementById('user-real-points').innerText =
-            Number(userData.points || 0).toLocaleString();
-    }
+function handleCardClick(){
+const now=Date.now();
+if(!userData)return tg.showAlert("⚠️ بيانات حسابك لم يتم تحميلها بعد.");
+if(clickerData.cooldownUntil>now)return;
+if(clickerData.dailyClicks>=100)return tg.showAlert("🛑 لقد وصلت للحد الأقصى للضغطات اليومية (100 ضغطة). عود غداً لمزيد من الأرباح!");
+clickerData.dailyClicks++;clickerData.batchClicks++;saveClickerState();updateClickerUI();
+if(clickerData.batchClicks>=10)triggerClickerAd();
+else document.getElementById("clicker-status-msg").innerText=`متبقي ${10-clickerData.batchClicks} ضغطات للإعلان القادم`;
 }
 
-function handleCardClick() {
-    const now = Date.now();
-
-    if (!userData) {
-        tg.showAlert("⚠️ بيانات حسابك لم يتم تحميلها بعد.");
-        return;
-    }
-
-    if (clickerData.cooldownUntil > now) {
-        return;
-    }
-
-    if (clickerData.dailyClicks >= 100) {
-        tg.showAlert("🛑 لقد وصلت للحد الأقصى للضغطات اليومية (100 ضغطة). عود غداً لمزيد من الأرباح!");
-        return;
-    }
-
-    clickerData.dailyClicks++;
-    clickerData.batchClicks++;
-
-    saveClickerState();
-    updateClickerUI();
-
-    if (clickerData.batchClicks >= 10) {
-        triggerClickerAd();
-    } else {
-        document.getElementById('clicker-status-msg').innerText =
-            `متبقي ${10 - clickerData.batchClicks} ضغطات للإعلان القادم`;
-    }
+async function triggerClickerAd(){
+const status=document.getElementById("clicker-status-msg");status.innerText="⏳ جاري عرض الإعلان للحصول على الـ10 ألماسات...";
+try{
+if(typeof show_10959333==="function")await show_10959333();
+let n=Number(userData.gamepoints||0)+10;
+const{data,error}=await client.from("users").update({gamepoints:n}).eq("telegram_id",String(tid)).select("telegram_id,points,gamepoints,total_earned,daily_game_rounds,daily_game_date").single();
+if(error)throw error;
+userData=data;clickerData.batchClicks=0;clickerData.cooldownUntil=Date.now()+300000;
+saveClickerState();updateClickerUI();startCooldownTimer();
+tg.showAlert("🎉 رائع!\n\nتم إتمام الـ10 ضغطات وإضافة +10 ألماسات 💎 إلى حسابك.\n\nبدأ مؤقت الـ5 دقائق.");
+}catch(e){
+console.error(e);tg.showAlert("❌ لم يتم احتساب الألماس. تأكد من إكمال الإعلان ثم حاول مرة أخرى.");
+clickerData.batchClicks=0;saveClickerState();updateClickerUI();status.innerText="اضغط على الدائرة للمتابعة";
+}
 }
 
-async function triggerClickerAd() {
-    const status = document.getElementById('clicker-status-msg');
-
-    status.innerText =
-        "⏳ جاري عرض الإعلان للحصول على الـ10 ألماسات...";
-
-    try {
-        if (typeof show_10959333 === 'function') {
-            await show_10959333();
-        } else {
-            console.warn("Monetag SDK not found.");
-        }
-
-        if (!userData) {
-            throw new Error("بيانات المستخدم غير موجودة");
-        }
-
-        const currentGamePoints =
-            Number(userData.gamepoints || 0);
-
-        const newGamePoints =
-            currentGamePoints + 10;
-
-        const { data: updatedUser, error } = await client
-            .from('users')
-            .update({
-                gamepoints: newGamePoints
-            })
-            .eq('telegram_id', String(tid))
-            .select('telegram_id, points, gamepoints, total_earned')
-            .single();
-
-        if (error) {
-            throw error;
-        }
-
-        userData = updatedUser;
-
-        clickerData.batchClicks = 0;
-        clickerData.cooldownUntil =
-            Date.now() + (5 * 60 * 1000);
-
-        saveClickerState();
-        updateClickerUI();
-        startCooldownTimer();
-
-        tg.showAlert(
-            "🎉 رائع!\n\nتم إتمام الـ10 ضغطات وإضافة +10 ألماسات 💎 إلى حسابك.\n\nبدأ مؤقت الـ5 دقائق."
-        );
-    } catch (err) {
-        console.error("Ad / GamePoints error:", err);
-
-        tg.showAlert(
-            "❌ لم يتم احتساب الألماس. تأكد من إكمال الإعلان ثم حاول مرة أخرى."
-        );
-
-        clickerData.batchClicks = 0;
-        saveClickerState();
-        updateClickerUI();
-
-        status.innerText =
-            "اضغط على الدائرة للمتابعة";
-    }
+function startCooldownTimer(){
+if(cooldownInterval)clearInterval(cooldownInterval);
+const btn=document.getElementById("clicker-btn"),msg=document.getElementById("clicker-status-msg");btn.style.opacity=".5";
+cooldownInterval=setInterval(()=>{
+let r=clickerData.cooldownUntil-Date.now();
+if(r<=0){clearInterval(cooldownInterval);cooldownInterval=null;btn.style.opacity="1";msg.innerText="🟢 انتهى وقت الانتظار! يمكنك الضغط الآن.";return}
+let m=Math.floor(r/60000),s=Math.floor(r%60000/1000);msg.innerText=`⏳ يرجى الانتظار: ${m}:${s<10?"0":""}${s}`;
+},1000)
 }
 
-function startCooldownTimer() {
-    if (cooldownInterval) {
-        clearInterval(cooldownInterval);
-    }
-
-    const btn = document.getElementById('clicker-btn');
-    const statusMsg = document.getElementById('clicker-status-msg');
-
-    btn.style.opacity = "0.5";
-
-    cooldownInterval = setInterval(() => {
-        const remaining =
-            clickerData.cooldownUntil - Date.now();
-
-        if (remaining <= 0) {
-            clearInterval(cooldownInterval);
-            cooldownInterval = null;
-            btn.style.opacity = "1";
-            statusMsg.innerText =
-                "🟢 انتهى وقت الانتظار! يمكنك الضغط الآن.";
-            return;
-        }
-
-        const mins =
-            Math.floor(remaining / (1000 * 60));
-
-        const secs =
-            Math.floor((remaining % (1000 * 60)) / 1000);
-
-        statusMsg.innerText =
-            `⏳ يرجى الانتظار: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
-    }, 1000);
+function checkCooldownTimer(){
+if(clickerData.cooldownUntil>Date.now())startCooldownTimer();
+else document.getElementById("clicker-status-msg").innerText="اضغط على الدائرة للبدء!";
 }
 
-function checkCooldownTimer() {
-    if (clickerData.cooldownUntil > Date.now()) {
-        startCooldownTimer();
-    } else {
-        document.getElementById('clicker-status-msg').innerText =
-            "اضغط على الدائرة للبدء!";
-    }
+function openConvertModal(){
+if(!userData)return tg.showAlert("⚠️ بيانات حسابك لم يتم تحميلها بعد.");
+let d=Number(userData.gamepoints||0);
+if(d<10)return tg.showAlert("⚠️ يجب أن تمتلك 10 ألماسات على الأقل للتحويل.");
+document.getElementById("modal-game-diamonds").innerText=d.toLocaleString()+" 💎";
+document.getElementById("convert-modal").style.display="flex";
 }
 
-function openConvertModal() {
-    if (!userData) {
-        tg.showAlert("⚠️ بيانات حسابك لم يتم تحميلها بعد.");
-        return;
-    }
+function closeConvertModal(){document.getElementById("convert-modal").style.display="none"}
 
-    const diamonds =
-        Number(userData.gamepoints || 0);
-
-    if (diamonds < 10) {
-        tg.showAlert("⚠️ يجب أن تمتلك 10 ألماسات على الأقل للتحويل.");
-        return;
-    }
-
-    document.getElementById('modal-game-diamonds').innerText =
-        diamonds.toLocaleString() + " 💎";
-
-    document.getElementById('convert-modal').style.display =
-        'flex';
+async function confirmAndWatchAdConversion(){
+if(!userData)return;
+let d=Number(userData.gamepoints||0);
+if(d<10)return tg.showAlert("⚠️ لا توجد ألماسات كافية للتحويل.");
+let points=Math.floor(d/10),used=points*10;
+let newPoints=Number(userData.points||0)+points,remaining=d-used;
+closeConvertModal();
+try{
+if(typeof show_10959333==="function")await show_10959333();
+let obj={points:newPoints,gamepoints:remaining};
+if(userData.total_earned!==undefined)obj.total_earned=Number(userData.total_earned||0)+points;
+const{data,error}=await client.from("users").update(obj).eq("telegram_id",String(tid)).select("telegram_id,points,gamepoints,total_earned,daily_game_rounds,daily_game_date").single();
+if(error)throw error;
+userData=data;updateClickerUI();
+await client.from("transactions").insert([{telegram_id:String(tid),type:"points",title:"تحويل أرباح الألعاب (ألماس) لرصيد البوت",amount:`+${points.toLocaleString()} نقطة`,status:"مكتمل"}]);
+tg.showAlert(`🎉 تم التحويل بنجاح!\n\n💎 تم استخدام: ${used.toLocaleString()} ألماسة\n💰 تمت إضافة: +${points.toLocaleString()} نقطة إلى رصيد البوت`);
+}catch(e){console.error(e);tg.showAlert("❌ لم يتم التحويل. تأكد من إكمال الإعلان ثم حاول مرة أخرى.")}
 }
 
-function closeConvertModal() {
-    document.getElementById('convert-modal').style.display =
-        'none';
+function openGame(gameType){
+if(!tid)return tg.showAlert("⚠️ لم يتم التعرف على حسابك.");
+if(Number(userData?.daily_game_rounds||0)>=30)return tg.showAlert("🛑 لقد وصلت للحد الأقصى وهو 30 جولة اليوم.\n\nتتجدد الجولات عند منتصف الليل.");
+const paths={
+memory:"games/memory.html",quiz:"games/quiz.html",chests:"games/chests.html",
+tictactoe:"games/tictactoe.html",seahorse:"games/game-seahorse.html",
+space:"games/game-space.html","frost-breakout":"games/frost-breakout.html"
+};
+if(paths[gameType])location.href=`${paths[gameType]}?id=${tid}`;
 }
 
-async function confirmAndWatchAdConversion() {
-    if (!userData) return;
-
-    const diamonds =
-        Number(userData.gamepoints || 0);
-
-    if (diamonds < 10) {
-        tg.showAlert("⚠️ لا توجد ألماسات كافية للتحويل.");
-        closeConvertModal();
-        return;
-    }
-
-    const realPointsEarned =
-        Math.floor(diamonds / 10);
-
-    const diamondsUsed =
-        realPointsEarned * 10;
-
-    const currentPoints =
-        Number(userData.points || 0);
-
-    const newPoints =
-        currentPoints + realPointsEarned;
-
-    const remainingDiamonds =
-        diamonds - diamondsUsed;
-
-    closeConvertModal();
-
-    try {
-        if (typeof show_10959333 === 'function') {
-            await show_10959333();
-        }
-
-        const updateObj = {
-            points: newPoints,
-            gamepoints: remainingDiamonds
-        };
-
-        if (userData.total_earned !== undefined) {
-            updateObj.total_earned =
-                Number(userData.total_earned || 0) +
-                realPointsEarned;
-        }
-
-        const { data: updatedUser, error } = await client
-            .from('users')
-            .update(updateObj)
-            .eq('telegram_id', String(tid))
-            .select('telegram_id, points, gamepoints, total_earned')
-            .single();
-
-        if (error) {
-            throw error;
-        }
-
-        userData = updatedUser;
-
-        updateClickerUI();
-
-        const { error: transactionError } = await client
-            .from('transactions')
-            .insert([{
-                telegram_id: String(tid),
-                type: 'points',
-                title: 'تحويل أرباح الألعاب (ألماس) لرصيد البوت',
-                amount: `+${realPointsEarned.toLocaleString()} نقطة`,
-                status: 'مكتمل'
-            }]);
-
-        if (transactionError) {
-            console.error("Transaction error:", transactionError);
-        }
-
-        tg.showAlert(
-            `🎉 تم التحويل بنجاح!\n\n💎 تم استخدام: ${diamondsUsed.toLocaleString()} ألماسة\n💰 تمت إضافة: +${realPointsEarned.toLocaleString()} نقطة إلى رصيد البوت`
-        );
-    } catch (error) {
-        console.error("Conversion error:", error);
-
-        tg.showAlert(
-            "❌ لم يتم التحويل. تأكد من إكمال الإعلان ثم حاول مرة أخرى."
-        );
-    }
-}
-
-function openGame(gameType) {
-    if (!tid) {
-        tg.showAlert("⚠️ لم يتم التعرف على حسابك.");
-        return;
-    }
-
-    if (gameType === 'memory') {
-        window.location.href = `games/memory.html?id=${tid}`;
-    } else if (gameType === 'quiz') {
-        window.location.href = `games/quiz.html?id=${tid}`;
-    } else if (gameType === 'chests') {
-        window.location.href = `games/chests.html?id=${tid}`;
-    } else if (gameType === 'tictactoe') {
-        window.location.href = `games/tictactoe.html?id=${tid}`;
-    } else if (gameType === 'seahorse') {
-        window.location.href = `games/game-seahorse.html?id=${tid}`;
-    } else if (gameType === 'space') {
-        window.location.href = `games/game-space.html?id=${tid}`;
-    } else if (gameType === 'frost-breakout') {
-        window.location.href = `games/frost-breakout.html?id=${tid}`;
-    }
-}
-
-function goHome() {
-    window.location.href =
-        `index.html?id=${tid}&t=${Date.now()}`;
-}
-
-function goTasks() {
-    window.location.href =
-        `tasks.html?id=${tid}&t=${Date.now()}`;
-}
-
-function goGames() {
-    window.location.href =
-        `games.html?id=${tid}&t=${Date.now()}`;
-}
-
-function goProfile() {
-    window.location.href =
-        `profile.html?id=${tid}&t=${Date.now()}`;
-}
-
-function goInvite() {
-    window.location.href =
-        `invite.html?id=${tid}&t=${Date.now()}`;
-}
+function goHome(){location.href=`index.html?id=${tid}&t=${Date.now()}`}
+function goTasks(){location.href=`tasks.html?id=${tid}&t=${Date.now()}`}
+function goGames(){location.href=`games.html?id=${tid}&t=${Date.now()}`}
+function goProfile(){location.href=`profile.html?id=${tid}&t=${Date.now()}`}
+function goInvite(){location.href=`invite.html?id=${tid}&t=${Date.now()}`}
 
 init();
 </script>
