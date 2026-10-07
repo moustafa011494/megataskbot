@@ -56,8 +56,10 @@ let tid=String(p.get("id")||tg.initDataUnsafe.user?.id||localStorage.getItem("te
 localStorage.setItem("telegram_id",tid);
 document.getElementById("back-link").href=`../games.html?id=${tid}`;
 
+const roundKey=`tictactoe_rounds_${tid}`;
+
 let userData=null,board=["","","","","","","","",""],active=false,currentPlayer="X";
-let rounds=0,timer=null,dailyUsed=0;
+let rounds=Number(localStorage.getItem(roundKey)||0),timer=null,dailyUsed=0;
 
 const wins=[
 [0,1,2],[3,4,5],[6,7,8],
@@ -101,8 +103,6 @@ return;
 }
 
 ui();
-
-/* تجهيز العداد اليومي بدون تعطيل اللعبة */
 await prepareDaily();
 
 if(dailyUsed>=30){
@@ -114,8 +114,6 @@ startRound();
 
 }catch(e){
 console.error(e);
-
-/* حتى لو حصل خطأ في نظام العداد اليومي، اللعبة الأساسية تشتغل */
 ui();
 startRound();
 }
@@ -226,11 +224,8 @@ return true;
 
 }catch(e){
 console.error("consume:",e);
-
-/* لا نعطل اللعبة بسبب عداد اليوم */
 return true;
 }
-
 }
 
 async function startRound(){
@@ -243,7 +238,6 @@ return;
 }
 
 const allowed=await consumeDailyRound();
-
 if(!allowed)return;
 
 document.getElementById("restart-btn").style.display="none";
@@ -280,6 +274,8 @@ if(typeof show_10959333==="function")
 await show_10959333();
 
 rounds=0;
+localStorage.setItem(roundKey,"0");
+
 startTimer();
 
 }catch(e){
@@ -447,6 +443,9 @@ function finish(text,reward=0){
 
 active=false;
 rounds++;
+
+/* حفظ عداد الإعلانات حتى بعد الخروج من اللعبة */
+localStorage.setItem(roundKey,String(rounds));
 
 setStatus(text);
 
