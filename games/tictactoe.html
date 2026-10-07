@@ -54,56 +54,215 @@ let tid=String(p.get("id")||tg.initDataUnsafe.user?.id||localStorage.getItem("te
 document.getElementById("back-link").href=`../games.html?id=${tid}`;
 
 let userData=null,board=["","","","","","","","",""],active=false,currentPlayer="X";
-let rounds=0,timer=null;
+let rounds=0,timer=null,dailyUsed=0;
 const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+const cairoDate=()=>{
+return new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Cairo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+};
+
+function msg(x){document.getElementById("status-msg").innerText=x}
 
 async function initUser(){
 if(!tid)return tg.showAlert("❌ لم يتم العثور على معرف المستخدم.");
 try{
-const{data:user,error}=await client.from("users").select("*").eq("telegram_id",String(tid)).maybeSingle();
+let{data:user,error}=await client.from("users").select("*").eq("telegram_id",String(tid)).maybeSingle();
+
+if(!user){
+let r=await client.from("users").select("*").eq("telegram_id",Number(tid)).maybeSingle();
+user=r.data;error=r.error;
+}
+
 if(error||!user)return tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
-userData=user;ui();startRound();
-}catch(e){console.error(e)}
+
+userData=user;
+ui();
+
+if(!await prepareDaily())return;
+
+startRound();
+}catch(e){console.error(e);tg.showAlert("❌ حدث خطأ أثناء تجهيز الحساب.")}
 }
 
 function ui(){
-if(userData)document.getElementById("user-diamonds-counter").innerText=Number(userData.gamepoints||0).toLocaleString();
+if(userData)
+document.getElementById("user-diamonds-counter").innerText=Number(userData.gamepoints||0).toLocaleString();
+}
+
+async function prepareDaily(){
+const today=cairoDate();
+let used=Number(userData.daily_game_rounds||0);
+
+if(userData.daily_game_date!==today){
+used=0;
+
+let{data,error}=await client.from("users").update({
+daily_game_rounds:0,
+daily_game_date:today
+}).eq("telegram_id",String(tid)).select("*").maybeSingle();
+
+if(!data){
+let r=await client.from("users").update({
+daily_game_rounds:0,
+daily_game_date:today
+}).eq("telegram_id",Number(tid)).select("*").maybeSingle();
+data=r.data;error=r.error;
+}
+
+if(!error&&data)userData=data;
+}
+
+dailyUsed=Number(userData.daily_game_rounds||used);
+
+if(dailyUsed>=30){
+msg("🚫 وصلت للحد الأقصى اليومي: 30 جولة.");
+document.getElementById("restart-btn").style.display="none";
+return false;
+}
+
+return true;
+}
+
+async function consumeDailyRound(){
+const today=cairoDate();
+
+let{data:u,error}=await client.from("users")
+.select("daily_game_rounds,daily_game_date")
+.eq("telegram_id",String(tid)).maybeSingle();
+
+if(!u){
+let r=await client.from("users")
+.select("daily_game_rounds,daily_game_date")
+.eq("telegram_id",Number(tid)).maybeSingle();
+u=r.data;error=r.error;
+}
+
+if(error||!u)return false;
+
+let used=Number(u.daily_game_rounds||0);
+
+if(u.daily_game_date!==today){
+used=0;
+
+let r=await client.from("users").update({
+daily_game_rounds:0,
+daily_game_date:today
+}).eq("telegram_id",String(tid)).select("*").maybeSingle();
+
+if(!r.data){
+r=await client.from("users").update({
+daily_game_rounds:0,
+daily_game_date:today
+}).eq("telegram_id",Number(tid)).select("*").maybeSingle();
+}
+
+if(r.error)return false;
+used=0;
+}
+
+if(used>=30){
+dailyUsed=30;
+msg("🚫 وصلت للحد الأقصى اليومي: 30 جولة.");
+return false;
+}
+
+let next=used+1;
+
+let{data,error:upErr}=await client.from("users")
+.update({
+daily_game_rounds:next,
+daily_game_date:today
+})
+.eq("telegram_id",String(tid))
+.select("*")
+.maybeSingle();
+
+if(!data){
+let r=await client.from("users")
+.update({
+daily_game_rounds:next,
+daily_game_date:today
+})
+.eq("telegram_id",Number(tid))
+.select("*")
+.maybeSingle();
+data=r.data;upErr=r.error;
+}
+
+if(upErr||!data)return false;
+
+userData=data;
+dailyUsed=next;
+return true;
 }
 
 async function startRound(){
-if(timer)return;
+if(timer||active)return;
+
+if(dailyUsed>=30){
+msg("🚫 وصلت للحد الأقصى اليومي: 30 جولة.");
+return;
+}
+
+let ok=await consumeDailyRound();
+if(!ok)return;
+
 document.getElementById("restart-btn").style.display="none";
-reset();active=true;document.getElementById("status-msg").innerText="دورك (X)";
+reset();
+active=true;
+msg(`دورك (X)`);
 }
 
 async function nextRound(){
-if(timer)return;
+if(timer||active)return;
+
+if(dailyUsed>=30){
+msg("🚫 انتهت كل جولاتك اليوم (30/30).");
+document.getElementById("restart-btn").style.display="none";
+return;
+}
+
 if(rounds>=3)return showAd();
+
 startRound();
 }
 
 async function showAd(){
 document.getElementById("restart-btn").style.display="none";
-document.getElementById("status-msg").innerText="⏳ جاري تحميل الإعلان...";
+msg("⏳ جاري تحميل الإعلان...");
+
 try{
 if(typeof show_10959333==="function")await show_10959333();
-rounds=0;startTimer();
+
+rounds=0;
+startTimer();
 }catch(e){
 console.error(e);
 tg.showAlert("❌ يجب مشاهدة الإعلان كاملاً.");
-document.getElementById("status-msg").innerText="⚠️ لم يتم إكمال الإعلان.";
+msg("⚠️ لم يتم إكمال الإعلان.");
 document.getElementById("restart-btn").style.display="inline-block";
 }
 }
 
 function startTimer(){
 let end=Date.now()+300000;
+
 timer=setInterval(()=>{
-let left=Math.max(0,end-Date.now()),s=Math.ceil(left/1000),m=Math.floor(s/60),sec=s%60;
-document.getElementById("status-msg").innerText=`⏱️ متاح اللعب بعد ${String(m).padStart(2,"0")}:${String(sec%60).padStart(2,"0")}`;
+let left=Math.max(0,end-Date.now());
+let s=Math.ceil(left/1000),m=Math.floor(s/60),sec=s%60;
+
+msg(`⏱️ متاح اللعب بعد ${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`);
+
 if(!left){
-clearInterval(timer);timer=null;
-document.getElementById("status-msg").innerText="✅ انتهى وقت الانتظار، يمكنك لعب 3 جولات جديدة.";
+clearInterval(timer);
+timer=null;
+
+if(dailyUsed>=30){
+msg("🚫 انتهت كل جولاتك اليوم (30/30).");
+return;
+}
+
+msg(`✅ انتهى وقت الانتظار، يمكنك لعب ${Math.min(3,30-dailyUsed)} جولات جديدة.`);
 document.getElementById("restart-btn").style.display="inline-block";
 }
 },250);
@@ -111,56 +270,108 @@ document.getElementById("restart-btn").style.display="inline-block";
 
 function makeMove(i){
 if(board[i]||!active||currentPlayer!=="X")return;
-board[i]="X";draw();
+
+board[i]="X";
+draw();
+
 if(check("X"))return finish("🎉 مبروك! فزت على الخصم وحصلت على +5 ألماسات 💎",5);
 if(board.every(Boolean))return finish("🤝 تعادل! لا تغيير في رصيد الألماس.");
-currentPlayer="O";document.getElementById("status-msg").innerText="دور الكمبيوتر (O)...";
+
+currentPlayer="O";
+msg("دور الكمبيوتر (O)...");
 setTimeout(computer,500);
 }
 
 function computer(){
 if(!active)return;
+
 let move=best();
+
 if(move<0){
 let e=board.map((v,i)=>v===""?i:null).filter(v=>v!==null);
-if(!e.length)return;move=e[Math.floor(Math.random()*e.length)];
+if(!e.length)return;
+move=e[Math.floor(Math.random()*e.length)];
 }
-board[move]="O";draw();
+
+board[move]="O";
+draw();
+
 if(check("O"))return finish("❌ فاز الكمبيوتر! تم خصم 5 ألماسات من رصيدك.",-5);
 if(board.every(Boolean))return finish("🤝 تعادل! لا تغيير في رصيد الألماس.");
-currentPlayer="X";document.getElementById("status-msg").innerText="دورك (X)";
+
+currentPlayer="X";
+msg("دورك (X)");
 }
 
 function best(){
 for(const c of wins){
 let l=c.map(i=>board[i]);
-if(l.filter(v=>v==="O").length===2&&l.includes(""))return c[l.indexOf("")];
-if(l.filter(v=>v==="X").length===2&&l.includes(""))return c[l.indexOf("")];
+
+if(l.filter(v=>v==="O").length===2&&l.includes(""))
+return c[l.indexOf("")];
+
+if(l.filter(v=>v==="X").length===2&&l.includes(""))
+return c[l.indexOf("")];
 }
+
 return -1;
 }
 
-function check(x){return wins.some(c=>c.every(i=>board[i]===x))}
-function draw(){document.querySelectorAll(".cell").forEach((e,i)=>{e.innerText=board[i];e.className=`cell ${board[i].toLowerCase()}`})}
+function check(x){
+return wins.some(c=>c.every(i=>board[i]===x));
+}
+
+function draw(){
+document.querySelectorAll(".cell").forEach((e,i)=>{
+e.innerText=board[i];
+e.className=`cell ${board[i].toLowerCase()}`
+});
+}
 
 async function updateDiamonds(a){
 if(!userData)return;
+
 let n=Math.max(0,Number(userData.gamepoints||0)+a);
+
 try{
-const{data,error}=await client.from("users").update({gamepoints:n}).eq("telegram_id",String(tid)).select("*").single();
-if(!error&&data){userData=data;ui()}
+let{data,error}=await client.from("users")
+.update({gamepoints:n})
+.eq("telegram_id",String(tid))
+.select("*").single();
+
+if(!data){
+let r=await client.from("users")
+.update({gamepoints:n})
+.eq("telegram_id",Number(tid))
+.select("*").single();
+data=r.data;error=r.error;
+}
+
+if(!error&&data){
+userData=data;
+ui();
+}
 }catch(e){console.error(e)}
 }
 
-function finish(msg,reward=0){
-active=false;rounds++;document.getElementById("status-msg").innerText=msg;
+function finish(text,reward=0){
+active=false;
+rounds++;
+
+msg(text);
+
 if(reward)updateDiamonds(reward);
-document.getElementById("restart-btn").style.display="inline-block";
-document.getElementById("restart-btn").innerText=rounds>=3?"🔄 الجولة القادمة (مشاهدة إعلان)":"🔄 جولة جديدة";
+
+if(dailyUsed>=30){
+document.getElementById("restart-btn").style.display="none";
+return;
 }
 
-function reset(){
-board=["","","","","","","","",""];currentPlayer="X";draw();
+document.getElementById("restart-btn").style.display="inline-block";
+document.getElementById("restart-btn").innerText=
+rounds>=3
+?"🔄 الجولة القادمة (مشاهدة إعلان)"
+:"🔄 جولة جديدة";
 }
 
 initUser();
