@@ -12,11 +12,13 @@
 html,body{background:var(--bg);color:#fff;font-family:'Segoe UI',sans-serif;margin:0;padding:0 0 50px;width:100%;max-width:100vw;overflow-x:hidden;text-align:center}
 .header{padding:15px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #2d333d}
 .back-link{background:#252932;color:#fff;border:0;padding:8px 15px;border-radius:10px;font-weight:bold;cursor:pointer;font-size:12px;text-decoration:none}
-.game-title{margin:20px 0 5px;color:#ffaa00;font-size:20px}.game-desc{font-size:12px;color:var(--gray);margin-bottom:20px}
+.game-title{margin:20px 0 5px;color:#ffaa00;font-size:20px}
+.game-desc{font-size:12px;color:var(--gray);margin-bottom:20px}
 .stat-badge{font-size:13px;color:var(--g);font-weight:bold;margin-bottom:20px;display:inline-block;background:#00d26a1a;padding:6px 15px;border-radius:10px;border:1px solid var(--g)}
 .chests-container{display:flex;justify-content:center;gap:15px;margin:20px auto 30px;padding:0 15px;max-width:350px}
 .chest-box{flex:1;aspect-ratio:1;background:var(--card);border:2px solid #2d333d;border-radius:20px;font-size:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.3s;user-select:none;box-shadow:0 5px 15px #0004}
-.chest-box:hover{border-color:#ffaa00;transform:translateY(-3px)}.chest-box.opened{background:#16191e;border-color:var(--g);cursor:default}
+.chest-box:hover{border-color:#ffaa00;transform:translateY(-3px)}
+.chest-box.opened{background:#16191e;border-color:var(--g);cursor:default}
 .btn-action{background:linear-gradient(135deg,#ffaa00,#e67e00);color:#000;border:0;padding:14px 30px;border-radius:14px;font-weight:bold;font-size:14px;cursor:pointer;box-shadow:0 4px 15px #ffaa0033;display:none}
 </style>
 </head>
@@ -30,7 +32,10 @@ html,body{background:var(--bg);color:#fff;font-family:'Segoe UI',sans-serif;marg
 
 <h2 class="game-title">اختر صندوقاً واربح الجائزة!</h2>
 <p class="game-desc">الفوز يمنحك +5 ألماسات 💎 | الخسارة تخصم منك 5 ألماسات!</p>
-<div class="stat-badge">ألماسات حسابك: <span id="user-diamonds-counter">0</span> 💎</div>
+
+<div class="stat-badge">
+ألماسات حسابك: <span id="user-diamonds-counter">0</span> 💎
+</div>
 
 <div class="chests-container" id="chests-grid">
 <div class="chest-box" onclick="openChest(0)">📦</div>
@@ -38,12 +43,15 @@ html,body{background:var(--bg);color:#fff;font-family:'Segoe UI',sans-serif;marg
 <div class="chest-box" onclick="openChest(2)">📦</div>
 </div>
 
-<div id="result-msg" style="font-size:14px;font-weight:bold;color:white;margin-bottom:20px;min-height:25px">جاري تحميل الجولة...</div>
+<div id="result-msg" style="font-size:14px;font-weight:bold;color:white;margin-bottom:20px;min-height:25px">
+جاري تجهيز الحساب...
+</div>
 
-<button id="next-round-btn" class="btn-action" onclick="nextRound()">🔄 جولة جديدة</button>
+<button id="next-round-btn" class="btn-action" onclick="nextRound()">🔄 بدء الجولة</button>
 
 <script>
-const tg=window.Telegram.WebApp;tg.expand();
+const tg=window.Telegram.WebApp;
+tg.expand();
 
 const client=supabase.createClient(
 "https://smukfrwnguvmxvfwqwrv.supabase.co",
@@ -51,134 +59,415 @@ const client=supabase.createClient(
 );
 
 const p=new URLSearchParams(location.search);
-let tid=String(p.get("id")||tg.initDataUnsafe.user?.id||localStorage.getItem("telegram_id")||"").trim();
+let tid=String(
+p.get("id")||
+tg.initDataUnsafe.user?.id||
+localStorage.getItem("telegram_id")||
+""
+).trim();
+
 document.getElementById("back-link").href=`../games.html?id=${tid}`;
 
-let userData=null,isOpened=false,rounds=0,timer=null;
+let userData=null,isOpened=false,roundActive=false,timer=null;
+let rounds=0,dailyUsed=0;
+
+const roundKey=()=>`chests_rounds_${tid}`;
+const lockKey=()=>`chests_lock_${tid}`;
+
+function cairoDate(){
+return new Intl.DateTimeFormat("en-CA",{
+timeZone:"Africa/Cairo",
+year:"numeric",
+month:"2-digit",
+day:"2-digit"
+}).format(new Date());
+}
+
+async function prepareDaily(){
+if(!userData)return;
+
+let today=cairoDate();
+let used=Number(userData.daily_game_rounds||0);
+let date=userData.daily_game_date;
+
+if(date!==today){
+let{data,error}=await client.from("users")
+.update({daily_game_rounds:0,daily_game_date:today})
+.eq("telegram_id",String(tid))
+.select("*")
+.single();
+
+if(!error&&data){
+userData=data;
+used=0;
+}
+}
+
+dailyUsed=used;
+}
+
+async function consumeDailyRound(){
+if(!userData)return false;
+
+if(dailyUsed>=30){
+showDailyLimit();
+return false;
+}
+
+let today=cairoDate();
+let next=dailyUsed+1;
+
+let{data,error}=await client.from("users")
+.update({
+daily_game_rounds:next,
+daily_game_date:today
+})
+.eq("telegram_id",String(tid))
+.select("*")
+.single();
+
+if(error){
+console.error("Daily round error:",error);
+return true;
+}
+
+if(data){
+userData=data;
+dailyUsed=Number(data.daily_game_rounds||next);
+}
+
+return true;
+}
+
+function showDailyLimit(){
+roundActive=false;
+document.getElementById("next-round-btn").style.display="none";
+document.getElementById("result-msg").innerText="🚫 وصلت للحد الأقصى اليومي: 30 جولة.";
+}
 
 async function initUser(){
 if(!tid||tid==="undefined"||tid==="null"){
 try{
-let{data:x}=await client.from("users").select("*").order("created_at",{ascending:false}).limit(1).maybeSingle();
-if(x){userData=x;tid=String(x.telegram_id)}
+let{data:x}=await client.from("users")
+.select("*")
+.order("created_at",{ascending:false})
+.limit(1)
+.maybeSingle();
+
+if(x){
+userData=x;
+tid=String(x.telegram_id);
+}
 }catch(e){}
 }
+
 try{
-let{data:u}=await client.from("users").select("*").eq("telegram_id",String(tid)).maybeSingle();
+let{data:u}=await client.from("users")
+.select("*")
+.eq("telegram_id",String(tid))
+.maybeSingle();
+
 if(u)userData=u;
 else{
-let{data:n}=await client.from("users").select("*").eq("telegram_id",Number(tid)).maybeSingle();
+let{data:n}=await client.from("users")
+.select("*")
+.eq("telegram_id",Number(tid))
+.maybeSingle();
+
 if(n)userData=n;
 else{
-let{data:f}=await client.from("users").select("*").limit(1).maybeSingle();
+let{data:f}=await client.from("users")
+.select("*")
+.limit(1)
+.maybeSingle();
+
 if(f)userData=f;
 }
 }
-if(!userData)return tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
+
+if(!userData)
+return tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
+
 tid=String(userData.telegram_id);
 localStorage.setItem("telegram_id",tid);
+document.getElementById("back-link").href=`../games.html?id=${tid}`;
+
+rounds=Number(localStorage.getItem(roundKey())||0);
+
 updateUI();
-startRound();
+await prepareDaily();
+checkSavedState();
+
 }catch(e){
-console.error(e);tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
+console.error(e);
+tg.showAlert("❌ حدث خطأ أثناء جلب بيانات المستخدم.");
 }
 }
 
 function updateUI(){
 if(!userData)return;
-let d=Number(userData.gamepoints!==undefined?userData.gamepoints:userData.diamonds||0);
+
+let d=Number(
+userData.gamepoints!==undefined?
+userData.gamepoints:
+userData.diamonds||0
+);
+
 document.getElementById("user-diamonds-counter").innerText=d.toLocaleString();
 }
 
-function startRound(){
-if(timer)return;
-resetChests();isOpened=false;
-document.getElementById("result-msg").innerText="اختر أحد الصناديق الثلاثة لاكتشاف ما تخفيه داخله.";
+function checkSavedState(){
+rounds=Number(localStorage.getItem(roundKey())||0);
+
+let lock=Number(localStorage.getItem(lockKey())||0);
+
+if(lock>0){
+if(lock>Date.now()){
+roundActive=false;
+isOpened=false;
+showSavedTimer(lock);
+return;
+}
+
+localStorage.removeItem(lockKey());
+rounds=0;
+localStorage.setItem(roundKey(),"0");
+}
+
+if(dailyUsed>=30){
+showDailyLimit();
+return;
+}
+
+if(rounds>=3){
+roundActive=false;
+document.getElementById("result-msg").innerText=
+"📺 يجب مشاهدة الإعلان لفتح 3 جولات جديدة.";
+document.getElementById("next-round-btn").style.display="inline-block";
+document.getElementById("next-round-btn").innerText="📺 مشاهدة الإعلان";
+return;
+}
+
+roundActive=false;
+document.getElementById("result-msg").innerText=
+`جاهز للجولة ${rounds+1} من 3. اضغط بدء الجولة.`;
+document.getElementById("next-round-btn").style.display="inline-block";
+document.getElementById("next-round-btn").innerText="🔄 بدء الجولة";
+}
+
+async function startRound(){
+if(timer||roundActive)return;
+
+rounds=Number(localStorage.getItem(roundKey())||0);
+
+if(dailyUsed>=30){
+showDailyLimit();
+return;
+}
+
+if(rounds>=3){
+showAd();
+return;
+}
+
+let ok=await consumeDailyRound();
+if(!ok)return;
+
+resetChests();
+isOpened=false;
+roundActive=true;
+
+document.getElementById("result-msg").innerText=
+"اختر أحد الصناديق الثلاثة لاكتشاف ما تخفيه داخله.";
+
 document.getElementById("next-round-btn").style.display="none";
 }
 
 function nextRound(){
-if(timer)return;
-if(rounds>=3)return showAd();
+if(timer||roundActive)return;
+
+rounds=Number(localStorage.getItem(roundKey())||0);
+
+if(dailyUsed>=30){
+showDailyLimit();
+return;
+}
+
+if(rounds>=3){
+showAd();
+return;
+}
+
 startRound();
 }
 
 async function showAd(){
+if(timer||roundActive)return;
+
 document.getElementById("next-round-btn").style.display="none";
 document.getElementById("result-msg").innerText="⏳ جاري تحميل الإعلان...";
+
 try{
-if(typeof show_10959333==="function")await show_10959333();
-rounds=0;startTimer();
+if(typeof show_10959333!=="function")
+throw new Error("Ad unavailable");
+
+await show_10959333();
+
+rounds=0;
+localStorage.setItem(roundKey(),"0");
+
+let end=Date.now()+300000;
+localStorage.setItem(lockKey(),String(end));
+
+showSavedTimer(end);
+
 }catch(e){
 console.error(e);
+
 tg.showAlert("❌ يجب مشاهدة الإعلان كاملاً.");
-document.getElementById("result-msg").innerText="⚠️ لم يتم إكمال الإعلان.";
+
+document.getElementById("result-msg").innerText=
+"⚠️ لم يتم إكمال الإعلان.";
+
 document.getElementById("next-round-btn").style.display="inline-block";
+document.getElementById("next-round-btn").innerText="📺 مشاهدة الإعلان";
 }
 }
 
-function startTimer(){
-let end=Date.now()+300000;
+function showSavedTimer(end){
+if(timer)clearInterval(timer);
+
+roundActive=false;
+isOpened=false;
 timer=setInterval(()=>{
-let left=Math.max(0,end-Date.now()),s=Math.ceil(left/1000),m=Math.floor(s/60),sec=s%60;
-document.getElementById("result-msg").innerText=`⏱️ متاح اللعب بعد ${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+let left=Math.max(0,end-Date.now());
+let s=Math.ceil(left/1000);
+let m=Math.floor(s/60);
+let sec=s%60;
+
+document.getElementById("result-msg").innerText=
+`⏱️ متاح اللعب بعد ${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
+
+document.getElementById("next-round-btn").style.display="none";
+
 if(!left){
-clearInterval(timer);timer=null;
-document.getElementById("result-msg").innerText="✅ انتهى وقت الانتظار، يمكنك لعب 3 جولات جديدة.";
+clearInterval(timer);
+timer=null;
+
+localStorage.removeItem(lockKey());
+rounds=0;
+localStorage.setItem(roundKey(),"0");
+
+if(dailyUsed>=30){
+showDailyLimit();
+return;
+}
+
+document.getElementById("result-msg").innerText=
+"✅ انتهى وقت الانتظار، يمكنك لعب 3 جولات جديدة.";
+
 document.getElementById("next-round-btn").style.display="inline-block";
-document.getElementById("next-round-btn").innerText="🔄 بدء الجولة الجديدة";
+document.getElementById("next-round-btn").innerText="🔄 بدء الجولة";
 }
 },250);
 }
 
 async function openChest(index){
-if(isOpened||!userData||timer)return;
+if(!roundActive||isOpened||!userData||timer)return;
+
 isOpened=true;
-let win=Math.random()<.5,prize=win?5:-5;
+roundActive=false;
+
+let win=Math.random()<.5;
 const boxes=document.querySelectorAll(".chest-box");
 
 boxes.forEach((box,i)=>{
 box.classList.add("opened");
+
 if(i===index){
 box.innerText=win?"🎁\n+5":"❌\n-5";
 box.style.color=win?"#00d26a":"#ff3b30";
 }else{
-box.innerText="📦";box.style.color="var(--gray)";
+box.innerText="📦";
+box.style.color="var(--gray)";
 }
 });
 
 let msg=document.getElementById("result-msg");
+
 if(win){
-msg.innerHTML=`🎉 مبروك! اخترت الصندوق الصحيح وفزت بـ <span style="color:var(--g)">+5 ألماسات 💎</span>!`;
+msg.innerHTML=
+`🎉 مبروك! اخترت الصندوق الصحيح وفزت بـ <span style="color:var(--g)">+5 ألماسات 💎</span>!`;
+
 await updateUserDiamonds(5);
 }else{
-msg.innerHTML=`💔 حظ أوفر! الصندوق كان فارغاً وتم خصم <span style="color:#ff3b30">5 ألماسات</span>.`;
+msg.innerHTML=
+`💔 حظ أوفر! الصندوق كان فارغاً وتم خصم <span style="color:#ff3b30">5 ألماسات</span>.`;
+
 await updateUserDiamonds(-5);
 }
 
 rounds++;
+localStorage.setItem(roundKey(),String(rounds));
+
+if(dailyUsed>=30){
+document.getElementById("next-round-btn").style.display="none";
+msg.innerHTML+=
+`<br><span style="color:#ffaa00">🚫 وصلت للحد الأقصى اليومي: 30 جولة.</span>`;
+return;
+}
+
 document.getElementById("next-round-btn").style.display="inline-block";
-document.getElementById("next-round-btn").innerText=rounds>=3?"🔄 الجولة القادمة (مشاهدة إعلان)":"🔄 جولة جديدة";
+
+if(rounds>=3){
+document.getElementById("next-round-btn").innerText="📺 مشاهدة الإعلان";
+}else{
+document.getElementById("next-round-btn").innerText="🔄 جولة جديدة";
+}
 }
 
 async function updateUserDiamonds(amount){
 if(!userData)return;
-let field=userData.gamepoints!==undefined?"gamepoints":userData.diamonds!==undefined?"diamonds":"gamepoints";
-let n=Math.max(0,Number(userData[field]||0)+amount);
+
+let field=
+userData.gamepoints!==undefined?
+"gamepoints":
+userData.diamonds!==undefined?
+"diamonds":
+"gamepoints";
+
+let n=Math.max(
+0,
+Number(userData[field]||0)+amount
+);
+
 try{
 let obj={[field]:n};
-let{data,error}=await client.from("users").update(obj).eq("telegram_id",String(tid)).select("*").single();
-if(!error&&data){userData=data;updateUI()}
-}catch(e){console.error("Update diamonds error:",e)}
+
+let{data,error}=await client.from("users")
+.update(obj)
+.eq("telegram_id",String(tid))
+.select("*")
+.single();
+
+if(!error&&data){
+userData=data;
+updateUI();
+}
+}catch(e){
+console.error("Update diamonds error:",e);
+}
 }
 
 function resetChests(){
 document.querySelectorAll(".chest-box").forEach(b=>{
-b.classList.remove("opened");b.innerText="📦";b.style.color="white";
+b.classList.remove("opened");
+b.innerText="📦";
+b.style.color="white";
 });
 }
 
 initUser();
 </script>
 </body>
-</html>
+  </html>
