@@ -3,296 +3,346 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-
 <title>Frost Seahorse - MegaTask</title>
 
-<script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
 
 <style>
-:root{
-    --g:#00d26a;
-    --bg:#030508;
-}
-
 *{
     box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
 }
 
 html,body{
     margin:0;
+    padding:0;
     width:100%;
     height:100%;
     overflow:hidden;
-    background:var(--bg);
+    background:#06111f;
+    font-family:Arial,sans-serif;
     color:#fff;
-    font-family:Segoe UI,Tahoma,sans-serif;
-    user-select:none;
-    -webkit-user-select:none;
-    -webkit-tap-highlight-color:transparent;
+}
+
+body{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+#app{
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:
+        radial-gradient(circle at 50% 20%,#123c5d 0%,#071b2d 38%,#030a12 100%);
 }
 
 canvas{
-    display:block;
-    width:100vw;
-    height:100vh;
-    background:#030508;
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    display:none;
 }
 
-.game-top-bar{
+#hud{
     position:absolute;
-    top:0;
-    left:0;
-    width:100%;
+    top:15px;
+    left:12px;
+    right:12px;
     z-index:10;
-    display:flex;
+    display:none;
+    justify-content:space-between;
     align-items:center;
-    gap:8px;
-    padding:15px 20px;
-    background:linear-gradient(
-        180deg,
-        rgba(3,5,8,.95),
-        transparent
-    );
     pointer-events:none;
 }
 
-.info{
-    background:rgba(20,23,31,.9);
-    border:1px solid rgba(0,210,106,.35);
-    padding:8px 14px;
-    border-radius:20px;
-    font-size:13px;
-    font-weight:bold;
-    box-shadow:0 0 14px rgba(0,210,106,.12);
+.badge{
+    min-width:125px;
+    padding:9px 13px;
+    border:1px solid rgba(79,220,255,.3);
+    border-radius:14px;
+    background:rgba(3,16,29,.82);
+    box-shadow:0 5px 20px rgba(0,0,0,.25);
+    text-align:center;
 }
 
-.info span{
-    color:var(--g);
+.badge small{
+    display:block;
+    color:#8da9bc;
+    font-size:11px;
+    margin-bottom:3px;
 }
 
-.exit{
-    position:absolute;
-    top:15px;
-    right:20px;
-    z-index:20;
-    background:rgba(255,59,48,.18);
-    border:1px solid #ff3b30;
-    color:#ff7777;
-    padding:7px 15px;
-    border-radius:15px;
-    font-size:12px;
-    font-weight:bold;
-    cursor:pointer;
+.badge strong{
+    color:#62e7ff;
+    font-size:17px;
 }
 
-.overlay{
+#overlay{
     position:absolute;
     inset:0;
     z-index:30;
     display:flex;
-    flex-direction:column;
     align-items:center;
     justify-content:center;
-    padding:25px;
+    padding:22px;
+    background:rgba(1,8,15,.62);
+    backdrop-filter:blur(8px);
+}
+
+.panel{
+    width:min(430px,100%);
+    padding:28px 22px;
+    border:1px solid rgba(88,222,255,.25);
+    border-radius:25px;
+    background:linear-gradient(
+        145deg,
+        rgba(12,39,60,.96),
+        rgba(3,15,27,.97)
+    );
+    box-shadow:
+        0 20px 60px rgba(0,0,0,.5),
+        inset 0 1px rgba(255,255,255,.05);
     text-align:center;
-    background:rgba(3,5,8,.94);
 }
 
-.overlay h1{
-    color:var(--g);
-    font-size:30px;
-    margin:5px 0;
-    text-shadow:0 0 25px rgba(0,210,106,.5);
+.logo{
+    width:88px;
+    height:88px;
+    margin:0 auto 15px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    font-size:48px;
+    background:radial-gradient(circle,#123f5c,#061624);
+    border:1px solid rgba(89,224,255,.25);
+    box-shadow:0 0 35px rgba(42,205,255,.18);
 }
 
-.overlay p{
-    color:#9ca3af;
+h1{
+    margin:0 0 9px;
+    font-size:27px;
+}
+
+.desc{
+    color:#9bb3c4;
+    line-height:1.7;
+    font-size:14px;
+    margin:0 0 22px;
+}
+
+button{
+    width:100%;
+    border:0;
+    border-radius:16px;
+    padding:15px 18px;
+    font-size:16px;
+    font-weight:bold;
+    color:#021019;
+    background:linear-gradient(135deg,#54e6ff,#21a9ff);
+    box-shadow:0 8px 25px rgba(31,180,255,.2);
+    cursor:pointer;
+}
+
+button:active{
+    transform:scale(.98);
+}
+
+button:disabled{
+    opacity:.6;
+    cursor:default;
+}
+
+.secondary{
+    margin-top:10px;
+    color:#b6c9d5;
+    background:rgba(255,255,255,.07);
+    box-shadow:none;
+}
+
+#loading{
+    display:none;
+    margin-top:13px;
+    color:#81dfff;
     font-size:13px;
-    line-height:1.6;
-    max-width:320px;
+}
+
+.spinner{
+    width:22px;
+    height:22px;
+    margin:0 auto 8px;
+    border:3px solid rgba(255,255,255,.15);
+    border-top-color:#55ddff;
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+}
+
+@keyframes spin{
+    to{transform:rotate(360deg)}
+}
+
+#gameOver{
+    display:none;
+}
+
+#gameOver .score{
+    font-size:30px;
+    font-weight:bold;
+    color:#62e7ff;
     margin:8px 0 20px;
 }
 
-.btn{
-    width:100%;
-    max-width:270px;
-    padding:15px;
-    border:0;
-    border-radius:20px;
-    font-size:16px;
-    font-weight:bold;
-    cursor:pointer;
-    background:linear-gradient(
-        135deg,
-        #00d26a,
-        #009e4f
-    );
-    color:#001b0d;
-    box-shadow:0 5px 30px rgba(0,210,106,.4);
-    transition:.2s;
+#message{
+    position:absolute;
+    top:105px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:15;
+    padding:9px 15px;
+    border-radius:13px;
+    background:rgba(2,14,24,.86);
+    border:1px solid rgba(91,221,255,.22);
+    color:#d8f8ff;
+    font-size:13px;
+    opacity:0;
+    pointer-events:none;
+    transition:.25s;
 }
 
-.btn:active{
-    transform:scale(.95);
+#message.show{
+    opacity:1;
 }
 
-.btn:disabled{
-    opacity:.5;
-    cursor:not-allowed;
+#touchHint{
+    position:absolute;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:12;
+    display:none;
+    padding:8px 13px;
+    border-radius:12px;
+    background:rgba(1,10,18,.6);
+    color:#8faaba;
+    font-size:12px;
+    pointer-events:none;
 }
 
-.reward{
-    color:var(--g)!important;
-    font-weight:bold;
+.shake{
+    animation:shake .18s linear;
 }
 
-.loading{
-    margin-top:12px;
-    color:#8b929e;
-    font-size:11px;
+@keyframes shake{
+    0%,100%{transform:translateX(0)}
+    25%{transform:translateX(-5px)}
+    75%{transform:translateX(5px)}
 }
-
 </style>
 </head>
 
 <body>
 
-<!-- ================= TOP BAR ================= -->
+<div id="app">
 
-<div class="game-top-bar">
+    <canvas id="game"></canvas>
 
-    <div class="info">
-        النقاط:
-        <span id="score">0</span>
+    <div id="hud">
+        <div class="badge">
+            <small>ألماسات حسابك</small>
+            <strong id="diamondHud">0 💎</strong>
+        </div>
+
+        <div class="badge">
+            <small>الجولة</small>
+            <strong id="scoreHud">0</strong>
+        </div>
     </div>
 
-    <div class="info">
-        💎
-        <span id="diamonds">0</span>
+    <div id="message"></div>
+
+    <div id="touchHint">
+        اضغط على الشاشة للقفز 🐴
+    </div>
+
+    <div id="overlay">
+
+        <div class="panel" id="startPanel">
+
+            <div class="logo">🐴</div>
+
+            <h1>حصان البحر السريع</h1>
+
+            <p class="desc">
+                ساعد حصان البحر على عبور العقبات،
+                واجمع النقاط والماس أثناء اللعب.
+                <br>
+                تكلفة الجولة: <b>1 💎</b>
+            </p>
+
+            <button id="startBtn">
+                ابدأ الجولة الآن (1 💎)
+            </button>
+
+            <div id="loading">
+                <div class="spinner"></div>
+                جاري تجهيز الحساب...
+            </div>
+
+        </div>
+
+        <div class="panel" id="gameOver">
+
+            <div class="logo">💥</div>
+
+            <h1>انتهت الجولة</h1>
+
+            <div class="score">
+                <span id="finalScore">0</span>
+            </div>
+
+            <p class="desc">
+                نتيجتك في الجولة السابقة
+            </p>
+
+            <button id="retryBtn">
+                اللعب مرة أخرى (1 💎)
+            </button>
+
+            <button class="secondary" id="exitBtn">
+                العودة للألعاب
+            </button>
+
+            <div id="retryLoading">
+                <div class="spinner"></div>
+                جاري تجهيز الجولة...
+            </div>
+
+        </div>
+
     </div>
 
 </div>
-
-
-<!-- ================= EXIT ================= -->
-
-<button
-    class="exit"
-    id="exitBtn"
->
-    ✖ خروج للألعاب
-</button>
-
-
-<!-- ================= START ================= -->
-
-<div
-    id="start"
-    class="overlay"
->
-
-    <div style="font-size:55px">
-        🐴
-    </div>
-
-    <h1>
-        FROST SEAHORSE
-    </h1>
-
-    <p>
-        تحرك بحصان البحر وتفادى العوائق واجمع الألماس 💎
-    </p>
-
-    <button
-        id="startBtn"
-        class="btn"
-    >
-        ⚡ بدء الجولة — 1 💎
-    </button>
-
-    <div
-        id="loading"
-        class="loading"
-    >
-        جاري تحميل الحساب...
-    </div>
-
-</div>
-
-
-<!-- ================= GAME OVER ================= -->
-
-<div
-    id="over"
-    class="overlay"
-    style="display:none"
->
-
-    <div style="font-size:55px">
-        💥
-    </div>
-
-    <h1 style="color:#ff3b30">
-        انتهت الجولة
-    </h1>
-
-    <p
-        id="final"
-        style="
-            color:#fff;
-            font-size:16px;
-            font-weight:bold;
-        "
-    ></p>
-
-    <p
-        id="reward"
-        class="reward"
-    ></p>
-
-    <button
-        id="retry"
-        class="btn"
-    >
-        🔄 محاولة أخرى — 1 💎
-    </button>
-
-    <button
-        id="backOver"
-        class="btn"
-        style="
-            background:#222630;
-            color:#fff;
-            margin-top:10px;
-        "
-    >
-        🔙 العودة لصفحة الألعاب
-    </button>
-
-</div>
-
-
-<canvas id="gameCanvas"></canvas>
-
 
 <script>
-
 /* =========================================================
    TELEGRAM
 ========================================================= */
 
-const tg =
-    window.Telegram?.WebApp || null;
+const tg = window.Telegram && window.Telegram.WebApp
+    ? window.Telegram.WebApp
+    : null;
 
 if(tg){
-
     try{
-        tg.expand();
         tg.ready();
+        tg.expand();
     }catch(e){}
-
 }
 
 
@@ -300,88 +350,488 @@ if(tg){
    SUPABASE
 ========================================================= */
 
-const URL =
-"https://smukfrwnguvmxvfwqwrv.supabase.co";
+const SUPABASE_URL =
+    "https://smukfrwnguvmxvfwqwrv.supabase.co";
 
-const KEY =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2IiwiaWF0IjoxNzY5NTA4NTY4LCJleHAiOjIwODUwODQ1Njh9.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+const SUPABASE_KEY =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2IiwiaWF0IjoxNzY5NTA4NTY4LCJleHAiOjIwODUwODQ1Njh9.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
 
-const db =
-    supabase.createClient(
-        URL,
-        KEY
-    );
+const headers = {
+    "apikey": SUPABASE_KEY,
+    "Authorization": "Bearer " + SUPABASE_KEY,
+    "Content-Type": "application/json"
+};
 
 
 /* =========================================================
    ELEMENTS
 ========================================================= */
 
-const cv =
-    document.getElementById("gameCanvas");
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-const ctx =
-    cv.getContext("2d");
+const overlay = document.getElementById("overlay");
+const startPanel = document.getElementById("startPanel");
+const gameOverPanel = document.getElementById("gameOver");
 
-const q =
-    id => document.getElementById(id);
+const startBtn = document.getElementById("startBtn");
+const retryBtn = document.getElementById("retryBtn");
+const exitBtn = document.getElementById("exitBtn");
+
+const loading = document.getElementById("loading");
+const retryLoading = document.getElementById("retryLoading");
+
+const diamondHud = document.getElementById("diamondHud");
+const scoreHud = document.getElementById("scoreHud");
+const finalScore = document.getElementById("finalScore");
+const touchHint = document.getElementById("touchHint");
+const messageBox = document.getElementById("message");
 
 
 /* =========================================================
-   GAME STATE
+   USER
 ========================================================= */
 
-let uid = "";
+let telegramId = null;
+let userRow = null;
+let diamondField = null;
+let diamonds = 0;
 
-let user = null;
 
-let gp = "gamepoints";
+/* =========================================================
+   GET TELEGRAM ID
+========================================================= */
+
+function getTelegramId(){
+
+    const params = new URLSearchParams(location.search);
+
+    const urlId =
+        params.get("id") ||
+        params.get("telegram_id") ||
+        params.get("user_id");
+
+    if(urlId){
+        return String(urlId);
+    }
+
+    if(
+        tg &&
+        tg.initDataUnsafe &&
+        tg.initDataUnsafe.user &&
+        tg.initDataUnsafe.user.id
+    ){
+        return String(tg.initDataUnsafe.user.id);
+    }
+
+    const local =
+        localStorage.getItem("telegram_id");
+
+    if(local){
+        return String(local);
+    }
+
+    return null;
+}
+
+
+/* =========================================================
+   SUPABASE REQUEST
+========================================================= */
+
+async function supabaseFetch(url, options = {}){
+
+    const response = await fetch(url,{
+        ...options,
+        headers:{
+            ...headers,
+            ...(options.headers || {})
+        }
+    });
+
+    const text = await response.text();
+
+    let data = null;
+
+    try{
+        data = text ? JSON.parse(text) : null;
+    }catch(e){
+        data = text;
+    }
+
+    if(!response.ok){
+        throw new Error(
+            typeof data === "string"
+                ? data
+                : JSON.stringify(data)
+        );
+    }
+
+    return data;
+}
+
+
+/* =========================================================
+   FIND USER
+   نفس طريقة Lucky Chests
+========================================================= */
+
+async function loadUser(){
+
+    telegramId = getTelegramId();
+
+    if(!telegramId){
+        throw new Error("لم يتم العثور على Telegram ID");
+    }
+
+    localStorage.setItem(
+        "telegram_id",
+        String(telegramId)
+    );
+
+    let data = null;
+
+    /* ---------- STRING ---------- */
+
+    try{
+
+        data = await supabaseFetch(
+            SUPABASE_URL +
+            "/rest/v1/users?telegram_id=eq." +
+            encodeURIComponent(String(telegramId)) +
+            "&limit=1"
+        );
+
+    }catch(e){}
+
+
+    /* ---------- NUMBER ---------- */
+
+    if(!data || !data.length){
+
+        try{
+
+            data = await supabaseFetch(
+                SUPABASE_URL +
+                "/rest/v1/users?telegram_id=eq." +
+                encodeURIComponent(Number(telegramId)) +
+                "&limit=1"
+            );
+
+        }catch(e){}
+
+    }
+
+
+    /* ---------- FALLBACK ---------- */
+
+    if(!data || !data.length){
+
+        try{
+
+            data = await supabaseFetch(
+                SUPABASE_URL +
+                "/rest/v1/users?select=*&order=created_at.desc&limit=1"
+            );
+
+        }catch(e){}
+
+    }
+
+
+    if(!data || !data.length){
+
+        throw new Error("الحساب غير موجود في قاعدة البيانات");
+    }
+
+
+    userRow = data[0];
+
+
+    /* ---------- DETECT DIAMOND FIELD ---------- */
+
+    if(
+        Object.prototype.hasOwnProperty.call(
+            userRow,
+            "gamepoints"
+        )
+    ){
+
+        diamondField = "gamepoints";
+
+    }else if(
+        Object.prototype.hasOwnProperty.call(
+            userRow,
+            "diamonds"
+        )
+    ){
+
+        diamondField = "diamonds";
+
+    }else{
+
+        throw new Error(
+            "لم يتم العثور على خانة الألماسات"
+        );
+    }
+
+
+    diamonds =
+        Number(userRow[diamondField]) || 0;
+
+    updateDiamondUI();
+}
+
+
+/* =========================================================
+   UPDATE UI
+========================================================= */
+
+function updateDiamondUI(){
+
+    diamondHud.textContent =
+        diamonds + " 💎";
+}
+
+
+/* =========================================================
+   CHANGE DIAMONDS
+========================================================= */
+
+async function changeDiamonds(amount){
+
+    if(!userRow || !diamondField){
+        throw new Error("الحساب غير جاهز");
+    }
+
+    const oldValue = diamonds;
+
+    const newValue =
+        Math.max(
+            0,
+            oldValue + Number(amount)
+        );
+
+
+    let updated = false;
+
+
+    /* ---------- BY STRING ID ---------- */
+
+    try{
+
+        const result =
+            await supabaseFetch(
+                SUPABASE_URL +
+                "/rest/v1/users?telegram_id=eq." +
+                encodeURIComponent(String(telegramId)),
+
+                {
+                    method:"PATCH",
+                    headers:{
+                        "Prefer":"return=representation"
+                    },
+                    body:JSON.stringify({
+                        [diamondField]:newValue
+                    })
+                }
+            );
+
+        if(result && result.length){
+            updated = true;
+        }
+
+    }catch(e){}
+
+
+    /* ---------- BY NUMBER ID ---------- */
+
+    if(!updated){
+
+        try{
+
+            const result =
+                await supabaseFetch(
+                    SUPABASE_URL +
+                    "/rest/v1/users?telegram_id=eq." +
+                    encodeURIComponent(Number(telegramId)),
+
+                    {
+                        method:"PATCH",
+                        headers:{
+                            "Prefer":"return=representation"
+                        },
+                        body:JSON.stringify({
+                            [diamondField]:newValue
+                        })
+                    }
+                );
+
+            if(result && result.length){
+                updated = true;
+            }
+
+        }catch(e){}
+
+    }
+
+
+    if(!updated){
+
+        throw new Error(
+            "فشل تحديث الألماسات"
+        );
+    }
+
+
+    diamonds = newValue;
+
+    userRow[diamondField] = newValue;
+
+    updateDiamondUI();
+
+
+    /* ---------- TRANSACTION ---------- */
+
+    try{
+
+        await supabaseFetch(
+            SUPABASE_URL +
+            "/rest/v1/transactions",
+
+            {
+                method:"POST",
+
+                body:JSON.stringify({
+
+                    telegram_id:telegramId,
+
+                    type:"game",
+
+                    title:
+                        amount < 0
+                            ? "بدء جولة حصان البحر"
+                            : "مكافأة لعبة حصان البحر",
+
+                    amount:amount
+
+                })
+            }
+        );
+
+    }catch(e){
+        /* transaction optional */
+    }
+}
+
+
+/* =========================================================
+   LOAD ACCOUNT
+========================================================= */
+
+async function prepareAccount(){
+
+    startBtn.disabled = true;
+
+    loading.style.display = "block";
+
+    try{
+
+        await loadUser();
+
+        startBtn.disabled = false;
+
+        loading.style.display = "none";
+
+        if(diamonds < 1){
+
+            startBtn.disabled = true;
+
+            showMessage(
+                "لا يوجد لديك ألماسات كافية 💎"
+            );
+
+            return false;
+        }
+
+        return true;
+
+    }catch(error){
+
+        console.error(error);
+
+        loading.style.display = "none";
+
+        startBtn.disabled = false;
+
+        showMessage(
+            "تعذر تجهيز الحساب، حاول مرة أخرى"
+        );
+
+        return false;
+    }
+}
+
+
+/* =========================================================
+   MONETAG
+========================================================= */
+
+async function showAd(){
+
+    try{
+
+        if(typeof show_10959333 === "function"){
+
+            await show_10959333();
+
+        }
+
+    }catch(e){
+
+        console.log("Ad error:",e);
+
+    }
+}
+
+
+/* =========================================================
+   GAME VARIABLES
+========================================================= */
+
+let W = 0;
+let H = 0;
+
+let animationId = null;
 
 let running = false;
-
-let saving = false;
+let gameStarted = false;
 
 let score = 0;
 
-let meteorsPassed = 0;
-
-let roundDiamonds = 0;
+let passed = 0;
 
 let frame = 0;
 
-let adBusy = false;
+let speed = 3.2;
 
-let rounds =
-    Number(
-        localStorage.getItem(
-            "space_rounds"
-        ) || 0
-    );
+let gravity = 0.38;
 
+let jumpPower = -7.5;
 
-/* =========================================================
-   OBJECTS
-========================================================= */
+let pipeGap = 195;
 
-let ship = {
+let pipeWidth = 62;
 
-    x:0,
+let spawnDistance = 280;
 
-    y:0,
+let nextPipe = 0;
 
-    w:40,
+let seahorse = null;
 
-    h:45
+let pipes = [];
 
-};
-
-let meteors = [];
-
-let gems = [];
-
-let stars = [];
-
-let particles = [];
+let bubbles = [];
 
 
 /* =========================================================
@@ -390,799 +840,319 @@ let particles = [];
 
 function resize(){
 
-    cv.width =
-        innerWidth;
+    W = window.innerWidth;
+    H = window.innerHeight;
 
-    cv.height =
-        innerHeight;
-
-    if(!running){
-
-        ship.x =
-            cv.width / 2;
-
-        ship.y =
-            cv.height - 120;
-    }
-}
-
-addEventListener(
-    "resize",
-    resize
-);
-
-resize();
-
-
-/* =========================================================
-   USER
-========================================================= */
-
-async function initUser(){
-
-    try{
-
-        uid =
-            String(
-                new URLSearchParams(
-                    location.search
-                ).get("id") ||
-
-                tg?.initDataUnsafe?.user?.id ||
-
-                localStorage.getItem(
-                    "telegram_id"
-                ) ||
-
-                ""
-            ).trim();
-
-
-        /* =========================
-           STRING ID
-        ========================= */
-
-        if(uid){
-
-            let r =
-                await db
-                .from("users")
-                .select("*")
-                .eq(
-                    "telegram_id",
-                    uid
-                )
-                .maybeSingle();
-
-            user =
-                r.data || null;
-        }
-
-
-        /* =========================
-           NUMBER ID
-        ========================= */
-
-        if(
-            !user &&
-            uid &&
-            !isNaN(
-                Number(uid)
-            )
-        ){
-
-            let r =
-                await db
-                .from("users")
-                .select("*")
-                .eq(
-                    "telegram_id",
-                    Number(uid)
-                )
-                .maybeSingle();
-
-            user =
-                r.data || null;
-        }
-
-
-        /* =========================
-           LATEST FALLBACK
-        ========================= */
-
-        if(!user){
-
-            let r =
-                await db
-                .from("users")
-                .select("*")
-                .order(
-                    "created_at",
-                    {
-                        ascending:false
-                    }
-                )
-                .limit(1)
-                .maybeSingle();
-
-            user =
-                r.data || null;
-        }
-
-
-        if(!user){
-
-            showAlert(
-                "⚠️ لم يتم العثور على حسابك."
-            );
-
-            q("loading").textContent =
-                "❌ لم يتم العثور على الحساب";
-
-            return false;
-        }
-
-
-        uid =
-            String(
-                user.telegram_id
-            );
-
-
-        localStorage.setItem(
-            "telegram_id",
-            uid
+    const dpr =
+        Math.min(
+            window.devicePixelRatio || 1,
+            2
         );
 
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
 
-        gp =
-            user.gamepoints !== undefined
-            ? "gamepoints"
-            : user.diamonds !== undefined
-            ? "diamonds"
-            : "gamepoints";
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
 
-
-        updateDiamonds();
-
-
-        q("loading").textContent =
-            "✅ الحساب جاهز";
-
-
-        return true;
-
-    }catch(e){
-
-        console.error(
-            "USER ERROR:",
-            e
-        );
-
-        showAlert(
-            "⚠️ حدث خطأ أثناء تحميل حسابك."
-        );
-
-        q("loading").textContent =
-            "❌ حدث خطأ في تحميل الحساب";
-
-        return false;
-    }
-}
-
-
-/* =========================================================
-   ALERT
-========================================================= */
-
-function showAlert(text){
-
-    if(
-        tg &&
-        typeof tg.showAlert ===
-        "function"
-    ){
-
-        tg.showAlert(text);
-
-    }else{
-
-        alert(text);
-    }
-}
-
-
-/* =========================================================
-   DIAMONDS
-========================================================= */
-
-function getD(){
-
-    return Number(
-        user?.[gp] || 0
+    ctx.setTransform(
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
     );
 }
 
+window.addEventListener("resize",resize);
 
-function updateDiamonds(){
-
-    q("diamonds").textContent =
-        getD();
-}
-
-
-/* =========================================================
-   CHANGE DIAMONDS
-========================================================= */
-
-async function changeD(
-    amount,
-    title
-){
-
-    if(!user){
-
-        return false;
-    }
-
-
-    const old =
-        getD();
-
-    const next =
-        Math.max(
-            0,
-            old +
-            Number(amount)
-        );
-
-
-    let r =
-        await db
-        .from("users")
-        .update({
-            [gp]:next
-        })
-        .eq(
-            "telegram_id",
-            String(
-                user.telegram_id
-            )
-        )
-        .select("*")
-        .maybeSingle();
-
-
-    /* =========================
-       NUMBER FALLBACK
-    ========================= */
-
-    if(
-        !r.data &&
-        !r.error &&
-        !isNaN(
-            Number(
-                user.telegram_id
-            )
-        )
-    ){
-
-        r =
-            await db
-            .from("users")
-            .update({
-                [gp]:next
-            })
-            .eq(
-                "telegram_id",
-                Number(
-                    user.telegram_id
-                )
-            )
-            .select("*")
-            .maybeSingle();
-    }
-
-
-    if(r.error){
-
-        console.error(
-            "Diamond error:",
-            r.error
-        );
-
-        return false;
-    }
-
-
-    user =
-        r.data ||
-        {
-            ...user,
-            [gp]:next
-        };
-
-
-    updateDiamonds();
-
-
-    /* =========================
-       TRANSACTION
-    ========================= */
-
-    try{
-
-        await db
-        .from("transactions")
-        .insert({
-
-            telegram_id:
-                String(
-                    user.telegram_id
-                ),
-
-            type:"points",
-
-            title:title,
-
-            amount:
-                amount > 0
-                ? `+${amount} 💎`
-                : `${amount} 💎`,
-
-            status:"مكتمل"
-
-        });
-
-    }catch(e){
-
-        console.warn(
-            "Transaction:",
-            e
-        );
-    }
-
-
-    return true;
-}
-
-
-/* =========================================================
-   ADS
-========================================================= */
-
-async function showAd(){
-
-    if(adBusy){
-
-        return;
-    }
-
-
-    adBusy=true;
-
-
-    try{
-
-        if(
-            typeof show_10959333 ===
-            "function"
-        ){
-
-            await show_10959333();
-        }
-
-    }catch(e){
-
-        console.warn(
-            "Monetag:",
-            e
-        );
-
-    }finally{
-
-        adBusy=false;
-    }
-}
-
-
-/* =========================================================
-   CHECK AD
-========================================================= */
-
-async function checkAd(){
-
-    /*
-       إعلان كل 3 جولات
-    */
-
-    if(
-        rounds > 0 &&
-        rounds % 3 === 0
-    ){
-
-        const b =
-            q("retry");
-
-        b.disabled=true;
-
-        b.textContent =
-            "📺 جاري تحميل الإعلان...";
-
-
-        await showAd();
-
-
-        rounds=0;
-
-        localStorage.setItem(
-            "space_rounds",
-            "0"
-        );
-
-
-        b.disabled=false;
-
-        b.textContent =
-            "🔄 محاولة أخرى — 1 💎";
-    }
-}
-
-
-/* =========================================================
-   STARS
-========================================================= */
-
-function initStars(){
-
-    stars=[];
-
-
-    for(
-        let i=0;
-        i<90;
-        i++
-    ){
-
-        stars.push({
-
-            x:
-                Math.random() *
-                cv.width,
-
-            y:
-                Math.random() *
-                cv.height,
-
-            r:
-                Math.random()*1.7+.2,
-
-            s:
-                Math.random()*2+.4
-
-        });
-    }
-}
-
-
-/* =========================================================
-   START REQUEST
-========================================================= */
-
-async function startRequest(){
-
-    if(
-        running ||
-        saving
-    ){
-
-        return;
-    }
-
-
-    saving=true;
-
-
-    const startBtn =
-        q("startBtn");
-
-    const retryBtn =
-        q("retry");
-
-
-    try{
-
-        /* =========================
-           USER
-        ========================= */
-
-        if(!user){
-
-            const ok =
-                await initUser();
-
-
-            if(!ok){
-
-                return;
-            }
-        }
-
-
-        /* =========================
-           BALANCE
-        ========================= */
-
-        if(
-            getD() < 1
-        ){
-
-            showAlert(
-                "⚠️ ليس لديك ألماسات كافية!\n\nيلزمك 1 💎 لبدء الجولة."
-            );
-
-            return;
-        }
-
-
-        /*
-           تعطيل الزر مؤقتاً
-        */
-
-        startBtn.disabled=true;
-
-        if(retryBtn){
-
-            retryBtn.disabled=true;
-        }
-
-
-        /*
-           الإعلان كل 3 جولات
-        */
-
-        await checkAd();
-
-
-        /*
-           خصم الألماسة
-        */
-
-        const paid =
-            await changeD(
-                -1,
-                "بدء جولة لعبة Frost Seahorse"
-            );
-
-
-        if(!paid){
-
-            showAlert(
-                "⚠️ تعذر خصم الألماسة."
-            );
-
-            return;
-        }
-
-
-        /*
-           تبدأ اللعبة فوراً
-        */
-
-        startGame();
-
-
-    }catch(e){
-
-        console.error(
-            "START ERROR:",
-            e
-        );
-
-        showAlert(
-            "⚠️ حدث خطأ أثناء بدء الجولة."
-        );
-
-    }finally{
-
-        saving=false;
-
-        if(!running){
-
-            startBtn.disabled=false;
-
-            if(retryBtn){
-
-                retryBtn.disabled=false;
-            }
-        }
-    }
-}
+resize();
 
 
 /* =========================================================
    START GAME
 ========================================================= */
 
-function startGame(){
+async function startGameRequest(){
 
-    q("start").style.display =
-        "none";
+    if(running){
+        return;
+    }
 
-    q("over").style.display =
-        "none";
+    startBtn.disabled = true;
 
+    loading.style.display = "block";
 
-    running=true;
+    try{
 
+        /* تأكيد الحساب مرة أخرى بنفس طريقة الألعاب */
 
-    score=0;
+        if(!userRow){
+            await loadUser();
+        }
 
-    meteorsPassed=0;
+        if(diamonds < 1){
 
-    roundDiamonds=0;
-
-    frame=0;
-
-
-    meteors=[];
-
-    gems=[];
-
-    particles=[];
+            throw new Error(
+                "لا يوجد لديك ألماسات كافية"
+            );
+        }
 
 
-    ship.x =
-        cv.width/2;
+        /* إعلان */
 
-    ship.y =
-        cv.height-120;
+        await showAd();
 
 
-    q("score").textContent =
-        "0";
+        /* خصم دخول الجولة */
+
+        await changeDiamonds(-1);
 
 
-    /*
-       تأكيد تشغيل اللعبة
-    */
+        /* بدء اللعبة */
 
-    requestAnimationFrame(
-        loop
-    );
+        startGame();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        showMessage(
+            error.message ||
+            "حدث خطأ أثناء بدء الجولة"
+        );
+
+        startBtn.disabled = false;
+
+        loading.style.display = "none";
+    }
 }
 
 
 /* =========================================================
-   CONTROLS
+   START
 ========================================================= */
 
-addEventListener(
-    "touchmove",
-    e=>{
+function startGame(){
 
-        if(!running){
+    cancelAnimationFrame(animationId);
 
-            return;
-        }
+    running = true;
+    gameStarted = true;
+
+    score = 0;
+    passed = 0;
+    frame = 0;
+
+    speed = 3.2;
+
+    pipes = [];
+    bubbles = [];
+
+    nextPipe = 30;
+
+    seahorse = {
+
+        x:W * .24,
+
+        y:H * .48,
+
+        r:18,
+
+        vy:0,
+
+        rotation:0
+
+    };
 
 
-        if(
-            e.touches &&
-            e.touches[0]
-        ){
+    overlay.style.display = "none";
 
-            ship.x =
-                Math.max(
-                    28,
-                    Math.min(
-                        cv.width-28,
-                        e.touches[0].clientX
-                    )
-                );
-        }
+    canvas.style.display = "block";
+
+    document.getElementById("hud").style.display =
+        "flex";
+
+    touchHint.style.display =
+        "block";
+
+    scoreHud.textContent = "0";
+
+    updateDiamondUI();
+
+    createBubbles();
+
+    animationId =
+        requestAnimationFrame(loop);
+}
+
+
+/* =========================================================
+   RESET
+========================================================= */
+
+function resetGame(){
+
+    running = false;
+
+    cancelAnimationFrame(animationId);
+
+    canvas.style.display = "none";
+
+    document.getElementById("hud").style.display =
+        "none";
+
+    touchHint.style.display =
+        "none";
+
+    overlay.style.display =
+        "flex";
+
+    startPanel.style.display =
+        "none";
+
+    gameOverPanel.style.display =
+        "block";
+
+    finalScore.textContent =
+        score;
+
+    retryBtn.disabled = false;
+
+    retryLoading.style.display =
+        "none";
+}
+
+
+/* =========================================================
+   JUMP
+========================================================= */
+
+function jump(){
+
+    if(!running || !seahorse){
+        return;
+    }
+
+    seahorse.vy =
+        jumpPower;
+}
+
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+canvas.addEventListener(
+    "pointerdown",
+    function(e){
+
+        e.preventDefault();
+
+        jump();
 
     },
-    {
-        passive:true
-    }
+    {passive:false}
 );
 
+document.addEventListener(
+    "keydown",
+    function(e){
 
-addEventListener(
-    "mousemove",
-    e=>{
+        if(
+            e.code === "Space" ||
+            e.code === "ArrowUp"
+        ){
 
-        if(!running){
+            e.preventDefault();
 
-            return;
+            jump();
         }
 
-
-        ship.x =
-            Math.max(
-                28,
-                Math.min(
-                    cv.width-28,
-                    e.clientX
-                )
-            );
     }
 );
 
 
 /* =========================================================
-   PARTICLES
+   PIPES
 ========================================================= */
 
-function burst(
-    x,
-    y,
-    color,
-    n=15
-){
+function createPipe(){
 
-    for(
-        let i=0;
-        i<n;
-        i++
-    ){
+    const minTop = 95;
 
-        particles.push({
+    const maxTop =
+        Math.max(
+            minTop + 30,
+            H - pipeGap - 120
+        );
 
-            x:x,
+    const top =
+        minTop +
+        Math.random() *
+        Math.max(30,maxTop-minTop);
 
-            y:y,
+    pipes.push({
 
-            vx:
-                (Math.random()-.5)*7,
+        x:W + 40,
 
-            vy:
-                (Math.random()-.5)*7,
+        top:top,
 
-            life:
-                35 +
-                Math.random()*20,
+        bottom:
+            top + pipeGap,
 
-            color:color,
+        width:pipeWidth,
 
-            size:
-                Math.random()*3+1
+        passed:false
+
+    });
+}
+
+
+/* =========================================================
+   BUBBLES
+========================================================= */
+
+function createBubbles(){
+
+    bubbles = [];
+
+    for(let i=0;i<45;i++){
+
+        bubbles.push({
+
+            x:Math.random()*W,
+
+            y:Math.random()*H,
+
+            r:1+Math.random()*3,
+
+            speed:.3+Math.random()*1.2,
+
+            alpha:.2+Math.random()*.5
 
         });
     }
 }
 
 
-function updateParticles(){
+/* =========================================================
+   UPDATE BUBBLES
+========================================================= */
 
-    for(
-        let i=particles.length-1;
-        i>=0;
-        i--
-    ){
+function updateBubbles(){
 
-        const p =
-            particles[i];
+    for(const b of bubbles){
 
+        b.y -= b.speed;
 
-        p.x += p.vx;
+        if(b.y < -10){
 
-        p.y += p.vy;
+            b.y = H + 10;
 
-        p.vy += .05;
-
-        p.life--;
-
-
-        if(
-            p.life<=0
-        ){
-
-            particles.splice(
-                i,
-                1
-            );
+            b.x = Math.random()*W;
         }
     }
 }
@@ -1194,267 +1164,589 @@ function updateParticles(){
 
 function update(){
 
-    /* =========================
-       STARS
-    ========================= */
+    frame++;
 
-    stars.forEach(
-        s=>{
-
-            s.y += s.s;
+    updateBubbles();
 
 
-            if(
-                s.y > cv.height
-            ){
+    /* زيادة السرعة تدريجياً */
 
-                s.y=0;
-
-                s.x =
-                    Math.random() *
-                    cv.width;
-            }
-        }
-    );
+    speed =
+        3.2 +
+        Math.min(
+            3.8,
+            score * 0.035
+        );
 
 
-    updateParticles();
+    /* Seahorse physics */
 
+    seahorse.vy += gravity;
 
-    /* =========================
-       METEOR RATE
-    ========================= */
+    seahorse.y += seahorse.vy;
 
-    const rate =
+    seahorse.rotation =
         Math.max(
-            18,
-            50 -
-            Math.floor(
-                score/30
+            -.5,
+            Math.min(
+                .9,
+                seahorse.vy * .045
             )
         );
 
 
-    if(
-        frame % rate === 0
-    ){
+    /* Pipes */
 
-        meteors.push({
+    for(const p of pipes){
 
-            x:
-                Math.random() *
-                (cv.width-50)+25,
-
-            y:-60,
-
-            r:
-                Math.random()*20+15,
-
-            s:
-                Math.random()*4+
-                6+
-                score/100,
-
-            rot:
-                Math.random()*6.28
-        });
-    }
-
-
-    /* =========================
-       GEMS
-    ========================= */
-
-    if(
-        frame % 180 === 0
-    ){
-
-        gems.push({
-
-            x:
-                Math.random() *
-                (cv.width-30)+15,
-
-            y:-30,
-
-            r:12,
-
-            s:3
-        });
-    }
-
-
-    /* =========================
-       METEORS
-    ========================= */
-
-    for(
-        let i=meteors.length-1;
-        i>=0;
-        i--
-    ){
-
-        const m =
-            meteors[i];
-
-
-        m.y += m.s;
-
-        m.rot += .05;
-
-
-        const d =
-            Math.hypot(
-                ship.x-m.x,
-                ship.y-m.y
-            );
+        p.x -= speed;
 
 
         if(
-            d <
-            ship.w/2 +
-            m.r -
-            8
+            !p.passed &&
+            p.x + p.width < seahorse.x
         ){
 
-            burst(
-                ship.x,
-                ship.y,
-                "#ff3b30",
-                45
-            );
+            p.passed = true;
 
-
-            gameOver();
-
-            return;
-        }
-
-
-        if(
-            m.y >
-            cv.height+60
-        ){
-
-            meteors.splice(
-                i,
-                1
-            );
-
+            passed++;
 
             score++;
 
-            meteorsPassed++;
-
-
-            q("score").textContent =
+            scoreHud.textContent =
                 score;
 
 
-            if(
-                meteorsPassed % 10 === 0
-            ){
+            /* كل 3 عقبات = 1 ألماسة */
 
-                awardDiamond();
+            if(passed % 3 === 0){
+
+                changeDiamonds(1)
+                    .then(()=>{
+
+                        showMessage(
+                            "+1 💎 مكافأة"
+                        );
+
+                    })
+                    .catch(()=>{});
+
             }
         }
     }
 
 
-    /* =========================
-       GEMS
-    ========================= */
-
-    for(
-        let i=gems.length-1;
-        i>=0;
-        i--
-    ){
-
-        const g =
-            gems[i];
+    pipes =
+        pipes.filter(
+            p => p.x + p.width > -50
+        );
 
 
-        g.y += g.s;
+    nextPipe -= speed;
 
+    if(nextPipe <= 0){
 
-        if(
-            Math.hypot(
-                ship.x-g.x,
-                ship.y-g.y
-            ) <
-            ship.w/2 +
-            g.r
-        ){
+        createPipe();
 
-            score += 5;
-
-
-            q("score").textContent =
-                score;
-
-
-            burst(
-                g.x,
-                g.y,
-                "#00d26a",
-                20
+        nextPipe =
+            spawnDistance -
+            Math.min(
+                80,
+                score * 2
             );
-
-
-            gems.splice(
-                i,
-                1
-            );
-
-
-        }else if(
-            g.y >
-            cv.height+30
-        ){
-
-            gems.splice(
-                i,
-                1
-            );
-        }
     }
 
 
-    frame++;
+    /* Collision */
+
+    if(checkCollision()){
+
+        endGame();
+
+        return;
+    }
 }
 
 
 /* =========================================================
-   REWARD
+   COLLISION
 ========================================================= */
 
-async function awardDiamond(){
+function checkCollision(){
 
-    roundDiamonds++;
+    const s = seahorse;
+
+    if(
+        s.y - s.r < 0 ||
+        s.y + s.r > H
+    ){
+
+        return true;
+    }
 
 
-    burst(
-        ship.x,
-        ship.y,
-        "#00d26a",
-        25
+    for(const p of pipes){
+
+        const horizontal =
+            s.x + s.r > p.x &&
+            s.x - s.r < p.x + p.width;
+
+        if(!horizontal){
+            continue;
+        }
+
+
+        const hitTop =
+            s.y - s.r < p.top;
+
+        const hitBottom =
+            s.y + s.r > p.bottom;
+
+        if(hitTop || hitBottom){
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+/* =========================================================
+   DRAW BACKGROUND
+========================================================= */
+
+function drawBackground(){
+
+    const gradient =
+        ctx.createLinearGradient(
+            0,
+            0,
+            0,
+            H
+        );
+
+    gradient.addColorStop(
+        0,
+        "#062b42"
+    );
+
+    gradient.addColorStop(
+        .5,
+        "#073452"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#020c16"
+    );
+
+    ctx.fillStyle = gradient;
+
+    ctx.fillRect(
+        0,
+        0,
+        W,
+        H
     );
 
 
-    const ok =
-        await changeD(
-            1,
-            "مكافأة 10 نيازك في لعبة Frost Seahorse"
+    /* light rays */
+
+    ctx.save();
+
+    ctx.globalAlpha = .07;
+
+    for(let i=0;i<6;i++){
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            W*.5,
+            0
         );
 
-
-    if(ok){
-
-        showAlert(
-            "☄️ ممتاز!\n\nعدّيت 10 نيازك!\nتمت إضافة +1 💎 لرصيدك."
+        ctx.lineTo(
+            i*(W/5),
+            H
         );
+
+        ctx.lineTo(
+            i*(W/5)+100,
+            H
+        );
+
+        ctx.closePath();
+
+        ctx.fillStyle="#7ee8ff";
+
+        ctx.fill();
     }
+
+    ctx.restore();
+
+
+    /* bubbles */
+
+    for(const b of bubbles){
+
+        ctx.beginPath();
+
+        ctx.arc(
+            b.x,
+            b.y,
+            b.r,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle =
+            `rgba(170,235,255,${b.alpha})`;
+
+        ctx.fill();
+    }
+}
+
+
+/* =========================================================
+   DRAW PIPE
+========================================================= */
+
+function drawPipe(p){
+
+    const pipeGradient =
+        ctx.createLinearGradient(
+            p.x,
+            0,
+            p.x+p.width,
+            0
+        );
+
+    pipeGradient.addColorStop(
+        0,
+        "#164e68"
+    );
+
+    pipeGradient.addColorStop(
+        .5,
+        "#2e89a2"
+    );
+
+    pipeGradient.addColorStop(
+        1,
+        "#0e3b52"
+    );
+
+    ctx.fillStyle =
+        pipeGradient;
+
+
+    /* top */
+
+    ctx.fillRect(
+        p.x,
+        0,
+        p.width,
+        p.top
+    );
+
+
+    /* bottom */
+
+    ctx.fillRect(
+        p.x,
+        p.bottom,
+        p.width,
+        H-p.bottom
+    );
+
+
+    /* caps */
+
+    ctx.fillStyle="#42a9bd";
+
+    ctx.fillRect(
+        p.x-5,
+        p.top-15,
+        p.width+10,
+        15
+    );
+
+    ctx.fillRect(
+        p.x-5,
+        p.bottom,
+        p.width+10,
+        15
+    );
+
+
+    /* highlights */
+
+    ctx.fillStyle =
+        "rgba(255,255,255,.12)";
+
+    ctx.fillRect(
+        p.x+8,
+        0,
+        7,
+        p.top-15
+    );
+
+    ctx.fillRect(
+        p.x+8,
+        p.bottom+15,
+        7,
+        H-p.bottom-15
+    );
+}
+
+
+/* =========================================================
+   DRAW SEAHORSE
+========================================================= */
+
+function drawSeahorse(){
+
+    const s = seahorse;
+
+    ctx.save();
+
+    ctx.translate(
+        s.x,
+        s.y
+    );
+
+    ctx.rotate(
+        s.rotation
+    );
+
+
+    /* glow */
+
+    ctx.shadowColor =
+        "#5de7ff";
+
+    ctx.shadowBlur =
+        20;
+
+
+    /* body */
+
+    const body =
+        ctx.createLinearGradient(
+            -15,
+            -25,
+            15,
+            25
+        );
+
+    body.addColorStop(
+        0,
+        "#79ecff"
+    );
+
+    body.addColorStop(
+        .5,
+        "#2fb8d8"
+    );
+
+    body.addColorStop(
+        1,
+        "#12617c"
+    );
+
+    ctx.fillStyle =
+        body;
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        0,
+        2,
+        15,
+        25,
+        0,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /* head */
+
+    ctx.beginPath();
+
+    ctx.arc(
+        7,
+        -20,
+        13,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /* snout */
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        15,
+        -21
+    );
+
+    ctx.quadraticCurveTo(
+        28,
+        -18,
+        25,
+        -11
+    );
+
+    ctx.quadraticCurveTo(
+        19,
+        -12,
+        14,
+        -14
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    /* crest */
+
+    ctx.fillStyle =
+        "#9af4ff";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        0,
+        -29
+    );
+
+    ctx.lineTo(
+        -4,
+        -42
+    );
+
+    ctx.lineTo(
+        4,
+        -35
+    );
+
+    ctx.lineTo(
+        8,
+        -45
+    );
+
+    ctx.lineTo(
+        12,
+        -31
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    /* belly */
+
+    ctx.fillStyle =
+        "rgba(207,250,255,.38)";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        3,
+        6,
+        6,
+        17,
+        0,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /* eye */
+
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle =
+        "#021018";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        12,
+        -24,
+        3,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    ctx.fillStyle =
+        "#fff";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        13,
+        -25,
+        1,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    /* tail */
+
+    ctx.strokeStyle =
+        "#54dff5";
+
+    ctx.lineWidth = 6;
+
+    ctx.lineCap =
+        "round";
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        -9,
+        20
+    );
+
+    ctx.bezierCurveTo(
+        -27,
+        24,
+        -20,
+        42,
+        -5,
+        38
+    );
+
+    ctx.bezierCurveTo(
+        8,
+        35,
+        4,
+        28,
+        -4,
+        31
+    );
+
+    ctx.stroke();
+
+
+    ctx.restore();
 }
 
 
@@ -1467,434 +1759,19 @@ function draw(){
     ctx.clearRect(
         0,
         0,
-        cv.width,
-        cv.height
+        W,
+        H
     );
 
-
-    /* =========================
-       BACKGROUND
-    ========================= */
-
-    const bg =
-        ctx.createRadialGradient(
-            cv.width/2,
-            cv.height*.65,
-            10,
-            cv.width/2,
-            cv.height*.65,
-            cv.height
-        );
-
-
-    bg.addColorStop(
-        0,
-        "#071622"
-    );
-
-    bg.addColorStop(
-        1,
-        "#030508"
-    );
-
-
-    ctx.fillStyle =
-        bg;
-
-    ctx.fillRect(
-        0,
-        0,
-        cv.width,
-        cv.height
-    );
-
-
-    /* =========================
-       STARS
-    ========================= */
-
-    stars.forEach(
-        s=>{
-
-            ctx.globalAlpha =
-                .4 +
-                s.r/2;
-
-            ctx.fillStyle =
-                "#fff";
-
-
-            ctx.beginPath();
-
-            ctx.arc(
-                s.x,
-                s.y,
-                s.r,
-                0,
-                Math.PI*2
-            );
-
-            ctx.fill();
-        }
-    );
-
-
-    ctx.globalAlpha=1;
-
-
-    /* =========================
-       PARTICLES
-    ========================= */
-
-    particles.forEach(
-        p=>{
-
-            ctx.globalAlpha =
-                Math.max(
-                    0,
-                    p.life/45
-                );
-
-            ctx.fillStyle =
-                p.color;
-
-            ctx.shadowBlur=10;
-
-            ctx.shadowColor =
-                p.color;
-
-
-            ctx.beginPath();
-
-            ctx.arc(
-                p.x,
-                p.y,
-                p.size,
-                0,
-                Math.PI*2
-            );
-
-            ctx.fill();
-        }
-    );
-
-
-    ctx.globalAlpha=1;
-
-    ctx.shadowBlur=0;
-
-
-    /* =========================
-       GEMS
-    ========================= */
-
-    gems.forEach(
-        g=>{
-
-            ctx.save();
-
-            ctx.translate(
-                g.x,
-                g.y
-            );
-
-            ctx.rotate(
-                frame*.03
-            );
-
-
-            ctx.shadowBlur=25;
-
-            ctx.shadowColor =
-                "#00d26a";
-
-            ctx.fillStyle =
-                "#00d26a";
-
-
-            ctx.beginPath();
-
-            ctx.moveTo(
-                0,
-                -g.r
-            );
-
-            ctx.lineTo(
-                g.r,
-                0
-            );
-
-            ctx.lineTo(
-                0,
-                g.r
-            );
-
-            ctx.lineTo(
-                -g.r,
-                0
-            );
-
-            ctx.closePath();
-
-            ctx.fill();
-
-            ctx.restore();
-        }
-    );
-
-
-    /* =========================
-       METEORS
-    ========================= */
-
-    meteors.forEach(
-        m=>{
-
-            ctx.save();
-
-            ctx.translate(
-                m.x,
-                m.y
-            );
-
-
-            /* fire tail */
-
-            const tail =
-                ctx.createLinearGradient(
-                    0,
-                    -m.r*3,
-                    0,
-                    m.r
-                );
-
-
-            tail.addColorStop(
-                0,
-                "rgba(255,59,48,0)"
-            );
-
-            tail.addColorStop(
-                .5,
-                "rgba(255,100,0,.4)"
-            );
-
-            tail.addColorStop(
-                1,
-                "rgba(255,170,0,.8)"
-            );
-
-
-            ctx.fillStyle =
-                tail;
-
-
-            ctx.beginPath();
-
-            ctx.moveTo(
-                -m.r*.45,
-                -m.r*.5
-            );
-
-            ctx.lineTo(
-                m.r*.45,
-                -m.r*.5
-            );
-
-            ctx.lineTo(
-                m.r*.8,
-                m.r*3
-            );
-
-            ctx.lineTo(
-                -m.r*.8,
-                m.r*3
-            );
-
-            ctx.fill();
-
-
-            ctx.rotate(
-                m.rot
-            );
-
-
-            ctx.shadowBlur=18;
-
-            ctx.shadowColor =
-                "#ff3b30";
-
-
-            const g =
-                ctx.createRadialGradient(
-                    -m.r*.3,
-                    -m.r*.3,
-                    2,
-                    0,
-                    0,
-                    m.r
-                );
-
-
-            g.addColorStop(
-                0,
-                "#ffe08a"
-            );
-
-            g.addColorStop(
-                .45,
-                "#ffaa00"
-            );
-
-            g.addColorStop(
-                1,
-                "#ff3b30"
-            );
-
-
-            ctx.fillStyle =
-                g;
-
-
-            ctx.beginPath();
-
-            ctx.arc(
-                0,
-                0,
-                m.r,
-                0,
-                Math.PI*2
-            );
-
-            ctx.fill();
-
-
-            ctx.restore();
-        }
-    );
-
-
-    /* =========================
-       SEAHORSE / PLAYER
-    ========================= */
-
-    ctx.save();
-
-    ctx.translate(
-        ship.x,
-        ship.y
-    );
-
-
-    /* flame */
-
-    const flame =
-        ctx.createLinearGradient(
-            0,
-            15,
-            0,
-            42
-        );
-
-
-    flame.addColorStop(
-        0,
-        "#fff"
-    );
-
-    flame.addColorStop(
-        .35,
-        "#00d26a"
-    );
-
-    flame.addColorStop(
-        1,
-        "rgba(0,210,106,0)"
-    );
-
-
-    ctx.fillStyle =
-        flame;
-
-    ctx.shadowBlur=20;
-
-    ctx.shadowColor =
-        "#00d26a";
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        -8,
-        12
-    );
-
-    ctx.lineTo(
-        8,
-        12
-    );
-
-    ctx.lineTo(
-        0,
-        42 +
-        Math.sin(
-            frame*.3
-        )*8
-    );
-
-    ctx.closePath();
-
-    ctx.fill();
-
-
-    /* player */
-
-    ctx.shadowBlur=25;
-
-    ctx.shadowColor =
-        "#00d26a";
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        0,
-        -ship.h/2
-    );
-
-    ctx.lineTo(
-        -ship.w/2,
-        ship.h/2
-    );
-
-    ctx.lineTo(
-        0,
-        ship.h/3
-    );
-
-    ctx.lineTo(
-        ship.w/2,
-        ship.h/2
-    );
-
-    ctx.closePath();
-
-
-    ctx.fillStyle =
-        "#fff";
-
-    ctx.fill();
-
-
-    ctx.lineWidth=2;
-
-    ctx.strokeStyle =
-        "#00d26a";
-
-    ctx.stroke();
-
-
-    ctx.restore();
+    drawBackground();
+
+    for(const p of pipes){
+        drawPipe(p);
+    }
+
+    if(seahorse){
+        drawSeahorse();
+    }
 }
 
 
@@ -1905,69 +1782,105 @@ function draw(){
 function loop(){
 
     if(!running){
-
         return;
     }
-
 
     update();
 
     draw();
 
-
-    requestAnimationFrame(
-        loop
-    );
+    animationId =
+        requestAnimationFrame(loop);
 }
 
 
 /* =========================================================
-   GAME OVER
+   END GAME
 ========================================================= */
 
-async function gameOver(){
+function endGame(){
 
     if(!running){
-
         return;
     }
 
+    running = false;
 
-    running=false;
-
-
-    q("final").textContent =
-        `النقاط المحققة: ${score} نقطة`;
-
-
-    q("reward").textContent =
-        `💎 مكافأة الجولة: ${roundDiamonds} ألماسة`;
-
-
-    q("over").style.display =
-        "flex";
-
-
-    rounds++;
-
-
-    localStorage.setItem(
-        "space_rounds",
-        rounds
+    cancelAnimationFrame(
+        animationId
     );
 
+    document.getElementById("app")
+        .classList.add("shake");
 
-    const retry =
-        q("retry");
+    setTimeout(()=>{
+
+        document.getElementById("app")
+            .classList.remove("shake");
+
+    },220);
+
+    resetGame();
+}
 
 
-    retry.disabled=false;
+/* =========================================================
+   RETRY
+========================================================= */
+
+async function retryGame(){
+
+    if(running){
+        return;
+    }
+
+    retryBtn.disabled = true;
+
+    retryLoading.style.display =
+        "block";
 
 
-    retry.textContent =
-        rounds % 3 === 0
-        ? "📺 شاهد الإعلان ثم العب"
-        : "🔄 محاولة أخرى — 1 💎";
+    try{
+
+        if(!userRow){
+
+            await loadUser();
+        }
+
+
+        if(diamonds < 1){
+
+            throw new Error(
+                "لا يوجد لديك ألماسات كافية 💎"
+            );
+        }
+
+
+        await showAd();
+
+
+        await changeDiamonds(-1);
+
+
+        retryLoading.style.display =
+            "none";
+
+        startGame();
+
+    }catch(error){
+
+        console.error(error);
+
+        retryLoading.style.display =
+            "none";
+
+        retryBtn.disabled = false;
+
+        showMessage(
+            error.message ||
+            "تعذر بدء الجولة"
+        );
+    }
 }
 
 
@@ -1978,80 +1891,110 @@ async function gameOver(){
 function exitGame(){
 
     const id =
-        String(
-            uid ||
-            localStorage.getItem(
-                "telegram_id"
-            ) ||
-            ""
-        );
-
+        telegramId ||
+        getTelegramId();
 
     location.href =
-        `../games.html?id=${encodeURIComponent(id)}`;
+        "../games.html?id=" +
+        encodeURIComponent(
+            id || ""
+        );
 }
 
 
 /* =========================================================
-   BUTTON EVENTS
+   MESSAGE
 ========================================================= */
 
-q("startBtn").addEventListener(
+let messageTimer = null;
+
+function showMessage(text){
+
+    messageBox.textContent =
+        text;
+
+    messageBox.classList.add(
+        "show"
+    );
+
+    clearTimeout(
+        messageTimer
+    );
+
+    messageTimer =
+        setTimeout(()=>{
+
+            messageBox.classList.remove(
+                "show"
+            );
+
+        },2200);
+}
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+startBtn.addEventListener(
     "click",
-    startRequest
+    startGameRequest
 );
 
-
-q("retry").addEventListener(
+retryBtn.addEventListener(
     "click",
-    startRequest
+    retryGame
 );
 
-
-q("exitBtn").addEventListener(
-    "click",
-    exitGame
-);
-
-
-q("backOver").addEventListener(
+exitBtn.addEventListener(
     "click",
     exitGame
 );
 
 
 /* =========================================================
-   INIT
+   INITIALIZE
+   نفس فكرة الألعاب التانية:
+   تجهيز الحساب أولاً بدون إيقاف الصفحة
 ========================================================= */
 
-(async()=>{
+(async function(){
 
-    initStars();
+    try{
 
-    q("startBtn").disabled=true;
+        await loadUser();
 
-    const ok =
-        await initUser();
+        loading.style.display =
+            "none";
 
+        if(diamonds < 1){
 
-    if(ok){
+            startBtn.disabled = true;
 
-        q("startBtn").disabled=false;
+            showMessage(
+                "رصيدك أقل من 1 💎"
+            );
 
-        q("loading").textContent =
-            "✅ الحساب جاهز — يمكنك بدء الجولة";
+        }else{
 
-    }else{
+            startBtn.disabled = false;
+        }
 
-        q("startBtn").disabled=false;
+    }catch(error){
 
-        q("loading").textContent =
-            "❌ تعذر تحميل الحساب — حاول مرة أخرى";
+        console.error(
+            "Account initialization:",
+            error
+        );
+
+        startBtn.disabled = false;
+
+        loading.style.display =
+            "none";
     }
 
 })();
-
 </script>
 
 </body>
- </html>
+        </html>
