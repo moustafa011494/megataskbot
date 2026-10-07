@@ -3,446 +3,2021 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" content="#020817">
+
 <title>Frost Breakout - MegaTask</title>
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#01040b;font-family:Arial;color:#fff}
-body{display:flex;justify-content:center;align-items:center}
-#app{width:100%;height:100%;max-width:520px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 45%,#06275a,#03132d 35%,#010713 70%,#000208)}
-#game{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
-#hud{position:absolute;top:9px;left:9px;right:9px;z-index:10;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;direction:ltr}
-.hudGroup{display:flex;gap:6px}.hudBox{min-width:67px;padding:6px 8px;border-radius:9px;border:1px solid #00beff80;background:#000818c7;box-shadow:0 0 12px #0096ff40,inset 0 0 10px #008cff14;text-align:center;backdrop-filter:blur(4px)}
-.hudValue{color:#42eaff;font-size:18px;font-weight:900;line-height:20px;text-shadow:0 0 8px #00dcffaa}.hudLabel{margin-top:2px;color:#79c9ef;font-size:9px;font-weight:bold}
-#overlay{position:absolute;inset:0;z-index:30;display:flex;justify-content:center;align-items:center;padding:18px;background:#00030cb8;backdrop-filter:blur(6px)}
-.panel{width:min(370px,94%);padding:24px 19px;border-radius:20px;border:1px solid #00b4ffb3;background:radial-gradient(circle at 50% 0%,#00b4ff2e,transparent 55%),#020819f5;box-shadow:0 0 25px #008cff73,0 0 80px #0050ff26,inset 0 0 30px #0078ff14;text-align:center}
-.logo{font-size:44px;margin-bottom:2px;filter:drop-shadow(0 0 13px #00cfff)}.panel h1{margin:0;color:#eaffff;font-size:27px;text-shadow:0 0 10px #00d2ff66}.subtitle{margin:7px 0 18px;color:#7ed5ff;font-size:13px}
-.infoGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}.infoBox{padding:9px 7px;border-radius:10px;border:1px solid #0096ff40;background:#0050961a;color:#8bd7f7;font-size:11px}.infoBox b{display:block;margin-top:4px;color:#fff;font-size:17px}
-.gameBtn{width:100%;padding:14px 10px;border:0;border-radius:13px;background:linear-gradient(135deg,#00eaff,#087cff);color:#00101b;font-size:16px;font-weight:900;box-shadow:0 0 18px #00beff66,inset 0 1px 0 #ffffff8c;cursor:pointer}.gameBtn:active{transform:scale(.97)}.gameBtn:disabled{opacity:.55}.secondaryBtn{margin-top:9px;color:#bdeaff;background:#0046822e;border:1px solid #00aaff4d;box-shadow:none}
-#toast{position:absolute;left:50%;bottom:25px;z-index:50;transform:translateX(-50%) translateY(20px);opacity:0;padding:9px 16px;border-radius:20px;border:1px solid #00c8ff80;background:#000a19f0;color:#e6fbff;font-size:13px;font-weight:bold;white-space:nowrap;pointer-events:none;transition:.25s}#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}.hidden{display:none!important}
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#020814;
+    font-family:Arial,sans-serif;
+    color:#fff;
+}
+
+body{
+    position:relative;
+}
+
+canvas{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    display:block;
+}
+
+#hud{
+    position:fixed;
+    top:12px;
+    left:10px;
+    right:10px;
+    z-index:20;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:7px;
+    direction:ltr;
+}
+
+.stat{
+    min-width:0;
+    padding:8px 5px;
+    border:1px solid rgba(90,210,255,.22);
+    border-radius:12px;
+    background:rgba(3,18,36,.78);
+    backdrop-filter:blur(10px);
+    box-shadow:0 0 15px rgba(0,170,255,.08);
+    text-align:center;
+}
+
+.stat small{
+    display:block;
+    color:#8ba9bd;
+    font-size:9px;
+    font-weight:bold;
+    letter-spacing:.5px;
+}
+
+.stat b{
+    display:block;
+    margin-top:2px;
+    color:#eafaff;
+    font-size:15px;
+}
+
+#score{
+    color:#62d9ff;
+}
+
+#level{
+    color:#b7f1ff;
+}
+
+#time{
+    color:#fff;
+}
+
+#balance{
+    color:#ffd95c;
+}
+
+#message{
+    position:fixed;
+    top:86px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:21;
+    padding:7px 14px;
+    border-radius:20px;
+    background:rgba(0,20,40,.75);
+    border:1px solid rgba(80,210,255,.2);
+    color:#bfeeff;
+    font-size:12px;
+    opacity:0;
+    pointer-events:none;
+    transition:.25s;
+    white-space:nowrap;
+}
+
+#message.show{
+    opacity:1;
+}
+
+#overlay{
+    position:fixed;
+    inset:0;
+    z-index:30;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:
+        radial-gradient(circle at 50% 35%,rgba(0,150,255,.13),transparent 40%),
+        rgba(1,7,16,.72);
+    backdrop-filter:blur(7px);
+}
+
+.panel{
+    width:min(390px,100%);
+    padding:27px 20px 22px;
+    border:1px solid rgba(93,218,255,.22);
+    border-radius:24px;
+    background:linear-gradient(180deg,rgba(8,29,50,.96),rgba(2,12,24,.97));
+    box-shadow:
+        0 0 50px rgba(0,150,255,.12),
+        inset 0 1px 0 rgba(255,255,255,.05);
+    text-align:center;
+}
+
+.logo{
+    font-size:48px;
+    margin-bottom:5px;
+    filter:drop-shadow(0 0 14px rgba(0,200,255,.35));
+}
+
+h1{
+    font-size:25px;
+    margin-bottom:8px;
+}
+
+.subtitle{
+    color:#91aabd;
+    font-size:13px;
+    line-height:1.7;
+    margin-bottom:18px;
+}
+
+.result{
+    display:none;
+    margin:0 auto 17px;
+    padding:12px;
+    border-radius:15px;
+    background:rgba(0,120,190,.10);
+    border:1px solid rgba(70,200,255,.15);
+}
+
+.result .big{
+    color:#64dcff;
+    font-size:27px;
+    font-weight:900;
+}
+
+.result .reward{
+    margin-top:5px;
+    color:#ffd95c;
+    font-size:14px;
+    font-weight:bold;
+}
+
+button{
+    width:100%;
+    border:0;
+    border-radius:15px;
+    padding:14px 16px;
+    margin-top:9px;
+    font-size:15px;
+    font-weight:900;
+    cursor:pointer;
+    color:#00111d;
+    background:linear-gradient(135deg,#65e4ff,#27a9ef);
+    box-shadow:0 7px 25px rgba(0,170,255,.18);
+}
+
+button:active{
+    transform:scale(.98);
+}
+
+button.secondary{
+    color:#d4e7ef;
+    background:rgba(255,255,255,.055);
+    border:1px solid rgba(255,255,255,.09);
+    box-shadow:none;
+}
+
+button:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+}
+
+#loading{
+    color:#82dfff;
+    font-size:12px;
+    margin-top:10px;
+}
+
+#touchHint{
+    position:fixed;
+    bottom:10px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:15;
+    color:rgba(190,230,245,.45);
+    font-size:10px;
+    pointer-events:none;
+}
+
+.flash{
+    position:fixed;
+    inset:0;
+    z-index:25;
+    pointer-events:none;
+    background:#fff;
+    opacity:0;
+}
+
+.shake{
+    animation:shake .16s linear;
+}
+
+@keyframes shake{
+    0%{transform:translate(0,0)}
+    25%{transform:translate(4px,-2px)}
+    50%{transform:translate(-4px,2px)}
+    75%{transform:translate(3px,1px)}
+    100%{transform:translate(0,0)}
+}
+
+@media(max-width:380px){
+    .stat b{font-size:13px}
+    .stat small{font-size:8px}
+}
 </style>
 </head>
+
 <body>
-<div id="app">
+
 <canvas id="game"></canvas>
 
 <div id="hud">
- <div class="hudBox"><div class="hudValue" id="score">000000</div><div class="hudLabel">SCORE</div></div>
- <div class="hudGroup">
-  <div class="hudBox"><div class="hudValue" id="level">1</div><div class="hudLabel">LVL</div></div>
-  <div class="hudBox"><div class="hudValue" id="time">0.0s</div><div class="hudLabel">TIME</div></div>
-  <div class="hudBox"><div class="hudValue" id="diamonds">💎 0</div><div class="hudLabel">BALANCE</div></div>
- </div>
+    <div class="stat">
+        <small>SCORE</small>
+        <b id="score">0</b>
+    </div>
+
+    <div class="stat">
+        <small>LVL</small>
+        <b id="level">1</b>
+    </div>
+
+    <div class="stat">
+        <small>TIME</small>
+        <b id="time">0s</b>
+    </div>
+
+    <div class="stat">
+        <small>BALANCE</small>
+        <b id="balance">0 💎</b>
+    </div>
 </div>
 
-<div id="overlay"><div class="panel" id="panel">
- <div class="logo">❄️</div><h1>Frost Breakout</h1>
- <div class="subtitle">اكسر الجليد واجمع أكبر Score ممكن</div>
- <div class="infoGrid">
-  <div class="infoBox">بداية الجولة<b>1 💎</b></div>
-  <div class="infoBox">المكافأة<b>100 Score = 1 💎</b></div>
-  <div class="infoBox">الصعوبة<b>تزيد تدريجيًا</b></div>
-  <div class="infoBox">الإعلان<b>كل 3 جولات</b></div>
- </div>
- <button class="gameBtn" id="startBtn">🎮 ابدأ الجولة — 1 💎</button>
- <button class="gameBtn secondaryBtn" id="backBtn">← العودة للألعاب</button>
-</div></div>
-<div id="toast"></div>
+<div id="message"></div>
+<div id="touchHint">حرّك المضرب بإصبعك</div>
+<div class="flash" id="flash"></div>
+
+<div id="overlay">
+    <div class="panel">
+
+        <div class="logo">❄️</div>
+
+        <h1>Frost Breakout</h1>
+
+        <div class="subtitle">
+            اكسر الطوب الجليدي وارفع الـScore<br>
+            كل <b>100 Score = 💎 1</b> عند نهاية الجولة
+        </div>
+
+        <div class="result" id="result">
+            <div class="big" id="finalScore">0</div>
+            <div class="reward" id="finalReward">+0 💎</div>
+        </div>
+
+        <button id="startBtn">
+            🎮 ابدأ الجولة — 1 💎
+        </button>
+
+        <button class="secondary" id="backBtn">
+            ↩️ العودة للألعاب
+        </button>
+
+        <div id="loading">جاري تحميل الحساب...</div>
+    </div>
 </div>
 
 <script>
-const URLS="https://smukfrwnguvmxvfwqwrv.supabase.co",
-KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-const tg=window.Telegram?.WebApp||null,db=supabase.createClient(URLS,KEY);
-tg?.ready();tg?.expand();
+/* =========================================================
+   CONFIG
+========================================================= */
 
-const $=id=>document.getElementById(id),canvas=$("game"),ctx=canvas.getContext("2d"),
-overlay=$("overlay"),panel=$("panel"),startBtn=$("startBtn"),backBtn=$("backBtn"),
-scoreEl=$("score"),levelEl=$("level"),timeEl=$("time"),diamondsEl=$("diamonds"),toastEl=$("toast");
+const SUPABASE_URL =
+"https://smukfrwnguvmxvfwqwrv.supabase.co";
 
-let uid=null,user=null,diamondField=null,W=360,H=640,dpr=1,running=false,saving=false,
-score=0,level=1,gameTime=0,startTime=0,lastTime=0,animationId=null,
-completedRounds=+localStorage.getItem("frost_breakout_rounds")||0,particles=[],stars=[],screenShake=0,flash=0;
+const SUPABASE_KEY =
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
 
-const paddle={x:180,y:590,w:82,h:9,targetX:180},
-ball={x:180,y:520,r:7,vx:3.8,vy:-5.4,speed:5.4},
-brickSettings={cols:5,w:52,h:19,gap:5,top:88};
-let bricks=[];
+const db = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
 
-for(let i=0;i<100;i++)stars.push({x:Math.random(),y:Math.random(),size:Math.random()*1.7+.2,alpha:Math.random()*.8+.15});
+const tg = window.Telegram?.WebApp || null;
 
-function resizeCanvas(){
- const r=canvas.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);
- canvas.width=r.width*dpr;canvas.height=r.height*dpr;W=r.width;H=r.height;
- ctx.setTransform(dpr,0,0,dpr,0,0);paddle.y=H-56;
- if(!running){paddle.x=paddle.targetX=W/2;ball.x=W/2;ball.y=H-95}
-}
-addEventListener("resize",resizeCanvas);resizeCanvas();
-
-let toastTimer;
-function showToast(m){toastEl.textContent=m;toastEl.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>toastEl.classList.remove("show"),1800)}
-
-async function initUser(){
- try{
-  let id=new URLSearchParams(location.search).get("id")||
-   tg?.initDataUnsafe?.user?.id||
-   localStorage.getItem("telegram_id");
-
-  if(!id)return false;
-  id=String(id);
-
-  let r=await db.from("users").select("*").eq("telegram_id",id).maybeSingle();
-  user=r.data;
-
-  if(!user&&!r.error){
-   const n=Number(id);
-   if(Number.isFinite(n)){
-    r=await db.from("users").select("*").eq("telegram_id",n).maybeSingle();
-    user=r.data;
-   }
-  }
-
-  if(r.error){console.error("USER QUERY:",r.error);return false}
-  if(!user)return false;
-
-  uid=String(user.telegram_id);
-  localStorage.setItem("telegram_id",uid);
-
-  diamondField=
-   user.gamepoints!=null?"gamepoints":
-   user.diamonds!=null?"diamonds":null;
-
-  if(!diamondField)return false;
-  updateDiamondUI();
-  console.log("MegaTask:",uid,diamondField,user[diamondField]);
-  return true;
- }catch(e){console.error("INIT USER:",e);return false}
+if(tg){
+    try{
+        tg.expand();
+        tg.ready();
+    }catch(e){}
 }
 
-function updateDiamondUI(){
- diamondsEl.textContent="💎 "+Number(user?.[diamondField]||0);
+
+/* =========================================================
+   ACCOUNT — نفس طريقة Lucky Chests
+========================================================= */
+
+const params = new URLSearchParams(window.location.search);
+
+let tid = String(
+    params.get("id") ||
+    tg?.initDataUnsafe?.user?.id ||
+    localStorage.getItem("telegram_id") ||
+    ""
+).trim();
+
+let uid = null;
+let user = null;
+let diamondField = null;
+
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const scoreEl = document.getElementById("score");
+const levelEl = document.getElementById("level");
+const timeEl = document.getElementById("time");
+const balanceEl = document.getElementById("balance");
+
+const overlay = document.getElementById("overlay");
+const startBtn = document.getElementById("startBtn");
+const backBtn = document.getElementById("backBtn");
+const loading = document.getElementById("loading");
+
+const resultBox = document.getElementById("result");
+const finalScore = document.getElementById("finalScore");
+const finalReward = document.getElementById("finalReward");
+
+const message = document.getElementById("message");
+const flash = document.getElementById("flash");
+
+
+/* =========================================================
+   CANVAS
+========================================================= */
+
+let W = innerWidth;
+let H = innerHeight;
+let DPR = Math.min(devicePixelRatio || 1,2);
+
+function resize(){
+
+    W = innerWidth;
+    H = innerHeight;
+
+    DPR = Math.min(devicePixelRatio || 1,2);
+
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+
+    if(!gameRunning){
+        paddle.y = H - 72;
+    }
 }
 
-async function changeDiamonds(amount,title){
- try{
-  if(!user||!diamondField)return false;
-  const old=Number(user[diamondField]||0),next=Math.max(0,old+amount);
+addEventListener("resize",resize);
 
-  let q=db.from("users").update({[diamondField]:next}).eq("telegram_id",user.telegram_id).select("*").maybeSingle();
-  let r=await q;
 
-  if(r.error){
-   const n=Number(user.telegram_id);
-   if(Number.isFinite(n))r=await db.from("users").update({[diamondField]:next}).eq("telegram_id",n).select("*").maybeSingle();
-  }
+/* =========================================================
+   GAME VARIABLES
+========================================================= */
 
-  if(r.error){console.error("BALANCE:",r.error);return false}
-  user=r.data||{...user,[diamondField]:next};
-  updateDiamondUI();
+let gameRunning = false;
+let animationId = null;
 
-  await db.from("transactions").insert({
-   telegram_id:String(user.telegram_id),type:"points",title,
-   amount:(amount>0?"+":"")+amount+" 💎",status:"مكتمل"
-  });
-  return true;
- }catch(e){console.error("CHANGE:",e);return false}
-}
+let score = 0;
+let level = 1;
 
-let adBusy=false;
-async function showAd(){
- if(adBusy)return;adBusy=true;
- try{
-  if(typeof show_10959333==="function")
-   await Promise.race([show_10959333(),new Promise(r=>setTimeout(r,8000))]);
- }catch(e){console.warn("AD:",e)}finally{adBusy=false}
-}
+let startTime = 0;
+let elapsed = 0;
 
-function getBallSpeed(){return Math.min(12,5.4+Math.floor(score/100)*.28)}
+let lastFrame = 0;
 
-function updateDifficulty(){
- const nl=1+Math.floor(score/300);
- if(nl!==level){
-  level=nl;levelEl.textContent=level;buildBricks();resetBall();flash=1;
-  showToast("❄️ LEVEL "+level+" — السرعة زادت!");
- }
- const s=getBallSpeed(),cs=Math.hypot(ball.vx,ball.vy);
- if(cs){const f=s/cs;ball.vx*=f;ball.vy*=f}
- paddle.w=Math.max(55,82-Math.floor(score/250)*3);
-}
-
-function buildBricks(){
- bricks=[];const cols=5,rows=Math.min(4+Math.floor((level-1)/2),8),
- total=cols*brickSettings.w+(cols-1)*brickSettings.gap,startX=(W-total)/2;
-
- for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
-  let exists=true;
-  if(level>=3&&(row+col+level)%5===0&&row>0)exists=false;
-  if(level>=5&&(col===0||col===cols-1))exists=row%2===0;
-  if(!exists)continue;
-  const strong=level>=5&&(row+col)%4===0;
-  bricks.push({
-   x:startX+col*(brickSettings.w+brickSettings.gap),
-   y:brickSettings.top+row*(brickSettings.h+brickSettings.gap),
-   w:brickSettings.w,h:brickSettings.h,hp:strong?2:1,maxHp:strong?2:1,alive:true
-  });
- }
-}
-
-function resetBall(){
- ball.x=W/2;ball.y=H-95;
- const a=-Math.PI/2+(Math.random()-.5)*.8,s=getBallSpeed();
- ball.speed=s;ball.vx=Math.cos(a)*s;ball.vy=Math.sin(a)*s;
-}
-
-function addScore(n){
- score+=n;scoreEl.textContent=String(score).padStart(6,"0");updateDifficulty();
-}
-
-function createBurst(x,y,count=12){
- for(let i=0;i<count;i++){
-  const a=Math.random()*Math.PI*2,s=Math.random()*3+1;
-  particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,size:Math.random()*3+1});
- }
-}
-
-function updateParticles(dt){
- for(let i=particles.length-1;i>=0;i--){
-  const p=particles[i];p.x+=p.vx;p.y+=p.vy;p.vy+=.04;p.life-=dt*2;
-  if(p.life<=0)particles.splice(i,1);
- }
-}
-
-function movePaddle(x){
- const r=canvas.getBoundingClientRect();
- paddle.targetX=Math.max(paddle.w/2,Math.min(W-paddle.w/2,x-r.left));
-}
-
-canvas.onpointermove=e=>running&&movePaddle(e.clientX);
-canvas.onpointerdown=e=>running&&movePaddle(e.clientX);
-canvas.ontouchmove=e=>{if(running&&e.touches[0])movePaddle(e.touches[0].clientX);e.preventDefault()};
-
-onkeydown=e=>{
- if(!running)return;
- if(e.key==="ArrowLeft")paddle.targetX-=45;
- if(e.key==="ArrowRight")paddle.targetX+=45;
- paddle.targetX=Math.max(paddle.w/2,Math.min(W-paddle.w/2,paddle.targetX));
+let ball = {
+    x:0,
+    y:0,
+    r:8,
+    vx:4,
+    vy:-4
 };
 
-function circleRect(c,r){
- const x=Math.max(r.x,Math.min(c.x,r.x+r.w)),y=Math.max(r.y,Math.min(c.y,r.y+r.h));
- const dx=c.x-x,dy=c.y-y;return dx*dx+dy*dy<=c.r*c.r;
+let paddle = {
+    x:0,
+    y:0,
+    w:110,
+    h:12,
+    targetX:0
+};
+
+let bricks = [];
+let particles = [];
+let stars = [];
+
+let roundReward = 0;
+let completedRounds = 0;
+
+
+/* =========================================================
+   BACKGROUND STARS
+========================================================= */
+
+function createStars(){
+
+    stars = [];
+
+    const count = Math.max(35,Math.floor(W/10));
+
+    for(let i=0;i<count;i++){
+
+        stars.push({
+            x:Math.random()*W,
+            y:Math.random()*H,
+            r:Math.random()*1.5+.3,
+            a:Math.random()*.6+.15,
+            s:Math.random()*.35+.05
+        });
+    }
 }
 
-function updateBall(dt){
- const ox=ball.x,oy=ball.y;
- ball.x+=ball.vx*dt*60;ball.y+=ball.vy*dt*60;
+createStars();
 
- if(ball.x-ball.r<=0){ball.x=ball.r;ball.vx=Math.abs(ball.vx);createBurst(ball.x,ball.y,5)}
- if(ball.x+ball.r>=W){ball.x=W-ball.r;ball.vx=-Math.abs(ball.vx);createBurst(ball.x,ball.y,5)}
- if(ball.y-ball.r<=64){ball.y=64+ball.r;ball.vy=Math.abs(ball.vy);createBurst(ball.x,ball.y,5)}
 
- const pr={x:paddle.x-paddle.w/2,y:paddle.y,w:paddle.w,h:paddle.h};
- if(ball.vy>0&&circleRect(ball,pr)){
-  ball.y=paddle.y-ball.r;
-  const hit=(ball.x-paddle.x)/(paddle.w/2),a=hit*Math.PI*.43-Math.PI/2,s=getBallSpeed();
-  ball.vx=Math.cos(a)*s;ball.vy=Math.sin(a)*s;createBurst(ball.x,paddle.y,10);
- }
+/* =========================================================
+   USER LOOKUP
+   مطابق Lucky Chests
+========================================================= */
 
- for(const b of bricks){
-  if(!b.alive||!circleRect(ball,b))continue;
+async function initUser(){
 
-  if(oy+ball.r<=b.y){ball.y=b.y-ball.r;ball.vy=-Math.abs(ball.vy)}
-  else if(oy-ball.r>=b.y+b.h){ball.y=b.y+b.h+ball.r;ball.vy=Math.abs(ball.vy)}
-  else if(ox+ball.r<=b.x){ball.x=b.x-ball.r;ball.vx=-Math.abs(ball.vx)}
-  else{ball.x=b.x+b.w+ball.r;ball.vx=Math.abs(ball.vx)}
+    try{
 
-  addScore(10);b.hp--;createBurst(ball.x,ball.y,18);screenShake=Math.min(7,screenShake+2);flash=.35;
-  if(b.hp<=0){b.alive=false;addScore(10)}
-  break;
- }
+        if(
+            !tid ||
+            tid === "undefined" ||
+            tid === "null"
+        ){
 
- if(ball.y-ball.r>H)endGame("سقطت الكرة");
+            const {data:latest,error:latestError} =
+                await db
+                .from("users")
+                .select("*")
+                .order("created_at",{ascending:false})
+                .limit(1)
+                .maybeSingle();
+
+            if(latestError){
+                console.error("LATEST USER ERROR:",latestError);
+            }
+
+            if(latest){
+
+                user = latest;
+                tid = String(latest.telegram_id);
+            }
+        }
+
+
+        if(!user){
+
+            let r =
+                await db
+                .from("users")
+                .select("*")
+                .eq("telegram_id",String(tid))
+                .maybeSingle();
+
+            console.log("STRING USER:",r.data,r.error);
+
+            if(r.data){
+                user = r.data;
+            }
+
+
+            if(!user && !r.error){
+
+                const n = Number(tid);
+
+                if(Number.isFinite(n)){
+
+                    r =
+                        await db
+                        .from("users")
+                        .select("*")
+                        .eq("telegram_id",n)
+                        .maybeSingle();
+
+                    console.log("NUMBER USER:",r.data,r.error);
+
+                    if(r.data){
+                        user = r.data;
+                    }
+                }
+            }
+        }
+
+
+        /* آخر fallback مثل Lucky Chests */
+
+        if(!user){
+
+            const {data:firstUser,error:firstError} =
+                await db
+                .from("users")
+                .select("*")
+                .limit(1)
+                .maybeSingle();
+
+            console.log(
+                "FALLBACK USER:",
+                firstUser,
+                firstError
+            );
+
+            if(firstUser){
+                user = firstUser;
+                tid = String(firstUser.telegram_id);
+            }
+        }
+
+
+        if(!user){
+
+            loading.textContent =
+                "❌ لم يتم العثور على الحساب";
+
+            return false;
+        }
+
+
+        uid = String(user.telegram_id);
+
+        tid = uid;
+
+        localStorage.setItem(
+            "telegram_id",
+            uid
+        );
+
+
+        /* تحديد خانة الرصيد */
+
+        diamondField =
+            user.gamepoints !== undefined
+                ? "gamepoints"
+                : user.diamonds !== undefined
+                    ? "diamonds"
+                    : null;
+
+
+        if(!diamondField){
+
+            loading.textContent =
+                "❌ لم يتم العثور على رصيد الألماس";
+
+            console.error(
+                "No gamepoints/diamonds field",
+                user
+            );
+
+            return false;
+        }
+
+
+        updateDiamondUI();
+
+        loading.textContent =
+            "✅ الحساب جاهز";
+
+        console.log(
+            "MEGATASK USER:",
+            uid,
+            diamondField,
+            user[diamondField]
+        );
+
+        return true;
+
+    }catch(e){
+
+        console.error(
+            "INIT USER ERROR:",
+            e
+        );
+
+        loading.textContent =
+            "❌ حدث خطأ في تحميل الحساب";
+
+        return false;
+    }
 }
 
-function update(dt){
- if(!running)return;
- gameTime=(performance.now()-startTime)/1000;
- timeEl.textContent=gameTime.toFixed(1)+"s";
- paddle.x+=(paddle.targetX-paddle.x)*Math.min(1,dt*18);
- updateBall(dt);updateParticles(dt);
- if(screenShake>0)screenShake-=dt*18;
- if(flash>0)flash-=dt*2;
 
- if(bricks.length&&bricks.every(b=>!b.alive)){
-  level++;levelEl.textContent=level;buildBricks();resetBall();
-  showToast("❄️ Level "+level+" بدأ!");flash=1;
- }
+/* =========================================================
+   BALANCE UI
+========================================================= */
+
+function updateDiamondUI(){
+
+    if(!user || !diamondField){
+        balanceEl.textContent = "0 💎";
+        return;
+    }
+
+    const value =
+        Number(user[diamondField] || 0);
+
+    balanceEl.textContent =
+        `${value} 💎`;
 }
 
-function drawBackground(){
- ctx.fillStyle="#010817";ctx.fillRect(0,0,W,H);
- for(const s of stars){
-  ctx.globalAlpha=s.alpha*(.5+.5*Math.sin(performance.now()/1000+s.x*10));
-  ctx.fillStyle="#78ddff";ctx.beginPath();ctx.arc(s.x*W,s.y*H,s.size,0,Math.PI*2);ctx.fill();
- }
- ctx.globalAlpha=1;
- const g=ctx.createRadialGradient(W/2,H*.48,10,W/2,H*.48,H*.72);
- g.addColorStop(0,"#006eff1a");g.addColorStop(1,"#00000000");
- ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+
+/* =========================================================
+   UPDATE DIAMONDS
+========================================================= */
+
+async function changeDiamonds(amount){
+
+    if(!user || !diamondField){
+        return false;
+    }
+
+    const current =
+        Number(user[diamondField] || 0);
+
+    const next =
+        Math.max(0,current + Number(amount));
+
+    const payload = {
+        [diamondField]: next
+    };
+
+    let r =
+        await db
+        .from("users")
+        .update(payload)
+        .eq(
+            "telegram_id",
+            String(uid)
+        )
+        .select("*")
+        .maybeSingle();
+
+
+    /* لو العمود telegram_id رقمي */
+
+    if(!r.data && !r.error){
+
+        const n = Number(uid);
+
+        if(Number.isFinite(n)){
+
+            r =
+                await db
+                .from("users")
+                .update(payload)
+                .eq(
+                    "telegram_id",
+                    n
+                )
+                .select("*")
+                .maybeSingle();
+        }
+    }
+
+
+    if(r.error){
+
+        console.error(
+            "DIAMOND UPDATE:",
+            r.error
+        );
+
+        return false;
+    }
+
+
+    if(r.data){
+
+        user = r.data;
+
+    }else{
+
+        user[diamondField] = next;
+    }
+
+
+    updateDiamondUI();
+
+    return true;
 }
 
-function drawBorder(){
- ctx.save();ctx.shadowColor="#008cff";ctx.shadowBlur=16;ctx.strokeStyle="#008cff";ctx.lineWidth=2;
- ctx.strokeRect(7,7,W-14,H-14);ctx.shadowBlur=5;ctx.strokeStyle="#00dcffa6";ctx.lineWidth=1;
- ctx.strokeRect(11,11,W-22,H-22);ctx.restore();
+
+/* =========================================================
+   TRANSACTION
+========================================================= */
+
+async function addTransaction(amount,title){
+
+    try{
+
+        if(!uid) return;
+
+        await db
+        .from("transactions")
+        .insert({
+            telegram_id:uid,
+            type:"points",
+            title:title,
+            amount:Number(amount)
+        });
+
+    }catch(e){
+
+        console.warn(
+            "TRANSACTION:",
+            e
+        );
+    }
 }
 
-function drawBricks(){
- for(const b of bricks){
-  if(!b.alive)continue;
-  const h=b.hp/b.maxHp,g=ctx.createLinearGradient(b.x,b.y,b.x,b.y+b.h);
-  g.addColorStop(0,h>=1?"#54f4ff":"#1595ff");g.addColorStop(.5,"#087bff");g.addColorStop(1,"#0739b9");
-  ctx.save();ctx.shadowColor="#008cff";ctx.shadowBlur=12;ctx.fillStyle=g;
-  ctx.beginPath();ctx.roundRect(b.x,b.y,b.w,b.h,3);ctx.fill();ctx.restore();
-  ctx.fillStyle="#ffffff40";ctx.fillRect(b.x+3,b.y+2,b.w-6,2);
-  if(b.hp>1){ctx.fillStyle="#ffffffcc";ctx.font="10px Arial";ctx.textAlign="center";ctx.fillText("❄",b.x+b.w/2,b.y+14)}
- }
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+let toastTimer;
+
+function showToast(text){
+
+    clearTimeout(toastTimer);
+
+    message.textContent = text;
+    message.classList.add("show");
+
+    toastTimer =
+        setTimeout(()=>{
+            message.classList.remove("show");
+        },2200);
 }
 
-function drawPaddle(){
- const x=paddle.x-paddle.w/2,g=ctx.createLinearGradient(x,paddle.y,x,paddle.y+paddle.h);
- g.addColorStop(0,"#e0ffff");g.addColorStop(.35,"#36eaff");g.addColorStop(1,"#0078ff");
- ctx.save();ctx.shadowColor="#00cfff";ctx.shadowBlur=18;ctx.fillStyle=g;
- ctx.beginPath();ctx.roundRect(x,paddle.y,paddle.w,paddle.h,4);ctx.fill();ctx.restore();
+
+/* =========================================================
+   GAME SETUP
+========================================================= */
+
+function resetGame(){
+
+    score = 0;
+    level = 1;
+    elapsed = 0;
+    roundReward = 0;
+
+    particles = [];
+
+    paddle.w = 110;
+    paddle.h = 12;
+    paddle.x = W/2 - paddle.w/2;
+    paddle.y = H - 72;
+    paddle.targetX = W/2;
+
+
+    const speed = 4.1;
+
+    const angle =
+        Math.random() > .5
+            ? 0.55
+            : -0.55;
+
+    ball.x = W/2;
+    ball.y = H - 105;
+
+    ball.r = 8;
+
+    ball.vx =
+        Math.cos(angle) *
+        speed *
+        (Math.random()>.5?1:-1);
+
+    ball.vy =
+        -Math.abs(
+            Math.sin(angle) *
+            speed
+        );
+
+    createBricks();
+
+    updateHUD();
 }
 
-function drawBall(){
- const g=ctx.createRadialGradient(ball.x,ball.y,1,ball.x,ball.y,25);
- g.addColorStop(0,"#64f5fff2");g.addColorStop(.25,"#00b4ffa6");g.addColorStop(1,"#0064ff00");
- ctx.fillStyle=g;ctx.beginPath();ctx.arc(ball.x,ball.y,25,0,Math.PI*2);ctx.fill();
- ctx.save();ctx.shadowColor="#00eaff";ctx.shadowBlur=18;ctx.fillStyle="#e5ffff";
- ctx.beginPath();ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2);ctx.fill();ctx.restore();
+
+/* =========================================================
+   BRICKS
+========================================================= */
+
+function createBricks(){
+
+    bricks = [];
+
+    const cols =
+        W < 400 ? 6 : 7;
+
+    const rows =
+        Math.min(
+            5 + Math.floor(level/2),
+            8
+        );
+
+    const gap = 6;
+
+    const side = 12;
+
+    const bw =
+        (W - side*2 - gap*(cols-1))
+        / cols;
+
+    const bh = 21;
+
+    const top = 125;
+
+    for(let r=0;r<rows;r++){
+
+        for(let c=0;c<cols;c++){
+
+            bricks.push({
+
+                x:
+                    side +
+                    c*(bw+gap),
+
+                y:
+                    top +
+                    r*(bh+gap),
+
+                w:bw,
+                h:bh,
+
+                alive:true,
+
+                hp:
+                    1 +
+                    Math.floor(
+                        level/5
+                    )
+            });
+        }
+    }
 }
+
+
+/* =========================================================
+   LEVEL
+========================================================= */
+
+function calculateLevel(){
+
+    return Math.min(
+        15,
+        1 +
+        Math.floor(score/300)
+    );
+}
+
+
+/* =========================================================
+   SPEED
+========================================================= */
+
+function getBallSpeed(){
+
+    const base = 4.1;
+
+    const bonus =
+        Math.min(
+            3.6,
+            score / 650
+        );
+
+    return base + bonus;
+}
+
+
+/* =========================================================
+   HUD
+========================================================= */
+
+function updateHUD(){
+
+    scoreEl.textContent =
+        Math.floor(score);
+
+    levelEl.textContent =
+        level;
+
+    timeEl.textContent =
+        Math.floor(elapsed) + "s";
+
+    updateDiamondUI();
+}
+
+
+/* =========================================================
+   PARTICLES
+========================================================= */
+
+function burst(x,y,count=8){
+
+    for(let i=0;i<count;i++){
+
+        const a =
+            Math.random() *
+            Math.PI*2;
+
+        const speed =
+            Math.random()*3+1;
+
+        particles.push({
+
+            x:x,
+            y:y,
+
+            vx:
+                Math.cos(a)*speed,
+
+            vy:
+                Math.sin(a)*speed,
+
+            life:1,
+
+            size:
+                Math.random()*3+1
+        });
+    }
+}
+
+
+function updateParticles(dt){
+
+    for(let i=particles.length-1;i>=0;i--){
+
+        const p = particles[i];
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        p.vy += .04;
+
+        p.life -= dt*2.5;
+
+        if(p.life<=0){
+            particles.splice(i,1);
+        }
+    }
+}
+
 
 function drawParticles(){
- for(const p of particles){
-  ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle="#70eaff";ctx.shadowColor="#00cfff";ctx.shadowBlur=8;
-  ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,Math.PI*2);ctx.fill();
- }
- ctx.globalAlpha=1;
+
+    for(const p of particles){
+
+        ctx.globalAlpha =
+            Math.max(0,p.life);
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.size,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle =
+            "#72ddff";
+
+        ctx.fill();
+    }
+
+    ctx.globalAlpha = 1;
 }
 
-function render(){
- ctx.save();
- let sx=0,sy=0;
- if(screenShake>0){sx=(Math.random()-.5)*screenShake;sy=(Math.random()-.5)*screenShake}
- ctx.translate(sx,sy);drawBackground();drawBorder();drawBricks();drawPaddle();drawBall();drawParticles();
- if(flash>0){ctx.globalAlpha=Math.min(.2,flash*.2);ctx.fillStyle="#cfffff";ctx.fillRect(0,0,W,H);ctx.globalAlpha=1}
- ctx.restore();
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+function drawBackground(){
+
+    const g =
+        ctx.createLinearGradient(
+            0,0,
+            0,H
+        );
+
+    g.addColorStop(
+        0,
+        "#020a18"
+    );
+
+    g.addColorStop(
+        .5,
+        "#03172a"
+    );
+
+    g.addColorStop(
+        1,
+        "#01060d"
+    );
+
+    ctx.fillStyle = g;
+
+    ctx.fillRect(
+        0,0,W,H
+    );
+
+
+    for(const s of stars){
+
+        s.y += s.s;
+
+        if(s.y>H){
+            s.y=0;
+            s.x=Math.random()*W;
+        }
+
+        ctx.globalAlpha=s.a;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            s.x,
+            s.y,
+            s.r,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fillStyle="#bcefff";
+        ctx.fill();
+    }
+
+    ctx.globalAlpha=1;
+
+
+    /* glow */
+
+    const glow =
+        ctx.createRadialGradient(
+            W/2,
+            H*.35,
+            10,
+            W/2,
+            H*.35,
+            H*.65
+        );
+
+    glow.addColorStop(
+        0,
+        "rgba(0,170,255,.07)"
+    );
+
+    glow.addColorStop(
+        1,
+        "rgba(0,0,0,0)"
+    );
+
+    ctx.fillStyle=glow;
+
+    ctx.fillRect(
+        0,0,W,H
+    );
 }
 
-function gameLoop(now){
- if(!running)return;
- const dt=Math.min(.033,(now-lastTime)/1000);lastTime=now;update(dt);render();
- animationId=requestAnimationFrame(gameLoop);
+
+/* =========================================================
+   DRAW BRICKS
+========================================================= */
+
+function drawBricks(){
+
+    for(const b of bricks){
+
+        if(!b.alive) continue;
+
+        const g =
+            ctx.createLinearGradient(
+                b.x,
+                b.y,
+                b.x,
+                b.y+b.h
+            );
+
+        g.addColorStop(
+            0,
+            "#8cecff"
+        );
+
+        g.addColorStop(
+            1,
+            "#177db2"
+        );
+
+        ctx.fillStyle=g;
+
+        ctx.beginPath();
+
+        ctx.roundRect(
+            b.x,
+            b.y,
+            b.w,
+            b.h,
+            5
+        );
+
+        ctx.fill();
+
+
+        ctx.strokeStyle =
+            "rgba(210,250,255,.45)";
+
+        ctx.stroke();
+
+
+        ctx.fillStyle =
+            "rgba(255,255,255,.28)";
+
+        ctx.fillRect(
+            b.x+4,
+            b.y+3,
+            Math.max(5,b.w*.35),
+            2
+        );
+    }
 }
 
-function beginRound(){
- score=0;level=1;gameTime=0;scoreEl.textContent="000000";levelEl.textContent="1";timeEl.textContent="0.0s";
- paddle.w=82;paddle.x=paddle.targetX=W/2;particles=[];buildBricks();resetBall();
- overlay.classList.add("hidden");running=true;startTime=lastTime=performance.now();
- if(animationId)cancelAnimationFrame(animationId);animationId=requestAnimationFrame(gameLoop);
+
+/* =========================================================
+   DRAW PADDLE
+========================================================= */
+
+function drawPaddle(){
+
+    const g =
+        ctx.createLinearGradient(
+            paddle.x,
+            paddle.y,
+            paddle.x,
+            paddle.y+paddle.h
+        );
+
+    g.addColorStop(
+        0,
+        "#d9fbff"
+    );
+
+    g.addColorStop(
+        .4,
+        "#65dcff"
+    );
+
+    g.addColorStop(
+        1,
+        "#1684b5"
+    );
+
+    ctx.shadowColor =
+        "rgba(50,210,255,.65)";
+
+    ctx.shadowBlur = 14;
+
+    ctx.fillStyle=g;
+
+    ctx.beginPath();
+
+    ctx.roundRect(
+        paddle.x,
+        paddle.y,
+        paddle.w,
+        paddle.h,
+        8
+    );
+
+    ctx.fill();
+
+    ctx.shadowBlur=0;
 }
+
+
+/* =========================================================
+   DRAW BALL
+========================================================= */
+
+function drawBall(){
+
+    const g =
+        ctx.createRadialGradient(
+            ball.x-2,
+            ball.y-2,
+            1,
+            ball.x,
+            ball.y,
+            ball.r*2.2
+        );
+
+    g.addColorStop(
+        0,
+        "#ffffff"
+    );
+
+    g.addColorStop(
+        .35,
+        "#baf4ff"
+    );
+
+    g.addColorStop(
+        1,
+        "rgba(30,180,255,0)"
+    );
+
+    ctx.fillStyle=g;
+
+    ctx.beginPath();
+
+    ctx.arc(
+        ball.x,
+        ball.y,
+        ball.r*2.2,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+
+    ctx.fillStyle="#f5fdff";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        ball.x,
+        ball.y,
+        ball.r,
+        0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+}
+
+
+/* =========================================================
+   COLLISION
+========================================================= */
+
+function circleRectCollision(c,r){
+
+    const closestX =
+        Math.max(
+            r.x,
+            Math.min(
+                c.x,
+                r.x+r.w
+            )
+        );
+
+    const closestY =
+        Math.max(
+            r.y,
+            Math.min(
+                c.y,
+                r.y+r.h
+            )
+        );
+
+    const dx =
+        c.x-closestX;
+
+    const dy =
+        c.y-closestY;
+
+    return (
+        dx*dx +
+        dy*dy
+    ) <
+    c.r*c.r;
+}
+
+
+/* =========================================================
+   BALL UPDATE
+========================================================= */
+
+function updateBall(dt){
+
+    const speed =
+        getBallSpeed();
+
+    const currentSpeed =
+        Math.sqrt(
+            ball.vx*ball.vx +
+            ball.vy*ball.vy
+        );
+
+    if(
+        currentSpeed <
+        speed
+    ){
+
+        const mul =
+            speed /
+            Math.max(
+                currentSpeed,
+                .001
+            );
+
+        ball.vx*=mul;
+        ball.vy*=mul;
+    }
+
+
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+
+    /* walls */
+
+    if(ball.x-ball.r<=0){
+
+        ball.x=ball.r;
+        ball.vx=Math.abs(ball.vx);
+
+    }else if(
+        ball.x+ball.r>=W
+    ){
+
+        ball.x=W-ball.r;
+        ball.vx=-Math.abs(ball.vx);
+    }
+
+
+    if(ball.y-ball.r<=85){
+
+        ball.y=85+ball.r;
+        ball.vy=Math.abs(ball.vy);
+    }
+
+
+    /* paddle */
+
+    if(
+        ball.vy>0 &&
+        circleRectCollision(
+            ball,
+            paddle
+        )
+    ){
+
+        ball.y =
+            paddle.y -
+            ball.r -
+            1;
+
+        const hit =
+            (
+                ball.x -
+                (
+                    paddle.x +
+                    paddle.w/2
+                )
+            ) /
+            (paddle.w/2);
+
+        const maxAngle =
+            Math.PI*.42;
+
+        const angle =
+            hit*maxAngle;
+
+        const s =
+            getBallSpeed();
+
+        ball.vx =
+            Math.sin(angle)*s;
+
+        ball.vy =
+            -Math.cos(angle)*s;
+
+        burst(
+            ball.x,
+            paddle.y,
+            7
+        );
+    }
+
+
+    /* bricks */
+
+    for(const b of bricks){
+
+        if(!b.alive) continue;
+
+        if(
+            circleRectCollision(
+                ball,
+                b
+            )
+        ){
+
+            b.hp--;
+
+            if(b.hp<=0){
+
+                b.alive=false;
+
+                score += 25;
+
+                burst(
+                    ball.x,
+                    ball.y,
+                    12
+                );
+
+                screenFlash();
+
+            }else{
+
+                score += 10;
+
+                burst(
+                    ball.x,
+                    ball.y,
+                    5
+                );
+            }
+
+
+            /* choose bounce direction */
+
+            const centerX =
+                b.x+b.w/2;
+
+            const centerY =
+                b.y+b.h/2;
+
+            const dx =
+                ball.x-centerX;
+
+            const dy =
+                ball.y-centerY;
+
+            if(
+                Math.abs(dx/b.w) >
+                Math.abs(dy/b.h)
+            ){
+
+                ball.vx *= -1;
+
+            }else{
+
+                ball.vy *= -1;
+            }
+
+            break;
+        }
+    }
+
+
+    /* clear level */
+
+    if(
+        bricks.every(
+            b=>!b.alive
+        )
+    ){
+
+        level++;
+
+        createBricks();
+
+        ball.vy *= 1.05;
+
+        showToast(
+            "❄️ مستوى جديد!"
+        );
+    }
+
+
+    /* game over */
+
+    if(
+        ball.y-ball.r>H
+    ){
+
+        endGame();
+
+        return;
+    }
+
+
+    const newLevel =
+        calculateLevel();
+
+    if(newLevel!==level){
+
+        level=newLevel;
+
+        paddle.w =
+            Math.max(
+                65,
+                110 -
+                (level-1)*4
+            );
+
+        createBricks();
+
+        showToast(
+            `🔥 Level ${level}`
+        );
+    }
+}
+
+
+/* =========================================================
+   GAME LOOP
+========================================================= */
+
+function gameLoop(timestamp){
+
+    if(!gameRunning){
+        return;
+    }
+
+    if(!lastFrame){
+        lastFrame=timestamp;
+    }
+
+    const dt =
+        Math.min(
+            .033,
+            (timestamp-lastFrame)/1000
+        );
+
+    lastFrame=timestamp;
+
+    elapsed =
+        (Date.now()-startTime)/1000;
+
+
+    paddle.x +=
+        (
+            paddle.targetX -
+            (
+                paddle.x+
+                paddle.w/2
+            )
+        ) *
+        Math.min(
+            1,
+            dt*14
+        );
+
+
+    paddle.x =
+        Math.max(
+            0,
+            Math.min(
+                W-paddle.w,
+                paddle.x
+            )
+        );
+
+
+    updateBall(dt);
+
+    updateParticles(dt);
+
+    updateHUD();
+
+
+    ctx.save();
+
+    drawBackground();
+
+    drawBricks();
+
+    drawPaddle();
+
+    drawBall();
+
+    drawParticles();
+
+    ctx.restore();
+
+
+    animationId =
+        requestAnimationFrame(
+            gameLoop
+        );
+}
+
+
+/* =========================================================
+   START GAME
+========================================================= */
 
 async function startGameRequest(){
- if(running||saving)return;
- saving=true;startBtn.disabled=true;startBtn.textContent="⏳ جاري تجهيز الجولة...";
 
- try{
-  if(!user||!diamondField&&!await initUser()){
-   showToast("⚠️ لم يتم العثور على حسابك");return;
-  }
+    if(gameRunning){
+        return;
+    }
 
-  const balance=Number(user[diamondField]||0);
-  if(balance<1){
-   const m="⚠️ ليس لديك ألماسات كافية!\n\nيلزمك 1 💎 لبدء الجولة.";
-   tg?.showAlert?tg.showAlert(m):showToast("⚠️ يلزمك 1 💎 لبدء الجولة");return;
-  }
 
-  if(completedRounds>0&&completedRounds%3===0){
-   startBtn.textContent="📺 جاري تحميل الإعلان...";
-   await showAd();completedRounds=0;localStorage.setItem("frost_breakout_rounds","0");
-  }
+    /* مهم جداً:
+       لا تستخدم
+       if(!user || !diamondField && ...)
+       */
 
-  if(!await changeDiamonds(-1,"بدء جولة Frost Breakout")){
-   showToast("⚠️ تعذر خصم الألماسة");return;
-  }
+    if(!user || !diamondField){
 
-  beginRound();
- }catch(e){
-  console.error("START:",e);
-  tg?.showAlert?tg.showAlert("⚠️ حصل خطأ أثناء بدء الجولة.\nحاول مرة أخرى."):showToast("⚠️ حصل خطأ أثناء بدء الجولة");
- }finally{
-  saving=false;
-  if(!running){startBtn.disabled=false;startBtn.textContent="🎮 ابدأ الجولة — 1 💎"}
- }
+        const ok =
+            await initUser();
+
+        if(!ok){
+
+            showToast(
+                "⚠️ لم يتم العثور على حسابك"
+            );
+
+            return;
+        }
+    }
+
+
+    const balance =
+        Number(
+            user[diamondField] || 0
+        );
+
+
+    if(balance<1){
+
+        showToast(
+            "💎 تحتاج إلى 1 ألماسة لبدء الجولة"
+        );
+
+        return;
+    }
+
+
+    startBtn.disabled=true;
+
+    loading.textContent =
+        "جاري بدء الجولة...";
+
+
+    /* خصم 1 ألماسة */
+
+    const paid =
+        await changeDiamonds(-1);
+
+
+    if(!paid){
+
+        startBtn.disabled=false;
+
+        showToast(
+            "❌ تعذر خصم الألماسة"
+        );
+
+        return;
+    }
+
+
+    completedRounds++;
+
+    /* إعلان كل 3 جولات */
+
+    if(
+        completedRounds % 3 === 0
+    ){
+
+        try{
+
+            if(
+                typeof show_10959333 ===
+                "function"
+            ){
+
+                await show_10959333();
+
+            }
+
+        }catch(e){
+
+            console.warn(
+                "MONETAG:",
+                e
+            );
+        }
+    }
+
+
+    startRound();
 }
 
-async function endGame(reason){
- if(!running)return;
- running=false;if(animationId){cancelAnimationFrame(animationId);animationId=null}
 
- const earned=Math.floor(score/100);
- completedRounds++;localStorage.setItem("frost_breakout_rounds",completedRounds);
- saving=true;
+/* =========================================================
+   START ROUND
+========================================================= */
 
- try{
-  let rewardText="لم تحقق 100 Score بعد.";
-  if(earned){
-   rewardText=await changeDiamonds(earned,"مكافأة Frost Breakout")?"🎉 حصلت على "+earned+" 💎":"⚠️ تعذر حفظ المكافأة";
-  }
-  showGameOver(reason,earned,rewardText);
- }catch(e){showGameOver(reason,earned,"⚠️ تعذر حفظ المكافأة")}
- finally{saving=false}
+function startRound(){
+
+    resultBox.style.display="none";
+
+    overlay.style.display="none";
+
+    touchHint.style.display="block";
+
+    gameRunning=true;
+
+    startTime=Date.now();
+
+    lastFrame=0;
+
+    resetGame();
+
+    animationId =
+        requestAnimationFrame(
+            gameLoop
+        );
 }
 
-function showGameOver(reason,earned,rewardText){
- overlay.classList.remove("hidden");
- const nextAd=completedRounds>0&&completedRounds%3===0;
 
- panel.innerHTML=`
- <div class="logo">❄️</div><h1>انتهت الجولة</h1>
- <div class="subtitle">${reason}</div>
- <div class="infoGrid">
-  <div class="infoBox">SCORE<b>${score}</b></div>
-  <div class="infoBox">LEVEL<b>${level}</b></div>
-  <div class="infoBox">الوقت<b>${gameTime.toFixed(1)}s</b></div>
-  <div class="infoBox">المكافأة<b>+${earned} 💎</b></div>
- </div>
- <div style="color:#8eeaff;font-size:13px;margin-bottom:12px">${rewardText}</div>
- ${nextAd?`<div style="color:#ffd36a;font-size:12px;margin-bottom:12px">📺 سيتم عرض إعلان قبل الجولة التالية</div>`:""}
- <button class="gameBtn" id="retryBtn">🔄 جولة جديدة — 1 💎</button>
- <button class="gameBtn secondaryBtn" id="gameBackBtn">← العودة للألعاب</button>`;
+/* =========================================================
+   END GAME
+========================================================= */
 
- $("retryBtn").onclick=startGameRequest;$("gameBackBtn").onclick=goBack;updateDiamondUI();
+async function endGame(){
+
+    if(!gameRunning){
+        return;
+    }
+
+    gameRunning=false;
+
+    cancelAnimationFrame(
+        animationId
+    );
+
+
+    roundReward =
+        Math.floor(
+            score/100
+        );
+
+
+    finalScore.textContent =
+        Math.floor(score) +
+        " SCORE";
+
+
+    finalReward.textContent =
+        "+" +
+        roundReward +
+        " 💎";
+
+
+    resultBox.style.display =
+        "block";
+
+
+    overlay.style.display =
+        "flex";
+
+
+    touchHint.style.display =
+        "none";
+
+
+    if(roundReward>0){
+
+        const rewarded =
+            await changeDiamonds(
+                roundReward
+            );
+
+        if(rewarded){
+
+            await addTransaction(
+                roundReward,
+                "مكافأة لعبة Frost Breakout"
+            );
+
+            showToast(
+                `🎉 حصلت على ${roundReward} 💎`
+            );
+        }
+
+    }else{
+
+        showToast(
+            "❄️ حاول الوصول إلى 100 Score"
+        );
+    }
+
+
+    startBtn.disabled=false;
+
+    startBtn.textContent =
+        "🎮 العب مرة أخرى — 1 💎";
+
+    loading.textContent =
+        "الجولة انتهت";
 }
+
+
+/* =========================================================
+   FLASH
+========================================================= */
+
+function screenFlash(){
+
+    flash.style.opacity=".12";
+
+    setTimeout(()=>{
+        flash.style.opacity="0";
+    },70);
+}
+
+
+/* =========================================================
+   TOUCH / MOUSE
+========================================================= */
+
+function movePaddle(clientX){
+
+    paddle.targetX =
+        Math.max(
+            0,
+            Math.min(
+                W,
+                clientX
+            )
+        );
+}
+
+
+addEventListener(
+    "touchstart",
+    e=>{
+
+        if(!gameRunning) return;
+
+        if(e.touches[0]){
+            movePaddle(
+                e.touches[0].clientX
+            );
+        }
+
+    },
+    {passive:true}
+);
+
+
+addEventListener(
+    "touchmove",
+    e=>{
+
+        if(!gameRunning) return;
+
+        if(e.touches[0]){
+            movePaddle(
+                e.touches[0].clientX
+            );
+        }
+
+    },
+    {passive:true}
+);
+
+
+addEventListener(
+    "mousemove",
+    e=>{
+
+        if(!gameRunning) return;
+
+        movePaddle(
+            e.clientX
+        );
+
+    }
+);
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+startBtn.addEventListener(
+    "click",
+    startGameRequest
+);
+
 
 function goBack(){
- let id=uid||new URLSearchParams(location.search).get("id")||localStorage.getItem("telegram_id");
- location.href="../games.html"+(id?"?id="+encodeURIComponent(id):"");
+
+    const id =
+        String(
+            uid ||
+            tid ||
+            localStorage.getItem(
+                "telegram_id"
+            ) ||
+            ""
+        );
+
+    window.location.href =
+        "../games.html?id=" +
+        encodeURIComponent(id);
 }
 
-startBtn.onclick=startGameRequest;backBtn.onclick=goBack;
+
+backBtn.addEventListener(
+    "click",
+    goBack
+);
+
+
+/* =========================================================
+   INITIAL LOAD
+========================================================= */
+
+resize();
 
 (async()=>{
- const ok=await initUser();
- startBtn.disabled=false;
- startBtn.textContent="🎮 ابدأ الجولة — 1 💎";
- if(!ok)console.warn("User will be loaded on start");
+
+    loading.textContent =
+        "جاري تحميل الحساب...";
+
+    const ok =
+        await initUser();
+
+    startBtn.disabled=false;
+
+    if(ok){
+
+        startBtn.textContent =
+            "🎮 ابدأ الجولة — 1 💎";
+
+    }else{
+
+        startBtn.textContent =
+            "🔄 حاول مرة أخرى";
+
+        loading.textContent =
+            "تعذر تحميل الحساب — اضغط مرة أخرى";
+    }
+
 })();
 </script>
+
 </body>
-</html>
+ </html>
