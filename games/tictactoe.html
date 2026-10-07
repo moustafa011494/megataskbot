@@ -221,6 +221,7 @@ rounds=0;
 localStorage.setItem(roundKey,"0");
 }
 
+/* ممنوع بدء الجولة تلقائياً عند فتح اللعبة */
 if(rounds>=3){
 document.getElementById("restart-btn").style.display="inline-block";
 document.getElementById("restart-btn").innerText="📺 مشاهدة الإعلان";
@@ -228,7 +229,16 @@ setStatus("📺 لازم تشاهد الإعلان قبل بدء الـ3 جول�
 return;
 }
 
-startRound();
+if(dailyUsed>=30){
+setStatus("🚫 انتهت كل جولاتك اليوم (30/30).");
+document.getElementById("restart-btn").style.display="none";
+return;
+}
+
+/* يظهر زر البداية فقط ولا يبدأ الجولة */
+document.getElementById("restart-btn").style.display="inline-block";
+document.getElementById("restart-btn").innerText="🔄 بدء الجولة";
+setStatus(`جاهز للجولة ${rounds+1} من 3`);
 }
 
 async function startRound(){
