@@ -3,654 +3,871 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Space Dodge - MegaTask Arcade</title>
+<title>Space War Pro - MegaTask Arcade</title>
 
+<!-- سكريبت إعلانات Monetag -->
 <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <style>
-:root{--g:#00d26a;--bg:#030508}
-*{box-sizing:border-box}
-html,body{
- margin:0;width:100%;height:100%;overflow:hidden;
- background:var(--bg);color:#fff;
- font-family:Segoe UI,Tahoma,sans-serif;
- user-select:none;-webkit-user-select:none
+:root {
+    --g: #00d26a;
+    --cyan: #00f2ff;
+    --gold: #ffaa00;
+    --red: #ff3b30;
+    --bg: #030508;
 }
-canvas{display:block;width:100vw;height:100vh;background:#030508}
+* { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+html, body {
+    margin: 0; width: 100%; height: 100%; overflow: hidden;
+    background: var(--bg); color: #fff;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    touch-action: none;
+}
+canvas { display: block; width: 100vw; height: 100vh; background: #030508; }
 
-.game-top-bar{
- position:absolute;top:0;left:0;width:100%;z-index:10;
- display:flex;align-items:center;gap:8px;padding:15px 20px;
- background:linear-gradient(180deg,rgba(3,5,8,.95),transparent);
- pointer-events:none
+/* الشريط العلوي أثناء اللعب */
+.game-top-bar {
+    position: absolute; top: 0; left: 0; width: 100%; z-index: 10;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 15px;
+    background: linear-gradient(180deg, rgba(3,5,8,0.92), transparent);
+    pointer-events: none;
 }
-.info{
- background:rgba(20,23,31,.9);
- border:1px solid rgba(0,210,106,.35);
- padding:8px 14px;border-radius:20px;
- font-size:13px;font-weight:bold;
- box-shadow:0 0 14px rgba(0,210,106,.12)
+.hud-badges { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.info-pill {
+    background: rgba(18, 22, 30, 0.9);
+    border: 1px solid rgba(0, 210, 106, 0.35);
+    padding: 6px 11px; border-radius: 16px;
+    font-size: 12px; font-weight: bold;
+    box-shadow: 0 0 12px rgba(0, 210, 106, 0.12);
+    display: flex; align-items: center; gap: 4px;
 }
-.info span{color:var(--g)}
+.info-pill.diamond-pill { border-color: rgba(0, 242, 255, 0.45); }
+.info-pill.rounds-pill { border-color: rgba(255, 170, 0, 0.45); }
 
-.exit{
- position:absolute;top:15px;right:20px;z-index:20;
- background:rgba(255,59,48,.18);
- border:1px solid #ff3b30;color:#ff7777;
- padding:7px 15px;border-radius:15px;
- font-size:12px;font-weight:bold
+.exit-btn {
+    pointer-events: auto;
+    background: rgba(255, 59, 48, 0.18);
+    border: 1px solid var(--red); color: #ff8882;
+    padding: 6px 13px; border-radius: 14px;
+    font-size: 12px; font-weight: bold; cursor: pointer;
+}
+.exit-btn:active { transform: scale(0.95); }
+
+/* شريط تقدم الـ 10 نيازك لكسب ألماسة */
+.meteor-progress-wrap {
+    position: absolute; top: 54px; left: 15px; right: 15px; z-index: 10;
+    pointer-events: none;
+    display: flex; align-items: center; gap: 8px;
+}
+.meteor-bar-bg {
+    flex: 1; height: 6px; background: rgba(255,255,255,0.1);
+    border-radius: 10px; overflow: hidden; border: 1px solid rgba(0, 242, 255, 0.25);
+}
+.meteor-bar-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--g), var(--cyan));
+    transition: width 0.2s ease;
+}
+.meteor-bar-txt { font-size: 10px; color: var(--cyan); font-weight: bold; white-space: nowrap; }
+
+/* إشعار طائر غير معطل للعب عند كسب ألماسة أو درع */
+#floating-toast {
+    position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+    z-index: 15; pointer-events: none;
+    background: rgba(0, 210, 106, 0.2); border: 1px solid var(--g);
+    color: #fff; padding: 6px 16px; border-radius: 20px;
+    font-size: 12px; font-weight: bold;
+    opacity: 0; transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(0, 210, 106, 0.4);
 }
 
-.overlay{
- position:absolute;inset:0;z-index:30;
- display:flex;flex-direction:column;align-items:center;
- justify-content:center;padding:25px;text-align:center;
- background:rgba(3,5,8,.94)
+/* الواجهات (البداية والنهاية) */
+.overlay {
+    position: absolute; inset: 0; z-index: 30;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 22px; text-align: center;
+    background: radial-gradient(circle at center, rgba(10, 22, 34, 0.95), rgba(3, 5, 8, 0.98));
 }
-.overlay h1{
- color:var(--g);font-size:30px;margin:5px 0;
- text-shadow:0 0 25px rgba(0,210,106,.5)
+.overlay h1 {
+    color: var(--g); font-size: 28px; margin: 6px 0;
+    text-shadow: 0 0 20px rgba(0, 210, 106, 0.45);
 }
-.overlay p{
- color:#9ca3af;font-size:13px;line-height:1.6;
- max-width:320px;margin:8px 0 20px
+.overlay p {
+    color: #9ca3af; font-size: 12.5px; line-height: 1.6;
+    max-width: 320px; margin: 4px 0 15px;
 }
-.btn{
- width:100%;max-width:270px;padding:15px;border:0;
- border-radius:20px;font-size:16px;font-weight:bold;
- cursor:pointer;background:linear-gradient(135deg,#00d26a,#009e4f);
- color:#001b0d;box-shadow:0 5px 30px rgba(0,210,106,.4);
- transition:.2s
-}
-.btn:active{transform:scale(.95)}
-.btn:disabled{opacity:.5}
 
-.lb{
- background:rgba(20,23,31,.8);
- border:1px solid #2d333f;border-radius:15px;
- padding:12px;width:100%;max-width:280px;
- margin-bottom:20px;font-size:12px
+.features-row {
+    display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap;
 }
-.lb-title{color:#ffaa00;font-weight:bold;text-align:center;margin-bottom:6px}
-.lb-row{
- display:flex;justify-content:space-between;
- padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05);
- color:#ccc
+.feat-badge {
+    background: rgba(255,255,255,0.05); border: 1px solid #2d3442;
+    padding: 5px 10px; border-radius: 10px; font-size: 11px; color: #cbd5e1;
 }
-.reward{color:var(--g)!important;font-weight:bold}
+
+.lb-box {
+    background: rgba(20, 24, 33, 0.85);
+    border: 1px solid #2d333f; border-radius: 16px;
+    padding: 12px 14px; width: 100%; max-width: 300px;
+    margin-bottom: 16px; font-size: 12px;
+}
+.lb-title { color: var(--gold); font-weight: bold; text-align: center; margin-bottom: 8px; font-size: 13px; }
+.lb-row {
+    display: flex; justify-content: space-between;
+    padding: 5px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    color: #e5e7eb;
+}
+.lb-row:last-child { border-bottom: none; }
+
+.btn-main {
+    width: 100%; max-width: 280px; padding: 14px; border: 0;
+    border-radius: 16px; font-size: 15px; font-weight: bold;
+    cursor: pointer; background: linear-gradient(135deg, #00d26a, #009e4f);
+    color: #001b0d; box-shadow: 0 5px 25px rgba(0, 210, 106, 0.35);
+    transition: 0.2s; margin-bottom: 8px;
+}
+.btn-main:active { transform: scale(0.96); }
+.btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+    width: 100%; max-width: 280px; padding: 12px; border: 1px solid #333a48;
+    border-radius: 14px; font-size: 13px; font-weight: bold;
+    cursor: pointer; background: #1a1f29; color: #fff;
+}
 </style>
 </head>
 
 <body>
 
+<!-- الشريط العلوي -->
 <div class="game-top-bar">
- <div class="info">النقاط: <span id="score">0</span></div>
- <div class="info">💎 <span id="diamonds">0</span></div>
+    <div class="hud-badges">
+        <div class="info-pill">🎯 <span id="score">0</span></div>
+        <div class="info-pill diamond-pill">💎 <span id="diamonds" style="color: var(--cyan);">0</span></div>
+        <div class="info-pill rounds-pill">🎮 <span id="rounds-hud" style="color: var(--gold);">0/30</span></div>
+    </div>
+    <button class="exit-btn" onclick="exitGame()">✖ خروج</button>
 </div>
 
-<button class="exit" onclick="exitGame()">✖ خروج للألعاب</button>
-
-<div id="start" class="overlay">
- <div style="font-size:55px">🚀</div>
- <h1>SPACE DODGE</h1>
- <p>تفادى النيازك السريعة واجمع الألماس الموحد 💎!</p>
-
- <div class="lb">
-  <div class="lb-title">🏆 لوحة الشرف</div>
-  <div id="lb">جاري تحميل التصنيف...</div>
-  <div class="reward" style="margin-top:8px">☄️ كل 10 نيازك = +1 💎</div>
- </div>
-
- <button id="startBtn" class="btn" onclick="startRequest()">
-  ⚡ بدء المهمة — 1 💎
- </button>
+<!-- شريط تقدم الـ 10 نيازك للحصول على +1 ألماسة -->
+<div class="meteor-progress-wrap">
+    <span class="meteor-bar-txt" id="meteor-counter-txt">☄️ 0 / 10 للماسة</span>
+    <div class="meteor-bar-bg">
+        <div class="meteor-bar-fill" id="meteor-bar-fill"></div>
+    </div>
 </div>
 
-<div id="over" class="overlay" style="display:none">
- <div style="font-size:55px">💥</div>
- <h1 style="color:#ff3b30">اصطدام مدمر!</h1>
- <p id="final" style="color:#fff;font-size:16px;font-weight:bold"></p>
- <p id="reward" class="reward"></p>
+<!-- إشعار طائر أثناء اللعب -->
+<div id="floating-toast">☄️ +1 💎 ألماسة جديدة!</div>
 
- <button id="retry" class="btn" onclick="startRequest()">
-  🔄 محاولة أخرى — 1 💎
- </button>
+<!-- شاشة البداية -->
+<div id="start-screen" class="overlay">
+    <div style="font-size: 52px;">🚀</div>
+    <h1>حرب الفضاء</h1>
+    <p>حرّك سفينتك لتفادي وتدمير النيازك بالليزر التلقائي واجمع الألماس 💎 لرصيدك!</p>
 
- <button class="btn" style="background:#222630;color:#fff;margin-top:10px"
- onclick="exitGame()">🔙 العودة لصفحة الألعاب</button>
+    <div class="features-row">
+        <span class="feat-badge">🔫 ليزر تلقائي</span>
+        <span class="feat-badge">🛡️ دروع حماية</span>
+        <span class="feat-badge">☄️ كل 10 نيازك = +1 💎</span>
+    </div>
+
+    <div class="lb-box">
+        <div class="lb-title">🏆 لوحة شرف أبطال الفضاء</div>
+        <div id="lb-list">⏳ جاري تحميل الأبطال...</div>
+    </div>
+
+    <button id="startBtn" class="btn-main" onclick="startRequest()">
+        🚀 ابدأ الجولة الآن (مجاناً)
+    </button>
+    <button class="btn-secondary" onclick="exitGame()">🔙 العودة لمركز الألعاب</button>
+</div>
+
+<!-- شاشة انتهاء الجولة -->
+<div id="over-screen" class="overlay" style="display:none">
+    <div style="font-size: 52px;">💥</div>
+    <h1 style="color: var(--red);">تحطمت السفينة!</h1>
+    <p id="final-score-txt" style="color:#fff; font-size:16px; font-weight:bold; margin-bottom:4px;"></p>
+    <p id="final-reward-txt" style="color: var(--cyan); font-size:14px; font-weight:bold; margin-bottom:16px;"></p>
+
+    <button id="retryBtn" class="btn-main" onclick="startRequest()">
+        🔄 جولة جديدة
+    </button>
+    <button class="btn-secondary" onclick="exitGame()">🔙 العودة لمركز الألعاب</button>
 </div>
 
 <canvas id="gameCanvas"></canvas>
 
 <script>
-const tg=Telegram.WebApp;
-tg.expand();
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
 
-const URL="https://smukfrwnguvmxvfwqwrv.supabase.co";
-const KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-const db=supabase.createClient(URL,KEY);
+// ⭐ المفتاح الصحيح الكامل لقاعدة بيانات Supabase
+const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const cv=document.getElementById("gameCanvas"),ctx=cv.getContext("2d");
-const q=id=>document.getElementById(id);
+const cv = document.getElementById("gameCanvas");
+const ctx = cv.getContext("2d");
+const q = id => document.getElementById(id);
 
-let uid="",user=null,gp="gamepoints",running=false,saving=false;
-let score=0,meteorsPassed=0,roundDiamonds=0,frame=0,adBusy=false;
-let rounds=Number(localStorage.getItem("space_rounds")||0);
+let uid = "";
+let user = null;
+let running = false;
+let busyStarting = false;
 
-let ship={x:0,y:0,w:40,h:45};
-let meteors=[],gems=[],stars=[],particles=[];
+let score = 0;
+let meteorsCleared = 0;
+let sessionDiamondsEarned = 0;
+let frame = 0;
+let localPlayedSinceAd = 0;
 
-function resize(){
- cv.width=innerWidth;cv.height=innerHeight;
- ship.x=cv.width/2;ship.y=cv.height-120;
+// كائن السفينة والقدرات الخارقة
+let ship = {
+    x: 0,
+    y: 0,
+    w: 42,
+    h: 46,
+    hasShield: false,
+    doubleLaserTimer: 0
+};
+
+let meteors = [];
+let lasers = [];
+let powerups = [];
+let stars = [];
+let particles = [];
+
+function resize() {
+    cv.width = window.innerWidth;
+    cv.height = window.innerHeight;
+    ship.x = cv.width / 2;
+    ship.y = cv.height - 115;
 }
-addEventListener("resize",resize);
+window.addEventListener("resize", resize);
 resize();
 
-/* ================= USER ================= */
-
-async function initUser(){
- try{
-  uid=String(
-   new URLSearchParams(location.search).get("id")||
-   tg.initDataUnsafe?.user?.id||
-   localStorage.getItem("telegram_id")||""
-  ).trim();
-
-  /* نفس نظام تحديد المستخدم الذي اشتغل في الألعاب السابقة */
-  if(uid){
-   let r=await db.from("users").select("*")
-    .eq("telegram_id",uid).maybeSingle();
-   user=r.data;
-  }
-
-  if(!user&&uid&&!isNaN(Number(uid))){
-   let r=await db.from("users").select("*")
-    .eq("telegram_id",Number(uid)).maybeSingle();
-   user=r.data;
-  }
-
-  if(!user){
-   let r=await db.from("users").select("*")
-    .order("created_at",{ascending:false})
-    .limit(1).maybeSingle();
-   user=r.data;
-  }
-
-  if(!user){
-   tg.showAlert("⚠️ لم يتم العثور على حسابك.");
-   return false;
-  }
-
-  uid=String(user.telegram_id);
-  localStorage.setItem("telegram_id",uid);
-
-  gp=user.gamepoints!==undefined?"gamepoints":
-     user.diamonds!==undefined?"diamonds":"gamepoints";
-
-  updateDiamonds();
-  return true;
-
- }catch(e){
-  console.error(e);
-  tg.showAlert("⚠️ حدث خطأ أثناء تحميل حسابك.");
-  return false;
+// إشعار طائر سريع بدون تعطيل اللعب
+let toastTimeout = null;
+function showToast(msg, color = "#00d26a") {
+    const t = q("floating-toast");
+    t.textContent = msg;
+    t.style.borderColor = color;
+    t.style.opacity = "1";
+    t.style.transform = "translateX(-50%) translateY(5px)";
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        t.style.opacity = "0";
+        t.style.transform = "translateX(-50%) translateY(0px)";
+    }, 1800);
 }
 
+/* ================= جلب بيانات اللاعب ومزامنة الجولات ================= */
+
+async function initUser() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        uid = String(
+            params.get("id") ||
+            tg?.initDataUnsafe?.user?.id ||
+            localStorage.getItem("telegram_id") ||
+            localStorage.getItem("megatask_uid") ||
+            ""
+        ).trim();
+
+        if (!uid || uid === "undefined" || uid === "null") {
+            if (tg) tg.showAlert("❌ يرجى فتح اللعبة من داخل البوت.");
+            return false;
+        }
+
+        const { data, error } = await db
+            .from("users")
+            .select("*")
+            .eq("telegram_id", uid)
+            .maybeSingle();
+
+        if (error || !data) {
+            if (tg) tg.showAlert("⚠️ لم يتم العثور على حسابك في قاعدة البيانات.");
+            return false;
+        }
+
+        user = data;
+        localStorage.setItem("telegram_id", uid);
+        localStorage.setItem("megatask_uid", uid);
+
+        // فحص تصفير الجولات ليوم جديد
+        const today = new Date().toISOString().slice(0, 10);
+        if (user.daily_game_date !== today) {
+            const { data: updated } = await db
+                .from("users")
+                .update({ daily_game_rounds: 0, daily_game_date: today })
+                .eq("telegram_id", uid)
+                .select()
+                .single();
+            if (updated) user = updated;
+        }
+
+        updateHUD();
+        return true;
+    } catch (e) {
+        console.error("Init user error:", e);
+        return false;
+    }
 }
 
-/* ================= DIAMONDS ================= */
+function updateHUD() {
+    const currentDiamonds = Number(user?.gamepoints || 0) + sessionDiamondsEarned;
+    const currentRounds = Math.min(30, Number(user?.daily_game_rounds || 0));
+    q("diamonds").textContent = currentDiamonds.toLocaleString();
+    q("rounds-hud").textContent = `${currentRounds}/30`;
 
-function getD(){
- return Number(user?.[gp]||0);
+    const progressInTen = meteorsCleared % 10;
+    q("meteor-counter-txt").textContent = `☄️ ${progressInTen} / 10 للماسة`;
+    q("meteor-bar-fill").style.width = `${(progressInTen / 10) * 100}%`;
 }
 
-function updateDiamonds(){
- q("diamonds").textContent=getD();
+/* ================= لوحة الشرف ================= */
+
+async function loadLeaderboard() {
+    try {
+        const { data } = await db
+            .from("game_scores")
+            .select("*")
+            .order("high_score", { ascending: false })
+            .limit(3);
+
+        if (data && data.length > 0) {
+            const medals = ["🥇", "🥈", "🥉"];
+            q("lb-list").innerHTML = data.map((x, i) => `
+                <div class="lb-row">
+                    <span>${medals[i] || '#'+(i+1)} مقاتل (${String(x.user_id).slice(-4)})</span>
+                    <b style="color:var(--g)">${Number(x.high_score).toLocaleString()} نقطة</b>
+                </div>
+            `).join("");
+        } else {
+            q("lb-list").innerHTML = '<div style="color:#888; padding:6px;">كن أول بطل يسجل رقماً قياسياً!</div>';
+        }
+    } catch (e) {
+        q("lb-list").textContent = "تعذر تحميل لوحة الشرف";
+    }
 }
 
-async function changeD(amount,title){
- if(!user)return false;
+/* ================= بدء الجولة والتحقق من الجولات اليومية والاعلان ================= */
 
- const old=getD(),next=Math.max(0,old+amount);
+async function startRequest() {
+    if (running || busyStarting) return;
+    busyStarting = true;
 
- const {data,error}=await db.from("users")
-  .update({[gp]:next})
-  .eq("telegram_id",user.telegram_id)
-  .select().maybeSingle();
+    const btnStart = q("startBtn");
+    const btnRetry = q("retryBtn");
+    btnStart.disabled = true;
+    btnRetry.disabled = true;
 
- if(error){
-  console.error("Diamond error:",error);
-  return false;
- }
+    try {
+        if (!user && !(await initUser())) return;
 
- user=data||{...user,[gp]:next};
- updateDiamonds();
+        const today = new Date().toISOString().slice(0, 10);
+        let roundsUsed = Number(user.daily_game_rounds || 0);
+        if (user.daily_game_date !== today) roundsUsed = 0;
 
- try{
-  await db.from("transactions").insert({
-   telegram_id:String(user.telegram_id),
-   type:"points",
-   title,
-   amount:amount>0?`+${amount} 💎`:`${amount} 💎`,
-   status:"مكتمل"
-  });
- }catch(e){console.error("Transaction:",e)}
+        // التحقق من الحد الأقصى (30 جولة يومياً في صفحة الألعاب الرئيسية)
+        if (roundsUsed >= 30) {
+            if (tg) tg.showAlert("🛑 لقد استنفدت الحد الأقصى للجولات اليومية (30 / 30 جولة)!\n\nتتجدد الجولات تلقائياً عند منتصف الليل.");
+            return;
+        }
 
- return true;
+        // عرض إعلان Monetag كل 3 جولات لدعم أرباح البوت
+        if (localPlayedSinceAd > 0 && localPlayedSinceAd % 3 === 0) {
+            btnRetry.textContent = "📺 جاري عرض إعلان قصير...";
+            try {
+                if (typeof show_10959333 === "function") {
+                    await show_10959333();
+                }
+            } catch (adErr) {
+                console.warn("Ad skipped or failed:", adErr);
+            }
+        }
+
+        // زيادة عداد الجولات اليومية في قاعدة البيانات
+        const newRounds = roundsUsed + 1;
+        const { data: updatedUser, error } = await db
+            .from("users")
+            .update({
+                daily_game_rounds: newRounds,
+                daily_game_date: today
+            })
+            .eq("telegram_id", uid)
+            .select()
+            .single();
+
+        if (!error && updatedUser) {
+            user = updatedUser;
+        } else {
+            user.daily_game_rounds = newRounds;
+        }
+
+        startGameSession();
+    } finally {
+        busyStarting = false;
+        btnStart.disabled = false;
+        btnRetry.disabled = false;
+    }
 }
 
-/* ================= ADS ================= */
+function startGameSession() {
+    q("start-screen").style.display = "none";
+    q("over-screen").style.display = "none";
 
-async function showAd(){
- if(adBusy)return;
- adBusy=true;
- try{
-  if(typeof show_10959333==="function")
-   await show_10959333();
- }catch(e){
-  console.error("Monetag:",e);
- }finally{
-  adBusy=false;
- }
+    running = true;
+    score = 0;
+    meteorsCleared = 0;
+    sessionDiamondsEarned = 0;
+    frame = 0;
+
+    meteors = [];
+    lasers = [];
+    powerups = [];
+    particles = [];
+
+    ship.x = cv.width / 2;
+    ship.hasShield = true; // يبدأ اللاعب بدرع مجاني لأول صدمة!
+    ship.doubleLaserTimer = 0;
+
+    q("score").textContent = "0";
+    updateHUD();
+    showToast("🛡️ درع البداية مفعل! انطلق!", "#00f2ff");
+
+    requestAnimationFrame(loop);
 }
 
-async function checkAd(){
- if(rounds>0&&rounds%3===0){
-  const b=q("retry");
-  b.disabled=true;
-  b.textContent="📺 جاري تحميل الإعلان...";
-  await showAd();
-  rounds=0;
-  localStorage.setItem("space_rounds","0");
-  b.disabled=false;
-  b.textContent="🔄 محاولة أخرى — 1 💎";
- }
-}
+/* ================= التحكم بالسفينة (لمس + ماوس) ================= */
 
-/* ================= STARS ================= */
+window.addEventListener("touchmove", e => {
+    if (!running || !e.touches[0]) return;
+    ship.x = Math.max(26, Math.min(cv.width - 26, e.touches[0].clientX));
+}, { passive: true });
 
-function initStars(){
- stars=[];
- for(let i=0;i<90;i++)
-  stars.push({
-   x:Math.random()*cv.width,
-   y:Math.random()*cv.height,
-   r:Math.random()*1.7+.2,
-   s:Math.random()*2+.4
-  });
-}
+window.addEventListener("touchstart", e => {
+    if (!running || !e.touches[0]) return;
+    ship.x = Math.max(26, Math.min(cv.width - 26, e.touches[0].clientX));
+}, { passive: true });
 
-/* ================= LEADERBOARD ================= */
-
-async function leaderboard(){
- try{
-  const {data}=await db.from("game_scores")
-   .select("*").order("high_score",{ascending:false}).limit(3);
-
-  q("lb").innerHTML=data?.length?data.map((x,i)=>`
-   <div class="lb-row">
-    <span>#${i+1} لاعب (${String(x.user_id).slice(-4)})</span>
-    <b style="color:#00d26a">${x.high_score} ن</b>
-   </div>`).join(""):"لا توجد سكورات مسجلة بعد.";
- }catch(e){
-  q("lb").textContent="فشل تحميل لوحة الشرف";
- }
-}
-
-/* ================= START ================= */
-
-async function startRequest(){
- if(running||saving)return;
-
- saving=true;
-
- try{
-  if(!user&&!await initUser())return;
-
-  if(getD()<1){
-   tg.showAlert("⚠️ ليس لديك ألماسات كافية!\nيلزمك 1 💎 لبدء الجولة.");
-   return;
-  }
-
-  await checkAd();
-
-  if(!await changeD(-1,"بدء جولة لعبة Space Dodge")){
-   tg.showAlert("⚠️ تعذر خصم الألماسة.");
-   return;
-  }
-
-  startGame();
-
- }finally{
-  saving=false;
- }
-}
-
-function startGame(){
- q("start").style.display="none";
- q("over").style.display="none";
-
- running=true;
- score=0;
- meteorsPassed=0;
- roundDiamonds=0;
- frame=0;
- meteors=[];
- gems=[];
- particles=[];
-
- ship.x=cv.width/2;
- q("score").textContent=0;
-
- loop();
-}
-
-/* ================= CONTROLS ================= */
-
-addEventListener("touchmove",e=>{
- if(!running)return;
- ship.x=Math.max(28,Math.min(cv.width-28,e.touches[0].clientX));
-},{passive:true});
-
-addEventListener("mousemove",e=>{
- if(running)ship.x=e.clientX;
+window.addEventListener("mousemove", e => {
+    if (!running) return;
+    ship.x = Math.max(26, Math.min(cv.width - 26, e.clientX));
 });
 
-/* ================= PARTICLES ================= */
+/* ================= المؤثرات البصرية والنجوم ================= */
 
-function burst(x,y,color,n=15){
- for(let i=0;i<n;i++)
-  particles.push({
-   x,y,
-   vx:(Math.random()-.5)*7,
-   vy:(Math.random()-.5)*7,
-   life:35+Math.random()*20,
-   color,
-   size:Math.random()*3+1
-  });
+function initStars() {
+    stars = [];
+    for (let i = 0; i < 85; i++) {
+        stars.push({
+            x: Math.random() * cv.width,
+            y: Math.random() * cv.height,
+            r: Math.random() * 1.6 + 0.3,
+            s: Math.random() * 2.2 + 0.5
+        });
+    }
 }
 
-function updateParticles(){
- for(let i=particles.length-1;i>=0;i--){
-  let p=particles[i];
-  p.x+=p.vx;p.y+=p.vy;p.vy+=.05;p.life--;
-  if(p.life<=0)particles.splice(i,1);
- }
+function burst(x, y, color, count = 16) {
+    for (let i = 0; i < count; i++) {
+        particles.push({
+            x, y,
+            vx: (Math.random() - 0.5) * 8,
+            vy: (Math.random() - 0.5) * 8,
+            life: 28 + Math.random() * 18,
+            color,
+            size: Math.random() * 3 + 1
+        });
+    }
 }
 
-/* ================= GAME UPDATE ================= */
-
-function update(){
- stars.forEach(s=>{
-  s.y+=s.s;
-  if(s.y>cv.height){s.y=0;s.x=Math.random()*cv.width}
- });
-
- updateParticles();
-
- let rate=Math.max(18,50-Math.floor(score/30));
-
- if(frame%rate===0)
-  meteors.push({
-   x:Math.random()*(cv.width-50)+25,
-   y:-60,
-   r:Math.random()*20+15,
-   s:Math.random()*4+6+score/100,
-   rot:Math.random()*6.28
-  });
-
- if(frame%180===0)
-  gems.push({
-   x:Math.random()*(cv.width-30)+15,
-   y:-30,r:12,s:3
-  });
-
- for(let i=meteors.length-1;i>=0;i--){
-  let m=meteors[i];
-  m.y+=m.s;m.rot+=.05;
-
-  let d=Math.hypot(ship.x-m.x,ship.y-m.y);
-
-  if(d<ship.w/2+m.r-8){
-   burst(ship.x,ship.y,"#ff3b30",45);
-   return gameOver();
-  }
-
-  if(m.y>cv.height+60){
-   meteors.splice(i,1);
-   score++;
-   meteorsPassed++;
-   q("score").textContent=score;
-
-   if(meteorsPassed%10===0)
-    awardDiamond();
-  }
- }
-
- for(let i=gems.length-1;i>=0;i--){
-  let g=gems[i];
-  g.y+=g.s;
-
-  if(Math.hypot(ship.x-g.x,ship.y-g.y)<ship.w/2+g.r){
-   score+=5;
-   q("score").textContent=score;
-   burst(g.x,g.y,"#00d26a",20);
-   gems.splice(i,1);
-  }else if(g.y>cv.height+30)
-   gems.splice(i,1);
- }
-
- frame++;
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
 }
 
-/* ================= REWARD ================= */
+/* ================= تحديث منطق اللعبة ================= */
 
-async function awardDiamond(){
- roundDiamonds++;
+function onMeteorCleared() {
+    score += 2;
+    meteorsCleared++;
+    q("score").textContent = score;
 
- burst(ship.x,ship.y,"#00d26a",25);
-
- const ok=await changeD(
-  1,
-  "مكافأة 10 نيازك في لعبة Space Dodge"
- );
-
- if(ok)
-  tg.showAlert("☄️ ممتاز!\nعدّيت 10 نيازك!\nتمت إضافة +1 💎 لرصيدك.");
+    // كل 10 نيازك يمنح +1 ألماسة فوراً
+    if (meteorsCleared % 10 === 0) {
+        sessionDiamondsEarned++;
+        burst(ship.x, ship.y - 20, "#00f2ff", 22);
+        showToast(`💎 +1 ألماسة! (إجمالي الجولة: ${sessionDiamondsEarned} 💎)`, "#00f2ff");
+    }
+    updateHUD();
 }
 
-/* ================= DRAW ================= */
+function update() {
+    // تحريك النجوم
+    stars.forEach(s => {
+        s.y += s.s;
+        if (s.y > cv.height) { s.y = 0; s.x = Math.random() * cv.width; }
+    });
 
-function draw(){
- ctx.clearRect(0,0,cv.width,cv.height);
+    updateParticles();
 
- /* background glow */
- let bg=ctx.createRadialGradient(
-  cv.width/2,cv.height*.65,10,
-  cv.width/2,cv.height*.65,cv.height
- );
- bg.addColorStop(0,"#071622");
- bg.addColorStop(1,"#030508");
- ctx.fillStyle=bg;
- ctx.fillRect(0,0,cv.width,cv.height);
+    if (ship.doubleLaserTimer > 0) ship.doubleLaserTimer--;
 
- /* stars */
- stars.forEach(s=>{
-  ctx.globalAlpha=.4+s.r/2;
-  ctx.fillStyle="#fff";
-  ctx.beginPath();
-  ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-  ctx.fill();
- });
- ctx.globalAlpha=1;
+    // إطلاق الليزر التلقائي من السفينة
+    if (frame % 16 === 0) {
+        if (ship.doubleLaserTimer > 0) {
+            lasers.push({ x: ship.x - 12, y: ship.y - 20, vy: -11, color: "#00f2ff" });
+            lasers.push({ x: ship.x + 12, y: ship.y - 20, vy: -11, color: "#00f2ff" });
+        } else {
+            lasers.push({ x: ship.x, y: ship.y - 24, vy: -10, color: "#00d26a" });
+        }
+    }
 
- /* particles */
- particles.forEach(p=>{
-  ctx.globalAlpha=Math.max(0,p.life/45);
-  ctx.fillStyle=p.color;
-  ctx.shadowBlur=10;
-  ctx.shadowColor=p.color;
-  ctx.beginPath();
-  ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
-  ctx.fill();
- });
- ctx.globalAlpha=1;
- ctx.shadowBlur=0;
+    // تحديث حركة الليزر
+    for (let i = lasers.length - 1; i >= 0; i--) {
+        lasers[i].y += lasers[i].vy;
+        if (lasers[i].y < -20) lasers.splice(i, 1);
+    }
 
- /* gems */
- gems.forEach(g=>{
-  ctx.save();
-  ctx.translate(g.x,g.y);
-  ctx.rotate(frame*.03);
-  ctx.shadowBlur=25;
-  ctx.shadowColor="#00d26a";
-  ctx.fillStyle="#00d26a";
-  ctx.beginPath();
-  ctx.moveTo(0,-g.r);
-  ctx.lineTo(g.r,0);
-  ctx.lineTo(0,g.r);
-  ctx.lineTo(-g.r,0);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
- });
+    // توليد النيازك
+    let spawnRate = Math.max(20, 48 - Math.floor(score / 25));
+    if (frame % spawnRate === 0) {
+        let radius = Math.random() * 18 + 14;
+        meteors.push({
+            x: Math.random() * (cv.width - 50) + 25,
+            y: -50,
+            r: radius,
+            hp: radius > 24 ? 3 : 2, // النيازك الكبيرة تحتاج 3 طلقات ليزر لتدميرها
+            s: Math.random() * 3.2 + 4.5 + Math.min(4, score / 90),
+            rot: Math.random() * 6.28
+        });
+    }
 
- /* meteors */
- meteors.forEach(m=>{
-  ctx.save();
-  ctx.translate(m.x,m.y);
+    // توليد الجواهر والقدرات المساعدة (درع / ليزر مزدوج / جوهرة)
+    if (frame > 0 && frame % 170 === 0) {
+        const rand = Math.random();
+        let pType = "gem"; // جوهرة نقاط
+        if (rand < 0.22) pType = "shield";
+        else if (rand < 0.45) pType = "double";
 
-  /* fire tail */
-  let tail=ctx.createLinearGradient(0,-m.r*3,0,m.r);
-  tail.addColorStop(0,"rgba(255,59,48,0)");
-  tail.addColorStop(.5,"rgba(255,100,0,.4)");
-  tail.addColorStop(1,"rgba(255,170,0,.8)");
+        powerups.push({
+            x: Math.random() * (cv.width - 40) + 20,
+            y: -30,
+            r: 14,
+            s: 3.2,
+            type: pType
+        });
+    }
 
-  ctx.fillStyle=tail;
-  ctx.beginPath();
-  ctx.moveTo(-m.r*.45,-m.r*.5);
-  ctx.lineTo(m.r*.45,-m.r*.5);
-  ctx.lineTo(m.r*.8,m.r*3);
-  ctx.lineTo(-m.r*.8,m.r*3);
-  ctx.fill();
+    // تحديث النيازك وفحص التصادم مع الليزر أو السفينة
+    for (let i = meteors.length - 1; i >= 0; i--) {
+        let m = meteors[i];
+        m.y += m.s;
+        m.rot += 0.04;
 
-  ctx.rotate(m.rot);
+        // فحص اصطياد النيزك بالليزر
+        let destroyedByLaser = false;
+        for (let j = lasers.length - 1; j >= 0; j--) {
+            let l = lasers[j];
+            if (Math.hypot(l.x - m.x, l.y - m.y) < m.r + 5) {
+                lasers.splice(j, 1);
+                m.hp--;
+                burst(l.x, l.y, "#ffaa00", 5);
+                if (m.hp <= 0) {
+                    burst(m.x, m.y, "#ff5722", 18);
+                    meteors.splice(i, 1);
+                    onMeteorCleared();
+                    destroyedByLaser = true;
+                }
+                break;
+            }
+        }
+        if (destroyedByLaser) continue;
 
-  ctx.shadowBlur=18;
-  ctx.shadowColor="#ff3b30";
+        // فحص التصادم مع السفينة
+        let dist = Math.hypot(ship.x - m.x, ship.y - m.y);
+        if (dist < ship.w / 2 + m.r - 7) {
+            if (ship.hasShield) {
+                // الدرع يحمي السفينة ويدمر النيزك
+                ship.hasShield = false;
+                burst(m.x, m.y, "#00f2ff", 30);
+                meteors.splice(i, 1);
+                showToast("⚠️ تحطم الدرع الواقي وتم إنقاذك!", "#ffaa00");
+                continue;
+            } else {
+                burst(ship.x, ship.y, "#ff3b30", 45);
+                return gameOver();
+            }
+        }
 
-  let g=ctx.createRadialGradient(
-   -m.r*.3,-m.r*.3,2,0,0,m.r
-  );
-  g.addColorStop(0,"#ffe08a");
-  g.addColorStop(.45,"#ffaa00");
-  g.addColorStop(1,"#ff3b30");
+        // إذا مر النيزك بسلام لأسفل الشاشة
+        if (m.y > cv.height + 50) {
+            meteors.splice(i, 1);
+            onMeteorCleared();
+        }
+    }
 
-  ctx.fillStyle=g;
-  ctx.beginPath();
-  ctx.arc(0,0,m.r,0,Math.PI*2);
-  ctx.fill();
+    // تحديث الجواهر والقدرات الخارقة
+    for (let i = powerups.length - 1; i >= 0; i--) {
+        let p = powerups[i];
+        p.y += p.s;
 
-  ctx.restore();
- });
+        if (Math.hypot(ship.x - p.x, ship.y - p.y) < ship.w / 2 + p.r) {
+            if (p.type === "shield") {
+                ship.hasShield = true;
+                burst(p.x, p.y, "#00f2ff", 20);
+                showToast("🛡️ حصلت على درع حماية!", "#00f2ff");
+            } else if (p.type === "double") {
+                ship.doubleLaserTimer = 420; // حوالي 7 ثوانٍ
+                burst(p.x, p.y, "#ffaa00", 20);
+                showToast("⚡ الليزر المزدوج مفعل!", "#ffaa00");
+            } else {
+                score += 5;
+                q("score").textContent = score;
+                burst(p.x, p.y, "#00d26a", 18);
+                showToast("✨ +5 نقاط إضافية!", "#00d26a");
+            }
+            powerups.splice(i, 1);
+        } else if (p.y > cv.height + 30) {
+            powerups.splice(i, 1);
+        }
+    }
 
- /* ship flame */
- ctx.save();
- ctx.translate(ship.x,ship.y);
-
- let flame=ctx.createLinearGradient(0,15,0,42);
- flame.addColorStop(0,"#fff");
- flame.addColorStop(.35,"#00d26a");
- flame.addColorStop(1,"rgba(0,210,106,0)");
-
- ctx.fillStyle=flame;
- ctx.shadowBlur=20;
- ctx.shadowColor="#00d26a";
- ctx.beginPath();
- ctx.moveTo(-8,12);
- ctx.lineTo(8,12);
- ctx.lineTo(0,42+Math.sin(frame*.3)*8);
- ctx.closePath();
- ctx.fill();
-
- /* ship */
- ctx.shadowBlur=25;
- ctx.shadowColor="#00d26a";
- ctx.beginPath();
- ctx.moveTo(0,-ship.h/2);
- ctx.lineTo(-ship.w/2,ship.h/2);
- ctx.lineTo(0,ship.h/3);
- ctx.lineTo(ship.w/2,ship.h/2);
- ctx.closePath();
-
- ctx.fillStyle="#fff";
- ctx.fill();
- ctx.lineWidth=2;
- ctx.strokeStyle="#00d26a";
- ctx.stroke();
-
- ctx.restore();
+    frame++;
 }
 
-/* ================= LOOP ================= */
+/* ================= الرسم على الـ Canvas ================= */
 
-function loop(){
- if(!running)return;
- update();
- draw();
- requestAnimationFrame(loop);
+function draw() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+
+    // خلفية الفضاء المتدرجة
+    let bg = ctx.createRadialGradient(cv.width / 2, cv.height * 0.65, 10, cv.width / 2, cv.height * 0.65, cv.height);
+    bg.addColorStop(0, "#081826");
+    bg.addColorStop(1, "#030508");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, cv.width, cv.height);
+
+    // رسم النجوم
+    stars.forEach(s => {
+        ctx.globalAlpha = 0.4 + s.r / 2;
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // رسم الانفجارات والجزيئات
+    particles.forEach(p => {
+        ctx.globalAlpha = Math.max(0, p.life / 40);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // رسم طلقات الليزر
+    lasers.forEach(l => {
+        ctx.save();
+        ctx.fillStyle = l.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = l.color;
+        ctx.fillRect(l.x - 2, l.y, 4, 14);
+        ctx.restore();
+    });
+
+    // رسم الجواهر والقدرات الخارقة
+    powerups.forEach(p => {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(frame * 0.04);
+
+        let col = "#00d26a";
+        if (p.type === "shield") col = "#00f2ff";
+        if (p.type === "double") col = "#ffaa00";
+
+        ctx.shadowBlur = 18;
+        ctx.shadowColor = col;
+        ctx.fillStyle = col;
+        ctx.beginPath();
+        ctx.moveTo(0, -p.r);
+        ctx.lineTo(p.r, 0);
+        ctx.lineTo(0, p.r);
+        ctx.lineTo(-p.r, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    });
+
+    // رسم النيازك النارية
+    meteors.forEach(m => {
+        ctx.save();
+        ctx.translate(m.x, m.y);
+
+        let tail = ctx.createLinearGradient(0, -m.r * 2.5, 0, m.r);
+        tail.addColorStop(0, "rgba(255,59,48,0)");
+        tail.addColorStop(0.5, "rgba(255,100,0,0.35)");
+        tail.addColorStop(1, "rgba(255,170,0,0.75)");
+
+        ctx.fillStyle = tail;
+        ctx.beginPath();
+        ctx.moveTo(-m.r * 0.45, -m.r * 0.5);
+        ctx.lineTo(m.r * 0.45, -m.r * 0.5);
+        ctx.lineTo(m.r * 0.75, m.r * 2.5);
+        ctx.lineTo(-m.r * 0.75, m.r * 2.5);
+        ctx.fill();
+
+        ctx.rotate(m.rot);
+        let g = ctx.createRadialGradient(-m.r * 0.3, -m.r * 0.3, 2, 0, 0, m.r);
+        g.addColorStop(0, "#ffe08a");
+        g.addColorStop(0.45, "#ffaa00");
+        g.addColorStop(1, "#ff3b30");
+
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(0, 0, m.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+
+    // رسم السفينة الفضائية والدرع الواقي
+    ctx.save();
+    ctx.translate(ship.x, ship.y);
+
+    // هالة الدرع الواقي إن وجد
+    if (ship.hasShield) {
+        ctx.beginPath();
+        ctx.arc(0, 0, ship.w * 0.78, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(0, 242, 255, 0.75)";
+        ctx.lineWidth = 2.5;
+        ctx.fillStyle = "rgba(0, 242, 255, 0.12)";
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    // لهب المحرك
+    let flame = ctx.createLinearGradient(0, 15, 0, 40);
+    flame.addColorStop(0, "#fff");
+    flame.addColorStop(0.4, ship.doubleLaserTimer > 0 ? "#00f2ff" : "#00d26a");
+    flame.addColorStop(1, "rgba(0,210,106,0)");
+
+    ctx.fillStyle = flame;
+    ctx.beginPath();
+    ctx.moveTo(-8, 12);
+    ctx.lineTo(8, 12);
+    ctx.lineTo(0, 38 + Math.sin(frame * 0.35) * 7);
+    ctx.closePath();
+    ctx.fill();
+
+    // جسم السفينة
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = ship.doubleLaserTimer > 0 ? "#00f2ff" : "#00d26a";
+    ctx.beginPath();
+    ctx.moveTo(0, -ship.h / 2);
+    ctx.lineTo(-ship.w / 2, ship.h / 2);
+    ctx.lineTo(0, ship.h / 3);
+    ctx.lineTo(ship.w / 2, ship.h / 2);
+    ctx.closePath();
+
+    ctx.fillStyle = "#fff";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = ship.doubleLaserTimer > 0 ? "#00f2ff" : "#00d26a";
+    ctx.stroke();
+    ctx.restore();
 }
 
-/* ================= GAME OVER ================= */
-
-async function gameOver(){
- if(!running)return;
- running=false;
-
- q("final").textContent=`النقاط المحققة: ${score} نقطة`;
- q("reward").textContent=`💎 مكافأة الجولة: ${roundDiamonds} ألماسة`;
- q("over").style.display="flex";
-
- rounds++;
- localStorage.setItem("space_rounds",rounds);
-
- try{
-  const {data:old}=await db.from("game_scores")
-   .select("high_score")
-   .eq("user_id",uid)
-   .maybeSingle();
-
-  if(score>(old?.high_score||0))
-   await db.from("game_scores").upsert(
-    {user_id:uid,high_score:score},
-    {onConflict:"user_id"}
-   );
-
-  q("retry").textContent=
-   rounds%3===0
-    ?"📺 شاهد الإعلان ثم العب"
-    :"🔄 محاولة أخرى — 1 💎";
-
- }catch(e){
-  console.error("Score save:",e);
- }
+function loop() {
+    if (!running) return;
+    update();
+    draw();
+    requestAnimationFrame(loop);
 }
 
-/* ================= EXIT ================= */
+/* ================= نهاية الجولة وحفظ الألماس والسكور ================= */
 
-function exitGame(){
- location.href=`../games.html?id=${uid}`;
+async function gameOver() {
+    if (!running) return;
+    running = false;
+    localPlayedSinceAd++;
+
+    q("final-score-txt").textContent = `🎯 النقاط المحققة: ${score.toLocaleString()} نقطة`;
+    q("final-reward-txt").textContent = sessionDiamondsEarned > 0
+        ? `💎 ربحت في هذه الجولة: +${sessionDiamondsEarned} ألماسة!`
+        : `💡 دمر أو تفادَ 10 نيازك في الجولة القادمة لكسب الألماس!`;
+
+    q("retryBtn").textContent = (localPlayedSinceAd % 3 === 0)
+        ? "📺 شاهد إعلان والعب جولة جديدة"
+        : "🔄 جولة جديدة الآن";
+
+    q("over-screen").style.display = "flex";
+
+    try {
+        // 1. حفظ الألماس المكتسب في هذه الجولة دفعة واحدة في حساب المستخدم
+        if (sessionDiamondsEarned > 0 && user) {
+            const newTotalDiamonds = Number(user.gamepoints || 0) + sessionDiamondsEarned;
+            const { data: updated } = await db
+                .from("users")
+                .update({ gamepoints: newTotalDiamonds })
+                .eq("telegram_id", uid)
+                .select()
+                .single();
+
+            if (updated) user = updated;
+
+            await db.from("transactions").insert([{
+                telegram_id: String(uid),
+                type: "points",
+                title: `أرباح لعبة حرب الفضاء (${score} نقطة)`,
+                amount: `+${sessionDiamondsEarned} 💎`,
+                status: "مكتمل"
+            }]);
+        }
+
+        // 2. تحديث أعلى سكور في لوحة الشرف
+        const { data: oldScore } = await db
+            .from("game_scores")
+            .select("high_score")
+            .eq("user_id", uid)
+            .maybeSingle();
+
+        if (score > (oldScore?.high_score || 0)) {
+            await db.from("game_scores").upsert(
+                { user_id: uid, high_score: score },
+                { onConflict: "user_id" }
+            );
+            await loadLeaderboard();
+        }
+    } catch (e) {
+        console.error("Save game over error:", e);
+    }
+
+    sessionDiamondsEarned = 0;
+    updateHUD();
 }
 
-/* ================= INIT ================= */
+function exitGame() {
+    window.location.href = `../games.html?id=${uid}&t=${Date.now()}`;
+}
 
-(async()=>{
- initStars();
- await initUser();
- await leaderboard();
+/* ================= التشغيل المبدئي ================= */
+(async () => {
+    initStars();
+    await initUser();
+    await loadLeaderboard();
 })();
 </script>
 </body>
