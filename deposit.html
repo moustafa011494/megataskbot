@@ -2,63 +2,239 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Deposit - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; padding-bottom: 100px; }
-        .balance-card { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #2d333d; text-align: center; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        .balance-card h2 { color: var(--main-green); font-size: 32px; margin: 10px 0; }
-        .input-group { margin-bottom: 20px; text-align: right; }
-        .input-group label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-gray); }
-        select, input { width: 100%; background: #000; border: 1px solid #2d333d; padding: 15px; border-radius: 12px; color: white; box-sizing: border-box; outline: none; transition: 0.3s; }
-        select:focus, input:focus { border-color: var(--main-green); }
-        .deposit-btn { background: var(--main-green); color: black; border: none; width: 100%; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 5px 15px rgba(0, 210, 106, 0.3); }
-        .info-box { background: rgba(0, 210, 106, 0.1); border: 1px dashed var(--main-green); padding: 10px; border-radius: 10px; font-size: 12px; margin-bottom: 20px; color: #00d26a; text-align: center; }
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        :root { 
+            --main-green: #00d26a; 
+            --main-cyan: #00f2ff;
+            --dark-bg: #0d0f12; 
+            --card-bg: #1a1d23; 
+            --text-gray: #9ca3af; 
+        }
+        * { box-sizing: border-box; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 18px 15px 110px; overflow-x: hidden; }
+        
+        .page-title { text-align: right; font-size: 20px; margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; }
+
+        /* بطاقة الأرصدة العلوية */
+        .balance-card { 
+            background: linear-gradient(145deg, #1a1e26, #12151a); 
+            padding: 18px 15px; 
+            border-radius: 20px; 
+            border: 1px solid rgba(0, 242, 255, 0.3); 
+            text-align: center; 
+            margin-bottom: 22px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.45); 
+        }
+        .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .bal-item { background: rgba(0,0,0,0.35); padding: 12px 8px; border-radius: 14px; border: 1px solid #262b36; }
+        .bal-item span { font-size: 11px; color: var(--text-gray); display: block; margin-bottom: 4px; }
+        .bal-item b { font-size: 20px; }
+        .bal-egp b { color: var(--main-cyan); text-shadow: 0 0 8px rgba(0, 242, 255, 0.25); }
+        .bal-pts b { color: var(--main-green); }
+
+        .info-box { background: rgba(0, 210, 106, 0.08); border: 1px dashed rgba(0, 210, 106, 0.5); padding: 9px; border-radius: 10px; font-size: 12px; color: var(--main-green); text-align: center; }
+
+        .input-group { margin-bottom: 18px; text-align: right; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: bold; color: #e5e7eb; }
+        
+        /* شبكة وسائل الإيداع باللوجو */
+        .methods-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .method-card {
+            background: var(--card-bg);
+            border: 1.5px solid #2d333d;
+            border-radius: 14px;
+            padding: 12px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+        .method-card.active {
+            border-color: var(--main-cyan);
+            background: rgba(0, 242, 255, 0.08);
+            box-shadow: 0 0 12px rgba(0, 242, 255, 0.2);
+        }
+        .method-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: #0d0f12;
+            border: 1px solid #333;
+            flex-shrink: 0;
+        }
+        .method-fallback-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: rgba(0, 242, 255, 0.12);
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .method-title { font-size: 13px; font-weight: bold; color: white; line-height: 1.3; }
+
+        /* صندوق شرح طريقة الإيداع ورقم التحويل */
+        .method-instructions-card {
+            background: #14171d;
+            border: 1px solid #2d3545;
+            border-right: 4px solid var(--main-cyan);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .inst-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #232832; }
+        .inst-header img { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; }
+        .inst-header b { font-size: 14px; color: var(--main-cyan); }
+        
+        .transfer-target-box {
+            background: #090b0e;
+            border: 1px dashed #3a4454;
+            border-radius: 12px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+        .transfer-number { font-size: 14px; font-weight: bold; color: var(--main-green); word-break: break-all; }
+        .btn-copy {
+            background: rgba(0, 210, 106, 0.15);
+            color: var(--main-green);
+            border: 1px solid var(--main-green);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .btn-copy:active { transform: scale(0.95); }
+
+        .inst-steps { margin: 0; padding-right: 18px; font-size: 12px; color: #cbd5e1; line-height: 1.8; }
+        .inst-steps li { margin-bottom: 4px; }
+
+        input { width: 100%; background: #090b0e; border: 1px solid #2d333d; padding: 14px; border-radius: 12px; color: white; outline: none; transition: 0.3s; font-size: 14px; font-family: inherit; }
+        input:focus { border-color: var(--main-cyan); box-shadow: 0 0 8px rgba(0, 242, 255, 0.2); }
+        
+        .conversion-hint-box {
+            background: rgba(0, 242, 255, 0.06);
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #d1d5db;
+            display: none;
+            line-height: 1.6;
+        }
+
+        .deposit-btn { 
+            background: linear-gradient(135deg, #00f2ff, #0077ff); 
+            color: black; 
+            border: none; 
+            width: 100%; 
+            padding: 16px; 
+            border-radius: 15px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            font-size: 15px; 
+            box-shadow: 0 5px 15px rgba(0, 242, 255, 0.25); 
+            transition: 0.2s;
+        }
+        .deposit-btn:active { transform: scale(0.98); }
+        .deposit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: right;">💳 إيداع رصيد في المنصة</h2>
+    <h2 class="page-title">💳 شحن وإيداع رصيد (بالجنيه)</h2>
 
+    <!-- بطاقة عرض الرصيد الحالي بالجنيه والنقاط -->
     <div class="balance-card">
-        <span>رصيدك الحالي</span>
-        <h2 id="current-points">جاري التحميل...</h2>
-        <div class="info-box">شحن آمن وفوري لرصيدك لاستخدام خدمات المتجر ⚡</div>
+        <div class="balance-grid">
+            <div class="bal-item bal-egp">
+                <span>💵 رصيد الجنيه الحالي</span>
+                <b id="current-egp">0.00 ج.م</b>
+            </div>
+            <div class="bal-item bal-pts">
+                <span>🪙 رصيد النقاط الحالي</span>
+                <b id="current-points">0</b>
+            </div>
+        </div>
+        <div class="info-box">شحن آمن وفوري لرصيد الجنيه لشراء خدمات المتجر أو تحويلها لنقاط بونص ⚡</div>
     </div>
 
+    <!-- اختيار وسيلة الإيداع باللوجو -->
     <div class="input-group">
-        <label>وسيلة الإيداع</label>
-        <select id="deposit-method">
-            <option value="">جاري تحميل وسائل الإيداع...</option>
-        </select>
+        <label>1️⃣ اختر وسيلة الإيداع:</label>
+        <div id="methods-grid" class="methods-grid">
+            <div style="grid-column: span 2; text-align: center; color: var(--text-gray); padding: 15px;">
+                جاري تحميل وسائل الإيداع...
+            </div>
+        </div>
     </div>
 
-    <div class="input-group">
-        <label>المبلغ المراد إيداعه (بالجنيه أو النقاط)</label>
-        <input type="number" id="deposit-amount" placeholder="مثلاً: 100 جنيه أو 10000 نقطة" oninput="updateConversionHint()">
-        <small id="conversion-hint" style="color: var(--main-green); display: block; margin-top: 5px; font-size: 11px;"></small>
+    <!-- صندوق شرح طريقة الإيداع وبيانات الحساب المختار -->
+    <div id="method-instructions" class="method-instructions-card">
+        <div class="inst-header">
+            <img id="inst-logo" src="" alt="Logo" style="display: none;">
+            <div id="inst-fallback-icon" class="method-fallback-icon" style="width:32px; height:32px; font-size:16px;">💳</div>
+            <div>
+                <b id="inst-method-name">وسيلة الإيداع</b>
+                <div style="font-size: 11px; color: var(--text-gray);">اتبع التعليمات التالية لإتمام الشحن بنجاح</div>
+            </div>
+        </div>
+
+        <label style="font-size: 11px; color: var(--text-gray); display: block; margin-bottom: 5px;">📌 حوّل المبلغ إلى هذا الرقم / الحساب:</label>
+        <div class="transfer-target-box">
+            <span class="transfer-number" id="inst-target-account">---</span>
+            <button type="button" class="btn-copy" onclick="copyTargetAccount()">📋 نسخ</button>
+        </div>
+
+        <ol class="inst-steps" id="inst-steps-list">
+            <!-- يتم ملء الخطوات تلقائياً حسب الوسيلة -->
+        </ol>
     </div>
 
+    <!-- إدخال المبلغ بالجنيه فقط -->
     <div class="input-group">
-        <label>رقم الحساب المحول منه / رقم العملية (TX ID)</label>
-        <input type="text" id="deposit-wallet" placeholder="أدخل رقم هاتفك المحول منه أو رقم الإيصال">
+        <label>2️⃣ المبلغ المراد إيداعه (بالجنيه المصري فقط)</label>
+        <input type="number" id="deposit-amount" placeholder="مثلاً: 50 جنيه" min="1" step="0.5" oninput="updateConversionHint()">
+        <div id="conversion-hint" class="conversion-hint-box"></div>
     </div>
 
+    <!-- رقم المحول منه أو رقم العملية -->
     <div class="input-group">
-        <label>البريد الإلكتروني</label>
+        <label>3️⃣ رقم الحساب المحول منه / رقم العملية (TX ID)</label>
+        <input type="text" id="deposit-wallet" placeholder="أدخل الرقم الذي حولت منه أو رقم العملية">
+    </div>
+
+    <!-- البريد الإلكتروني أو ملاحظة -->
+    <div class="input-group">
+        <label>4️⃣ البريد الإلكتروني (اختياري)</label>
         <input type="email" id="deposit-email" placeholder="example@gmail.com">
     </div>
 
-    <button class="deposit-btn" onclick="processDeposit()">تأكيد وإرسال طلب الإيداع ↗</button>
+    <button id="submit-deposit-btn" class="deposit-btn" onclick="processDeposit()">تأكيد وإرسال طلب الإيداع ↗</button>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
-        <div onclick="goStore()" class="nav-item" style="color: var(--main-green);">🛍️<br>المتجر</div>
+        <div onclick="goStore()" class="nav-item" style="color: var(--main-cyan);">🛍️<br>المتجر</div>
         <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
         <div onclick="goInvite()" class="nav-item">👥<br>أصدقاء</div>
         <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
@@ -74,53 +250,157 @@
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
 
+        let depositMethodsList = [];
+        let selectedMethodObj = null;
+
         async function init() {
-            loadDepositMethods();
+            await loadDepositMethods();
             if (!tid) return;
-            const { data } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
-            if (data) document.getElementById('current-points').innerText = (data.points || 0).toLocaleString() + " نقطة";
+            const { data } = await client.from('users').select('points, egp_balance').eq('telegram_id', tid).maybeSingle();
+            if (data) {
+                document.getElementById('current-egp').innerText = Number(data.egp_balance || 0).toFixed(2) + " ج.م";
+                document.getElementById('current-points').innerText = (data.points || 0).toLocaleString() + " نقطة";
+            }
         }
 
-        // ⭐ تحديث هنت التحويل التلقائي بناءً على المبلغ المدخل (مثلاً كل 1 جنيه = 1000 نقطة أو حسب نظامك)
+        // تحديث التوضيح التلقائي للمبلغ بالجنيه فقط
         function updateConversionHint() {
             const val = parseFloat(document.getElementById('deposit-amount').value) || 0;
             const hint = document.getElementById('conversion-hint');
             if (val > 0) {
-                const pointsEstimated = val * 1000; // عدل المعامل حسب نظام نقاطك لو مختلف
-                hint.innerHTML = `💡 يعادل تقريباً: ${pointsEstimated.toLocaleString()} نقطة`;
+                const bonusPoints = Math.floor(val * 1200);
+                hint.style.display = 'block';
+                hint.innerHTML = `💵 سيتم إضافة <b style="color: var(--main-cyan);">${val.toFixed(2)} ج.م</b> إلى رصيدك الأساسي.<br>🔥 <span style="font-size:11px; color: var(--main-green);">وإذا رغبت لاحقاً بتحويلها لنقاط ستحصل على <b>${bonusPoints.toLocaleString()} نقطة</b> (شامل +20% بونص مجاني).</span>`;
             } else {
+                hint.style.display = 'none';
                 hint.innerHTML = "";
             }
         }
 
+        // جلب وسائل الإيداع مع اللوجو والوصف من قاعدة البيانات
         async function loadDepositMethods() {
-            const select = document.getElementById('deposit-method');
-            const { data, error } = await client.from('deposit_methods').select('*');
+            const grid = document.getElementById('methods-grid');
+            const { data, error } = await client.from('deposit_methods').select('*').order('id', { ascending: true });
+
             if (!error && data && data.length > 0) {
-                select.innerHTML = "";
-                data.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m.name;
-                    opt.textContent = `${m.name} - ${m.description || ''}`;
-                    select.appendChild(opt);
-                });
+                depositMethodsList = data;
             } else {
-                select.innerHTML = '<option value="Vodafone Cash">فودافون كاش - تحويل مباشر</option>';
+                depositMethodsList = [
+                    { id: 1, name: "فودافون كاش", description: "01000000000", logo: null }
+                ];
             }
+
+            grid.innerHTML = "";
+            depositMethodsList.forEach((m, index) => {
+                const card = document.createElement('div');
+                card.className = "method-card";
+                card.id = `method-card-${index}`;
+                card.onclick = () => selectDepositMethod(index);
+
+                const logoHtml = m.logo 
+                    ? `<img src="${m.logo}" class="method-logo" alt="${m.name}">`
+                    : `<div class="method-fallback-icon">💳</div>`;
+
+                card.innerHTML = `
+                    ${logoHtml}
+                    <div class="method-title">${m.name}</div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // اختيار أول وسيلة تلقائياً
+            if (depositMethodsList.length > 0) {
+                selectDepositMethod(0);
+            }
+        }
+
+        // تحديد وسيلة الإيداع وعرض اللوجو والرقم وشرح الخطوات الخاصة بها
+        function selectDepositMethod(index) {
+            selectedMethodObj = depositMethodsList[index];
+            if (!selectedMethodObj) return;
+
+            document.querySelectorAll('.method-card').forEach(el => el.classList.remove('active'));
+            const activeCard = document.getElementById(`method-card-${index}`);
+            if (activeCard) activeCard.classList.add('active');
+
+            const instBox = document.getElementById('method-instructions');
+            const instLogo = document.getElementById('inst-logo');
+            const instFallback = document.getElementById('inst-fallback-icon');
+            const instName = document.getElementById('inst-method-name');
+            const instTarget = document.getElementById('inst-target-account');
+            const instSteps = document.getElementById('inst-steps-list');
+
+            instBox.style.display = 'block';
+            instName.innerText = `طريقة الإيداع عبر ${selectedMethodObj.name}`;
+            instTarget.innerText = selectedMethodObj.description || "تواصل مع الإدارة";
+
+            if (selectedMethodObj.logo) {
+                instLogo.src = selectedMethodObj.logo;
+                instLogo.style.display = 'block';
+                instFallback.style.display = 'none';
+            } else {
+                instLogo.style.display = 'none';
+                instFallback.style.display = 'flex';
+            }
+
+            // تخصيص شرح طريقة الإيداع ذكياً بناءً على اسم الوسيلة
+            const lowerName = (selectedMethodObj.name || "").toLowerCase();
+            if (lowerName.includes("فودافون") || lowerName.includes("كاش") || lowerName.includes("اتصالات") || lowerName.includes("اورنج") || lowerName.includes("وي")) {
+                instSteps.innerHTML = `
+                    <li>انسخ رقم المحفظة الموضح بالأعلى بالضغط على زر <b>(نسخ)</b>.</li>
+                    <li>قم بتحويل المبلغ المطلوب (بالجنيه) من محفظتك الإلكترونية إلى هذا الرقم.</li>
+                    <li>اكتب <b>المبلغ بالجنيه</b> الذي قمت بتحويله في الخانة بالأسفل.</li>
+                    <li>اكتب <b>رقم هاتفك الذي قمت بالتحويل منه</b> في خانة رقم الحساب لتأكيد العملية فوراً.</li>
+                `;
+            } else if (lowerName.includes("انستا") || lowerName.includes("instapay")) {
+                instSteps.innerHTML = `
+                    <li>انسخ عنوان الدفع (IPA) أو الرقم الموضح بالأعلى.</li>
+                    <li>افتح تطبيق <b>InstaPay</b> وحوّل المبلغ المطلوب بالجنيه المصري.</li>
+                    <li>أدخل المبلغ المحول بالجنيه في الخانة بالأسفل.</li>
+                    <li>أدخل <b>عنوان انستا باي الخاص بك أو رقم المرجع (Reference)</b> في خانة التأكيد.</li>
+                `;
+            } else if (lowerName.includes("usdt") || lowerName.includes("بينانس") || lowerName.includes("binance") || lowerName.includes("payeer")) {
+                instSteps.innerHTML = `
+                    <li>انسخ معرف المحفظة (ID / Address) الموضح بالأعلى.</li>
+                    <li>قم بإرسال القيمة المقابلة للمبلغ، ثم اكتب <b>المبلغ المعادل بالجنيه المصري</b> بالأسفل.</li>
+                    <li>انسخ <b>رقم العملية (TX ID / Order ID)</b> وضعه في خانة رقم العملية بالأسفل.</li>
+                `;
+            } else {
+                instSteps.innerHTML = `
+                    <li>انسخ بيانات الحساب أو الرقم الموضح في الصندوق بالأعلى.</li>
+                    <li>قم بتحويل المبلغ المطلوب عبر <b>${selectedMethodObj.name}</b>.</li>
+                    <li>أدخل <b>المبلغ بالجنيه المصري</b> في الخانة المخصصة بالأسفل.</li>
+                    <li>أدخل <b>رقم الحساب المحول منه أو رقم الإيصال</b> ثم اضغط تأكيد الإيداع.</li>
+                `;
+            }
+        }
+
+        function copyTargetAccount() {
+            if (!selectedMethodObj || !selectedMethodObj.description) return;
+            navigator.clipboard.writeText(selectedMethodObj.description).then(() => {
+                tg.showAlert(`✅ تم نسخ: ${selectedMethodObj.description}`);
+            }).catch(() => {
+                tg.showAlert(`📌 البيانات: ${selectedMethodObj.description}`);
+            });
         }
 
         async function processDeposit() {
             const amount = parseFloat(document.getElementById('deposit-amount').value);
-            const method = document.getElementById('deposit-method').value;
             const wallet = document.getElementById('deposit-wallet').value.trim();
             const email = document.getElementById('deposit-email').value.trim();
+            const btn = document.getElementById('submit-deposit-btn');
 
-            if (isNaN(amount) || amount <= 0) return tg.showAlert("❌ يرجى إدخال مبلغ صحيح للإيداع!");
-            if (!wallet) return tg.showAlert("❌ يرجى إدخال تفاصيل الحساب المحول منه أو رقم الإيصال!");
+            if (!selectedMethodObj) return tg.showAlert("❌ يرجى اختيار وسيلة الإيداع أولاً!");
+            if (isNaN(amount) || amount <= 0) return tg.showAlert("❌ يرجى إدخال مبلغ صحيح بالجنيه للإيداع!");
+            if (!wallet) return tg.showAlert("❌ يرجى إدخال رقم المحفظة المحول منها أو رقم العملية (TX ID)!");
 
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري إرسال الطلب...";
+
+            const method = selectedMethodObj.name;
             const txId = "DEP-" + Math.floor(100000 + Math.random() * 900000);
             
-            // 1. إرسال الطلب لجدول الإيداعات
+            // 1. إرسال الطلب لجدول الإيداعات (بالجنيه)
             const { error } = await client.from('deposits').insert([{
                 telegram_id: tid,
                 tx_id: txId,
@@ -132,18 +412,20 @@
             }]);
 
             if (!error) {
-                // ⭐ 2. تسجيل العملية في جدول السجلات (الهيستوري) لتظهر في البروفايل
+                // 2. تسجيل العملية في جدول السجلات (الهيستوري) بالجنيه
                 await client.from('transactions').insert([{
                     telegram_id: String(tid),
                     type: 'deposit',
-                    title: `طلب إيداع (${method})`,
-                    amount: `+${amount} جنيه`,
+                    title: `طلب شحن رصيد (${method})`,
+                    amount: `+${amount.toFixed(2)} ج.م`,
                     status: 'قيد المراجعة'
                 }]);
 
-                tg.showAlert(`✅ تم إرسال طلب الإيداع بنجاح!\nرقم المعاملة: ${txId}\nسيتم مراجعة التحويل وإضافة الرصيد قريباً.`);
-                goStore();
+                tg.showAlert(`✅ تم إرسال طلب الإيداع بنجاح!\n\n🆔 رقم المعاملة: ${txId}\n💵 المبلغ: ${amount.toFixed(2)} ج.م\n\nسيتم مراجعة التحويل وإضافة الجنيهات لرصيدك قريباً.`);
+                goHome();
             } else {
+                btn.disabled = false;
+                btn.innerText = "تأكيد وإرسال طلب الإيداع ↗";
                 tg.showAlert("❌ خطأ أثناء إرسال الطلب: " + error.message);
             }
         }
