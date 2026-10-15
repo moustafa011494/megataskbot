@@ -1,5 +1,5 @@
 /**
- * MegaTask - Streak & Lucky Wheel Module (Auto-Create User & Monetag Integrated)
+ * MegaTask - Streak & Lucky Wheel Module (Updated Economy & Auto-Reset to 0)
  * Zone ID: 10959333
  */
 const StreakManager = (function() {
@@ -9,18 +9,21 @@ const StreakManager = (function() {
     let _userData = null;
     let _timerInterval = null;
     let _pendingAction = null;
+    let _wasBrokenBeforeClaim = false; // لتتبع ما إذا كان المستخدم قد فوّت أياماً
 
-    // جوائز عجلة الحظ (الحد الأقصى 25 نقطة)
+    // ⭐ جوائز عجلة الحظ المخفضة (الحد الأقصى 10 نقاط لضمان ربح البوت من الإعلان)
     const WHEEL_SECTORS = [
-        { label: "5 نقطة", value: 5, color: "#161920", text: "#00d26a" },
-        { label: "10 نقطة", value: 10, color: "#1e232d", text: "#00d26a" },
+        { label: "2 نقطة", value: 2, color: "#161920", text: "#00d26a" },
+        { label: "5 نقاط", value: 5, color: "#1e232d", text: "#00d26a" },
         { label: "حظ أوفر 💔", value: 0, color: "#161920", text: "#888888" },
-        { label: "15 نقطة", value: 15, color: "#1e232d", text: "#ffaa00" },
-        { label: "25 نقطة 💎", value: 25, color: "#00d26a", text: "#000000" },
-        { label: "5 نقطة", value: 5, color: "#2d3442", text: "#ffffff" },
-        { label: "10 نقطة", value: 10, color: "#161920", text: "#ffaa00" },
-        { label: "20 نقطة", value: 20, color: "#1e232d", text: "#ffffff" }
+        { label: "3 نقاط", value: 3, color: "#1e232d", text: "#ffaa00" },
+        { label: "10 نقاط 💎", value: 10, color: "#00d26a", text: "#000000" },
+        { label: "1 نقطة", value: 1, color: "#2d3442", text: "#ffffff" },
+        { label: "4 نقاط", value: 4, color: "#161920", text: "#ffaa00" },
+        { label: "2 نقطة", value: 2, color: "#1e232d", text: "#ffffff" }
     ];
+
+    const STREAK_DAILY_REWARD = 5; // 5 نقاط لمكافأة الستريك اليومي
 
     // قوائم الألقاب الدقيقة
     const MALE_TITLES = [
@@ -87,14 +90,26 @@ const StreakManager = (function() {
     }
 
     function getStreakTierData(streak, gender) {
+        // إذا كان الستريك 0 لا يأخذ لقباً بعد
+        if (!streak || streak <= 0) {
+            return {
+                title: "مبتدئ (ابدأ الستريك اليوم!)",
+                level: 0,
+                flameColor: "#6b7280",
+                glowShadow: "0 4px 15px rgba(0, 0, 0, 0.25)",
+                fireScale: 1
+            };
+        }
+
         const list = (gender === 'female') ? FEMALE_TITLES : MALE_TITLES;
         const index = Math.max(0, Math.min(streak - 1, list.length - 1));
         const title = list[index];
 
-        const tier = Math.floor((streak - 1) / 25);
+        const tier = Math.floor((streak - 1) / 15); // ترقية لون النار كل 15 يوم
+        const level = tier + 1;
         let flameColor = "#ffaa00"; 
-        let glowShadow = "0 0 15px rgba(255, 170, 0, 0.3)";
-        let fireScale = 1 + Math.min(streak * 0.015, 0.4); 
+        let glowShadow = "0 0 15px rgba(255, 170, 0, 0.35)";
+        let fireScale = 1 + Math.min(streak * 0.015, 0.35); 
 
         if (tier === 1) {
             flameColor = "#00f2ff"; 
@@ -107,7 +122,7 @@ const StreakManager = (function() {
             glowShadow = "0 0 45px rgba(0, 210, 106, 0.8)";
         }
 
-        return { title, flameColor, glowShadow, fireScale };
+        return { title, level, flameColor, glowShadow, fireScale };
     }
 
     function applyStreakVisualEffects(streakVal, gender, cardElement) {
@@ -125,17 +140,22 @@ const StreakManager = (function() {
             iconBox.style.transform = `scale(${tierData.fireScale})`;
             iconBox.style.color = tierData.flameColor;
             iconBox.style.borderColor = tierData.flameColor;
-            iconBox.style.boxShadow = `0 0 12px ${tierData.flameColor}88`;
+            iconBox.style.boxShadow = streakVal > 0 ? `0 0 12px ${tierData.flameColor}88` : "none";
         }
 
         if (infoSpan) {
-            infoSpan.innerHTML = `🔥 اللقب: <b style="color: ${tierData.flameColor};">${tierData.title}</b> (مستوى ${Math.floor((streakVal-1)/25)+1})`;
+            if (streakVal > 0) {
+                infoSpan.innerHTML = `🔥 اللقب: <b style="color: ${tierData.flameColor};">${tierData.title}</b> (مستوى ${tierData.level})`;
+            } else {
+                infoSpan.innerHTML = `⚪ اللقب: <b style="color: #9ca3af;">${tierData.title}</b>`;
+            }
         }
     }
 
     function renderUI(domElements) {
         const now = new Date();
-        const lastClaim = _userData?.last_daily_claim ? new Date(_userData.last_daily_claim) : null;
+        const rawClaimDate = _userData?.last_claim || _userData?.last_daily_claim;
+        const lastClaim = rawClaimDate ? new Date(rawClaimDate) : null;
         const lastSpin = _userData?.last_wheel_spin ? new Date(_userData.last_wheel_spin) : null;
 
         const claimedToday = lastClaim && isSameDay(lastClaim, now);
@@ -152,16 +172,12 @@ const StreakManager = (function() {
 
         if (claimedToday) {
             if (domElements.claimBtn) domElements.claimBtn.style.display = 'none';
-            if (domElements.timerBox) domElements.timerBox.style.display = 'block';
-            runMidnightTimer(domElements);
         } else {
-            if (_timerInterval) clearInterval(_timerInterval);
             if (domElements.claimBtn) {
                 domElements.claimBtn.style.display = 'block';
                 domElements.claimBtn.disabled = false;
-                domElements.claimBtn.innerText = "🎁 استلام مكافأة اليوم (+5 نقاط)";
+                domElements.claimBtn.innerText = `🎁 استلام مكافأة اليوم (+${STREAK_DAILY_REWARD} نقاط)`;
             }
-            if (domElements.timerBox) domElements.timerBox.style.display = 'none';
         }
 
         if (domElements.wheelBtn) {
@@ -175,6 +191,14 @@ const StreakManager = (function() {
                 domElements.wheelBtn.style.opacity = "1";
             }
         }
+
+        if (claimedToday && spunToday) {
+            if (domElements.timerBox) domElements.timerBox.style.display = 'block';
+            runMidnightTimer(domElements);
+        } else {
+            if (_timerInterval) clearInterval(_timerInterval);
+            if (domElements.timerBox) domElements.timerBox.style.display = 'none';
+        }
     }
 
     function promptGenderSelection() {
@@ -183,13 +207,13 @@ const StreakManager = (function() {
             if (existingModal) existingModal.remove();
 
             const modalHtml = `
-                <div id="gender-select-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.88); z-index:999999; display:flex; align-items:center; justify-content:center; padding:20px;">
-                    <div style="background:#161920; border:1px solid #2d333d; border-radius:20px; padding:25px; width:100%; max-width:320px; text-align:center;">
+                <div id="gender-select-modal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:999999; display:flex; align-items:center; justify-content:center; padding:20px;">
+                    <div style="background:#161920; border:1px solid #00d26a; border-radius:20px; padding:25px; width:100%; max-width:320px; text-align:center; box-shadow:0 0 25px rgba(0,210,106,0.2);">
                         <h3 style="color:#00d26a; margin-top:0; margin-bottom:10px;">🎯 حدد نوعك لتخصيص الألقاب</h3>
-                        <p style="font-size:13px; color:#9ca3af; margin-bottom:20px;">اختر التصنيف المناسب لكي يتم حساب ألقاب الستريك وتطورها بدقة:</p>
+                        <p style="font-size:13px; color:#9ca3af; margin-bottom:20px;">اختر التصنيف المناسب لكي تظهر لك ألقاب الستريك اليومية الخاصة بك:</p>
                         <div style="display:flex; gap:12px; margin-bottom:10px;">
-                            <button id="btn-gender-male" style="flex:1; background:#1e232d; border:1px solid #333; color:white; padding:14px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:14px;">🧔 ذكر</button>
-                            <button id="btn-gender-female" style="flex:1; background:#1e232d; border:1px solid #333; color:white; padding:14px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:14px;">👩 أنثى</button>
+                            <button id="btn-gender-male" style="flex:1; background:#1e232d; border:1px solid #00d26a; color:white; padding:14px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:14px;">🧔 ذكر</button>
+                            <button id="btn-gender-female" style="flex:1; background:#1e232d; border:1px solid #00f2ff; color:white; padding:14px; border-radius:12px; font-weight:bold; cursor:pointer; font-size:14px;">👩 أنثى</button>
                         </div>
                     </div>
                 </div>
@@ -207,10 +231,39 @@ const StreakManager = (function() {
         });
     }
 
+    // ⭐ فحص وتصفير الستريك فوراً إلى (0) إذا فوّت المستخدم يوم أمس
+    async function checkAndResetBrokenStreak(userObj) {
+        if (!userObj) return userObj;
+        const rawClaimDate = userObj.last_claim || userObj.last_daily_claim;
+        if (!rawClaimDate) return userObj;
+
+        const now = new Date();
+        const lastDate = new Date(rawClaimDate);
+
+        // إذا لم يكن اليوم ولم يكن أمس -> المستخدم فوّت يوماً كاملاً على الأقل!
+        if (!isSameDay(lastDate, now) && !isYesterday(lastDate, now)) {
+            if ((userObj.streak || 0) > 0) {
+                _wasBrokenBeforeClaim = true;
+                const { data: resetUser } = await _client
+                    .from('users')
+                    .update({ streak: 0 })
+                    .eq('telegram_id', _tid)
+                    .select()
+                    .single();
+
+                if (resetUser) {
+                    window.Telegram?.WebApp?.showAlert("💔 لقد فوّت تسجيل الدخول يوم أمس، لذلك عاد عداد الستريك إلى (0 يوم)!");
+                    return resetUser;
+                }
+                userObj.streak = 0;
+            }
+        }
+        return userObj;
+    }
+
     async function getOrCreateUser() {
         if (!_tid || _tid === "test_user") {
-            const fallbackId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "123456789");
-            _tid = fallbackId;
+            _tid = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "123456789");
         }
 
         let { data: userCurrent } = await _client
@@ -223,7 +276,15 @@ const StreakManager = (function() {
             const genderChoice = await promptGenderSelection();
             const { data: newUser, error: insErr } = await _client
                 .from('users')
-                .insert([{ telegram_id: _tid, points: 0, streak: 1, gender: genderChoice }])
+                .insert([{ 
+                    telegram_id: _tid, 
+                    name: window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name || "AGENT",
+                    points: 0, 
+                    egp_balance: 0,
+                    total_earned: 0,
+                    streak: 0, // يبدأ من صفر دائماً
+                    gender: genderChoice 
+                }])
                 .select()
                 .single();
 
@@ -241,20 +302,32 @@ const StreakManager = (function() {
             if (updatedG) userCurrent = updatedG;
         }
 
+        // فحص ما إذا كان قد فوّت أياماً لتصفير العداد فوراً
+        userCurrent = await checkAndResetBrokenStreak(userCurrent);
         return userCurrent;
     }
 
-        async function addPointsAndLog(pointsChange, titleText) {
+    // ⭐ إضافة النقاط + تحديث total_earned + تسجيل الهيستوري + 10% عمولة إحالة للداعي
+    async function addPointsAndLog(pointsChange, titleText) {
         try {
-            // 1. تحديث النقاط مباشرة في جدول المستخدمين
-            let { data: uInfo } = await _client.from('users').select('points').eq('telegram_id', String(_tid)).single();
+            let { data: uInfo } = await _client
+                .from('users')
+                .select('points, total_earned, referred_by')
+                .eq('telegram_id', String(_tid))
+                .single();
+
             const currentP = uInfo ? (uInfo.points || 0) : 0;
+            const currentTotalEarned = uInfo ? (uInfo.total_earned || 0) : 0;
             const newTotalP = currentP + pointsChange;
+            const newTotalEarned = currentTotalEarned + pointsChange;
 
-            await _client.from('users').update({ points: newTotalP }).eq('telegram_id', String(_tid));
+            await _client.from('users').update({ 
+                points: newTotalP,
+                total_earned: newTotalEarned
+            }).eq('telegram_id', String(_tid));
 
-            // 2. إدخال السجل مباشرة في جدول transactions مع إظهار رسالة لو فشل
-            const { error: tErr } = await _client.from('transactions').insert([{
+            // 1. تسجيل في جدول transactions
+            await _client.from('transactions').insert([{
                 telegram_id: String(_tid),
                 type: 'points',
                 title: titleText,
@@ -262,18 +335,30 @@ const StreakManager = (function() {
                 status: 'مكتمل'
             }]);
 
-            if (tErr) {
-                window.Telegram?.WebApp?.showAlert("⚠️ خطأ في حفظ الهيستوري: " + tErr.message);
+            // 2. إضافة 10% عمولة إحالة للداعي (إن وجد)
+            if (uInfo && uInfo.referred_by && String(uInfo.referred_by) !== String(_tid)) {
+                const refBonus = Math.max(1, Math.round(pointsChange * 0.10));
+                const { data: refUser } = await _client
+                    .from('users')
+                    .select('points, total_earned')
+                    .eq('telegram_id', String(uInfo.referred_by))
+                    .maybeSingle();
+
+                if (refUser) {
+                    await _client.from('users').update({
+                        points: (refUser.points || 0) + refBonus,
+                        total_earned: (refUser.total_earned || 0) + refBonus
+                    }).eq('telegram_id', String(uInfo.referred_by));
+                }
             }
 
-            return newTotalP;
+            return { points: newTotalP, total_earned: newTotalEarned };
         } catch (err) {
             console.error(err);
             return false;
         }
     }
 
-    
     function triggerAdFlow(actionType, domElements) {
         _pendingAction = actionType;
 
@@ -299,53 +384,64 @@ const StreakManager = (function() {
         try {
             const userCurrent = await getOrCreateUser();
             if (!userCurrent) {
-                window.Telegram?.WebApp?.showAlert("❌ تعذر إنشاء أو جلب حسابك من السيرفر.");
+                window.Telegram?.WebApp?.showAlert("❌ تعذر جلب حسابك من السيرفر.");
                 return;
             }
 
             const now = new Date();
+            const rawClaimDate = userCurrent.last_claim || userCurrent.last_daily_claim;
             let newStreak = 1;
 
-            if (userCurrent.last_daily_claim) {
-                const last = new Date(userCurrent.last_daily_claim);
+            if (rawClaimDate) {
+                const last = new Date(rawClaimDate);
                 if (isSameDay(last, now)) {
                     window.Telegram?.WebApp?.showAlert("⛔ لقد استلمت مكافأة الستريك اليوم بالفعل!");
                     renderUI(domElements);
                     return;
                 }
-                if (isYesterday(last, now)) {
+                if (isYesterday(last, now) && !_wasBrokenBeforeClaim) {
                     newStreak = (userCurrent.streak || 0) + 1;
                 } else {
-                    newStreak = 1; 
+                    // إذا فوّت أياماً يرجع العداد إلى 0 في يوم العودة ثم يبدأ بـ 1 من الغد
+                    newStreak = 0;
+                    _wasBrokenBeforeClaim = false;
                 }
+            } else {
+                // أول استلام لمستخدم جديد
+                newStreak = 1;
             }
 
             const nowIso = now.toISOString();
             const userGender = userCurrent.gender || 'male';
             const tierInfo = getStreakTierData(newStreak, userGender);
 
-            // تحديث الستريك وتاريخ الاستلام في جدول المستخدمين
             const { data: saved, error: updateErr } = await _client
                 .from('users')
                 .update({
                     streak: newStreak,
-                    last_daily_claim: nowIso
+                    last_claim: nowIso
                 })
                 .eq('telegram_id', _tid)
                 .select()
                 .single();
 
             if (!updateErr && saved) {
-                // استخدام الدالة المركزية لإضافة 5 نقاط وتجسيلها في الهيستوري بدقة
-                const updatedPointsTotal = await addPointsAndLog(5, `مكافأة الستريك اليومي (اليوم ${newStreak})`);
+                const updatedTotals = await addPointsAndLog(STREAK_DAILY_REWARD, `مكافأة الستريك اليومي (اليوم ${newStreak})`);
                 
-                saved.points = updatedPointsTotal !== false ? updatedPointsTotal : (saved.points + 5);
+                if (updatedTotals !== false) {
+                    saved.points = updatedTotals.points;
+                    saved.total_earned = updatedTotals.total_earned;
+                }
                 _userData = saved;
 
                 if (typeof _onUpdate === 'function') _onUpdate(saved);
 
                 renderUI(domElements);
-                window.Telegram?.WebApp?.showAlert(`🎉 مبروك! استلمت +5 نقاط.\n🔥 الستريك: ${newStreak} أيام متتالية!\n⭐ لقبك الحالي: ${tierInfo.title}`);
+                if (newStreak === 0) {
+                    window.Telegram?.WebApp?.showAlert(`🎁 استلمت مكافأة اليوم (+${STREAK_DAILY_REWARD} نقاط)!\n⚠️ لأنك فوّت أياماً سابقة، تم تصفير عداد الستريك إلى (0 يوم). استلم غداً ليبدأ العداد في الزيادة!`);
+                } else {
+                    window.Telegram?.WebApp?.showAlert(`🎉 مبروك! استلمت +${STREAK_DAILY_REWARD} نقاط.\n🔥 الستريك: ${newStreak} أيام متتالية!\n⭐ لقبك الحالي: ${tierInfo.title}`);
+                }
             } else {
                 window.Telegram?.WebApp?.showAlert("❌ خطأ أثناء تحديث الستريك: " + (updateErr?.message || ""));
             }
@@ -456,7 +552,6 @@ const StreakManager = (function() {
 
             const nowIso = new Date().toISOString();
 
-            // تحديث موعد تدوير العجلة في جدول المستخدمين
             const { data: updated, error: updateErr } = await _client
                 .from('users')
                 .update({
@@ -467,10 +562,12 @@ const StreakManager = (function() {
                 .single();
 
             if (!updateErr && updated) {
-                // استخدام الدالة المركزية لإضافة النقاط وتوثيقها في الهيستوري لو الجائزة أكبر من صفر
                 if (prize.value > 0) {
-                    const updatedPointsTotal = await addPointsAndLog(prize.value, 'جائزة عجلة الحظ اليومية');
-                    updated.points = updatedPointsTotal !== false ? updatedPointsTotal : (updated.points + prize.value);
+                    const updatedTotals = await addPointsAndLog(prize.value, 'جائزة عجلة الحظ اليومية');
+                    if (updatedTotals !== false) {
+                        updated.points = updatedTotals.points;
+                        updated.total_earned = updatedTotals.total_earned;
+                    }
                 }
 
                 _userData = updated;
