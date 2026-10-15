@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -10,24 +10,170 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 100px; }
+        :root { 
+            --main-green: #00d26a; 
+            --main-cyan: #00f2ff;
+            --gold: #ffaa00;
+            --dark-bg: #0d0f12; 
+            --card-bg: #1a1d23; 
+            --text-gray: #9ca3af; 
+        }
+        * { box-sizing: border-box; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 110px; overflow-x: hidden; }
         
-        /* القسم العلوي - إجمالي العائد بالأخضر */
-        .total-earnings { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #2d333d; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.05); }
-        .total-earnings h3 { margin: 0; font-size: 14px; color: var(--text-gray); }
-        .total-earnings .amount { font-size: 32px; font-weight: bold; color: var(--main-green); margin: 10px 0; text-shadow: 0 0 10px rgba(0, 210, 106, 0.2); }
+        /* القسم العلوي - إجمالي العائد ونسب العمولة */
+        .total-earnings { 
+            background: linear-gradient(145deg, #1a2029, #12151b); 
+            padding: 20px 15px; 
+            border-radius: 22px; 
+            border: 1px solid rgba(0, 210, 106, 0.35); 
+            text-align: center; 
+            margin-bottom: 15px; 
+            box-shadow: 0 6px 20px rgba(0, 210, 106, 0.08); 
+            position: relative;
+            overflow: hidden;
+        }
+        .total-earnings h3 { margin: 0; font-size: 13px; color: var(--text-gray); }
+        .total-earnings .amount { font-size: 34px; font-weight: 800; color: var(--main-green); margin: 8px 0; text-shadow: 0 0 12px rgba(0, 210, 106, 0.3); }
         
-        /* قسم تسجيل الكود أو الرابط */
-        #register-section { background: rgba(0, 210, 106, 0.05); border: 1px dashed var(--main-green); padding: 15px; border-radius: 15px; margin-bottom: 15px; display: none; text-align: center; }
-        .input-ref { width: 90%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); border-radius: 10px; text-align: center; margin-bottom: 10px; outline: none; font-size: 13px; font-weight: bold; }
+        .commission-badges { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .comm-badge { background: rgba(0,0,0,0.4); border: 1px solid #2b313d; border-radius: 12px; padding: 8px 6px; font-size: 11px; line-height: 1.4; }
+        .comm-badge b { display: block; font-size: 13px; margin-bottom: 2px; }
+        .comm-tasks b { color: var(--main-green); }
+        .comm-deposit b { color: var(--main-cyan); }
 
-        /* صندوق الدعوة */
+        /* زر جمع الكل بضغطة واحدة */
+        .btn-claim-all {
+            width: 100%;
+            background: linear-gradient(135deg, #00d26a, #009e4f);
+            color: #000;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 13px;
+            margin-top: 12px;
+            cursor: pointer;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0, 210, 106, 0.25);
+            transition: 0.2s;
+        }
+        .btn-claim-all:active { transform: scale(0.98); }
+
+        /* قسم تسجيل الكود أو الرابط */
+        #register-section { background: rgba(0, 210, 106, 0.06); border: 1px dashed var(--main-green); padding: 15px; border-radius: 18px; margin-bottom: 15px; display: none; text-align: center; }
+        .input-ref { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); border-radius: 10px; text-align: center; margin-bottom: 10px; outline: none; font-size: 13px; font-weight: bold; }
+
+        /* شبكة الإحصائيات */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; }
+        .stat-box { background: var(--card-bg); padding: 12px 8px; border-radius: 16px; text-align: center; border: 1px solid #2d333d; }
+        .stat-box b { display: block; font-size: 18px; color: var(--main-green); margin-bottom: 2px; }
+        .stat-box span { font-size: 10px; color: var(--text-gray); }
+
+        /* صندوق رابط وكود الدعوة */
         .invite-card { background: var(--card-bg); border-radius: 20px; padding: 15px; border: 1px solid #2d333d; margin-bottom: 15px; }
-        .link-box { background: #000; border-radius: 10px; padding: 12px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #333; margin-top: 10px; }
-        .link-box span { font-size: 11px; color: var(--text-gray); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
-        .btn-green { background: var(--main-green); color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-green:active { transform: scale(0.95); }
+        .invite-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .my-id-pill { background: #11141a; border: 1px solid #333; padding: 4px 10px; border-radius: 8px; font-size: 11px; color: var(--main-cyan); cursor: pointer; }
+        
+        .link-box { background: #000; border-radius: 12px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #333; margin-bottom: 10px; }
+        .link-box span { font-size: 11px; color: var(--text-gray); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 72%; direction: ltr; }
+        
+        .share-actions-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
+        .btn-green { background: var(--main-green); color: black; border: none; padding: 10px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 12px; }
+        .btn-green:active { transform: scale(0.96); }
+        .btn-outline { background: rgba(0, 210, 106, 0.08); border: 1px solid var(--main-green); color: var(--main-green); }
+        .btn-qr { background: rgba(0, 242, 255, 0.1); border: 1px solid var(--main-cyan); color: var(--main-cyan); }
+
+        /* بطاقة شرح شروط الدعوة الصالحة والنسب */
+        .rules-card {
+            background: #14171e;
+            border: 1px solid #282e3b;
+            border-right: 4px solid var(--gold);
+            border-radius: 16px;
+            padding: 14px;
+            margin-bottom: 15px;
+        }
+        .rules-title { font-size: 13px; font-weight: bold; color: var(--gold); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .rules-list { margin: 0; padding-right: 18px; font-size: 11.5px; color: #d1d5db; line-height: 1.7; }
+        .rules-list li { margin-bottom: 4px; }
+        .rules-list b { color: var(--main-green); }
+
+        /* بطاقة إنجازات الدعوة (Milestones) */
+        .milestones-card {
+            background: var(--card-bg);
+            border: 1px solid #2d333d;
+            border-radius: 18px;
+            padding: 14px;
+            margin-bottom: 18px;
+        }
+        .milestones-header { font-size: 13px; font-weight: bold; color: white; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .milestones-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+        .milestones-scroll::-webkit-scrollbar { display: none; }
+        .milestone-item {
+            min-width: 115px;
+            background: #11141a;
+            border: 1px solid #2b303c;
+            border-radius: 14px;
+            padding: 10px 8px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .milestone-item.unlocked { border-color: var(--main-green); background: rgba(0, 210, 106, 0.06); }
+        .milestone-item.claimed { opacity: 0.6; border-color: #333; }
+        .milestone-target { font-size: 11px; color: var(--text-gray); display: block; }
+        .milestone-reward { font-size: 14px; font-weight: bold; color: var(--gold); margin: 5px 0; display: block; }
+        .btn-milestone { width: 100%; border: none; padding: 5px; border-radius: 8px; font-size: 10px; font-weight: bold; cursor: pointer; }
+        .btn-milestone.ready { background: var(--main-green); color: #000; }
+        .btn-milestone.locked { background: #22262f; color: #777; cursor: not-allowed; }
+
+        /* التبويبات */
+        .tabs { display: flex; background: #000; border-radius: 14px; padding: 5px; margin-bottom: 15px; border: 1px solid #222; }
+        .tab { flex: 1; text-align: center; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 13px; color: var(--text-gray); transition: 0.2s; }
+        .tab.active { background: var(--main-green); color: black; font-weight: bold; }
+
+        /* فلاتر قائمة المدعوين */
+        .sub-filters { display: flex; gap: 6px; margin-bottom: 12px; }
+        .filter-chip { flex: 1; background: #14171d; border: 1px solid #2b303c; color: var(--text-gray); padding: 7px; border-radius: 10px; font-size: 11px; text-align: center; cursor: pointer; font-weight: bold; }
+        .filter-chip.active { border-color: var(--main-green); color: var(--main-green); background: rgba(0, 210, 106, 0.08); }
+
+        /* بانر الجائزة الأسبوعية في لوحة الصدارة */
+        .weekly-prize-banner {
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.18), rgba(188, 19, 254, 0.15));
+            border: 1.5px solid var(--gold);
+            border-radius: 18px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 20px rgba(255, 170, 0, 0.15);
+        }
+        .weekly-prize-banner h4 { margin: 0 0 5px 0; color: var(--gold); font-size: 15px; }
+        .weekly-prize-banner p { margin: 0 0 10px 0; font-size: 12px; color: #e5e7eb; line-height: 1.5; }
+        .weekly-timer { display: inline-block; background: rgba(0,0,0,0.6); border: 1px dashed var(--gold); padding: 5px 14px; border-radius: 20px; font-size: 11px; color: var(--gold); font-weight: bold; }
+
+        /* الجداول والكروت */
+        .list-container { display: none; }
+        .list-container.active { display: block; }
+        .item-row { display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); padding: 12px 14px; border-radius: 16px; margin-bottom: 9px; border: 1px solid #2d333d; gap: 10px; }
+        
+        /* تمييز المتصدر الأول */
+        .item-row.top-1-row {
+            background: linear-gradient(145deg, rgba(255, 170, 0, 0.14), #1a1d23);
+            border: 1.5px solid var(--gold);
+            box-shadow: 0 0 15px rgba(255, 170, 0, 0.15);
+        }
+
+        .rank-circle { width: 34px; height: 34px; border-radius: 50%; background: #14171d; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: bold; border: 1px solid var(--main-green); color: var(--main-green); flex-shrink: 0; }
+        .rank-1 { background: var(--gold); color: #000; border-color: #fff; font-size: 16px; box-shadow: 0 0 10px rgba(255,170,0,0.5); }
+        .rank-2 { background: #c0c0c0; color: #000; border-color: #fff; }
+        .rank-3 { background: #cd7f32; color: #000; border-color: #fff; }
+
+        .user-info { flex: 1; text-align: right; }
+        .user-info b { font-size: 13.5px; display: block; margin-bottom: 3px; }
+        .user-info small { color: var(--text-gray); display: block; font-size: 11px; }
+
+        .status-pill { display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-right: 5px; }
+        .status-valid { background: rgba(0, 210, 106, 0.12); color: var(--main-green); border: 1px solid rgba(0, 210, 106, 0.3); }
+        .status-pending { background: rgba(255, 170, 0, 0.12); color: var(--gold); border: 1px solid rgba(255, 170, 0, 0.3); }
 
         /* زر جمع أرباح المهام */
         .btn-claim {
@@ -36,12 +182,11 @@
             border: none;
             padding: 8px 12px;
             border-radius: 10px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
             white-space: nowrap;
-            box-shadow: 0 2px 8px rgba(0, 210, 106, 0.2);
         }
         .btn-claim:active { transform: scale(0.95); }
         .btn-claim.claimed {
@@ -49,75 +194,138 @@
             color: var(--text-gray);
             cursor: not-allowed;
             border: 1px solid #333842;
-            box-shadow: none;
         }
 
-        /* شبكة الإحصائيات */
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-        .stat-box { background: var(--card-bg); padding: 12px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
-        .stat-box b { display: block; font-size: 18px; color: var(--main-green); }
-        .stat-box span { font-size: 10px; color: var(--text-gray); }
+        /* نافذة QR Code */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
+        .modal-box { background: var(--card-bg); border: 1px solid var(--main-cyan); border-radius: 22px; padding: 22px; width: 100%; max-width: 320px; text-align: center; }
+        .qr-img { width: 190px; height: 190px; border-radius: 14px; border: 4px solid white; margin: 12px auto; display: block; background: white; }
 
-        /* التبويبات */
-        .tabs { display: flex; background: #000; border-radius: 12px; padding: 5px; margin-bottom: 15px; border: 1px solid #222; }
-        .tab { flex: 1; text-align: center; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 13px; color: var(--text-gray); }
-        .tab.active { background: var(--main-green); color: black; font-weight: bold; }
-
-        /* الجداول */
-        .list-container { display: none; }
-        .list-container.active { display: block; }
-        .item-row { display: flex; align-items: center; justify-content: space-between; background: var(--card-bg); padding: 12px 15px; border-radius: 15px; margin-bottom: 8px; border: 1px solid #2d333d; }
-        .rank-circle { width: 30px; height: 30px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; border: 1px solid var(--main-green); color: var(--main-green); }
-        .user-info { flex: 1; text-align: right; padding-right: 15px; }
-        .user-info b { font-size: 14px; }
-        .user-info small { color: var(--text-gray); display: block; font-size: 10px; }
-
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
-        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; cursor: pointer; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; cursor: pointer; text-decoration: none; }
         .nav-item.active { color: var(--main-green); }
     </style>
 </head>
 <body>
 
+    <!-- القسم العلوي: إجمالي العائد وشرح النسب -->
     <div class="total-earnings">
-        <h3>إجمالي العائد من المهام 💎</h3>
-        <div class="amount" id="total-comm">0</div>
-        <small style="color: var(--text-gray);">10% عمولة من مهام الأصدقاء فقط</small>
+        <h3>إجمالي أرباحك من الإحالات والعمولات 💎</h3>
+        <div class="amount"><span id="total-comm">0</span> <small style="font-size: 14px;">نقطة</small></div>
+        
+        <div class="commission-badges">
+            <div class="comm-badge comm-tasks">
+                <b>🔥 10% عمولة مهام</b>
+                <span>من كل النقاط التي يجمعها صديقك مدى الحياة</span>
+            </div>
+            <div class="comm-badge comm-deposit">
+                <b>💵 5% مكافأة شحن</b>
+                <span>نقاط مجانية عند قيام صديقك بشحن رصيد الجنيه</span>
+            </div>
+        </div>
+
+        <button id="btn-claim-all" class="btn-claim-all" onclick="claimAllFriendsCommissions()">
+            📥 جمع كل العمولات المتاحة الآن (+0 نقطة)
+        </button>
     </div>
 
+    <!-- قسم إدخال كود الدعوة لمن لم يسجل كود بعد -->
     <div id="register-section">
-        <input type="text" id="input-promo" class="input-ref" placeholder="الصق كود الدعوة أو رابط الصديق هنا">
-        <button class="btn-green" style="width: 90%;" onclick="submitInvite()">تفعيل الكود ✅</button>
+        <div style="font-size: 12px; color: var(--main-green); font-weight: bold; margin-bottom: 8px;">
+            🎁 هل دعاك صديق؟ فعّل كوده الآن واحصل على +10 نقاط ترحيبية!
+        </div>
+        <input type="text" id="input-promo" class="input-ref" placeholder="الصق كود الدعوة (ID) أو رابط الصديق هنا">
+        <button class="btn-green" style="width: 100%;" onclick="submitInvite()">تفعيل كود الدعوة ✅</button>
     </div>
 
+    <!-- شبكة الإحصائيات -->
     <div class="stats-grid">
-        <div class="stat-box"><b id="my-rank">#--</b><span>تصنيفي</span></div>
-        <div class="stat-box"><b id="total-ref">0</b><span>المدعوين</span></div>
-        <div class="stat-box"><b id="valid-ref">0</b><span>صالحين</span></div>
+        <div class="stat-box"><b id="my-rank">#--</b><span>ترتيبي بالصدارة</span></div>
+        <div class="stat-box"><b id="total-ref">0</b><span>إجمالي المسجلين</span></div>
+        <div class="stat-box"><b id="valid-ref" style="color: var(--main-cyan);">0</b><span>دعوات صالحة ✅</span></div>
     </div>
 
+    <!-- صندوق رابط وكود الدعوة + QR -->
     <div class="invite-card">
-        <span style="font-size: 12px; color: var(--text-gray);">رابط الدعوة الخاص بك</span>
+        <div class="invite-header-row">
+            <span style="font-size: 12px; font-weight: bold; color: #e5e7eb;">🔗 رابط وكود الدعوة الخاص بك</span>
+            <span class="my-id-pill" onclick="copyMyId()">كودك: <b id="my-id-text">...</b> 📋</span>
+        </div>
         <div class="link-box">
             <span id="ref-url">https://t.me/MegaTask1Bot?start=...</span>
-            <button class="btn-green" style="padding: 5px 12px; font-size: 12px;" onclick="copyLink()">نسخ</button>
+            <button class="btn-green" style="padding: 6px 14px;" onclick="copyLink()">نسخ الرابط</button>
         </div>
-        <button class="btn-green" style="width: 100%; margin-top: 10px; background: none; border: 1px solid var(--main-green); color: var(--main-green);" onclick="shareLink()">مشاركة الرابط 📤</button>
+        <div class="share-actions-grid">
+            <button class="btn-green btn-outline" onclick="shareLink()">📤 مشاركة سريعة بتيليجرام</button>
+            <button class="btn-green btn-qr" onclick="openQrModal()">📱 رمز QR</button>
+        </div>
     </div>
 
+    <!-- شرح كيف تكون الدعوة ناجحة ومحسوبة -->
+    <div class="rules-card">
+        <div class="rules-title">
+            <span>💡 كيف تُحتسب الدعوة ناجحة وصالحة؟</span>
+            <span style="font-size: 10px; color: var(--text-gray);">حماية ضد الحسابات الوهمية 🛡️</span>
+        </div>
+        <ul class="rules-list">
+            <li><b>1. التسجيل بالرابط أو الكود:</b> يدخل صديقك البوت عبر رابطك أو يضع الـ ID الخاص بك في خانة التفعيل.</li>
+            <li><b>2. شرط التفعيل (الدعوة الصالحة ✅):</b> لكي تُحتسب الدعوة في <b>لوحة الصدارة</b> وجوائز الإنجازات، يجب أن ينفذ صديقك <b>مهمة واحدة أو إعلاناً واحداً على الأقل</b> (الحسابات الخاملة ذات الـ 0 نقاط تظل "غير نشطة ⏳" ولا تُحتسب).</li>
+            <li><b>3. الأرباح المستمرة:</b> تحصل على <b>10%</b> من جميع نقاط مهامه + <b>5%</b> مكافأة نقاط على كل إيداع يشحنه بالجنيه!</li>
+        </ul>
+    </div>
+
+    <!-- جوائز إنجازات الدعوة الصالحة (Milestones) -->
+    <div class="milestones-card">
+        <div class="milestones-header">
+            <span>🎯 مكافآت إنجازات الدعوة (للأصدقاء النشطين)</span>
+            <span style="font-size: 11px; color: var(--main-green);" id="milestone-progress-txt">0 نشط</span>
+        </div>
+        <div class="milestones-scroll" id="milestones-container">
+            <!-- يتم توليدها تلقائياً بالجافاسكريبت -->
+        </div>
+    </div>
+
+    <!-- التبويبات -->
     <div class="tabs">
-        <div class="tab active" onclick="switchTab('history', this)">دعواتي 👥</div>
-        <div class="tab" onclick="switchTab('leaderboard', this)">المتصدرين 🏆</div>
+        <div class="tab active" onclick="switchTab('history-tab', this)">دعواتي 👥</div>
+        <div class="tab" onclick="switchTab('leaderboard-tab', this)">لوحة الصدارة 🏆</div>
     </div>
 
-    <div id="history" class="list-container active"></div>
-    <div id="leaderboard" class="list-container"></div>
+    <!-- التبويب 1: قائمة دعواتي مع الفلترة -->
+    <div id="history-tab" class="list-container active">
+        <div class="sub-filters">
+            <div class="filter-chip active" onclick="filterInvites('all', this)">الكل (<span id="f-count-all">0</span>)</div>
+            <div class="filter-chip" onclick="filterInvites('valid', this)">صالحة ونشطة ✅ (<span id="f-count-valid">0</span>)</div>
+            <div class="filter-chip" onclick="filterInvites('pending', this)">غير نشطة ⏳ (<span id="f-count-pending">0</span>)</div>
+        </div>
+        <div id="history-list"></div>
+    </div>
+
+    <!-- التبويب 2: لوحة الصدارة والجائزة الأسبوعية -->
+    <div id="leaderboard-tab" class="list-container">
+        <div class="weekly-prize-banner">
+            <h4>👑 جائزة المتصدر الأسبوعية الاستثنائية!</h4>
+            <p>صاحب <b>المركز الأول (#1)</b> في عدد الدعوات الصالحة بنهاية كل أسبوع يحصل على <b>مكافأة استثنائية كبرى</b> تُضاف لرصيده مباشرة من الإدارة!</p>
+            <div class="weekly-timer" id="weekly-countdown">⏳ متبقي لنهاية الأسبوع: جاري الحساب...</div>
+        </div>
+        <div id="leaderboard-list"></div>
+    </div>
+
+    <!-- نافذة رمز QR Code -->
+    <div id="qr-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color: var(--main-cyan); margin: 0;">📱 امسح الكود للانضمام</h3>
+            <p style="font-size: 11px; color: var(--text-gray); margin-top: 5px;">وجه كاميرا هاتف صديقك نحو الرمز لفتح البوت برابط دعوتك مباشرة</p>
+            <img id="qr-image" class="qr-img" src="" alt="QR Code">
+            <button class="btn-green" style="width: 100%; background: #252932; color: white;" onclick="closeQrModal()">إغلاق</button>
+        </div>
+    </div>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
         <div onclick="goTasks()" class="nav-item">📋<br>الربح من المهام</div>
         <div onclick="goGames()" class="nav-item" style="background: var(--main-green); width: 40px; height: 40px; border-radius: 50%; color: black; line-height: 40px; margin-top: -20px; font-size: 20px; text-align: center; cursor: pointer;">🎮</div>
-        <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
+        <div onclick="goInvite()" class="nav-item active">👥<br>الدعوات</div>
         <div onclick="goProfile()" class="nav-item">👤<br>الملف الشخصي</div>
     </nav>
 
@@ -133,9 +341,20 @@
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
         const botUser = "MegaTask1Bot";
+        
         let myData = null;
+        let allInvitedUsers = [];
+        let currentFilter = 'all';
 
-        // دالة إرسال إشعار مباشر في شات تيليجرام
+        // مستويات جوائز الإنجازات للدعوات الصالحة (Milestones)
+        const REF_MILESTONES = [
+            { count: 5, reward: 50, label: "5 أصدقاء" },
+            { count: 15, reward: 150, label: "15 صديق" },
+            { count: 30, reward: 350, label: "30 صديق" },
+            { count: 50, reward: 650, label: "50 صديق" },
+            { count: 100, reward: 1500, label: "100 صديق 👑" }
+        ];
+
         async function sendTelegramMessage(chatId, text) {
             try {
                 await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -152,62 +371,132 @@
             }
         }
 
-        // دالة استخراج الآيدي الذكي من الروابط أو الأكواد المباشرة
         function extractRefCode(raw) {
             if (!raw) return "";
             raw = String(raw).trim();
-            // لو تم لصق رابط يحتوي على start= أو id=
             const matchParam = raw.match(/(?:start|id)=([a-zA-Z0-9_-]+)/i);
             if (matchParam && matchParam[1]) return matchParam[1].trim();
-            // استخراج الأرقام الطويلة (Telegram ID)
             const matchDigits = raw.match(/\d{5,16}/);
             if (matchDigits) return matchDigits[0];
             return raw.replace(/[^\w-]/g, "");
         }
 
+        // فحص ما إذا كان المدعو يمثل "دعوة صالحة" (نفذ مهمة أو كسب نقاطاً من المهام/الإعلانات)
+        function isFriendValid(u) {
+            return (Number(u.task_earnings || 0) > 0) || (Number(u.total_tasks || 0) > 0) || (Number(u.total_earned || 0) > 10);
+        }
+
         async function init() {
             const url = `https://t.me/${botUser}?start=${tid}`;
             document.getElementById('ref-url').innerText = url;
+            document.getElementById('my-id-text').innerText = tid || "---";
+
+            startWeeklyCountdown();
 
             let { data: user } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
             if (user) {
                 myData = user;
-                document.getElementById('total-comm').innerText = (user.total_ref_commission || 0).toLocaleString();
-                document.getElementById('valid-ref').innerText = user.invited_count || 0;
-                if (!user.referred_by) document.getElementById('register-section').style.display = 'block';
-                loadMyInvites();
-                loadLeaderboard();
-                calculateRank();
+                if (!user.referred_by) {
+                    document.getElementById('register-section').style.display = 'block';
+                }
+                await loadMyInvites();
+                await loadLeaderboard();
+                await calculateRank();
             }
         }
 
+        // تحميل المدعوين وحساب الدعوات الصالحة والعمولات
         async function loadMyInvites() {
             const { data, error } = await client
                 .from('users')
                 .select('*')
-                .eq('referred_by', tid);
-
-            const container = document.getElementById('history');
-            let totalCommissionSum = 0;
+                .eq('referred_by', tid)
+                .order('id', { ascending: false });
 
             if (error) return console.error(error);
 
-            container.innerHTML = (data && data.length) ? '' : '<p style="text-align:center; font-size:12px; color:gray; margin-top:20px;">لا يوجد مدعوين حتى الآن</p>';
+            allInvitedUsers = data || [];
+            const validUsers = allInvitedUsers.filter(u => isFriendValid(u));
+            const pendingUsers = allInvitedUsers.filter(u => !isFriendValid(u));
 
+            // تحديث العدادات في الشاشة
+            document.getElementById('total-ref').innerText = allInvitedUsers.length;
+            document.getElementById('valid-ref').innerText = validUsers.length;
+            document.getElementById('f-count-all').innerText = allInvitedUsers.length;
+            document.getElementById('f-count-valid').innerText = validUsers.length;
+            document.getElementById('f-count-pending').innerText = pendingUsers.length;
+            document.getElementById('milestone-progress-txt').innerText = `${validUsers.length} صديق نشط ✅`;
+
+            // مزامنة عدد الدعوات الصالحة الحقيقي في قاعدة البيانات لكي تكون لوحة الصدارة دقيقة 100%
+            if (myData && Number(myData.invited_count || 0) !== validUsers.length) {
+                myData.invited_count = validUsers.length;
+                await client.from('users').update({ invited_count: validUsers.length }).eq('telegram_id', tid);
+            }
+
+            renderMilestones(validUsers.length);
+            renderInvitesList();
+        }
+
+        function filterInvites(filterType, chipEl) {
+            currentFilter = filterType;
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            chipEl.classList.add('active');
+            renderInvitesList();
+        }
+
+        function renderInvitesList() {
+            const container = document.getElementById('history-list');
             const claimedMap = JSON.parse(localStorage.getItem(`claimed_refs_${tid}`) || "{}");
 
-            data?.forEach(u => {
+            let totalCommissionSum = 0;
+            let totalClaimableNow = 0;
+
+            allInvitedUsers.forEach(u => {
                 const taskEarnings = Number(u.task_earnings || 0);
-                const commissionFromThisFriend = Math.floor(taskEarnings * 0.1); 
-                totalCommissionSum += commissionFromThisFriend;
+                const comm = Math.floor(taskEarnings * 0.10);
+                totalCommissionSum += comm;
+                const friendId = String(u.telegram_id || u.name);
+                const alreadyClaimed = claimedMap[friendId] || 0;
+                totalClaimableNow += Math.max(0, comm - alreadyClaimed);
+            });
+
+            document.getElementById('total-comm').innerText = Math.max(totalCommissionSum, Number(myData?.total_ref_commission || 0)).toLocaleString();
+
+            // إظهار أو إخفاء زر "جمع الكل"
+            const btnClaimAll = document.getElementById('btn-claim-all');
+            if (totalClaimableNow > 0) {
+                btnClaimAll.style.display = 'block';
+                btnClaimAll.innerText = `📥 جمع كل العمولات المتاحة بضغطة واحدة (+${totalClaimableNow.toLocaleString()} نقطة)`;
+            } else {
+                btnClaimAll.style.display = 'none';
+            }
+
+            let filtered = allInvitedUsers;
+            if (currentFilter === 'valid') filtered = allInvitedUsers.filter(u => isFriendValid(u));
+            if (currentFilter === 'pending') filtered = allInvitedUsers.filter(u => !isFriendValid(u));
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p style="text-align:center; font-size:12px; color:gray; margin-top:25px;">📭 لا يوجد مدعوين في هذا التصنيف حالياً.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            filtered.forEach(u => {
+                const taskEarnings = Number(u.task_earnings || 0);
+                const commissionFromThisFriend = Math.floor(taskEarnings * 0.10);
+                const isValid = isFriendValid(u);
 
                 const friendId = String(u.telegram_id || u.name);
                 const alreadyClaimed = claimedMap[friendId] || 0;
                 const claimable = Math.max(0, commissionFromThisFriend - alreadyClaimed);
 
+                const statusBadge = isValid
+                    ? `<span class="status-pill status-valid">✅ دعوة صالحة</span>`
+                    : `<span class="status-pill status-pending">⏳ غير نشط</span>`;
+
                 let actionButtonHtml = '';
-                if (commissionFromThisFriend === 0) {
-                    actionButtonHtml = `<button class="btn-claim" style="opacity: 0.7; background: #2d333d; color: #aaa;" onclick="alertNoPoints('${u.name}')">جمع (0)</button>`;
+                if (!isValid && commissionFromThisFriend === 0) {
+                    actionButtonHtml = `<button class="btn-claim" style="opacity: 0.7; background: #22262f; color: #9ca3af;" onclick="alertNoPoints('${u.name}')">لم ينفذ مهام</button>`;
                 } else if (claimable > 0) {
                     actionButtonHtml = `<button class="btn-claim" onclick="claimFromFriend('${friendId}', '${u.name}', ${claimable}, this)">📥 جمع +${claimable}</button>`;
                 } else {
@@ -215,27 +504,23 @@
                 }
 
                 container.innerHTML += `
-                    <div class="item-row" style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="color: var(--main-green); font-weight: bold; font-size: 15px;">+${commissionFromThisFriend.toLocaleString()}</span>
-                            ${actionButtonHtml}
+                    <div class="item-row">
+                        <div class="user-info">
+                            <b>${u.name || 'مستخدم'} ${statusBadge}</b>
+                            <small>أرباح مهامه: ${taskEarnings.toLocaleString()} نقطة • عمولتك (10%): <span style="color:var(--main-green); font-weight:bold;">+${commissionFromThisFriend}</span></small>
                         </div>
-                        
-                        <div class="user-info" style="text-align: right; flex: 1;">
-                            <b style="color: white; font-size: 14px;">${u.name}</b>
-                            <small style="color: var(--text-gray);">أرباح مهامه: ${taskEarnings.toLocaleString()} (عمولتك 10%) 💎</small>
+                        <div>
+                            ${actionButtonHtml}
                         </div>
                     </div>`;
             });
-
-            document.getElementById('total-comm').innerText = totalCommissionSum.toLocaleString();
-            document.getElementById('total-ref').innerText = data?.length || 0;
         }
 
         function alertNoPoints(friendName) {
-            tg.showAlert(`ℹ️ صديقك (${friendName}) لم ينجز أي مهام بعد.\nعمولتك 10% تُحتسب فقط من النقاط التي يكتسبها من تنفيذ المهام.`);
+            tg.showAlert(`⏳ صديقك (${friendName}) سجل في البوت لكنه لم ينفذ أي مهمة أو إعلان بعد!\n\n💡 ذكره بتنفيذ أول مهمة له لكي تُحتسب دعوتك "صالحة" وتبدأ في جني 10% من أرباحه.`);
         }
 
+        // جمع عمولة صديق واحد
         async function claimFromFriend(friendId, friendName, amount, btn) {
             if (!myData || amount <= 0) return;
 
@@ -259,10 +544,16 @@
                 claimedMap[friendId] = (claimedMap[friendId] || 0) + amount;
                 localStorage.setItem(`claimed_refs_${tid}`, JSON.stringify(claimedMap));
 
-                btn.className = "btn-claim claimed";
-                btn.innerText = "تم الجمع ✅";
+                await client.from('transactions').insert([{
+                    telegram_id: String(tid),
+                    type: 'points',
+                    title: `عمولة إحالة (10%) من: ${friendName}`,
+                    amount: `+${amount} نقطة`,
+                    status: 'مكتمل'
+                }]);
 
-                tg.showAlert(`🎉 مبروك! تم جمع +${amount} نقطة من مهام صديقك (${friendName}) وإضافتها لرصيدك الرئيسي!`);
+                renderInvitesList();
+                tg.showAlert(`🎉 مبروك! تم جمع +${amount} نقطة من مهام صديقك (${friendName}) وإضافتها لرصيدك!`);
             } else {
                 btn.disabled = false;
                 btn.innerText = `📥 جمع +${amount}`;
@@ -270,25 +561,221 @@
             }
         }
 
-        async function loadLeaderboard() {
-            const { data } = await client.from('users').select('name, invited_count').order('invited_count', { ascending: false }).limit(10);
-            const container = document.getElementById('leaderboard');
-            container.innerHTML = '';
-            data?.forEach((u, i) => {
+        // ⭐ ميزة جمع كل العمولات المتاحة بضغطة واحدة
+        async function claimAllFriendsCommissions() {
+            const btnAll = document.getElementById('btn-claim-all');
+            let claimedMap = JSON.parse(localStorage.getItem(`claimed_refs_${tid}`) || "{}");
+            let totalToClaim = 0;
+
+            allInvitedUsers.forEach(u => {
+                const taskEarnings = Number(u.task_earnings || 0);
+                const comm = Math.floor(taskEarnings * 0.10);
+                const friendId = String(u.telegram_id || u.name);
+                const alreadyClaimed = claimedMap[friendId] || 0;
+                const diff = Math.max(0, comm - alreadyClaimed);
+                if (diff > 0) {
+                    totalToClaim += diff;
+                    claimedMap[friendId] = alreadyClaimed + diff;
+                }
+            });
+
+            if (totalToClaim <= 0) return;
+
+            btnAll.disabled = true;
+            btnAll.innerText = "⏳ جاري جمع كافة العمولات...";
+
+            const newPoints = (myData.points || 0) + totalToClaim;
+            const newTotalEarned = (myData.total_earned || 0) + totalToClaim;
+            const newTotalComm = (myData.total_ref_commission || 0) + totalToClaim;
+
+            const { data, error } = await client.from('users').update({
+                points: newPoints,
+                total_earned: newTotalEarned,
+                total_ref_commission: newTotalComm
+            }).eq('telegram_id', tid).select().single();
+
+            btnAll.disabled = false;
+            if (!error && data) {
+                myData = data;
+                localStorage.setItem(`claimed_refs_${tid}`, JSON.stringify(claimedMap));
+
+                await client.from('transactions').insert([{
+                    telegram_id: String(tid),
+                    type: 'points',
+                    title: `جمع شامل لعمولات الأصدقاء (10%)`,
+                    amount: `+${totalToClaim} نقطة`,
+                    status: 'مكتمل'
+                }]);
+
+                renderInvitesList();
+                tg.showAlert(`🎉 عاش يا بطل! تم جمع +${totalToClaim.toLocaleString()} نقطة دفعة واحدة وإضافتها لرصيدك!`);
+            } else {
+                tg.showAlert("❌ تعذر جمع العمولات حالياً، حاول مرة أخرى.");
+            }
+        }
+
+        // ⭐ نظام جوائز إنجازات الدعوة (Milestones)
+        function renderMilestones(validCount) {
+            const container = document.getElementById('milestones-container');
+            const claimedMilestones = JSON.parse(localStorage.getItem(`claimed_milestones_${tid}`) || "[]");
+            container.innerHTML = "";
+
+            REF_MILESTONES.forEach(m => {
+                const isClaimed = claimedMilestones.includes(m.count);
+                const isUnlocked = validCount >= m.count;
+
+                let cardClass = "milestone-item";
+                let btnHtml = "";
+
+                if (isClaimed) {
+                    cardClass += " claimed";
+                    btnHtml = `<button class="btn-milestone locked" disabled>تم الاستلام ✅</button>`;
+                } else if (isUnlocked) {
+                    cardClass += " unlocked";
+                    btnHtml = `<button class="btn-milestone ready" onclick="claimMilestone(${m.count}, ${m.reward})">🎁 استلام</button>`;
+                } else {
+                    btnHtml = `<button class="btn-milestone locked" disabled>متبقي ${m.count - validCount}</button>`;
+                }
+
                 container.innerHTML += `
-                    <div class="item-row">
-                        <div class="rank-circle">${i+1}</div>
+                    <div class="${cardClass}">
+                        <span class="milestone-target">👥 ${m.label}</span>
+                        <span class="milestone-reward">+${m.reward} نقطة</span>
+                        ${btnHtml}
+                    </div>
+                `;
+            });
+        }
+
+        async function claimMilestone(targetCount, rewardPts) {
+            let claimedMilestones = JSON.parse(localStorage.getItem(`claimed_milestones_${tid}`) || "[]");
+            if (claimedMilestones.includes(targetCount)) return;
+
+            const newPoints = (myData.points || 0) + rewardPts;
+            const newTotalEarned = (myData.total_earned || 0) + rewardPts;
+            const newTotalComm = (myData.total_ref_commission || 0) + rewardPts;
+
+            const { data, error } = await client.from('users').update({
+                points: newPoints,
+                total_earned: newTotalEarned,
+                total_ref_commission: newTotalComm
+            }).eq('telegram_id', tid).select().single();
+
+            if (!error && data) {
+                myData = data;
+                claimedMilestones.push(targetCount);
+                localStorage.setItem(`claimed_milestones_${tid}`, JSON.stringify(claimedMilestones));
+
+                await client.from('transactions').insert([{
+                    telegram_id: String(tid),
+                    type: 'points',
+                    title: `جائزة إنجاز دعوة ${targetCount} صديق نشط`,
+                    amount: `+${rewardPts} نقطة`,
+                    status: 'مكتمل'
+                }]);
+
+                const validCount = allInvitedUsers.filter(u => isFriendValid(u)).length;
+                renderMilestones(validCount);
+                renderInvitesList();
+                tg.showAlert(`🏆 إنجاز رائع!\nاستلمت مكافأة +${rewardPts} نقطة لوصولك إلى ${targetCount} دعوة صالحة!`);
+            }
+        }
+
+        // ⭐ لوحة الصدارة (تستبعد أي شخص دعواته 0 نهائياً + تمييز المتصدر الأول)
+        async function loadLeaderboard() {
+            const container = document.getElementById('leaderboard-list');
+            const { data, error } = await client
+                .from('users')
+                .select('telegram_id, name, invited_count')
+                .gt('invited_count', 0) // منع ظهور أي مستخدم دعواته 0
+                .order('invited_count', { ascending: false })
+                .limit(15);
+
+            if (error || !data || data.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding: 30px 15px; background: var(--card-bg); border-radius: 16px; border: 1px dashed #333; color: var(--text-gray); font-size: 12px; line-height: 1.7;">
+                        🏆 <b>لوحة الصدارة تنتظر البطل الأول!</b><br>
+                        لا يوجد مستخدمون بدعوات صالحة حتى الآن (أصحاب الـ 0 دعوات لا يظهرون باللوحة).<br>
+                        <span style="color: var(--gold); font-weight: bold;">ادعُ أول صديق نشط الآن وتصدّر المركز الأول للفوز بالجائزة الأسبوعية!</span>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            data.forEach((u, i) => {
+                const rank = i + 1;
+                let rankClass = "rank-circle";
+                let rankIcon = rank;
+                let rowClass = "item-row";
+                let prizeBadge = "";
+
+                if (rank === 1) {
+                    rankClass += " rank-1";
+                    rankIcon = "🥇";
+                    rowClass += " top-1-row";
+                    prizeBadge = `<span style="background: rgba(255,170,0,0.2); color: var(--gold); border: 1px solid var(--gold); padding: 2px 7px; border-radius: 6px; font-size: 10px; margin-right: 5px;">👑 المرشح للجائزة الأسبوعية</span>`;
+                } else if (rank === 2) {
+                    rankClass += " rank-2";
+                    rankIcon = "🥈";
+                } else if (rank === 3) {
+                    rankClass += " rank-3";
+                    rankIcon = "🥉";
+                }
+
+                const isMe = String(u.telegram_id) === String(tid);
+                const nameDisplay = isMe ? `${u.name} (أنت ⭐)` : (u.name || "مستخدم");
+
+                container.innerHTML += `
+                    <div class="${rowClass}">
+                        <div class="${rankClass}">${rankIcon}</div>
                         <div class="user-info">
-                            <b>${u.name}</b>
-                            <small>دعا ${u.invited_count || 0} صديق</small>
+                            <b>${nameDisplay} ${prizeBadge}</b>
+                            <small>حقق <span style="color: var(--main-green); font-weight: bold;">${u.invited_count}</span> دعوة صالحة ونشطة ✅</small>
                         </div>
                     </div>`;
             });
         }
 
         async function calculateRank() {
-            const { count } = await client.from('users').select('*', { count: 'exact', head: true }).gt('invited_count', myData.invited_count || 0);
+            const myValidCount = myData?.invited_count || 0;
+            if (myValidCount <= 0) {
+                document.getElementById('my-rank').innerText = "غير مصنف";
+                document.getElementById('my-rank').style.fontSize = "13px";
+                return;
+            }
+            const { count } = await client
+                .from('users')
+                .select('*', { count: 'exact', head: true })
+                .gt('invited_count', myValidCount);
+
+            document.getElementById('my-rank').style.fontSize = "18px";
             document.getElementById('my-rank').innerText = `#${(count || 0) + 1}`;
+        }
+
+        // عداد تنازلي لنهاية الأسبوع (الجمعة 11:59 مساءً)
+        function startWeeklyCountdown() {
+            function updateTimer() {
+                const now = new Date();
+                const dayOfWeek = now.getDay(); // 5 = Friday
+                let daysUntilFriday = (5 - dayOfWeek + 7) % 7;
+                const nextFriday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntilFriday, 23, 59, 59);
+                
+                if (now > nextFriday) {
+                    nextFriday.setDate(nextFriday.getDate() + 7);
+                }
+
+                const diff = Math.max(0, nextFriday - now);
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const m = Math.floor((diff / (1000 * 60)) % 60);
+
+                const el = document.getElementById('weekly-countdown');
+                if (el) {
+                    el.innerText = `⏳ يتبقى على تسليم جائزة الأسبوع: ${d} يوم و ${h} ساعة و ${m} دقيقة`;
+                }
+            }
+            updateTimer();
+            setInterval(updateTimer, 60000);
         }
 
         function switchTab(id, el) {
@@ -298,7 +785,7 @@
             el.classList.add('active');
         }
 
-        // تفعيل الكود مع استخراج الآيدي الذكي وإرسال الإشعارات للطرفين
+        // تفعيل كود الدعوة بالنظام الآمن الجديد (هدية ترحيبية +10 نقاط والاحتساب عند النشاط)
         async function submitInvite() {
             const rawValue = document.getElementById('input-promo').value.trim();
             const refCode = extractRefCode(rawValue);
@@ -308,8 +795,9 @@
             let { data: inviter } = await client.from('users').select('*').eq('telegram_id', refCode).maybeSingle();
             if (!inviter) return tg.showAlert("❌ هذا الكود / المستخدم غير مسجل بالنظام!");
 
-            const newPointsForMe = (myData.points || 0) + 100;
-            const newTotalForMe = (myData.total_earned || 0) + 100;
+            const welcomeBonus = 10; // 10 نقاط هدية ترحيبية للمستخدم الجديد
+            const newPointsForMe = (myData.points || 0) + welcomeBonus;
+            const newTotalForMe = (myData.total_earned || 0) + welcomeBonus;
 
             const { error } = await client.from('users').update({ 
                 referred_by: refCode, 
@@ -318,50 +806,65 @@
             }).eq('telegram_id', tid);
 
             if (!error) {
-                // تحديث بيانات صاحب الدعوة
-                const inviterPoints = (inviter.points || 0) + 200;
-                const inviterTotal = (inviter.total_earned || 0) + 200;
-                const inviterCount = (inviter.invited_count || 0) + 1;
-                const inviterComm = (inviter.total_ref_commission || 0) + 200;
-
-                await client.from('users').update({ 
-                    points: inviterPoints, 
-                    total_earned: inviterTotal,
-                    invited_count: inviterCount, 
-                    total_ref_commission: inviterComm 
-                }).eq('telegram_id', refCode);
+                await client.from('transactions').insert([{
+                    telegram_id: String(tid),
+                    type: 'points',
+                    title: `هدية تفعيل كود الدعوة (${refCode})`,
+                    amount: `+${welcomeBonus} نقطة`,
+                    status: 'مكتمل'
+                }]);
 
                 const myName = myData.name || "مستخدم جديد";
                 const inviterName = inviter.name || "صديقك";
 
-                // 1. إرسال إشعار لصاحب الدعوة في شات البوت
+                // 1. إشعار لصاحب الدعوة يشرح النظام الجديد
                 const msgForInviter = 
-                    `🎉 *مستخدم جديد انضم من خلالك!*\n` +
+                    `🎉 *صديق جديد سجل بكود دعوتك!*\n` +
                     `━━━━━━━━━━━━━━━\n` +
                     `👤 *الصديق:* ${myName}\n` +
-                    `🎁 *المكافأة:* +200 نقطة تمت إضافتها لرصيدك الآن!\n` +
-                    `💎 *العمولة:* ستحصل تلقائياً على 10% من جميع أرباح مهامه مستقبلاً.`;
+                    `✅ *حالة الدعوة:* ستُحتسب دعوة صالحة في لوحة الصدارة فور تنفيذه لأول مهمة!\n` +
+                    `💎 *أرباحك منه:* ستحصل على *10%* من جميع أرباح مهامه + *5%* مكافأة نقاط على أي شحن يقوم به!`;
                 sendTelegramMessage(refCode, msgForInviter);
 
-                // 2. إرسال إشعار للمستخدم الجديد في شات البوت
+                // 2. إشعار للمستخدم الجديد
                 const msgForNewUser = 
                     `🎉 *تم تفعيل كود الدعوة بنجاح!*\n` +
                     `━━━━━━━━━━━━━━━\n` +
                     `👤 *تمت دعوتك بواسطة:* ${inviterName}\n` +
-                    `🎁 *هدية التسجيل:* مبروك! حصلت على +100 نقطة في رصيدك الرئيسي.`;
+                    `🎁 *هدية التفعيل:* حصلت على +${welcomeBonus} نقاط ترحيبية في رصيدك!`;
                 sendTelegramMessage(tid, msgForNewUser);
 
-                tg.showAlert("✅ تم تفعيل الدعوة بنجاح وحصلت على +100 نقطة!");
+                tg.showAlert(`✅ تم تفعيل كود الدعوة بنجاح وحصلت على +${welcomeBonus} نقاط ترحيبية!`);
                 location.reload();
             } else {
                 tg.showAlert("❌ حدث خطأ أثناء تفعيل الكود، يرجى المحاولة لاحقاً.");
             }
         }
 
-        function copyLink() { navigator.clipboard.writeText(document.getElementById('ref-url').innerText); tg.showAlert("✅ تم نسخ الرابط!"); }
+        function copyLink() { 
+            navigator.clipboard.writeText(document.getElementById('ref-url').innerText); 
+            tg.showAlert("✅ تم نسخ رابط الدعوة الخاص بك!"); 
+        }
+
+        function copyMyId() {
+            navigator.clipboard.writeText(tid);
+            tg.showAlert(`✅ تم نسخ كود الدعوة الخاص بك: ${tid}`);
+        }
+
         function shareLink() {
             const url = document.getElementById('ref-url').innerText;
-            window.open(`https://t.me/share/url?url=${url}&text=${encodeURIComponent("سجل في MegaTask واكسب نقاط حقيقية! 🚀")}`);
+            const shareTxt = "🔥 انضم الآن إلى بوت MegaTask واكسب نقاطاً وخدمات مجانية يومياً من المهام وعجلة الحظ! سجل من رابطي للحصول على هدية البداية 🚀";
+            window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(shareTxt)}`);
+        }
+
+        function openQrModal() {
+            const url = document.getElementById('ref-url').innerText;
+            document.getElementById('qr-image').src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}`;
+            document.getElementById('qr-modal').style.display = 'flex';
+        }
+
+        function closeQrModal() {
+            document.getElementById('qr-modal').style.display = 'none';
         }
 
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
