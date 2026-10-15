@@ -11,23 +11,95 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
+        :root { 
+            --main-green: #00d26a; 
+            --main-cyan: #00f2ff;
+            --dark-bg: #0d0f12; 
+            --card-bg: #1a1d23; 
+            --text-gray: #9ca3af; 
+        }
+        * { box-sizing: border-box; }
         html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 110px; width: 100%; max-width: 100vw; overflow-x: hidden; position: relative; }
         
-        .header { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; }
+        .header { padding: 18px 15px 10px; display: flex; justify-content: space-between; align-items: center; }
+        .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; color: var(--main-green); font-weight: bold; }
         
-        .main-balance { text-align: center; margin-bottom: 25px; }
-        .main-balance h1 { font-size: 42px; margin: 5px 0; color: white; text-shadow: 0 0 10px rgba(0, 210, 106, 0.3); }
+        /* حاوية العملتين جنباً إلى جنب */
+        .dual-balance-wrapper { padding: 0 15px; margin-bottom: 18px; }
+        .dual-balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
         
-        /* حاوية أزرار السحب والإيداع بجانب بعضهما */
-        .balance-actions { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
-        .btn-withdraw { background: var(--main-green); color: #000; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 14px; }
-        .btn-deposit { background: linear-gradient(135deg, #00f2ff, #0077ff); color: #000; border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .wallet-card {
+            background: linear-gradient(145deg, #1a1e26, #12151a);
+            border-radius: 18px;
+            padding: 15px 12px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .wallet-points {
+            border: 1px solid rgba(0, 210, 106, 0.35);
+            box-shadow: 0 4px 15px rgba(0, 210, 106, 0.08);
+        }
+        .wallet-egp {
+            border: 1px solid rgba(0, 242, 255, 0.35);
+            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.08);
+        }
+        .wallet-label { font-size: 12px; color: var(--text-gray); display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: bold; }
+        .wallet-amount { font-size: 26px; font-weight: 800; margin: 8px 0 4px; letter-spacing: 0.5px; }
+        .wallet-points .wallet-amount { color: var(--main-green); text-shadow: 0 0 10px rgba(0, 210, 106, 0.25); }
+        .wallet-egp .wallet-amount { color: var(--main-cyan); text-shadow: 0 0 10px rgba(0, 242, 255, 0.25); }
+        .wallet-sub { font-size: 10px; color: #7a8291; margin-bottom: 12px; }
+
+        .btn-wallet-action {
+            width: 100%;
+            border: none;
+            padding: 9px 10px;
+            border-radius: 11px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-wallet-action:active { transform: scale(0.96); }
+        
+        .btn-withdraw-soon {
+            background: rgba(0, 210, 106, 0.12);
+            color: var(--main-green);
+            border: 1px dashed rgba(0, 210, 106, 0.5);
+        }
+        .btn-deposit {
+            background: linear-gradient(135deg, #00f2ff, #0077ff);
+            color: #000;
+            box-shadow: 0 2px 10px rgba(0, 242, 255, 0.25);
+        }
+
+        /* زر تحويل الجنيه إلى نقاط */
+        .btn-exchange-bar {
+            width: 100%;
+            background: linear-gradient(90deg, rgba(0, 242, 255, 0.1), rgba(0, 210, 106, 0.1));
+            border: 1px solid #2d3542;
+            color: #fff;
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .btn-exchange-bar span { color: #ffaa00; }
+        .btn-exchange-bar:active { transform: scale(0.98); }
         
         .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; margin-bottom: 20px; }
-        .stat-card { background: var(--card-bg); padding: 15px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
-        .stat-card b { display: block; font-size: 16px; margin-bottom: 4px; color: var(--main-green); }
+        .stat-card { background: var(--card-bg); padding: 12px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
+        .stat-card b { display: block; font-size: 15px; margin-bottom: 3px; color: var(--main-green); }
+        .stat-card span { font-size: 11px; color: var(--text-gray); }
         
         /* بطاقة الستريك وعجلة الحظ العريضة */
         .streak-fullwidth-card {
@@ -105,11 +177,11 @@
         }
         .btn-service span { font-size: 32px; display: block; margin-bottom: 12px; filter: drop-shadow(0 0 5px rgba(0, 210, 106, 0.1)); }
 
-        #ref-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; }
-        .modal-content { background: var(--card-bg); padding: 30px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 85%; }
-        .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 15px 0; outline: none; }
+        #ref-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: var(--card-bg); padding: 25px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 100%; max-width: 340px; }
+        .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 15px 0; outline: none; font-size: 15px; }
         
-        /* نافذة عجلة الحظ */
+        /* نافذة عجلة الحظ والتحويل */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 99999; align-items: center; justify-content: center; padding: 20px; }
         .modal-box { background: #181b22; border: 1px solid #2d333d; border-radius: 20px; padding: 22px; width: 100%; max-width: 350px; text-align: center; }
         .btn-confirm-ad { width: 100%; background: var(--main-green); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; }
@@ -120,7 +192,6 @@
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
 
-        /* تأثيرات بصرية للستريك */
         @keyframes pulseGlow {
             0% { box-shadow: 0 0 5px rgba(0, 210, 106, 0.2); }
             50% { box-shadow: 0 0 25px rgba(0, 210, 106, 0.8), inset 0 0 15px rgba(0, 210, 106, 0.4); }
@@ -131,12 +202,34 @@
 </head>
 <body>
 
+    <!-- نافذة التسجيل وكود الدعوة -->
     <div id="ref-modal">
         <div class="modal-content">
             <h2 style="color: var(--main-green); margin: 0;">AGENT REGISTER</h2>
+            <p style="font-size: 12px; color: var(--text-gray); margin-top: 6px;">أدخل كود الدعوة إن وجد أو تخطى للبدء</p>
             <input type="text" id="ref-input" class="modal-input" placeholder="ENTER CODE (ID)">
-            <button class="btn-withdraw" style="width:100%" onclick="submitRegistration()">ابدأ الآن</button>
-            <button onclick="submitRegistration(true)" style="background: none; border: none; color: #555; margin-top: 10px;">تخطي ></button>
+            <button class="btn-confirm-ad" onclick="submitRegistration()">ابدأ الآن</button>
+            <button onclick="submitRegistration(true)" style="background: none; border: none; color: #777; margin-top: 12px; cursor: pointer;">تخطي ⬅</button>
+        </div>
+    </div>
+
+    <!-- نافذة تحويل الجنيه إلى نقاط (+20% بونص) -->
+    <div id="exchange-modal" class="modal-overlay">
+        <div class="modal-box" style="border-color: var(--main-cyan);">
+            <h3 style="color: var(--main-cyan); margin-top:0;">⚡ تحويل الجنيه إلى نقاط</h3>
+            <p style="font-size: 12px; color: var(--text-gray); margin-bottom: 12px;">
+                احصل على <b style="color: #ffaa00;">1,200 نقطة</b> مقابل كل <b style="color: var(--main-cyan);">1 جنيه</b> (شامل 20% نقاط إضافية مجاناً لتمويل مهامك ومشترياتك!)
+            </p>
+            <input type="number" id="exchange-egp-input" class="modal-input" placeholder="أدخل المبلغ بالجنيه (مثلاً: 5)" min="1" oninput="updateExchangePreview()">
+            <div id="exchange-preview" style="font-size: 13px; color: var(--main-green); font-weight: bold; margin-bottom: 15px;">
+                ستحصل على: 0 نقطة
+            </div>
+            <button class="btn-confirm-ad" style="background: linear-gradient(135deg, #00f2ff, #0077ff); margin-bottom: 8px;" onclick="confirmExchangeEgpToPoints()">
+                ✅ تأكيد التحويل فوراً
+            </button>
+            <button class="btn-confirm-ad" style="background: #252932; color: #ccc;" onclick="closeExchangeModal()">
+                إلغاء
+            </button>
         </div>
     </div>
 
@@ -165,19 +258,45 @@
         <div style="color: var(--text-gray); font-size: 12px;">WELCOME BACK</div>
     </div>
 
-    <div class="main-balance">
-        <span>BALANCE</span>
-        <h1 id="user-points">0</h1>
-        <div class="balance-actions">
-            <button class="btn-withdraw" onclick="goWithdraw()">↗ Withdraw</button>
-            <button class="btn-deposit" onclick="goDeposit()">📥 Deposit</button>
+    <!-- قسم العملتين الجديد (النقاط على جنب والجنيه على جنب) -->
+    <div class="dual-balance-wrapper">
+        <div class="dual-balance-grid">
+            <!-- بطاقة النقاط -->
+            <div class="wallet-card wallet-points">
+                <div>
+                    <div class="wallet-label">🪙 رصيد النقاط</div>
+                    <div class="wallet-amount" id="user-points">0</div>
+                    <div class="wallet-sub">1000 نقطة = 1 جنيه</div>
+                </div>
+                <button class="btn-wallet-action btn-withdraw-soon" onclick="showWithdrawSoon()">
+                    ↗ السحب (قريباً ⏳)
+                </button>
+            </div>
+
+            <!-- بطاقة الجنيه -->
+            <div class="wallet-card wallet-egp">
+                <div>
+                    <div class="wallet-label">💵 رصيد الجنيه</div>
+                    <div class="wallet-amount" id="user-egp">0.00</div>
+                    <div class="wallet-sub">للشراء والتمويل المباشر</div>
+                </div>
+                <button class="btn-wallet-action btn-deposit" onclick="goDeposit()">
+                    📥 شحن رصيد
+                </button>
+            </div>
         </div>
+
+        <!-- شريط تحويل الجنيه إلى نقاط -->
+        <button class="btn-exchange-bar" onclick="openExchangeModal()">
+            🔄 تحويل الجنيه إلى نقاط <span>(1 ج.م = 1200 نقطة 🔥)</span>
+        </button>
     </div>
 
+    <!-- شبكة الإحصائيات -->
     <div class="stats-grid">
-        <div class="stat-card"><b id="balance-short">0</b><span>Balance</span></div>
-        <div class="stat-card"><b id="user-streak">0d</b><span>Streak</span></div>
-        <div class="stat-card"><b id="tasks-done">0</b><span>Tasks</span></div>
+        <div class="stat-card"><b id="total-earned-short">0</b><span>إجمالي النقاط</span></div>
+        <div class="stat-card"><b id="user-streak">0d</b><span>الستريك</span></div>
+        <div class="stat-card"><b id="tasks-done">0</b><span>المهام المنفذة</span></div>
     </div>
 
     <!-- بطاقة الستريك وعجلة الحظ اليومية المدمجة بعرض الصفحة -->
@@ -195,7 +314,7 @@
 
         <div class="streak-actions">
             <button id="claimBtn" class="btn-streak-claim" onclick="claimDailyWithAd()">
-                🎁 مكافأة اليوم (+5 نقاط)
+                🎁 مكافأة اليوم (+10 نقاط)
             </button>
             
             <button id="btn-wheel-trigger" class="btn-wheel-trigger" onclick="showWheelAd()">
@@ -210,7 +329,7 @@
 
     <div class="action-box">
         <div class="btn-action btn-offers" onclick="showSoon('عروض CPA')">🎯 عروض CPA (قريباً..)</div>
-        <button class="btn-store-full" onclick="goStore()">🛍️ متجر MegaTask (شحن، متابعين، اشتراكات)</button>
+        <button class="btn-store-full" onclick="goStore()">🛍️ متجر MegaTask (منتجات بالنقاط وبالجنيه)</button>
     </div>
 
     <div class="services-section">
@@ -245,14 +364,14 @@
         let countdownTimer = null;
 
         const WHEEL_SECTORS = [
-            { label: "5 نقطة", value: 5, color: "#161920", text: "#00d26a" },
-            { label: "10 نقطة", value: 10, color: "#1e232d", text: "#00d26a" },
+            { label: "5 نقاط", value: 5, color: "#161920", text: "#00d26a" },
+            { label: "10 نقاط", value: 10, color: "#1e232d", text: "#00d26a" },
             { label: "حظ أوفر 💔", value: 0, color: "#161920", text: "#888888" },
             { label: "15 نقطة", value: 15, color: "#1e232d", text: "#ffaa00" },
-            { label: "25 نقطة 💎", value: 25, color: "#00d26a", text: "#000000" },
-            { label: "5 نقطة", value: 5, color: "#2d3442", text: "#ffffff" },
-            { label: "10 نقطة", value: 10, color: "#161920", text: "#ffaa00" },
-            { label: "20 نقطة", value: 20, color: "#1e232d", text: "#ffffff" }
+            { label: "20 نقطة 💎", value: 20, color: "#00d26a", text: "#000000" },
+            { label: "5 نقاط", value: 5, color: "#2d3442", text: "#ffffff" },
+            { label: "10 نقاط", value: 10, color: "#161920", text: "#ffaa00" },
+            { label: "15 نقطة", value: 15, color: "#1e232d", text: "#ffffff" }
         ];
         let currentAngle = 0;
         let isSpinning = false;
@@ -277,7 +396,6 @@
             }
         }
 
-        // ⭐ فحص وتجميع الإشعارات غير المقروءة وعرضها مرة واحدة بدلاً من تكرارها، ثم تحويل حالتها إلى مقروءة (true)
         async function checkAndShowNotifications() {
             try {
                 let { data: unreadNotifs, error } = await client
@@ -317,6 +435,7 @@
                 telegram_id: userId, 
                 name: tg.initDataUnsafe.user?.first_name || "AGENT", 
                 points: 0, 
+                egp_balance: 0,
                 total_earned: 0, 
                 streak: 0 
             };
@@ -333,11 +452,82 @@
 
         function updateUI() {
             if (!userData) return;
-            document.getElementById('user-points').innerText = (userData.points || 0).toLocaleString();
-            document.getElementById('balance-short').innerText = userData.points >= 1000 ? (userData.points/1000).toFixed(1) + 'k' : (userData.points || 0);
+            const pts = userData.points || 0;
+            const egp = Number(userData.egp_balance || 0);
+            const totalEarned = userData.total_earned || pts;
+
+            document.getElementById('user-points').innerText = pts.toLocaleString();
+            document.getElementById('user-egp').innerText = egp.toFixed(2) + " ج.م";
+            
+            document.getElementById('total-earned-short').innerText = totalEarned >= 1000 ? (totalEarned / 1000).toFixed(1) + 'k' : totalEarned;
             document.getElementById('user-streak').innerText = (userData.streak || 0) + "d";
             document.getElementById('tasks-done').innerText = userData.total_tasks || 0;
             document.getElementById('card-streak-count').innerText = (userData.streak || 0) + " يوم";
+        }
+
+        // تنبيه زر السحب (قريباً)
+        function showWithdrawSoon() {
+            tg.showAlert("⏳ سحب الأرباح النقدية قيد التجهيز وسيتم فتحه قريباً!\n\n💡 يمكنك حالياً استغلال نقاطك فوراً في شراء المنتجات من المتجر أو تمويل قناتك في قسم المهام.");
+        }
+
+        // دوال تحويل الجنيه إلى نقاط (+20% بونص)
+        function openExchangeModal() {
+            document.getElementById('exchange-egp-input').value = "";
+            document.getElementById('exchange-preview').innerText = "ستحصل على: 0 نقطة";
+            document.getElementById('exchange-modal').style.display = 'flex';
+        }
+
+        function closeExchangeModal() {
+            document.getElementById('exchange-modal').style.display = 'none';
+        }
+
+        function updateExchangePreview() {
+            const val = parseFloat(document.getElementById('exchange-egp-input').value);
+            if (!val || val <= 0) {
+                document.getElementById('exchange-preview').innerText = "ستحصل على: 0 نقطة";
+                return;
+            }
+            const pointsToGet = Math.floor(val * 1200);
+            document.getElementById('exchange-preview').innerText = `ستحصل على: ${pointsToGet.toLocaleString()} نقطة 🔥`;
+        }
+
+        async function confirmExchangeEgpToPoints() {
+            if (!userData) return;
+            const egpAmount = parseFloat(document.getElementById('exchange-egp-input').value);
+            const currentEgp = Number(userData.egp_balance || 0);
+
+            if (!egpAmount || egpAmount < 1) {
+                tg.showAlert("⚠️ الحد الأدنى للتحويل هو 1 جنيه.");
+                return;
+            }
+
+            if (egpAmount > currentEgp) {
+                tg.showAlert("❌ رصيدك بالجنيه غير كافٍ! قم بشحن رصيدك أولاً.");
+                return;
+            }
+
+            const pointsToAdd = Math.floor(egpAmount * 1200);
+            const newEgpBalance = Number((currentEgp - egpAmount).toFixed(2));
+            const newPointsBalance = (userData.points || 0) + pointsToAdd;
+
+            const { data, error } = await client
+                .from('users')
+                .update({
+                    egp_balance: newEgpBalance,
+                    points: newPointsBalance
+                })
+                .eq('telegram_id', userId)
+                .select()
+                .single();
+
+            if (!error && data) {
+                userData = data;
+                updateUI();
+                closeExchangeModal();
+                tg.showAlert(`🎉 تم التحويل بنجاح!\nتم خصم ${egpAmount} ج.م وإضافة ${pointsToAdd.toLocaleString()} نقطة إلى رصيدك.`);
+            } else {
+                tg.showAlert("❌ حدث خطأ أثناء التحويل، حاول مرة أخرى.");
+            }
         }
 
         function hasClaimedToday(lastClaimIso) {
@@ -405,7 +595,7 @@
                 btnClaim.style.display = "none";
             } else {
                 btnClaim.style.display = "block";
-                btnClaim.innerText = `🎁 مكافأة اليوم (+5 نقاط)`;
+                btnClaim.innerText = `🎁 مكافأة اليوم (+10 نقاط)`;
             }
 
             if (spun) {
@@ -427,7 +617,6 @@
             }
         }
 
-        // تشغيل إعلان الستريك مع Monetag
         function claimDailyWithAd() {
             if (!userData) return;
             if (hasClaimedToday(userData.last_claim)) {
@@ -438,7 +627,6 @@
             triggerMonetagAd();
         }
 
-        // تشغيل إعلان عجلة الحظ مع Monetag
         function showWheelAd() {
             if (!userData) return;
             if (hasSpunWheelToday(userData.last_wheel_spin)) {
@@ -468,11 +656,10 @@
             }
         }
 
-        // تنفيذ الستريك بعد مشاهدة الإعلان مع مؤثرات بصريه
         async function executeClaimDaily() {
             const now = new Date();
             const newStreak = calculateNewStreak(userData.last_claim, userData.streak || 0);
-            const rewardPoints = 5;
+            const rewardPoints = 10;
 
             const { data, error } = await client.from('users').update({
                 points: (userData.points || 0) + rewardPoints,
@@ -627,7 +814,6 @@
         function goGames() { window.location.href = `games.html?id=${userId}`; }
         function goInvite() { window.location.href = `invite.html?id=${userId}`; }
         function goProfile() { window.location.href = `profile.html?id=${userId}`; }
-        function goWithdraw() { window.location.href = `withdraw.html?id=${userId}`; }
         function goDeposit() { window.location.href = `deposit.html?id=${userId}`; }
         function goStore() { window.location.href = `store.html?id=${userId}`; }
         
