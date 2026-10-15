@@ -2,12 +2,19 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - Media Request</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MegaTask - التحميل السحابي الشامل</title>
+    
+    <!-- سكريبت إعلانات Monetag المدمج داخل الصفحة -->
+    <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --main-green: #00d26a;
+            --neon-blue: #00f2ff;
+            --gold: #ffaa00;
             --dark-bg: #0d0f12;
             --card-bg: #1a1d23;
             --text-gray: #9ca3af;
@@ -17,186 +24,612 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
         }
 
         body {
             background-color: var(--dark-bg);
             color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            padding: 15px;
+            padding-bottom: 110px;
+            overflow-x: hidden;
         }
 
-        .container {
+        /* الهيدر وشريط النقاط */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .btn-back {
             background: var(--card-bg);
-            width: 100%;
-            max-width: 500px;
-            padding: 25px;
-            border-radius: 25px;
             border: 1px solid #2d333d;
-            box-shadow: 0 0 20px rgba(0, 210, 106, 0.05);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .pts-pill {
+            background: rgba(0, 210, 106, 0.12);
+            border: 1px solid rgba(0, 210, 106, 0.4);
+            color: var(--main-green);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .main-card {
+            background: linear-gradient(145deg, #1b1f27, #13161c);
+            width: 100%;
+            padding: 20px 16px;
+            border-radius: 22px;
+            border: 1px solid #2d333d;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            margin-bottom: 18px;
         }
 
         h1 {
             text-align: center;
-            font-size: 22px;
-            margin-bottom: 8px;
+            font-size: 20px;
+            margin-bottom: 6px;
             color: var(--main-green);
         }
 
         p.subtitle {
             text-align: center;
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text-gray);
-            margin-bottom: 24px;
+            margin-bottom: 15px;
+            line-height: 1.5;
         }
 
-        .input-group {
+        /* شريط المنصات المدعومة (ينور تلقائياً حسب الرابط) */
+        .platforms-bar {
             display: flex;
-            flex-direction: column;
-            gap: 15px;
+            justify-content: space-around;
+            background: #101318;
+            border: 1px solid #252a34;
+            padding: 8px;
+            border-radius: 14px;
+            margin-bottom: 16px;
+        }
+        .plt-item {
+            font-size: 11px;
+            color: var(--text-gray);
+            text-align: center;
+            padding: 4px 6px;
+            border-radius: 8px;
+            transition: 0.25s;
+        }
+        .plt-item span { display: block; font-size: 18px; margin-bottom: 2px; }
+        .plt-item.active {
+            background: rgba(0, 210, 106, 0.15);
+            color: var(--main-green);
+            border: 1px solid var(--main-green);
+            font-weight: bold;
+            transform: scale(1.05);
         }
 
+        /* حقل الرابط مع زر اللصق السريع */
+        .url-input-wrap {
+            position: relative;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
         input[type="url"] {
-            width: 100%;
-            padding: 15px;
-            background: #000;
+            flex: 1;
+            padding: 13px 12px;
+            background: #090b0e;
             border: 1px solid #333;
             border-radius: 12px;
-            font-size: 14px;
+            font-size: 13px;
             outline: none;
             color: white;
-            text-align: center;
+            direction: ltr;
+            text-align: left;
         }
-
         input[type="url"]:focus {
             border-color: var(--main-green);
         }
-
-        label {
-            font-size: 13px;
-            color: var(--text-gray);
-            margin-bottom: -5px;
-            text-align: right;
-            padding-right: 5px;
+        .btn-paste {
+            background: rgba(0, 242, 255, 0.12);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 0 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
         }
 
+        /* خيارات الصيغة والجودة */
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .opt-box label {
+            display: block;
+            font-size: 11.5px;
+            color: var(--text-gray);
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
         select {
             width: 100%;
-            padding: 12px;
-            background: #11141a;
+            padding: 11px;
+            background: #0d1015;
             border: 1px solid #2d333d;
-            border-radius: 10px;
+            border-radius: 11px;
             color: white;
-            font-size: 14px;
+            font-size: 12.5px;
             outline: none;
-            direction: rtl;
         }
 
-        button {
-            background-color: var(--main-green);
+        /* أزرار التحميل (مجاني بالإعلان +كسب نقاط / أو فوري بالنقاط) */
+        .download-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+        .btn-dl-ad {
+            background: linear-gradient(135deg, var(--main-green), #009e4f);
             color: black;
             border: none;
-            padding: 15px;
-            font-size: 16px;
+            padding: 14px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 210, 106, 0.25);
+        }
+        .btn-dl-ad:active { transform: scale(0.98); }
+        .btn-dl-ad:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .btn-dl-vip {
+            background: rgba(255, 170, 0, 0.1);
+            color: var(--gold);
+            border: 1px dashed var(--gold);
+            padding: 11px;
+            font-size: 12.5px;
             font-weight: bold;
             border-radius: 12px;
             cursor: pointer;
             transition: 0.2s;
+        }
+        .btn-dl-vip:active { transform: scale(0.98); }
+
+        /* قسم سجل التحميلات */
+        .history-section {
             margin-top: 10px;
         }
-
-        button:active {
-            transform: scale(0.98);
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--neon-blue);
         }
-
-        .btn-back {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid #333;
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+        .history-card {
+            background: var(--card-bg);
+            border: 1px solid #2d333d;
+            border-radius: 15px;
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .h-info { flex: 1; overflow: hidden; }
+        .h-title {
+            font-size: 12.5px;
+            font-weight: bold;
             color: white;
-            padding: 5px 15px;
-            border-radius: 10px;
-            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+            direction: ltr;
+            text-align: right;
+        }
+        .h-meta { font-size: 11px; color: var(--text-gray); display: flex; gap: 8px; align-items: center; }
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .st-done { background: rgba(0, 210, 106, 0.12); color: var(--main-green); border: 1px solid rgba(0, 210, 106, 0.35); }
+        .st-wait { background: rgba(255, 170, 0, 0.12); color: var(--gold); border: 1px solid rgba(255, 170, 0, 0.35); }
+        .st-err { background: rgba(255, 77, 77, 0.12); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.35); }
+
+        .btn-redownload {
+            background: #22262f;
+            border: 1px solid #333a48;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 11px;
             cursor: pointer;
         }
+
+        .empty-box {
+            text-align: center;
+            padding: 25px 15px;
+            background: var(--card-bg);
+            border: 1px dashed #2d333d;
+            border-radius: 15px;
+            color: var(--text-gray);
+            font-size: 12px;
+        }
+
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; cursor: pointer; text-decoration: none; }
     </style>
 </head>
 <body>
 
-    <button class="btn-back" onclick="goHome()">رجوع ↩️</button>
+    <div class="top-bar">
+        <button class="btn-back" onclick="goHome()">↩️ الرئيسية</button>
+        <div class="pts-pill">🪙 رصيدك: <span id="user-points">0</span> نقطة</div>
+    </div>
 
-    <div class="container">
+    <div class="main-card">
         <h1>التحميل السحابي المباشر ⚡</h1>
-        <p class="subtitle">أرسل الطلب للبوت واستلم ملفك فوراً في الشات</p>
+        <p class="subtitle">حمّل الفيديوهات والريلز والصوتيات بدون علامة مائية مباشرة إلى شات البوت، واكسب <b>+2 نقطة</b> على كل تحميل!</p>
 
-        <div class="input-group">
-            <input type="url" id="videoUrl" placeholder="الصق رابط الفيديو أو الريل هنا..." required>
-            
-            <label>نوع الملف المطلوب:</label>
-            <select id="downloadMode" onchange="toggleQualitySelect()">
-                <option value="video" selected>🎥 فيديو شامل (Video)</option>
-                <option value="audio">🎵 صوت فقط (Audio MP3)</option>
-            </select>
+        <!-- شريط المنصات التفاعلي -->
+        <div class="platforms-bar">
+            <div class="plt-item" id="plt-tiktok"><span>🎵</span>TikTok</div>
+            <div class="plt-item" id="plt-instagram"><span>📸</span>Insta</div>
+            <div class="plt-item" id="plt-youtube"><span>▶️</span>YouTube</div>
+            <div class="plt-item" id="plt-facebook"><span>📘</span>Facebook</div>
+            <div class="plt-item" id="plt-twitter"><span>🐦</span>X/Twitter</div>
+            <div class="plt-item" id="plt-pinterest"><span>📌</span>Pin</div>
+        </div>
 
-            <div id="qualityGroup">
-                <label>الجودة:</label>
-                <select id="videoQuality">
-                    <option value="max">🔥 أعلى جودة متاحة (Max)</option>
-                    <option value="1080">📺 1080p</option>
-                    <option value="720" selected>⚡ 720p</option>
-                    <option value="480">📱 480p</option>
+        <!-- إدخال الرابط + زر اللصق -->
+        <div class="url-input-wrap">
+            <button type="button" class="btn-paste" onclick="pasteFromClipboard()">📋 لصق</button>
+            <input type="url" id="videoUrl" placeholder="https://... الصق رابط الفيديو هنا" oninput="detectPlatformUI()">
+        </div>
+
+        <!-- اختيار النوع والجودة -->
+        <div class="options-grid">
+            <div class="opt-box">
+                <label>نوع الملف المطلوب:</label>
+                <select id="downloadMode" onchange="toggleQualitySelect()">
+                    <option value="video" selected>🎬 فيديو (MP4)</option>
+                    <option value="audio">🎵 صوت فقط (MP3)</option>
                 </select>
             </div>
 
-            <button id="sendToBotBtn">🚀 إرسال الطلب للبوت وبدء التحميل</button>
+            <div class="opt-box" id="qualityGroup">
+                <label>دقة وجودة الفيديو:</label>
+                <select id="videoQuality">
+                    <option value="max">🔥 أعلى جودة (Max HD)</option>
+                    <option value="1080">📺 1080p Full HD</option>
+                    <option value="720" selected>⚡ 720p (موصى به)</option>
+                    <option value="480">📱 480p (توفير باقة)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- أزرار التحميل داخل الصفحة -->
+        <div class="download-actions">
+            <button id="btn-ad-dl" class="btn-dl-ad" onclick="startDownloadWithAd()">
+                📺 شاهد إعلان وحمّل مجاناً (+2 نقطة هدية 🎁)
+            </button>
+            <button id="btn-vip-dl" class="btn-dl-vip" onclick="startInstantVipDownload()">
+                ⚡ تحميل فوري بدون إعلان (خصم 5 نقاط)
+            </button>
         </div>
     </div>
+
+    <!-- قسم سجل التحميلات داخل الصفحة -->
+    <div class="history-section">
+        <div class="history-header">
+            <span>📂 سجل تحميلاتك الأخيرة</span>
+            <span style="font-size: 11px; color: var(--text-gray); cursor: pointer;" onclick="loadDownloadHistory()">🔄 تحديث الحالة</span>
+        </div>
+        <div id="downloads-history-list" class="history-list">
+            <div class="empty-box">⏳ جاري جلب سجل التحميلات...</div>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
+        <div onclick="goTasks()" class="nav-item">📋<br>المهام</div>
+        <div onclick="goStore()" class="nav-item" style="color: var(--neon-blue);">🛍️<br>المتجر</div>
+        <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
+        <div onclick="goProfile()" class="nav-item">👤<br>حسابي</div>
+    </nav>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
+
         const params = new URLSearchParams(window.location.search);
-        const userId = params.get('id');
+        const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        let userPoints = 0;
+
+        const PLATFORM_ICONS = {
+            tiktok: "🎵 تيك توك",
+            instagram: "📸 انستجرام",
+            youtube: "▶️ يوتيوب",
+            facebook: "📘 فيسبوك",
+            twitter: "🐦 تويتر/X",
+            pinterest: "📌 بنترست",
+            other: "🌐 رابط مباشر"
+        };
+
+        async function init() {
+            if (userId) {
+                const { data } = await client.from('users').select('points').eq('telegram_id', userId).maybeSingle();
+                if (data) {
+                    userPoints = Number(data.points || 0);
+                    document.getElementById('user-points').innerText = userPoints.toLocaleString();
+                }
+                loadDownloadHistory();
+            }
+        }
 
         function toggleQualitySelect() {
             const mode = document.getElementById('downloadMode').value;
-            document.getElementById('qualityGroup').style.display = mode === 'audio' ? 'none' : 'block';
+            const qSelect = document.getElementById('videoQuality');
+            qSelect.disabled = (mode === 'audio');
+            qSelect.style.opacity = (mode === 'audio') ? '0.4' : '1';
         }
 
-        document.getElementById('sendToBotBtn').addEventListener('click', () => {
-            let videoUrl = document.getElementById('videoUrl').value.trim();
-            const mode = document.getElementById('downloadMode').value;
-            const quality = document.getElementById('videoQuality').value;
+        // التعرف الذكي على المنصة وتنوير الأيقونة
+        function getPlatformFromUrl(url) {
+            const u = url.toLowerCase();
+            if (u.includes("tiktok.com")) return "tiktok";
+            if (u.includes("instagram.com") || u.includes("instagr.am")) return "instagram";
+            if (u.includes("youtube.com") || u.includes("youtu.be")) return "youtube";
+            if (u.includes("facebook.com") || u.includes("fb.watch")) return "facebook";
+            if (u.includes("twitter.com") || u.includes("x.com")) return "twitter";
+            if (u.includes("pinterest.com") || u.includes("pin.it")) return "pinterest";
+            return "other";
+        }
 
-            // تنظيف الرابط
-            videoUrl = videoUrl.replace(/^\/+/, '').trim();
+        function detectPlatformUI() {
+            const url = document.getElementById('videoUrl').value.trim();
+            document.querySelectorAll('.plt-item').forEach(el => el.classList.remove('active'));
+            if (!url) return;
 
-            if (!videoUrl) {
-                tg.showAlert('❌ من فضلك حط رابط صحيح الأول!');
-                return;
+            const plt = getPlatformFromUrl(url);
+            const activeEl = document.getElementById(`plt-${plt}`);
+            if (activeEl) activeEl.classList.add('active');
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    document.getElementById('videoUrl').value = text.trim();
+                    detectPlatformUI();
+                } else {
+                    tg.showAlert("📋 الحافظة فارغة، انسخ الرابط أولاً.");
+                }
+            } catch (e) {
+                tg.showAlert("💡 اضغط مطولاً داخل مربع النص واختر (لصق).");
+            }
+        }
+
+        function validateInputUrl() {
+            let url = document.getElementById('videoUrl').value.trim();
+            url = url.replace(/^\/+/, '').trim();
+            if (!url || !url.startsWith("http")) {
+                tg.showAlert("❌ يرجى لصق رابط صحيح يبدأ بـ http أو https أولاً!");
+                return null;
+            }
+            return url;
+        }
+
+        // 1️⃣ الخيار الأول: مشاهدة إعلان Monetag داخل الصفحة + إرسال الفيديو للشات + مكافأة +2 نقطة
+        function startDownloadWithAd() {
+            const videoUrl = validateInputUrl();
+            if (!videoUrl) return;
+
+            const btn = document.getElementById('btn-ad-dl');
+
+            if (typeof show_10959333 === 'function') {
+                btn.disabled = true;
+                btn.innerText = "⏳ جاري عرض الإعلان...";
+
+                show_10959333().then(async () => {
+                    await queueDownloadJob(videoUrl, true);
+                }).catch((err) => {
+                    console.error("Ad error:", err);
+                    btn.disabled = false;
+                    btn.innerText = "📺 شاهد إعلان وحمّل مجاناً (+2 نقطة هدية 🎁)";
+                    tg.showAlert("❌ لم تكتمل مشاهدة الإعلان! شاهد الإعلان للنهاية لبدء التحميل واستلام النقاط.");
+                });
+            } else {
+                tg.showAlert("⚠️ جاري تهيئة الإعلان، حاول بعد ثوانٍ أو استخدم التحميل الفوري بالنقاط.");
+            }
+        }
+
+        // 2️⃣ الخيار الثاني: تحميل فوري بدون إعلان مقابل خصم 5 نقاط
+        async function startInstantVipDownload() {
+            const videoUrl = validateInputUrl();
+            if (!videoUrl) return;
+
+            if (userPoints < 5) {
+                return tg.showAlert("❌ رصيد نقاطك غير كافٍ للتحميل الفوري بدون إعلان (مطلوب 5 نقاط)!\n\n💡 استخدم الزر الأخضر للتحميل مجاناً بمشاهدة إعلان واكسب +2 نقطة!");
             }
 
-            // إرسال البيانات كـ JSON للبوت لإشعال حدث web_app_data
-            tg.sendData(JSON.stringify({
-                action: "download_media",
-                url: videoUrl,
-                mode: mode,
-                quality: quality
-            }));
+            if (!confirm("⚡ هل تريد بدء التحميل الفوري بدون إعلانات مقابل خصم 5 نقاط من رصيدك؟")) return;
 
-            // قفل الميني أب فوراً عشان اليوزر يشوف الشات
-            tg.close();
-        });
-
-        function goHome() {
-            window.location.href = `index.html?id=${userId}`;
+            await queueDownloadJob(videoUrl, false);
         }
+
+        // ⭐ إرسال أمر التحميل مباشرة لسيرفر البايثون عبر Supabase وحفظ السجل
+        async function queueDownloadJob(videoUrl, isAdReward) {
+            const btnAd = document.getElementById('btn-ad-dl');
+            const btnVip = document.getElementById('btn-vip-dl');
+            const mode = document.getElementById('downloadMode').value;
+            const quality = document.getElementById('videoQuality').value;
+            const platform = getPlatformFromUrl(videoUrl);
+
+            btnAd.disabled = true;
+            btnVip.disabled = true;
+            btnAd.innerText = "🚀 جاري إرسال الأمر للبوت...";
+
+            try {
+                // 1. تحديث النقاط (إضافة +2 لو شاهد إعلان، أو خصم 5 لو VIP)
+                const ptsDelta = isAdReward ? 2 : -5;
+                const newPoints = Math.max(0, userPoints + ptsDelta);
+
+                const { data: uData } = await client.from('users').select('total_earned').eq('telegram_id', userId).maybeSingle();
+                const updateUserPayload = { points: newPoints };
+                if (isAdReward && uData) {
+                    updateUserPayload.total_earned = (uData.total_earned || 0) + 2;
+                }
+                await client.from('users').update(updateUserPayload).eq('telegram_id', userId);
+
+                await client.from('transactions').insert([{
+                    telegram_id: String(userId),
+                    type: 'points',
+                    title: isAdReward ? 'مكافأة استخدام محمل الفيديوهات' : 'تحميل فيديو فوري بدون إعلان (VIP)',
+                    amount: isAdReward ? '+2 نقطة' : '-5 نقاط',
+                    status: 'مكتمل'
+                }]);
+
+                userPoints = newPoints;
+                document.getElementById('user-points').innerText = userPoints.toLocaleString();
+
+                // 2. تسجيل العملية في جدول سجل التحميلات (media_downloads)
+                const { data: dlRecord } = await client.from('media_downloads').insert([{
+                    telegram_id: String(userId),
+                    url: videoUrl,
+                    platform: platform,
+                    mode: mode,
+                    quality: quality,
+                    status: 'جاري التحميل ⏳'
+                }]).select().single();
+
+                const downloadId = dlRecord ? dlRecord.id : 0;
+
+                // 3. إرسال أمر التحميل المباشر لبوت البايثون عبر جدول bot_messages (بدون الحاجة لقفل الميني أب!)
+                const jobPayload = JSON.stringify({
+                    url: videoUrl,
+                    mode: mode,
+                    quality: quality,
+                    dl_id: downloadId
+                });
+
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(userId),
+                    message: `__DOWNLOAD_JOB__:${jobPayload}`,
+                    status: 'pending'
+                }]);
+
+                document.getElementById('videoUrl').value = "";
+                detectPlatformUI();
+                await loadDownloadHistory();
+
+                tg.showAlert(
+                    `✅ تم بدء التحميل بنجاح!\n` +
+                    `${isAdReward ? '🎁 حصلت على +2 نقطة هدية!\n' : '⚡ تم استخدام التحميل السريع!\n'}` +
+                    `📥 البوت يقوم الآن بسحب الملف وإرساله لك في الشات مباشرة.`
+                );
+
+            } catch (e) {
+                console.error("Queue error:", e);
+                tg.showAlert("❌ حدث خطأ أثناء إرسال الطلب، حاول مرة أخرى.");
+            } finally {
+                btnAd.disabled = false;
+                btnVip.disabled = false;
+                btnAd.innerText = "📺 شاهد إعلان وحمّل مجاناً (+2 نقطة هدية 🎁)";
+            }
+        }
+
+        // جلب وعرض سجل التحميلات الخاصة بالمستخدم
+        async function loadDownloadHistory() {
+            const listEl = document.getElementById('downloads-history-list');
+            try {
+                const { data, error } = await client
+                    .from('media_downloads')
+                    .select('*')
+                    .eq('telegram_id', String(userId))
+                    .order('id', { ascending: false })
+                    .limit(15);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    listEl.innerHTML = '<div class="empty-box">📭 لم تقم بتحميل أي فيديوهات أو صوتيات بعد.</div>';
+                    return;
+                }
+
+                listEl.innerHTML = "";
+                data.forEach(item => {
+                    const pltName = PLATFORM_ICONS[item.platform] || "🌐 فيديو";
+                    const modeTxt = item.mode === 'audio' ? '🎵 MP3' : `🎬 فيديو (${item.quality || 'HD'})`;
+                    const timeStr = new Date(item.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+
+                    let stClass = "st-wait";
+                    if (item.status.includes("تم")) stClass = "st-done";
+                    if (item.status.includes("فشل")) stClass = "st-err";
+
+                    const safeUrl = (item.url || "").replace(/'/g, "\\'");
+
+                    listEl.innerHTML += `
+                        <div class="history-card">
+                            <div class="h-info">
+                                <div class="h-title">${pltName} • ${modeTxt}</div>
+                                <div class="h-meta">
+                                    <span>🕒 ${timeStr}</span>
+                                    <span class="status-badge ${stClass}">${item.status}</span>
+                                </div>
+                            </div>
+                            <button class="btn-redownload" onclick="reuseLink('${safeUrl}', '${item.mode}', '${item.quality}')">🔄 تكرار</button>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                listEl.innerHTML = '<div class="empty-box">📭 سجل التحميلات سيظهر هنا فور بدء أول تحميل.</div>';
+            }
+        }
+
+        function reuseLink(url, mode, quality) {
+            document.getElementById('videoUrl').value = url;
+            document.getElementById('downloadMode').value = mode || 'video';
+            document.getElementById('videoQuality').value = quality || '720';
+            toggleQualitySelect();
+            detectPlatformUI();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function goHome() { window.location.href = `index.html?id=${userId}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
+        function goStore() { window.location.href = `store.html?id=${userId}`; }
+        function goInvite() { window.location.href = `invite.html?id=${userId}`; }
+        function goProfile() { window.location.href = `profile.html?id=${userId}`; }
+
+        init();
     </script>
 </body>
-    </html>
+</html>
