@@ -2,72 +2,234 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>MegaTask Store - المتجر الذكي</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; --neon-blue: #00f2ff; }
+        :root { 
+            --main-green: #00d26a; 
+            --neon-blue: #00f2ff; 
+            --gold: #ffaa00;
+            --dark-bg: #0d0f12; 
+            --card-bg: #1a1d23; 
+            --text-gray: #9ca3af; 
+        }
         * { box-sizing: border-box; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 110px; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 15px; padding-bottom: 115px; overflow-x: hidden; }
         
-        .header-store { display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); border: 1px solid #2d333d; border-radius: 18px; padding: 15px; margin-bottom: 15px; }
-        .balance-info b { display: block; font-size: 20px; color: var(--main-green); }
-        .balance-info span { font-size: 11px; color: var(--text-gray); }
-        .btn-deposit { background: var(--main-green); color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; }
+        /* هيدر المحفظتين (النقاط والجنيه) */
+        .store-wallets-header {
+            background: linear-gradient(145deg, #1a1f28, #12151b);
+            border: 1px solid #2d333d;
+            border-radius: 20px;
+            padding: 14px;
+            margin-bottom: 15px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+        }
+        .wallets-top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .w-mini-card {
+            background: rgba(0,0,0,0.35);
+            border-radius: 14px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #262c38;
+        }
+        .w-mini-card.pts { border-color: rgba(0, 210, 106, 0.35); }
+        .w-mini-card.egp { border-color: rgba(0, 242, 255, 0.35); }
+        .w-mini-card span { font-size: 11px; color: var(--text-gray); display: block; margin-bottom: 3px; }
+        .w-mini-card b { font-size: 18px; font-weight: 800; }
+        .w-mini-card.pts b { color: var(--main-green); }
+        .w-mini-card.egp b { color: var(--neon-blue); }
 
-        .search-bar { width: 100%; background: #000; border: 1px solid #333; padding: 12px 15px; color: white; border-radius: 12px; outline: none; font-size: 13px; margin-bottom: 15px; }
-        .search-bar:focus { border-color: var(--neon-blue); }
+        .wallets-actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-top-deposit {
+            background: linear-gradient(135deg, #00f2ff, #0077ff);
+            color: black;
+            border: none;
+            padding: 9px;
+            border-radius: 11px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .btn-top-exchange {
+            background: rgba(255, 170, 0, 0.12);
+            color: var(--gold);
+            border: 1px solid rgba(255, 170, 0, 0.4);
+            padding: 9px;
+            border-radius: 11px;
+            font-weight: bold;
+            font-size: 11.5px;
+            cursor: pointer;
+        }
 
-        .btn-sell-item { background: linear-gradient(135deg, #00f2ff, #0077ff); color: black; border: none; width: 100%; padding: 14px; border-radius: 15px; font-size: 14px; font-weight: bold; cursor: pointer; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 242, 255, 0.2); }
+        /* شريط البحث والأزرار العلوية */
+        .search-bar { width: 100%; background: #090b0e; border: 1px solid #2d333d; padding: 12px 15px; color: white; border-radius: 14px; outline: none; font-size: 13px; margin-bottom: 12px; transition: 0.2s; }
+        .search-bar:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0, 242, 255, 0.15); }
 
-        .category-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; }
-        .category-tab { background: #16191e; border: 1px solid #2d333d; padding: 8px 15px; border-radius: 20px; font-size: 12px; color: var(--text-gray); cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .top-store-buttons { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; margin-bottom: 14px; }
+        .btn-sell-item { background: linear-gradient(135deg, var(--main-green), #009e4f); color: black; border: none; padding: 12px 10px; border-radius: 13px; font-size: 12.5px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 210, 106, 0.2); }
+        .btn-my-activity { background: #161920; color: white; border: 1px solid #2d333d; padding: 12px 10px; border-radius: 13px; font-size: 12px; font-weight: bold; cursor: pointer; }
+
+        /* فلاتر نوع العملة (الكل / نقاط / جنيه) */
+        .currency-filter-bar { display: flex; gap: 6px; margin-bottom: 12px; background: #0b0d10; padding: 5px; border-radius: 13px; border: 1px solid #22262f; }
+        .curr-chip { flex: 1; text-align: center; padding: 8px 6px; border-radius: 9px; font-size: 11.5px; font-weight: bold; color: var(--text-gray); cursor: pointer; transition: 0.2s; }
+        .curr-chip.active-all { background: #252a35; color: white; }
+        .curr-chip.active-pts { background: rgba(0, 210, 106, 0.18); color: var(--main-green); border: 1px solid var(--main-green); }
+        .curr-chip.active-egp { background: rgba(0, 242, 255, 0.18); color: var(--neon-blue); border: 1px solid var(--neon-blue); }
+
+        /* أقسام المتجر */
+        .category-tabs { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; scrollbar-width: none; }
+        .category-tabs::-webkit-scrollbar { display: none; }
+        .category-tab { background: #16191e; border: 1px solid #2d333d; padding: 8px 14px; border-radius: 20px; font-size: 12px; color: var(--text-gray); cursor: pointer; white-space: nowrap; transition: 0.2s; }
         .category-tab.active { background: var(--main-green); color: black; font-weight: bold; border-color: var(--main-green); }
 
+        /* كروت المنتجات المطورة */
         .products-container { display: flex; flex-direction: column; gap: 12px; }
-        .product-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
-        .product-top { display: flex; justify-content: space-between; align-items: center; }
-        .product-title { font-size: 15px; font-weight: bold; color: white; margin: 0; }
-        .product-price { font-size: 14px; color: var(--main-green); font-weight: bold; }
-        .product-desc { font-size: 12px; color: var(--text-gray); line-height: 1.5; background: #11141a; padding: 8px 12px; border-radius: 10px; }
-        .product-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #252932; padding-top: 10px; font-size: 11px; color: var(--text-gray); }
-        .btn-buy { background: var(--main-green); color: black; border: none; padding: 8px 16px; border-radius: 10px; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .product-card { 
+            background: var(--card-bg); 
+            border: 1px solid #2d333d; 
+            border-radius: 18px; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            position: relative;
+            transition: 0.2s;
+        }
+        .product-card.egp-border { border-right: 4px solid var(--neon-blue); }
+        .product-card.pts-border { border-right: 4px solid var(--main-green); }
 
-        /* Modal */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
-        .modal-body { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; text-align: right; }
+        .product-header-row { display: flex; gap: 12px; align-items: flex-start; }
+        .product-thumb {
+            width: 54px;
+            height: 54px;
+            border-radius: 13px;
+            background: #11141a;
+            border: 1px solid #2e3440;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        .product-main-info { flex: 1; }
+        .badges-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+        .seller-badge { font-size: 10px; padding: 2px 7px; border-radius: 6px; font-weight: bold; }
+        .badge-official { background: rgba(0, 242, 255, 0.12); color: var(--neon-blue); border: 1px solid rgba(0, 242, 255, 0.3); }
+        .badge-user { background: rgba(255, 170, 0, 0.12); color: var(--gold); border: 1px solid rgba(255, 170, 0, 0.3); }
+
+        .product-title { font-size: 15px; font-weight: bold; color: white; margin: 0; line-height: 1.3; }
+        
+        .price-tag {
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+        .price-pts { background: rgba(0, 210, 106, 0.12); color: var(--main-green); border: 1px solid rgba(0, 210, 106, 0.35); }
+        .price-egp { background: rgba(0, 242, 255, 0.12); color: var(--neon-blue); border: 1px solid rgba(0, 242, 255, 0.35); }
+
+        .product-desc { font-size: 12px; color: #cbd5e1; line-height: 1.5; background: #11141a; padding: 9px 12px; border-radius: 10px; border: 1px solid #22262f; white-space: pre-wrap; }
+        
+        .product-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #252932; padding-top: 10px; font-size: 11px; color: var(--text-gray); }
+        .stock-pill { display: flex; align-items: center; gap: 5px; }
+        
+        .btn-buy { border: none; padding: 9px 18px; border-radius: 11px; font-weight: bold; font-size: 12px; cursor: pointer; transition: 0.2s; }
+        .btn-buy:active { transform: scale(0.95); }
+        .btn-buy-pts { background: var(--main-green); color: black; }
+        .btn-buy-egp { background: linear-gradient(135deg, #00f2ff, #0077ff); color: black; }
+        .btn-buy-soldout { background: #252932; color: #777; cursor: not-allowed; }
+
+        /* النوافذ المنبثقة (Modals) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
+        .modal-body { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 22px; padding: 20px; width: 100%; max-width: 440px; max-height: 90vh; overflow-y: auto; text-align: right; }
         .input-group { margin-bottom: 12px; }
-        .input-group label { display: block; font-size: 12px; color: var(--text-gray); margin-bottom: 5px; }
-        .input-field { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: white; border-radius: 10px; outline: none; font-size: 13px; font-family: inherit; box-sizing: border-box; }
+        .input-group label { display: block; font-size: 12px; color: #d1d5db; margin-bottom: 5px; font-weight: bold; }
+        .input-field { width: 100%; background: #090b0e; border: 1px solid #333; padding: 12px; color: white; border-radius: 11px; outline: none; font-size: 13px; font-family: inherit; }
         .input-field:focus { border-color: var(--main-green); }
+
+        /* اختيار العملة داخل نافذة البيع */
+        .sell-currency-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .curr-option {
+            background: #11141a;
+            border: 1.5px solid #2d333d;
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text-gray);
+            transition: 0.2s;
+        }
+        .curr-option.selected-pts { border-color: var(--main-green); color: var(--main-green); background: rgba(0, 210, 106, 0.08); }
+        .curr-option.selected-egp { border-color: var(--neon-blue); color: var(--neon-blue); background: rgba(0, 242, 255, 0.08); }
+
+        .profit-preview-box {
+            background: rgba(0, 210, 106, 0.06);
+            border: 1px dashed var(--main-green);
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 11.5px;
+            line-height: 1.7;
+            margin-bottom: 12px;
+            color: #e5e7eb;
+        }
+
         .modal-buttons { display: flex; gap: 10px; margin-top: 15px; }
-        .modal-buttons button { flex: 1; padding: 12px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; }
+        .modal-buttons button { flex: 1; padding: 12px; border-radius: 12px; font-weight: bold; border: none; cursor: pointer; font-size: 13px; }
         .btn-confirm { background: var(--main-green); color: black; }
         .btn-cancel { background: #252932; color: white; }
 
-        .status-box { text-align: center; padding: 40px 15px; color: var(--text-gray); font-size: 13px; }
+        .status-box { text-align: center; padding: 35px 15px; color: var(--text-gray); font-size: 13px; background: var(--card-bg); border-radius: 16px; border: 1px dashed #2d333d; }
 
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; cursor: pointer; text-decoration: none; }
         .nav-item.active { color: var(--main-green); }
     </style>
 </head>
 <body>
 
-    <div class="header-store">
-        <div class="balance-info">
-            <span id="user-points">0 نقطة</span>
-            <span>رصيدك الحالي</span>
+    <!-- هيدر المحفظتين (النقاط والجنيه) -->
+    <div class="store-wallets-header">
+        <div class="wallets-top-grid">
+            <div class="w-mini-card pts">
+                <span>🪙 رصيد النقاط</span>
+                <b id="user-points">0</b>
+            </div>
+            <div class="w-mini-card egp">
+                <span>💵 رصيد الجنيه</span>
+                <b id="user-egp">0.00 ج.م</b>
+            </div>
         </div>
-        <button class="btn-deposit" onclick="goDeposit()">💳 إيداع رصيد</button>
+        <div class="wallets-actions-row">
+            <button class="btn-top-deposit" onclick="goDeposit()">📥 شحن جنيه</button>
+            <button class="btn-top-exchange" onclick="openExchangeModal()">🔄 تحويل جنيه لنقاط (+20%)</button>
+        </div>
     </div>
 
-    <input type="text" id="search-input" class="search-bar" placeholder="🔍 ابحث عن منتج، كارت شحن، أو خدمة..." oninput="filterProducts()">
+    <!-- شريط البحث -->
+    <input type="text" id="search-input" class="search-bar" placeholder="🔍 ابحث عن منتج، شحن ألعاب، متابعين، أو اشتراك..." oninput="filterProducts()">
 
-    <button class="btn-sell-item" onclick="openSellModal()">
-        🛍️ عرض سلعتك أو خدمتك للبيع
-    </button>
+    <!-- أزرار البيع ومتابعة الطلبات -->
+    <div class="top-store-buttons">
+        <button class="btn-sell-item" onclick="openSellModal()">➕ اعرض سلعتك أو خدمتك للبيع</button>
+        <button class="btn-my-activity" onclick="openMyActivityModal()">📦 طلباتي وسلعي</button>
+    </div>
+
+    <!-- شريط فلترة العملة (الكل / بالنقاط / بالجنيه) -->
+    <div class="currency-filter-bar">
+        <div id="chip-curr-all" class="curr-chip active-all" onclick="switchCurrencyFilter('all')">🌐 كل المنتجات</div>
+        <div id="chip-curr-points" class="curr-chip" onclick="switchCurrencyFilter('points')">🪙 متجر النقاط</div>
+        <div id="chip-curr-egp" class="curr-chip" onclick="switchCurrencyFilter('egp')">💵 متجر الجنيه</div>
+    </div>
 
     <!-- أقسام المتجر -->
     <div class="category-tabs">
@@ -81,51 +243,79 @@
         <div class="category-tab" onclick="switchCategory('subscriptions', this)">👑 اشتراكات مدفوعة</div>
     </div>
 
+    <!-- قائمة المنتجات -->
     <div id="products-list" class="products-container">
         <div class="status-box">⏳ جاري تحميل منتجات المتجر...</div>
     </div>
 
-    <!-- نافذة بيع سلعة للمستخدم -->
+    <!-- نافذة بيع سلعة للمستخدم (تدعم الاختيار بين النقاط والجنيه) -->
     <div id="sell-modal" class="modal-overlay">
         <div class="modal-body">
-            <h3 style="color: var(--neon-blue); margin-top:0;">🛍️ إضافة سلعة للبيع في المتجر</h3>
-            <p style="font-size: 11px; color: var(--text-gray);">تخضع السلعة لمراجعة الإدارة، ويخصم المتجر عمولة 25% عند البيع.</p>
+            <h3 style="color: var(--neon-blue); margin-top:0; margin-bottom: 6px;">🛍️ عرض سلعة أو خدمة للبيع</h3>
+            <p style="font-size: 11px; color: var(--text-gray); margin-top: 0; margin-bottom: 12px;">
+                اختر العملة التي ترغب بالبيع بها. تراجع الإدارة السلعة وتُخصم عمولة المنصة (25%) عند إتمام البيع.
+            </p>
 
-            <div class="input-group">
-                <label>القسم:</label>
-                <select id="sell-category" class="input-field">
-                    <option value="recharge">🔋 شحن وفكة</option>
-                    <option value="telegram">📢 تيليجرام</option>
-                    <option value="facebook">📘 فيسبوك</option>
-                    <option value="youtube">▶️ يوتيوب</option>
-                    <option value="tiktok">🎵 تيك توك</option>
-                    <option value="instagram">📸 انستجرام</option>
-                    <option value="subscriptions">👑 اشتراكات مدفوعة</option>
-                </select>
+            <label style="font-size: 12px; color: #d1d5db; font-weight: bold; display: block; margin-bottom: 6px;">اختر عملة البيع:</label>
+            <div class="sell-currency-selector">
+                <div id="opt-sell-points" class="curr-option selected-pts" onclick="selectSellCurrency('points')">
+                    🪙 بيع بالنقاط
+                </div>
+                <div id="opt-sell-egp" class="curr-option" onclick="selectSellCurrency('egp')">
+                    💵 بيع بالجنيه (EGP)
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 10px;">
+                <div class="input-group">
+                    <label>القسم:</label>
+                    <select id="sell-category" class="input-field">
+                        <option value="recharge">🔋 شحن وفكة</option>
+                        <option value="telegram">📢 تيليجرام</option>
+                        <option value="facebook">📘 فيسبوك</option>
+                        <option value="youtube">▶️ يوتيوب</option>
+                        <option value="tiktok">🎵 تيك توك</option>
+                        <option value="instagram">📸 انستجرام</option>
+                        <option value="subscriptions">👑 اشتراكات مدفوعة</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>الكمية المتاحة:</label>
+                    <input type="number" id="sell-target" class="input-field" value="1" min="1" max="500" oninput="updateSellProfitPreview()">
+                </div>
             </div>
 
             <div class="input-group">
-                <label>عنوان المنتج:</label>
-                <input type="text" id="sell-title" class="input-field" placeholder="مثلاً: كارت فودافون 25 جنيه">
+                <label>عنوان السلعة أو الخدمة:</label>
+                <input type="text" id="sell-title" class="input-field" placeholder="مثلاً: حساب نتفلكس شهر / كارت شحن / 1000 متابع">
             </div>
 
             <div class="input-group">
-                <label>رابط المنتج / معرف الحساب (يمنع تكرار نفس الرابط):</label>
+                <label>رابط الخدمة أو معرف التواصل:</label>
                 <input type="text" id="sell-link" class="input-field" placeholder="https://...">
             </div>
 
             <div class="input-group">
-                <label>الوصف والتفاصيل:</label>
-                <textarea id="sell-desc" class="input-field" rows="3" placeholder="اشرح تفاصيل السلعة..."></textarea>
+                <label>الوصف والتفاصيل للمشتري:</label>
+                <textarea id="sell-desc" class="input-field" rows="2" placeholder="اشرح تفاصيل السلعة وماذا سيستلم المشتري..."></textarea>
             </div>
 
             <div class="input-group">
-                <label>السعر (بالنقاط):</label>
-                <input type="number" id="sell-price" class="input-field" placeholder="1000">
+                <label id="lbl-sell-price">سعر البيع للمشتري (بالنقاط):</label>
+                <input type="number" id="sell-price" class="input-field" placeholder="مثلاً: 5000" step="0.5" oninput="updateSellProfitPreview()">
+            </div>
+
+            <div id="sell-profit-box" class="profit-preview-box">
+                💡 صافي ربحك بعد عمولة المتجر (25%): <b>0 نقطة</b> لكل عملية بيع.
+            </div>
+
+            <div class="input-group">
+                <label>صورة توضيحية للمنتج (اختياري):</label>
+                <input type="file" id="sell-img-file" class="input-field" accept="image/*" onchange="previewUserSellImage(this)">
             </div>
 
             <div class="modal-buttons">
-                <button class="btn-confirm" onclick="submitUserProduct()">إرسال للإدارة للإعتماد 🚀</button>
+                <button id="btn-submit-sell" class="btn-confirm" onclick="submitUserProduct()">إرسال للإدارة للاعتماد 🚀</button>
                 <button class="btn-cancel" onclick="closeModal('sell-modal')">إغلاق</button>
             </div>
         </div>
@@ -135,17 +325,46 @@
     <div id="buy-modal" class="modal-overlay">
         <div class="modal-body">
             <h3 style="color: var(--main-green); margin-top:0;" id="buy-modal-title">🛒 تأكيد شراء المنتج</h3>
-            <p id="buy-modal-price" style="font-size: 13px; color: var(--text-gray);"></p>
+            <div id="buy-modal-price" style="font-size: 13px; color: #e5e7eb; background: #11141a; padding: 10px 12px; border-radius: 10px; margin-bottom: 12px; border: 1px solid #262c38;"></div>
 
             <div class="input-group">
-                <label>بيانات الاستلام الخاصة بك (رقمك، رابط حسابك، أو إيميلك):</label>
-                <input type="text" id="buyer-input" class="input-field" placeholder="أدخل بياناتك لتصلك الخدمة...">
+                <label>📱 بيانات الاستلام الخاصة بك (رقمك، رابط حسابك، أو يوزر تيليجرام):</label>
+                <input type="text" id="buyer-input" class="input-field" placeholder="أدخل البيانات المطلوبة لتنفيذ وتسليم طلبك...">
             </div>
 
             <div class="modal-buttons">
-                <button class="btn-confirm" onclick="confirmPurchase()">تأكيد الشراء الآن ✅</button>
+                <button id="btn-confirm-buy" class="btn-confirm" onclick="confirmPurchase()">تأكيد الشراء الآن ✅</button>
                 <button class="btn-cancel" onclick="closeModal('buy-modal')">إلغاء</button>
             </div>
+        </div>
+    </div>
+
+    <!-- نافذة تحويل الجنيه إلى نقاط داخل المتجر (+20% بونص) -->
+    <div id="exchange-modal" class="modal-overlay">
+        <div class="modal-body" style="border-color: var(--neon-blue); text-align: center;">
+            <h3 style="color: var(--neon-blue); margin-top:0;">⚡ تحويل سريع: جنيه ⬅ نقاط</h3>
+            <p style="font-size: 12px; color: var(--text-gray);">
+                كل <b style="color: var(--neon-blue);">1 جنيه</b> يمنحك <b style="color: var(--gold);">1,200 نقطة</b> فوراً (شامل 20% بونص إضافي!)
+            </p>
+            <input type="number" id="ex-egp-input" class="input-field" style="text-align: center; font-size: 15px; margin: 10px 0;" placeholder="أدخل المبلغ بالجنيه (مثلاً: 5)" min="1" step="0.5" oninput="updateStoreExchangePreview()">
+            <div id="ex-pts-preview" style="font-size: 14px; color: var(--main-green); font-weight: bold; margin-bottom: 12px;">
+                ستحصل على: 0 نقطة
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-confirm" style="background: linear-gradient(135deg, #00f2ff, #0077ff);" onclick="confirmStoreExchange()">تحويل فوراً ✅</button>
+                <button class="btn-cancel" onclick="closeModal('exchange-modal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة طلباتي وسلعي المعروضة -->
+    <div id="activity-modal" class="modal-overlay">
+        <div class="modal-body">
+            <h3 style="color: var(--main-green); margin-top: 0;">📦 مشترياتي وسلعي المعروضة</h3>
+            <div id="my-activity-content" style="max-height: 65vh; overflow-y: auto;">
+                جاري التحميل...
+            </div>
+            <button class="btn-cancel" style="width: 100%; padding: 12px; border-radius: 12px; margin-top: 12px;" onclick="closeModal('activity-modal')">إغلاق</button>
         </div>
     </div>
 
@@ -166,20 +385,41 @@
 
         const params = new URLSearchParams(window.location.search);
         const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        
         let userPoints = 0;
+        let userEgp = 0;
         let allProducts = [];
         let activeCategory = 'all';
+        let activeCurrencyFilter = 'all';
+        let selectedSellCurrency = 'points';
+        let userSellImgBase64 = "";
         let selectedProductForBuy = null;
+
+        const CAT_ICONS = {
+            recharge: "🔋",
+            telegram: "📢",
+            facebook: "📘",
+            youtube: "▶️",
+            tiktok: "🎵",
+            instagram: "📸",
+            subscriptions: "👑"
+        };
 
         async function init() {
             if (tid) {
-                const { data } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
+                const { data } = await client.from('users').select('points, egp_balance').eq('telegram_id', tid).maybeSingle();
                 if (data) {
-                    userPoints = data.points || 0;
-                    document.getElementById('user-points').innerText = userPoints.toLocaleString() + " نقطة";
+                    userPoints = Number(data.points || 0);
+                    userEgp = Number(data.egp_balance || 0);
+                    updateWalletHeaderUI();
                 }
             }
             loadStoreProducts();
+        }
+
+        function updateWalletHeaderUI() {
+            document.getElementById('user-points').innerText = userPoints.toLocaleString() + " نقطة";
+            document.getElementById('user-egp').innerText = userEgp.toFixed(2) + " ج.م";
         }
 
         async function loadStoreProducts() {
@@ -187,69 +427,170 @@
             const { data, error } = await client.from('store_products').select('*').eq('status', 'Approved').order('id', { ascending: false });
             
             if (error) {
-                container.innerHTML = '<div class="status-box">❌ تعذر تحميل المنتجات.</div>';
+                container.innerHTML = '<div class="status-box">❌ تعذر تحميل المنتجات حالياً.</div>';
                 return;
             }
 
             allProducts = data || [];
-            renderProducts(allProducts);
+            renderProducts();
         }
 
-        function renderProducts(products) {
-            const container = document.getElementById('products-list');
-            const query = document.getElementById('search-input').value.toLowerCase();
-
-            let filtered = products.filter(p => {
-                const matchCat = (activeCategory === 'all' || p.category === activeCategory);
-                const matchSearch = p.title.toLowerCase().includes(query) || (p.description && p.description.toLowerCase().includes(query));
-                return matchCat && matchSearch;
-            });
-
-            if (filtered.length === 0) {
-                container.innerHTML = '<div class="status-box">📭 لا توجد منتجات متاحة في هذا القسم حالياً.</div>';
-                return;
-            }
-
-            container.innerHTML = "";
-            filtered.forEach(p => {
-                container.innerHTML += `
-                    <div class="product-card">
-                        <div class="product-top">
-                            <h3 class="product-title">📦 ${escapeHtml(p.title)}</h3>
-                            <span class="product-price">💰 ${p.price.toLocaleString()} نقطة</span>
-                        </div>
-                        ${p.description ? `<div class="product-desc">${escapeHtml(p.description)}</div>` : ''}
-                        <div class="product-footer">
-                            <span>الرصيد المتاح: ${p.target_count - (p.completed_count || 0)}</span>
-                            <button class="btn-buy" onclick="openBuyModal(${p.id}, '${escapeQuote(p.title)}', ${p.price})">شراء الآن 🛒</button>
-                        </div>
-                    </div>
-                `;
-            });
+        function switchCurrencyFilter(curr) {
+            activeCurrencyFilter = curr;
+            document.getElementById('chip-curr-all').className = 'curr-chip' + (curr === 'all' ? ' active-all' : '');
+            document.getElementById('chip-curr-points').className = 'curr-chip' + (curr === 'points' ? ' active-pts' : '');
+            document.getElementById('chip-curr-egp').className = 'curr-chip' + (curr === 'egp' ? ' active-egp' : '');
+            renderProducts();
         }
 
         function switchCategory(cat, el) {
             activeCategory = cat;
             document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
             el.classList.add('active');
-            renderProducts(allProducts);
+            renderProducts();
         }
 
         function filterProducts() {
-            renderProducts(allProducts);
+            renderProducts();
         }
 
+        function renderProducts() {
+            const container = document.getElementById('products-list');
+            const query = document.getElementById('search-input').value.toLowerCase();
+
+            let filtered = allProducts.filter(p => {
+                const pCurr = p.currency || 'points';
+                const matchCurr = (activeCurrencyFilter === 'all' || pCurr === activeCurrencyFilter);
+                const matchCat = (activeCategory === 'all' || p.category === activeCategory);
+                const matchSearch = (p.title || "").toLowerCase().includes(query) || (p.description && p.description.toLowerCase().includes(query));
+                return matchCurr && matchCat && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="status-box">📭 لا توجد منتجات مطابقة في هذا القسم حالياً.</div>';
+                return;
+            }
+
+            container.innerHTML = "";
+            filtered.forEach(p => {
+                const isEgp = p.currency === 'egp';
+                const isOfficial = !p.creator_id || p.creator_id === 'ADMIN';
+                const catIcon = CAT_ICONS[p.category] || "📦";
+                const remainingStock = Math.max(0, (p.target_count || 100) - (p.completed_count || 0));
+                const isSoldOut = remainingStock <= 0;
+
+                const borderClass = isEgp ? 'egp-border' : 'pts-border';
+                const priceBadgeHtml = isEgp
+                    ? `<span class="price-tag price-egp">💵 ${Number(p.price).toFixed(2)} ج.م</span>`
+                    : `<span class="price-tag price-pts">🪙 ${Number(p.price).toLocaleString()} نقطة</span>`;
+
+                const sellerBadgeHtml = isOfficial
+                    ? `<span class="seller-badge badge-official">🛡️ متجر MegaTask الرسمي</span>`
+                    : `<span class="seller-badge badge-user">👤 عرض عضو معتمد</span>`;
+
+                const thumbHtml = (p.image_url && p.image_url.startsWith('data:image'))
+                    ? `<div class="product-thumb"><img src="${p.image_url}" alt="Product"></div>`
+                    : `<div class="product-thumb">${catIcon}</div>`;
+
+                let buyBtnHtml = '';
+                if (isSoldOut) {
+                    buyBtnHtml = `<button class="btn-buy btn-buy-soldout" disabled>نفدت الكمية ❌</button>`;
+                } else if (isEgp) {
+                    buyBtnHtml = `<button class="btn-buy btn-buy-egp" onclick="openBuyModal(${p.id})">شراء بالجنيه 🛒</button>`;
+                } else {
+                    buyBtnHtml = `<button class="btn-buy btn-buy-pts" onclick="openBuyModal(${p.id})">شراء بالنقاط 🛒</button>`;
+                }
+
+                container.innerHTML += `
+                    <div class="product-card ${borderClass}">
+                        <div class="product-header-row">
+                            ${thumbHtml}
+                            <div class="product-main-info">
+                                <div class="badges-row">
+                                    ${sellerBadgeHtml}
+                                </div>
+                                <h3 class="product-title">${escapeHtml(p.title)}</h3>
+                            </div>
+                            ${priceBadgeHtml}
+                        </div>
+
+                        ${p.description ? `<div class="product-desc">${escapeHtml(p.description)}</div>` : ''}
+
+                        <div class="product-footer">
+                            <span class="stock-pill">📦 المتاح: <b style="color: ${isSoldOut ? '#ff4d4d' : 'white'};">${remainingStock}</b></span>
+                            ${buyBtnHtml}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- نافذة عرض سلعة للبيع (نقاط أو جنيه) ---
         function openSellModal() {
             if (!tid) return tg.showAlert("❌ يرجى فتح المنصة من داخل البوت.");
             document.getElementById('sell-title').value = "";
             document.getElementById('sell-link').value = "";
             document.getElementById('sell-desc').value = "";
             document.getElementById('sell-price').value = "";
+            document.getElementById('sell-target').value = "1";
+            document.getElementById('sell-img-file').value = "";
+            userSellImgBase64 = "";
+            selectSellCurrency('points');
             document.getElementById('sell-modal').style.display = 'flex';
         }
 
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
+        function selectSellCurrency(curr) {
+            selectedSellCurrency = curr;
+            const optPts = document.getElementById('opt-sell-points');
+            const optEgp = document.getElementById('opt-sell-egp');
+            const lblPrice = document.getElementById('lbl-sell-price');
+            const inputPrice = document.getElementById('sell-price');
+
+            if (curr === 'egp') {
+                optEgp.className = "curr-option selected-egp";
+                optPts.className = "curr-option";
+                lblPrice.innerText = "💵 سعر البيع للمشتري (بالجنيه المصري):";
+                inputPrice.placeholder = "مثلاً: 25 جنيه";
+            } else {
+                optPts.className = "curr-option selected-pts";
+                optEgp.className = "curr-option";
+                lblPrice.innerText = "🪙 سعر البيع للمشتري (بالنقاط):";
+                inputPrice.placeholder = "مثلاً: 5000 نقطة";
+            }
+            updateSellProfitPreview();
+        }
+
+        function updateSellProfitPreview() {
+            const price = parseFloat(document.getElementById('sell-price').value) || 0;
+            const box = document.getElementById('sell-profit-box');
+            const netProfit = price * 0.75; // صافي 75% بعد خصم 25% عمولة المتجر
+
+            if (selectedSellCurrency === 'egp') {
+                box.style.borderColor = "var(--neon-blue)";
+                box.innerHTML = `💵 صافي ربحك بعد عمولة المتجر (25%): <b style="color: var(--neon-blue);">${netProfit.toFixed(2)} ج.م</b> لكل عملية بيع مكتملة.`;
+            } else {
+                box.style.borderColor = "var(--main-green)";
+                box.innerHTML = `🪙 صافي ربحك بعد عمولة المتجر (25%): <b style="color: var(--main-green);">${Math.floor(netProfit).toLocaleString()} نقطة</b> لكل عملية بيع مكتملة.`;
+            }
+        }
+
+        function previewUserSellImage(input) {
+            if (!input.files || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxW = 400;
+                    let w = img.width, h = img.height;
+                    if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    userSellImgBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                };
+            };
+            reader.readAsDataURL(input.files[0]);
         }
 
         async function submitUserProduct() {
@@ -257,88 +598,164 @@
             const title = document.getElementById('sell-title').value.trim();
             const link = document.getElementById('sell-link').value.trim();
             const desc = document.getElementById('sell-desc').value.trim();
-            const price = parseInt(document.getElementById('sell-price').value);
+            const price = parseFloat(document.getElementById('sell-price').value);
+            const targetCount = Math.max(1, parseInt(document.getElementById('sell-target').value) || 1);
+            const btn = document.getElementById('btn-submit-sell');
 
             if (!title || !link || isNaN(price) || price <= 0) {
-                return tg.showAlert("❌ يرجى ملء جميع الحانات المطلوبة بشكل صحيح!");
+                return tg.showAlert("❌ يرجى ملء العنوان، الرابط، والسعر بشكل صحيح!");
             }
+
+            if (selectedSellCurrency === 'points' && price < 100) {
+                return tg.showAlert("⚠️ الحد الأدنى لعرض سلعة بالنقاط هو 100 نقطة.");
+            }
+            if (selectedSellCurrency === 'egp' && price < 5) {
+                return tg.showAlert("⚠️ الحد الأدنى لعرض سلعة بالجنيه هو 5 ج.م.");
+            }
+
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري الإرسال...";
 
             const { data: existing } = await client.from('store_products').select('id').eq('link', link).eq('status', 'Approved').limit(1);
             if (existing && existing.length > 0) {
-                return tg.showAlert("⛔ عذراً، هذا الرابط مسجل ومضاف مسبقاً في المتجر!");
+                btn.disabled = false;
+                btn.innerText = "إرسال للإدارة للاعتماد 🚀";
+                return tg.showAlert("⛔ عذراً، هذا الرابط معروض ومضاف مسبقاً في المتجر!");
             }
 
             const { error } = await client.from('store_products').insert([{
                 creator_id: tid,
                 category: category,
+                currency: selectedSellCurrency,
                 title: title,
                 description: desc,
                 price: price,
                 link: link,
-                target_count: 1,
+                image_url: userSellImgBase64 || null,
+                target_count: targetCount,
+                completed_count: 0,
                 status: 'Pending'
             }]);
 
+            btn.disabled = false;
+            btn.innerText = "إرسال للإدارة للاعتماد 🚀";
+
             if (!error) {
                 closeModal('sell-modal');
-                tg.showAlert("✅ تم إرسال سلعتك بنجاح وهي قيد مراجعة الإدارة الآن!");
+                const unitTxt = selectedSellCurrency === 'egp' ? 'ج.م' : 'نقطة';
+                tg.showAlert(`✅ تم إرسال سلعتك (${title}) بسعر ${price} ${unitTxt} بنجاح!\n\nستظهر في المتجر فور مراجعتها واعتمادها من الإدارة.`);
             } else {
                 tg.showAlert("❌ خطأ أثناء الإرسال: " + error.message);
             }
         }
 
-        function openBuyModal(id, title, price) {
-            selectedProductForBuy = { id, title, price };
-            document.getElementById('buy-modal-title').innerText = `🛒 شراء: ${title}`;
-            document.getElementById('buy-modal-price').innerText = `السعر المطلوبة: ${price.toLocaleString()} نقطة`;
+        // --- نافذة وعملية الشراء (تدعم النقاط والجنيه) ---
+        function openBuyModal(productId) {
+            const p = allProducts.find(item => item.id === productId);
+            if (!p) return;
+
+            selectedProductForBuy = p;
+            const isEgp = p.currency === 'egp';
+            const priceText = isEgp ? `${Number(p.price).toFixed(2)} ج.م` : `${Number(p.price).toLocaleString()} نقطة`;
+            const myBalText = isEgp ? `${userEgp.toFixed(2)} ج.م` : `${userPoints.toLocaleString()} نقطة`;
+
+            document.getElementById('buy-modal-title').innerText = `🛒 شراء: ${p.title}`;
+            document.getElementById('buy-modal-price').innerHTML = `
+                💰 <b>السعر المطلوب:</b> <span style="color: ${isEgp ? 'var(--neon-blue)' : 'var(--main-green)'}; font-weight:bold;">${priceText}</span><br>
+                💼 <b>رصيدك الحالي:</b> ${myBalText}
+            `;
             document.getElementById('buyer-input').value = "";
             document.getElementById('buy-modal').style.display = 'flex';
         }
 
         async function confirmPurchase() {
             if (!selectedProductForBuy) return;
+            const p = selectedProductForBuy;
             const buyerInput = document.getElementById('buyer-input').value.trim();
-            if (!buyerInput) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام الخاصة بك!");
+            const btn = document.getElementById('btn-confirm-buy');
 
-            if (userPoints < selectedProductForBuy.price) {
-                return tg.showAlert("❌ رصيدك الحالي غير كافٍ لإتمام عملية الشراء!");
+            if (!buyerInput) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام الخاصة بك أولاً!");
+
+            const isEgp = p.currency === 'egp';
+            const price = Number(p.price);
+
+            // التحقق من الرصيد حسب عملة المنتج
+            if (isEgp) {
+                if (userEgp < price) {
+                    closeModal('buy-modal');
+                    if (confirm(`❌ رصيدك بالجنيه غير كافٍ!\nسعر المنتج: ${price.toFixed(2)} ج.م\nرصيدك الحالي: ${userEgp.toFixed(2)} ج.م\n\nهل ترغب في الانتقال لصفحة شحن الجنيه الآن؟`)) {
+                        goDeposit();
+                    }
+                    return;
+                }
+            } else {
+                if (userPoints < price) {
+                    closeModal('buy-modal');
+                    if (userEgp >= 1) {
+                        if (confirm(`❌ رصيد نقاطك غير كافٍ (${userPoints.toLocaleString()} نقطة)!\n\n💡 لديك ${userEgp.toFixed(2)} ج.م في محفظة الجنيه، هل ترغب في تحويل الجنيه إلى نقاط (+20% بونص) لإتمام الشراء فوراً؟`)) {
+                            openExchangeModal();
+                        }
+                    } else {
+                        tg.showAlert(`❌ رصيد نقاطك غير كافٍ لإتمام الشراء!\nالمطلوب: ${price.toLocaleString()} نقطة.`);
+                    }
+                    return;
+                }
             }
 
-            if (!confirm(`تأكيد شراء (${selectedProductForBuy.title}) مقابل ${selectedProductForBuy.price.toLocaleString()} نقطة؟`)) return;
+            const unitLabel = isEgp ? 'ج.م' : 'نقطة';
+            if (!confirm(`تأكيد شراء (${p.title}) مقابل ${price.toLocaleString()} ${unitLabel}؟`)) return;
+
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري تنفيذ الطلب...";
 
             try {
-                const newPoints = userPoints - selectedProductForBuy.price;
-                const { error: err1 } = await client.from('users').update({ points: newPoints }).eq('telegram_id', tid);
+                // 1. خصم السعر من العملة المناسبة
+                let userUpdatePayload = {};
+                if (isEgp) {
+                    userEgp = Number((userEgp - price).toFixed(2));
+                    userUpdatePayload.egp_balance = userEgp;
+                } else {
+                    userPoints = userPoints - price;
+                    userUpdatePayload.points = userPoints;
+                }
+
+                const { error: err1 } = await client.from('users').update(userUpdatePayload).eq('telegram_id', tid);
                 if (err1) throw err1;
 
-                // تسجيل الطلب للأدمن
+                // 2. تسجيل الطلب في جدول store_orders مع عملة الدفع
                 const { error: err2 } = await client.from('store_orders').insert([{
                     user_id: tid,
-                    product_id: selectedProductForBuy.id,
-                    product_title: selectedProductForBuy.title,
-                    price_paid: selectedProductForBuy.price,
+                    product_id: p.id,
+                    product_title: p.title,
+                    price_paid: price,
+                    currency: isEgp ? 'egp' : 'points',
                     buyer_input: buyerInput,
                     status: 'Pending'
                 }]);
                 if (err2) throw err2;
 
-                // تسجيل العملية في الهيستوري (Transactions History) لتظهر في صفحة البروفايل
+                // 3. تحديث عدد المرات المباعة للمنتج
+                const newCompletedCount = (p.completed_count || 0) + 1;
+                await client.from('store_products').update({ completed_count: newCompletedCount }).eq('id', p.id);
+                p.completed_count = newCompletedCount;
+
+                // 4. توثيق العملية في جدول السجلات (Transactions)
                 await client.from('transactions').insert([{
                     telegram_id: String(tid),
                     type: 'store',
-                    title: `شراء: ${selectedProductForBuy.title}`,
-                    amount: `-${selectedProductForBuy.price.toLocaleString()} نقطة`,
+                    title: `شراء منتج: ${p.title}`,
+                    amount: isEgp ? `-${price.toFixed(2)} ج.م` : `-${price.toLocaleString()} نقطة`,
                     status: 'قيد التنفيذ'
                 }]);
 
-                // إرسال إشعار لشات البوت للمستخدم بالتفاصيل
+                // 5. إشعار المشتري في شات البوت
                 const orderMsg = 
                     `🛒 *تم استلام طلب شرائك بنجاح!* ✅\n` +
                     `━━━━━━━━━━━━━━━\n` +
-                    `📦 *المنتج:* ${selectedProductForBuy.title}\n` +
-                    `💰 *المبلغ المدفوع:* ${selectedProductForBuy.price.toLocaleString()} نقطة\n` +
+                    `📦 *المنتج:* ${p.title}\n` +
+                    `💰 *المبلغ المدفوع:* ${price.toLocaleString()} ${unitLabel}\n` +
                     `📱 *بيانات الاستلام:* \`${buyerInput}\`\n` +
-                    `📌 *الحالة:* جاري المراجعة والتنفيذ من الإدارة قريباً.`;
+                    `📌 *الحالة:* قيد المراجعة والتسليم من الإدارة.`;
 
                 await client.from('bot_messages').insert([{
                     telegram_id: tid,
@@ -346,17 +763,127 @@
                     status: 'pending'
                 }]);
 
-                userPoints = newPoints;
-                document.getElementById('user-points').innerText = userPoints.toLocaleString() + " نقطة";
+                updateWalletHeaderUI();
+                renderProducts();
                 closeModal('buy-modal');
-                tg.showAlert("✅ تم تنفيذ عملية الشراء بنجاح! وتفاصيل الطلب وصلت لشات البوت الخاص بك وتم تسجيلها في سجلك.");
+                tg.showAlert("🎉 تمت عملية الشراء بنجاح!\nتم إرسال الفاتورة لشات البوت الخاص بك ويمكنك متابعة حالة التسليم من زر (طلباتي وسلعي).");
             } catch (e) {
                 tg.showAlert("❌ حدث خطأ أثناء إتمام الشراء: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "تأكيد الشراء الآن ✅";
             }
         }
 
+        // --- نافذة تحويل الجنيه لنقاط داخل المتجر ---
+        function openExchangeModal() {
+            document.getElementById('ex-egp-input').value = "";
+            document.getElementById('ex-pts-preview').innerText = "ستحصل على: 0 نقطة";
+            document.getElementById('exchange-modal').style.display = 'flex';
+        }
+
+        function updateStoreExchangePreview() {
+            const val = parseFloat(document.getElementById('ex-egp-input').value) || 0;
+            const pts = Math.floor(val * 1200);
+            document.getElementById('ex-pts-preview').innerText = `ستحصل على: ${pts.toLocaleString()} نقطة 🔥`;
+        }
+
+        async function confirmStoreExchange() {
+            const egpAmt = parseFloat(document.getElementById('ex-egp-input').value);
+            if (!egpAmt || egpAmt < 1) return tg.showAlert("⚠️ الحد الأدنى للتحويل هو 1 جنيه.");
+            if (egpAmt > userEgp) return tg.showAlert("❌ رصيدك بالجنيه غير كافٍ!");
+
+            const ptsToAdd = Math.floor(egpAmt * 1200);
+            const newEgp = Number((userEgp - egpAmt).toFixed(2));
+            const newPts = userPoints + ptsToAdd;
+
+            const { error } = await client.from('users').update({
+                egp_balance: newEgp,
+                points: newPts
+            }).eq('telegram_id', tid);
+
+            if (!error) {
+                userEgp = newEgp;
+                userPoints = newPts;
+                updateWalletHeaderUI();
+                closeModal('exchange-modal');
+
+                await client.from('transactions').insert([{
+                    telegram_id: String(tid),
+                    type: 'points',
+                    title: `تحويل ${egpAmt} ج.م إلى نقاط بالمتجر`,
+                    amount: `+${ptsToAdd.toLocaleString()} نقطة`,
+                    status: 'مكتمل'
+                }]);
+
+                tg.showAlert(`🎉 تم التحويل بنجاح! أُضيف ${ptsToAdd.toLocaleString()} نقطة لرصيدك.`);
+            } else {
+                tg.showAlert("❌ حدث خطأ أثناء التحويل.");
+            }
+        }
+
+        // --- نافذة متابعة طلباتي وسلعي المعروضة ---
+        async function openMyActivityModal() {
+            document.getElementById('activity-modal').style.display = 'flex';
+            const box = document.getElementById('my-activity-content');
+            box.innerHTML = '<div class="status-box">⏳ جاري جلب بياناتك...</div>';
+
+            const { data: myOrders } = await client.from('store_orders').select('*').eq('user_id', tid).order('id', { ascending: false }).limit(15);
+            const { data: myItems } = await client.from('store_products').select('*').eq('creator_id', tid).order('id', { ascending: false });
+
+            let html = `<h4 style="color: var(--neon-blue); margin: 5px 0 8px;">🛒 آخر مشترياتي (${myOrders ? myOrders.length : 0}):</h4>`;
+            if (!myOrders || myOrders.length === 0) {
+                html += `<p style="font-size:12px; color:gray;">لم تقم بشراء أي منتج بعد.</p>`;
+            } else {
+                myOrders.forEach(o => {
+                    const unit = o.currency === 'egp' ? 'ج.م' : 'نقطة';
+                    let stBadge = `<span style="color:var(--gold);">⏳ قيد التنفيذ</span>`;
+                    if (o.status === 'Completed') stBadge = `<span style="color:var(--main-green);">✅ تم التسليم</span>`;
+                    if (o.status === 'Rejected') stBadge = `<span style="color:#ff4d4d;">❌ ملغي ومسترد</span>`;
+
+                    html += `
+                        <div style="background:#11141a; padding:10px; border-radius:10px; margin-bottom:8px; border:1px solid #262c38; font-size:12px;">
+                            <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                                <span>${escapeHtml(o.product_title)}</span>
+                                ${stBadge}
+                            </div>
+                            <div style="color:var(--text-gray); font-size:11px; margin-top:4px;">
+                                المدفوع: ${o.price_paid} ${unit} | البيانات: ${escapeHtml(o.buyer_input)}
+                            </div>
+                        </div>`;
+                });
+            }
+
+            html += `<hr style="border-color:#262c38; margin: 15px 0;">`;
+            html += `<h4 style="color: var(--main-green); margin: 5px 0 8px;">🏷️ سلعي المعروضة للبيع (${myItems ? myItems.length : 0}):</h4>`;
+            if (!myItems || myItems.length === 0) {
+                html += `<p style="font-size:12px; color:gray;">لم تعرض أي سلعة للبيع بعد.</p>`;
+            } else {
+                myItems.forEach(item => {
+                    const unit = item.currency === 'egp' ? 'ج.م' : 'نقطة';
+                    let stTxt = `<span style="color:var(--gold);">⏳ قيد المراجعة</span>`;
+                    if (item.status === 'Approved') stTxt = `<span style="color:var(--main-green);">✅ منشور بالمتجر (تم بيع ${item.completed_count || 0})</span>`;
+                    if (item.status === 'Rejected') stTxt = `<span style="color:#ff4d4d;">❌ مرفوض (${escapeHtml(item.rejection_reason || '')})</span>`;
+
+                    html += `
+                        <div style="background:#11141a; padding:10px; border-radius:10px; margin-bottom:8px; border:1px solid #262c38; font-size:12px;">
+                            <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                                <span>${escapeHtml(item.title)}</span>
+                                <span>${item.price} ${unit}</span>
+                            </div>
+                            <div style="font-size:11px; margin-top:4px;">الحالة: ${stTxt}</div>
+                        </div>`;
+                });
+            }
+
+            box.innerHTML = html;
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
         function escapeHtml(str) { return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-        function escapeQuote(str) { return (str || "").replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
 
         function goHome() { window.location.href = `index.html?id=${tid}`; }
         function goStore() { window.location.href = `store.html?id=${tid}`; }
