@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -10,7 +10,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
+        :root { --main-green: #00d26a; --main-cyan: #00f2ff; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
         * { box-sizing: border-box; }
         body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 110px; }
         
@@ -36,7 +36,7 @@
         }
         .ad-interaction-alert b { color: #ffaa00; display: block; margin-bottom: 3px; }
 
-        /* شبكة الإعلانات (زرين بشرح منفصل) */
+        /* شبكة الإعلانات المحدثة بحد أقصى 5 مرات يومياً */
         .ads-section { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
         .ad-box {
             background: linear-gradient(145deg, #1d222b, #13161c);
@@ -51,7 +51,7 @@
         .ad-box-icon { width: 44px; height: 44px; border-radius: 12px; background: #11141a; border: 1px solid #333; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
         .ad-box-info b { display: block; font-size: 14px; color: white; margin-bottom: 2px; }
         .ad-box-info span { font-size: 11px; color: var(--main-green); font-weight: bold; }
-        .ad-box-desc { font-size: 11px; color: var(--text-gray); line-height: 1.5; background: #0c0e12; padding: 8px 10px; border-radius: 10px; }
+        .ad-box-desc { font-size: 11px; color: var(--text-gray); line-height: 1.5; background: #0c0e12; padding: 8px 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; }
         
         .btn-ad-trigger { background: var(--main-green); color: black; border: none; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s; text-align: center; }
         .btn-ad-trigger:disabled { background: #22262f; color: #777; border: 1px solid #333842; cursor: not-allowed; }
@@ -171,7 +171,7 @@
         يجب البقاء والتفاعل مع صفحة الإعلان أو الموقع المعلن (تصفح أو نقر داخلي بسيط) لضمان اعتماد النقاط ومنع حظر حسابك بتهمة الزيارات الوهمية!
     </div>
 
-    <!-- قسم الإعلانات المزدوج مع الشرح -->
+    <!-- قسم الإعلانات المحدث (حد أقصى 5 مرات يومياً + مؤقت 5 دقائق) -->
     <div class="ads-section">
         
         <!-- النوع 1: مشاهدة إعلان فقط -->
@@ -184,7 +184,8 @@
                 </div>
             </div>
             <div class="ad-box-desc">
-                💡 <b>الشرح:</b> يفتح هذا الزر إعلاناً مباشراً أو فيديو قصير فقط دون الحاجة لتسجيل أو إجراءات مطولة.
+                <span>💡 إعلان مباشر قصير</span>
+                <span id="watch-daily-counter" style="color: var(--main-green); font-weight: bold;">المتبقي اليوم: 5/5</span>
             </div>
             <button id="btn-ad-watch" class="btn-ad-trigger" onclick="triggerAd('watch')">
                 📺 مشاهدة الإعلان الآن (+2 نقطة)
@@ -197,12 +198,13 @@
             <div class="ad-box-top">
                 <div class="ad-box-icon">🌐</div>
                 <div class="ad-box-info">
-                    <b>زيارة مواقع المعلنين (Web Traffic & OnClick)</b>
+                    <b>زيارة مواقع المعلنين (Web Traffic)</b>
                     <span>+3 نقطة • متاح كل 5 دقائق</span>
                 </div>
             </div>
             <div class="ad-box-desc">
-                💡 <b>الشرح:</b> يفتح موقعاً إلكترونياً أو رابطاً ترويجياً؛ يتطلب منك تصفح الصفحة والبقاء بها لمدة 15 ثانية لاحتساب الزيارة كاملة.
+                <span>💡 تصفح موقع ترويجي</span>
+                <span id="onclick-daily-counter" style="color: var(--main-cyan); font-weight: bold;">المتبقي اليوم: 5/5</span>
             </div>
             <button id="btn-ad-onclick" class="btn-ad-trigger" onclick="triggerAd('onclick')">
                 🌐 تصفح وزيارة الموقع المعلن (+3 نقطة)
@@ -417,10 +419,11 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         // ==========================================
-        // روابط الإعلانات المباشرة
+        // إعدادات الإعلانات والحد الأقصى (5 مرات يومياً + 5 دقائق مؤقت)
         // ==========================================
         const AD_COOLDOWN_SECONDS = 300; // 5 دقائق
         const AD_STAY_SECONDS = 15; // 15 ثانية تفاعل إجباري
+        const MAX_DAILY_ADS = 5; // أقصى عدد مرات في اليوم لكل زر إعلان
         const AD_LINK_WATCH = "https://omg10.com/4/10959404";
         const AD_LINK_ONCLICK = "https://omg10.com/4/10959404";
 
@@ -454,6 +457,13 @@
             return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
+        // فحص ما إذا كان التاريخ اليوم لنظام إعادة تعيين عداد الإعلانات اليومي
+        function isSameDay(d1, d2) {
+            return d1.getFullYear() === d2.getFullYear() &&
+                   d1.getMonth() === d2.getMonth() &&
+                   d1.getDate() === d2.getDate();
+        }
+
         async function init() {
             if (!tid) {
                 document.getElementById('tasks-list').innerHTML = '<div class="status-box">❌ يرجى فتح الصفحة من داخل البوت.</div>';
@@ -465,7 +475,7 @@
                 if (user) {
                     userData = user;
                     updateUI();
-                    checkAdsCooldown();
+                    checkAdsStatus();
                 }
             } catch (e) {
                 console.error("User fetch error:", e);
@@ -481,37 +491,71 @@
             document.getElementById('user-task-earnings').innerText = (userData.task_earnings || 0).toLocaleString();
         }
 
-        function checkAdsCooldown() {
+        // فحص عداد الإعلانات اليومي (حد أقصى 5 مرات) ومؤقت الـ 5 دقائق
+        function checkAdsStatus() {
             if (!userData) return;
+            const now = new Date();
 
-            if (userData.last_ad_watched_at) {
+            // --- 1. فحص إعلان Watch ---
+            let watchCount = userData.ads_watch_count || 0;
+            let watchDate = userData.ads_watch_date ? new Date(userData.ads_watch_date) : null;
+            if (!watchDate || !isSameDay(watchDate, now)) {
+                watchCount = 0; // إعادة تعيين العداد ليوم جديد
+            }
+
+            const watchRemaining = Math.max(0, MAX_DAILY_ADS - watchCount);
+            document.getElementById('watch-daily-counter').innerText = `المتبقي اليوم: ${watchRemaining}/${MAX_DAILY_ADS}`;
+
+            if (watchRemaining <= 0) {
+                lockAdButton('watch', "🔒 استنفدت محاولات اليوم (5/5)");
+            } else if (userData.last_ad_watched_at) {
                 const elapsedWatch = Math.floor((Date.now() - new Date(userData.last_ad_watched_at).getTime()) / 1000);
                 if (elapsedWatch >= 0 && elapsedWatch < AD_COOLDOWN_SECONDS) {
                     startSpecificAdTimer('watch', AD_COOLDOWN_SECONDS - elapsedWatch);
                 } else {
-                    enableAdBtn('watch');
+                    enableAdBtn('watch', watchRemaining);
                 }
             } else {
-                enableAdBtn('watch');
+                enableAdBtn('watch', watchRemaining);
             }
 
-            if (userData.last_onclick_watched_at) {
+            // --- 2. فحص إعلان OnClick ---
+            let clickCount = userData.ads_onclick_count || 0;
+            let clickDate = userData.ads_onclick_date ? new Date(userData.ads_onclick_date) : null;
+            if (!clickDate || !isSameDay(clickDate, now)) {
+                clickCount = 0;
+            }
+
+            const clickRemaining = Math.max(0, MAX_DAILY_ADS - clickCount);
+            document.getElementById('onclick-daily-counter').innerText = `المتبقي اليوم: ${clickRemaining}/${MAX_DAILY_ADS}`;
+
+            if (clickRemaining <= 0) {
+                lockAdButton('onclick', "🔒 استنفدت محاولات اليوم (5/5)");
+            } else if (userData.last_onclick_watched_at) {
                 const elapsedClick = Math.floor((Date.now() - new Date(userData.last_onclick_watched_at).getTime()) / 1000);
                 if (elapsedClick >= 0 && elapsedClick < AD_COOLDOWN_SECONDS) {
                     startSpecificAdTimer('onclick', AD_COOLDOWN_SECONDS - elapsedClick);
                 } else {
-                    enableAdBtn('onclick');
+                    enableAdBtn('onclick', clickRemaining);
                 }
             } else {
-                enableAdBtn('onclick');
+                enableAdBtn('onclick', clickRemaining);
             }
         }
 
-        function enableAdBtn(type) {
+        function enableAdBtn(type, remaining) {
             const btn = document.getElementById(`btn-ad-${type}`);
             const badge = document.getElementById(`timer-ad-${type}`);
             btn.disabled = false;
-            btn.innerText = type === 'watch' ? "📺 مشاهدة الإعلان الآن (+2 نقطة)" : "🌐 تصفح وزيارة الموقع المعلن (+3 نقطة)";
+            btn.innerText = type === 'watch' ? `📺 مشاهدة الإعلان الآن (+2 نقطة)` : `🌐 تصفح وزيارة الموقع المعلن (+3 نقطة)`;
+            badge.style.display = 'none';
+        }
+
+        function lockAdButton(type, msg) {
+            const btn = document.getElementById(`btn-ad-${type}`);
+            const badge = document.getElementById(`timer-ad-${type}`);
+            btn.disabled = true;
+            btn.innerText = msg;
             badge.style.display = 'none';
         }
 
@@ -527,7 +571,7 @@
             function tick() {
                 if (remaining <= 0) {
                     clearInterval(timerVar);
-                    enableAdBtn(type);
+                    checkAdsStatus();
                     return;
                 }
 
@@ -536,7 +580,7 @@
                 const fmt = `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
 
                 btn.innerText = type === 'watch' ? "مشاهدة إعلان 📺" : "زيارة وتصفح 🌐";
-                badge.innerText = `⏳ متاح بعد (${fmt})`;
+                badge.innerText = `⏳ متاح الإعلان القادم بعد (${fmt})`;
                 remaining--;
             }
 
@@ -599,39 +643,62 @@
 
             const isWatch = (currentAdType === 'watch');
             const rewardPoints = isWatch ? 2 : 3;
-            const dbField = isWatch ? 'last_ad_watched_at' : 'last_onclick_watched_at';
+            const dbFieldTime = isWatch ? 'last_ad_watched_at' : 'last_onclick_watched_at';
+            const dbFieldCount = isWatch ? 'ads_watch_count' : 'ads_onclick_count';
+            const dbFieldDate = isWatch ? 'ads_watch_date' : 'ads_onclick_date';
             const adTitle = isWatch ? 'مكافأة مشاهدة إعلان سريع' : 'مكافأة تصفح وزيارة موقع معلن';
 
             try {
                 const { data: currentUser, error: fetchErr } = await client
                     .from('users')
-                    .select(`points, ${dbField}`)
+                    .select(`points, ${dbFieldTime}, ${dbFieldCount}, ${dbFieldDate}, referred_by`)
                     .eq('telegram_id', tid)
                     .single();
 
                 if (fetchErr || !currentUser) throw new Error("تعذر جلب البيانات");
 
-                const lastRecorded = currentUser[dbField];
+                const now = new Date();
+                let currentCount = currentUser[dbFieldCount] || 0;
+                let lastDate = currentUser[dbFieldDate] ? new Date(currentUser[dbFieldDate]) : null;
+
+                if (!lastDate || !isSameDay(lastDate, now)) {
+                    currentCount = 0;
+                }
+
+                if (currentCount >= MAX_DAILY_ADS) {
+                    document.getElementById('ad-verify-modal').style.display = 'none';
+                    tg.showAlert("🔒 لقد استنفدت الحد الأقصى للمحاولات اليومية لهذا الإعلان (5/5)!");
+                    checkAdsStatus();
+                    return;
+                }
+
+                const lastRecorded = currentUser[dbFieldTime];
                 if (lastRecorded) {
                     const diff = (Date.now() - new Date(lastRecorded).getTime()) / 1000;
                     if (diff >= 0 && diff < AD_COOLDOWN_SECONDS) {
                         document.getElementById('ad-verify-modal').style.display = 'none';
                         tg.showAlert("⛔ لم تنقضِ مهلة الـ 5 دقائق الخاصة بهذا الإعلان بعد!");
-                        checkAdsCooldown();
+                        checkAdsStatus();
                         return;
                     }
                 }
 
-                const nowIso = new Date().toISOString();
+                const nowIso = now.toISOString();
                 const updatedPoints = (currentUser.points || 0) + rewardPoints;
+                const newCount = currentCount + 1;
                 
-                const updatePayload = { points: updatedPoints };
-                updatePayload[dbField] = nowIso;
+                const updatePayload = { 
+                    points: updatedPoints,
+                    total_earned: (currentUser.total_earned || 0) + rewardPoints
+                };
+                updatePayload[dbFieldTime] = nowIso;
+                updatePayload[dbFieldCount] = newCount;
+                updatePayload[dbFieldDate] = nowIso;
 
                 const { error: updateErr } = await client.from('users').update(updatePayload).eq('telegram_id', tid);
                 if (updateErr) throw updateErr;
 
-                // ⭐ تسجيل العملية في الهيستوري مباشرة لكي تظهر في البروفايل بالنوع points
+                // تسجيل العملية في الهيستوري
                 await client.from('transactions').insert([{
                     telegram_id: String(tid),
                     type: 'points',
@@ -640,13 +707,27 @@
                     status: 'مكتمل'
                 }]);
 
+                // ⭐ عمولة إحالة 10% للداعي تلقائياً
+                if (currentUser.referred_by && String(currentUser.referred_by) !== String(tid)) {
+                    const refBonus = Math.max(1, Math.round(rewardPoints * 0.10));
+                    const { data: refUser } = await client.from('users').select('points, total_earned').eq('telegram_id', String(currentUser.referred_by)).maybeSingle();
+                    if (refUser) {
+                        await client.from('users').update({
+                            points: (refUser.points || 0) + refBonus,
+                            total_earned: (refUser.total_earned || 0) + refBonus
+                        }).eq('telegram_id', String(currentUser.referred_by));
+                    }
+                }
+
                 userData.points = updatedPoints;
-                userData[dbField] = nowIso;
+                userData[dbFieldTime] = nowIso;
+                userData[dbFieldCount] = newCount;
+                userData[dbFieldDate] = nowIso;
                 updateUI();
 
                 document.getElementById('ad-verify-modal').style.display = 'none';
-                tg.showAlert(`🎉 تم تأكيد التفاعل بنجاح وحصلت على +${rewardPoints} نقطة!`);
-                startSpecificAdTimer(currentAdType, AD_COOLDOWN_SECONDS);
+                tg.showAlert(`🎉 تم تأكيد التفاعل بنجاح وحصلت على +${rewardPoints} نقطة!\n(المحاولات المستخدمة اليوم: ${newCount}/5)`);
+                checkAdsStatus();
 
             } catch (err) {
                 console.error("Claim ad error:", err);
@@ -836,7 +917,6 @@
             btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
 
             if (!taskErr) {
-                // تسجيل خصم نقاط إنشاء المهمة في الهيستوري
                 await client.from('transactions').insert([{
                     telegram_id: String(tid),
                     type: 'points',
@@ -1215,7 +1295,6 @@
 
                 await claimTaskSuccess(taskId, taskData.reward, executorId);
 
-                // ⭐ إرسال إشعار فوري في شات البوت للمنفذ (المستخدم رقم 2) بالقبول وصرف النقاط
                 await client.from('bot_messages').insert([{
                     telegram_id: String(executorId),
                     message: `🎉 *مبروك! تم قبول إثبات المهمة وصرف النقاط* ✅\n\n📌 *المهمة:* ${taskData.title}\n🎁 *النقاط المضافة:* +${taskData.reward} نقطة${feedbackVal ? `\n💌 *ملاحظة صاحب المهمة:* ${feedbackVal}` : ''}`,
@@ -1254,7 +1333,6 @@
                     if (tData) taskTitle = tData.title;
                 } catch(e){}
 
-                // ⭐ إرسال إشعار فوري في شات البوت للمنفذ (المستخدم رقم 2) بالرفض وسبب الرفض
                 await client.from('bot_messages').insert([{
                     telegram_id: String(executorId),
                     message: `❌ *عذراً، تم رفض إثبات المهمة الخاصة بك*\n\n📌 *المهمة:* ${taskTitle}\n💬 *السبب:* ${reason}\n\nيمكنك مراجعة التفاصيل وإعادة المحاولة.`,
@@ -1293,14 +1371,25 @@
                         total_tasks: newTotalTasks
                     }).eq('telegram_id', String(targetUserId));
 
-                    // ⭐ تسجيل أرباح إتمام المهمة في الهيستوري تلقائياً بالنوع points
                     await client.from('transactions').insert([{
                         telegram_id: String(targetUserId),
                         type: 'points',
                         title: 'مكافأة إتمام مهمة بنجاح',
                         amount: `+${reward} نقطة`,
                         status: 'مكتمل'
-                    }]);
+                    }]).then(() => {});
+
+                    // ⭐ عمولة إحالة 10% للداعي تلقائياً
+                    if (execUser.referred_by && String(execUser.referred_by) !== String(targetUserId)) {
+                        const refBonus = Math.max(1, Math.floor(reward * 0.10));
+                        const { data: refUser } = await client.from('users').select('points, total_earned').eq('telegram_id', String(execUser.referred_by)).maybeSingle();
+                        if (refUser) {
+                            await client.from('users').update({
+                                points: (refUser.points || 0) + refBonus,
+                                total_earned: (refUser.total_earned || 0) + refBonus
+                            }).eq('telegram_id', String(execUser.referred_by));
+                        }
+                    }
 
                     if (String(targetUserId) === String(tid)) {
                         userData.points = newPoints;
