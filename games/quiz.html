@@ -3,240 +3,667 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MegaTask - Arabic Infinite Quiz</title>
+    <title>MegaTask - كويز العباقرة (API)</title>
     
     <!-- إعلانات Monetag -->
     <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
-
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 50px; width: 100%; max-width: 100vw; overflow-x: hidden; text-align: center; }
+        :root { 
+            --main-green: #00d26a; 
+            --main-cyan: #00f2ff;
+            --gold: #ffaa00;
+            --red: #ff3b30;
+            --purple: #bc13fe;
+            --dark-bg: #0d0f12; 
+            --card-bg: #1a1d23; 
+            --text-gray: #9ca3af; 
+        }
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        html, body { 
+            background-color: var(--dark-bg); 
+            color: white; 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            margin: 0; padding: 0; padding-bottom: 40px; 
+            width: 100%; max-width: 100vw; overflow-x: hidden; 
+            text-align: center; 
+        }
         
-        .header { padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d333d; }
-        .back-link { background: #252932; color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px; text-decoration: none; }
-        
-        .game-title { margin: 20px 0 5px; color: var(--main-green); font-size: 20px; }
-        .game-desc { font-size: 12px; color: var(--text-gray); margin-bottom: 15px; }
+        /* الهيدر العلوي */
+        .header { 
+            padding: 14px 15px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            background: #13161b; border-bottom: 1px solid #262b35; 
+        }
+        .back-link { 
+            background: rgba(255, 59, 48, 0.15); color: #ff7b72; border: 1px solid var(--red); 
+            padding: 7px 13px; border-radius: 12px; font-weight: bold; cursor: pointer; 
+            font-size: 12px; text-decoration: none; 
+        }
+        .rounds-pill {
+            background: rgba(255, 170, 0, 0.12); border: 1px solid rgba(255, 170, 0, 0.4);
+            color: var(--gold); padding: 5px 12px; border-radius: 14px; font-size: 11.5px; font-weight: bold;
+        }
 
-        .stats-row { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
-        .stat-card { background: var(--card-bg); border: 1px solid #2d333d; padding: 8px 15px; border-radius: 12px; }
-        .stat-card b { display: block; color: #00f2ff; font-size: 15px; }
+        /* إحصائيات اللاعب والجولة */
+        .stats-grid { 
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; 
+            padding: 12px 15px; max-width: 420px; margin: 0 auto;
+        }
+        .stat-card { 
+            background: var(--card-bg); border: 1px solid #2d333d; 
+            padding: 10px 6px; border-radius: 14px; 
+        }
+        .stat-card b { display: block; font-size: 16px; margin-bottom: 2px; }
         .stat-card span { font-size: 10px; color: var(--text-gray); }
 
-        .timer-bar-container { width: 100%; max-width: 350px; background: #252932; height: 6px; border-radius: 3px; margin: 0 auto 15px; overflow: hidden; }
-        .timer-bar { width: 100%; height: 100%; background: #ff3b30; transition: width 1s linear; }
+        /* فلاتر تصنيف الأسئلة */
+        .categories-bar {
+            display: flex; gap: 6px; overflow-x: auto; padding: 4px 15px 12px;
+            max-width: 420px; margin: 0 auto; scrollbar-width: none;
+        }
+        .categories-bar::-webkit-scrollbar { display: none; }
+        .cat-chip {
+            background: #14171e; border: 1px solid #2b303c; color: var(--text-gray);
+            padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold;
+            white-space: nowrap; cursor: pointer; transition: 0.2s;
+        }
+        .cat-chip.active { background: var(--main-green); color: #000; border-color: var(--main-green); }
 
-        .quiz-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; max-width: 350px; margin: 0 auto 20px; text-align: center; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
-        .question-text { font-size: 15px; font-weight: bold; margin-bottom: 20px; color: white; line-height: 1.6; }
+        /* شريط الوقت ومؤشر السؤال */
+        .progress-wrapper { max-width: 370px; margin: 0 auto 12px; padding: 0 15px; }
+        .q-meta-row { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-bottom: 6px; color: #cbd5e1; }
+        .api-source-badge { background: rgba(0, 242, 255, 0.1); border: 1px solid rgba(0, 242, 255, 0.3); color: var(--main-cyan); padding: 2px 8px; border-radius: 8px; font-size: 10px; }
         
-        .option-btn { background: #16191e; border: 1px solid #2d333d; color: white; width: 100%; padding: 12px 15px; border-radius: 12px; font-size: 13px; font-weight: bold; margin-bottom: 10px; cursor: pointer; text-align: center; transition: 0.2s; }
-        .option-btn:active { transform: scale(0.98); border-color: var(--main-green); }
-        .option-btn.correct { background: rgba(0, 210, 106, 0.2); border-color: var(--main-green); color: #00d26a; }
-        .option-btn.wrong { background: rgba(255, 59, 48, 0.2); border-color: #ff3b30; color: #ff6b6b; }
+        .timer-bar-container { width: 100%; background: #22262f; height: 8px; border-radius: 10px; overflow: hidden; }
+        .timer-bar { width: 100%; height: 100%; background: linear-gradient(90deg, var(--main-green), var(--gold)); transition: width 0.25s linear; }
 
-        /* نافذة جمع الألماس (Modal) */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-        .modal-box { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 25px; width: 100%; max-width: 340px; text-align: center; box-sizing: border-box; }
-        .btn-confirm-modal { width: 100%; background: var(--main-green); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        /* كارت السؤال */
+        .quiz-card { 
+            background: linear-gradient(145deg, #1b2029, #14171d); 
+            border: 1px solid #2d333d; border-radius: 22px; padding: 18px 16px; 
+            max-width: 370px; margin: 0 auto 14px; text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.45); position: relative;
+        }
+        .difficulty-tag {
+            display: inline-block; font-size: 10px; font-weight: bold;
+            padding: 3px 9px; border-radius: 6px; margin-bottom: 10px;
+            background: rgba(188, 19, 254, 0.15); color: #e082ff; border: 1px solid rgba(188, 19, 254, 0.4);
+        }
+        .question-text { 
+            font-size: 15.5px; font-weight: bold; margin-bottom: 18px; 
+            color: white; line-height: 1.65; min-height: 48px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        .option-btn { 
+            background: #11141a; border: 1.5px solid #2b313d; color: #e5e7eb; 
+            width: 100%; padding: 13px 14px; border-radius: 13px; font-size: 13.5px; 
+            font-weight: bold; margin-bottom: 9px; cursor: pointer; 
+            text-align: center; transition: all 0.2s ease; 
+        }
+        .option-btn:active:not(:disabled) { transform: scale(0.98); border-color: var(--main-cyan); }
+        .option-btn.correct { background: rgba(0, 210, 106, 0.22) !important; border-color: var(--main-green) !important; color: #00d26a !important; box-shadow: 0 0 12px rgba(0,210,106,0.25); }
+        .option-btn.wrong { background: rgba(255, 59, 48, 0.22) !important; border-color: var(--red) !important; color: #ff6b6b !important; }
+        .option-btn.hidden-opt { opacity: 0.2; pointer-events: none; text-decoration: line-through; }
+
+        /* وسائل المساعدة (Lifelines) */
+        .lifelines-bar {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+            max-width: 370px; margin: 0 auto; padding: 0 15px;
+        }
+        .life-btn {
+            background: #161922; border: 1px solid #2d3444; color: #d1d5db;
+            padding: 9px 6px; border-radius: 12px; font-size: 11px; font-weight: bold;
+            cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 3px;
+        }
+        .life-btn span { font-size: 16px; }
+        .life-btn:active:not(:disabled) { transform: scale(0.95); border-color: var(--main-cyan); }
+        .life-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        /* النوافذ المنبثقة (نهاية الجولة وجمع الألماس) */
+        .modal-overlay { 
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); 
+            z-index: 9999; align-items: center; justify-content: center; padding: 20px; 
+        }
+        .modal-box { 
+            background: var(--card-bg); border: 1px solid #2d333d; border-radius: 22px; 
+            padding: 24px 20px; width: 100%; max-width: 350px; text-align: center; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+        .btn-confirm-modal { 
+            width: 100%; background: linear-gradient(135deg, var(--main-green), #009e4f); 
+            color: #000; border: none; padding: 14px; border-radius: 14px; 
+            font-size: 14px; font-weight: bold; cursor: pointer; margin-top: 12px; 
+        }
+        .btn-secondary-modal {
+            width: 100%; background: #252932; color: #ccc; border: none;
+            padding: 11px; border-radius: 12px; font-size: 12.5px; font-weight: bold;
+            cursor: pointer; margin-top: 8px;
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <a id="back-link" href="#" class="back-link">⬅ العودة للألعاب</a>
-        <span style="font-size: 13px; font-weight: bold; color: var(--main-green);">❓ كويز السرعة اللانهائي</span>
-        <div style="width: 60px;"></div>
+        <a id="back-link" href="#" class="back-link">✖ خروج للألعاب</a>
+        <span style="font-size: 14px; font-weight: bold; color: var(--main-green);">🧠 كويز العباقرة Pro</span>
+        <div class="rounds-pill" id="daily-rounds-badge">🎮 0/30</div>
     </div>
 
-    <h2 class="game-title">تحدي الـ 5 ثوانٍ المتجدد!</h2>
-    <p class="game-desc">أجب خلال 5 ثوانٍ: الصح يمنحك +4 ألماسات 💎 (بعد الإعلان) | الخطأ يخصم 1 ألماسة!</p>
-
-    <div class="stats-row">
+    <!-- شريط الإحصائيات -->
+    <div class="stats-grid">
         <div class="stat-card">
-            <b id="user-diamonds-counter">0</b>
-            <span>ألماسات حسابك</span>
+            <b id="user-diamonds-counter" style="color: var(--main-cyan);">0 💎</b>
+            <span>رصيد الألماس</span>
         </div>
         <div class="stat-card">
-            <b id="session-score" style="color: #ffaa00;">0</b>
-            <span>نقاط الجلسة</span>
+            <b id="round-diamonds" style="color: var(--gold);">+0 💎</b>
+            <span>أرباح الجولة</span>
+        </div>
+        <div class="stat-card">
+            <b id="streak-combo" style="color: var(--main-green);">0 🔥</b>
+            <span>سلسلة الصح</span>
         </div>
     </div>
 
-    <div class="timer-bar-container">
-        <div class="timer-bar" id="timer-bar"></div>
+    <!-- اختيار تصنيف الأسئلة -->
+    <div class="categories-bar">
+        <div class="cat-chip active" onclick="changeCategory('all', this)">🌐 شامل (API مباشر)</div>
+        <div class="cat-chip" onclick="changeCategory('science', this)">🧬 علوم وطب وتقنية</div>
+        <div class="cat-chip" onclick="changeCategory('islamic', this)">📖 قرآن وتاريخ إسلامي</div>
+        <div class="cat-chip" onclick="changeCategory('geo', this)">🌍 جغرافيا وعواصم</div>
+        <div class="cat-chip" onclick="changeCategory('iq', this)">🧠 منطق وقدرات ذهنية</div>
     </div>
 
-    <div class="quiz-card" id="quiz-container">
-        <div class="question-text" id="question-box">⏳ جاري توليد أسئلة ذكية جديدة...</div>
-        <div id="options-box"></div>
+    <!-- شريط تقدم الجولة والعداد الزمني -->
+    <div class="progress-wrapper">
+        <div class="q-meta-row">
+            <span id="q-step-counter" style="font-weight: bold; color: var(--gold);">السؤال: 1 / 5</span>
+            <span id="api-source-lbl" class="api-source-badge">🌐 جاري الاتصال بالـ API...</span>
+            <span id="timer-seconds-txt" style="font-weight: bold; color: var(--main-green);">⏱️ 12 ث</span>
+        </div>
+        <div class="timer-bar-container">
+            <div class="timer-bar" id="timer-bar"></div>
+        </div>
     </div>
 
-    <!-- نافذة جمع الألماس عند الإجابة الصحيحة -->
-    <div id="claim-modal" class="modal-overlay">
+    <!-- بطاقة السؤال والاختيارات -->
+    <div style="padding: 0 15px;">
+        <div class="quiz-card">
+            <div class="difficulty-tag" id="diff-badge">🔥 مستوى متقدم • الصح +2 💎 | الخطأ -1 💎</div>
+            <div class="question-text" id="question-box">⏳ جاري سحب سؤال جديد من السيرفر...</div>
+            <div id="options-box"></div>
+        </div>
+    </div>
+
+    <!-- وسائل المساعدة داخل الجولة -->
+    <div class="lifelines-bar">
+        <button id="life-5050" class="life-btn" onclick="useLifeline5050()">
+            <span>✂️</span>حذف إجابتين
+        </button>
+        <button id="life-time" class="life-btn" onclick="useLifelineTime()">
+            <span>❄️</span>+8 ثوانٍ
+        </button>
+        <button id="life-skip" class="life-btn" onclick="useLifelineSkip()">
+            <span>🔄</span>تبديل السؤال
+        </button>
+    </div>
+
+    <!-- نافذة نهاية الجولة (5 أسئلة) وجمع الألماس -->
+    <div id="round-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3 style="color: #00f2ff; margin-top:0;">🎯 إجابة صحيحة وفي الوقت المناسب!</h3>
-            <p style="font-size: 13px; color: var(--text-gray); line-height: 1.6; margin-bottom: 15px;">
-                أحسنت السرعة والعقل المدبر!<br>
-                لديك <b style="color: #ffaa00;">+4 ألماسات 💎</b> في انتظار الجمع.
-            </p>
-            <button class="btn-confirm-modal" onclick="claimQuizDiamonds()">
-                📺 جمع الألماس (مشاهدة إعلان)
+            <div style="font-size: 46px; margin-bottom: 6px;" id="modal-emoji">🏆</div>
+            <h3 style="color: var(--main-cyan); margin: 0 0 8px 0;" id="modal-title">انتهت الجولة!</h3>
+            <p id="modal-summary" style="font-size: 13px; color: #d1d5db; line-height: 1.7; margin-bottom: 12px;"></p>
+            
+            <button id="btn-claim-ad" class="btn-confirm-modal" onclick="claimRoundDiamondsWithAd()">
+                📺 شاهد الإعلان واجمع الألماس الآن
+            </button>
+            <button id="btn-next-round" class="btn-secondary-modal" style="display: none;" onclick="startNewQuizRound()">
+                🔄 بدء جولة جديدة (5 أسئلة)
+            </button>
+            <button class="btn-secondary-modal" onclick="exitToGamesHub()">
+                🔙 العودة لمركز الألعاب
             </button>
         </div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+        const tg = window.Telegram?.WebApp;
+        if (tg) { tg.ready(); tg.expand(); }
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        let tid = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || localStorage.getItem('megatask_uid') || "").trim();
-
+        let tid = String(params.get('id') || tg?.initDataUnsafe?.user?.id || localStorage.getItem('telegram_id') || localStorage.getItem('megatask_uid') || "").trim();
         document.getElementById('back-link').href = `../games.html?id=${tid}`;
 
-        let userData = null;
-        let currentQuestion = null;
-        let sessionScore = 0;
-        let timerInterval = null;
-        let timeLeft = 5;
+        const QUESTIONS_PER_ROUND = 5;
+        const QUESTION_TIME_LIMIT = 12; // 12 ثانية لقراءة الأسئلة الصعبة بتركيز
+        const MAX_DAILY_ROUNDS = 30;
 
-        // مكتبة ضخمة جداً متجددة لتوليد آلاف الأسئلة العشوائية الفورية بدون تكرار
-        const questionPool = [
-            { q: "ما هي عاصمة دولة فرنسا؟", options: ["مدريد", "روما", "باريس", "برلين"], correct: 2 },
-            { q: "ما هو الكوكب الذي يلقب بالكوكب الأحمر؟", options: ["المشتري", "المريخ", "زحل", "الزهرة"], correct: 1 },
-            { q: "كم عدد سور القرآن الكريم؟", options: ["112 سورة", "114 سورة", "120 سورة", "110 سورة"], correct: 1 },
-            { q: "من هو واضع علم الجبر؟", options: ["الخوارزمي", "ابن سينا", "الزهراوي", "البيروني"], correct: 0 },
-            { q: "ما هو أسرع حيوان بري في العالم؟", options: ["الأسد", "الفهد", "الغزال", "الحصان"], correct: 1 },
-            { q: "في أي قارة تقع دولة مصر؟", options: ["أوروبا", "آسيا", "إفريقيا", "أمريكا الجنوبية"], correct: 2 },
-            { q: "ما هي عاصمة سلطنة عمان؟", options: ["مسقط", "الرياض", "الدوحة", "صنعاء"], correct: 0 },
-            { q: "كم عدد أركان الإسلام؟", options: ["4", "5", "6", "3"], correct: 1 },
-            { q: "ما هو العنصر الكيميائي الذي يرمز له بـ (Au)؟", options: ["الفضة", "الحديد", "الذهب", "النحاس"], correct: 2 },
-            { q: "من هو النبي الذي ألقي في النار؟", options: ["موسى", "إبراهيم", "عيسى", "يوسف"], correct: 1 },
-            { q: "ما هي عاصمة المملكة العربية السعودية؟", options: ["جدة", "الرياض", "الدمام", "مكة"], correct: 1 },
-            { q: "كم عدد ألوان قزح الرئيسية؟", options: ["5 ألوان", "7 ألوان", "9 ألوان", "6 ألوان"], correct: 1 },
-            { q: "ما هو أكبر بحر مغلق في العالم؟", options: ["البحر الأحمر", "بحر قزوين", "البحر المتوسط", "البحر الميت"], correct: 1 },
-            { q: "أي غاز يتنفسه الإنسان بشكل أساسي للبقاء على قيد الحياة؟", options: ["ثاني أكسيد الكربون", "النيتروجين", "الأكسجين", "الهيدروجين"], correct: 2 },
-            { q: "ما هي عاصمة دولة إيطاليا؟", options: ["روما", "ميلانو", "فلورنسا", "البندقية"], correct: 0 },
-            { q: "كم عدد حواس الإنسان الأساسية؟", options: ["4", "5", "6", "3"], correct: 1 },
-            { q: "ما هي عاصمة اليابان؟", options: ["سول", "طوكيو", "بكين", "بانكوك"], correct: 1 },
-            { q: "ما هو الحيوان الذي يُسمى بـ 'سفين الصحراء'؟", options: ["الحصان", "الجمل", "الفيل", "الذئب"], correct: 1 },
-            { q: "كم عدد أضلاع المثلث؟", options: ["3 أضلاع", "4 أضلاع", "5 أضلاع", "6 أضلاع"], correct: 0 },
-            { q: "ما هي عاصمة دولة الإمارات العربية المتحدة؟", options: ["دبي", "أبوظبي", "الشارقة", "عجمان"], correct: 1 }
+        let userData = null;
+        let currentCategory = 'all';
+        let currentQuestion = null;
+        
+        // متغيرات الجولة الحالية
+        let qIndexInRound = 0;
+        let correctInRound = 0;
+        let roundNetDiamonds = 0;
+        let streakCombo = 0;
+        let timerInterval = null;
+        let timeLeft = QUESTION_TIME_LIMIT;
+        let isAnswering = false;
+
+        // كاش لبيانات الـ APIs المجانية لسرعة التحميل وعدم التكرار
+        let apiOpenTdbCache = [];
+        let apiQuranSurahsCache = null;
+        let apiCountriesCache = null;
+
+        // تتبع الأسئلة التي ظهرت للمستخدم سابقاً لمنع تكرارها نهائياً
+        let seenQuestions = new Set(JSON.parse(localStorage.getItem(`seen_quiz_${tid}`) || "[]"));
+
+        function markQuestionAsSeen(qText) {
+            seenQuestions.add(qText);
+            if (seenQuestions.size > 400) {
+                const arr = Array.from(seenQuestions).slice(-200);
+                seenQuestions = new Set(arr);
+            }
+            localStorage.setItem(`seen_quiz_${tid}`, JSON.stringify(Array.from(seenQuestions)));
+        }
+
+        // ============================================================================
+        // 📚 بنك الأسئلة العربية المتقدمة والمختارة بعناية (بدون تكرار + مستويات صعبة)
+        // ============================================================================
+        const ADVANCED_ARABIC_BANK = [
+            // علوم وطب وتكنولوجيا
+            { cat: "science", q: "ما هو الصمام الذي يفصل بين الأذين الأيسر والبطين الأيسر في القلب البشري؟", options: ["الصمام المترالي (التاجي)", "الصمام ثلاثي الشرفات", "الصمام الرئوي", "الصمام الأبهري"], correct: 0 },
+            { cat: "science", q: "أي عضو في جسم الإنسان هو المسؤول عن إفراز هرمون الإنسولين وتنظيم السكر؟", options: ["الكبد", "جزر لانجرهانز في البنكرياس", "الغدة الدرقية", "الطحال"], correct: 1 },
+            { cat: "science", q: "ما هو الغاز الذي يشكل النسبة الأكبر (حوالي 78%) من الغلاف الجوي للأرض؟", options: ["الأكسجين", "النيتروجين", "الأرجون", "ثاني أكسيد الكربون"], correct: 1 },
+            { cat: "science", q: "ما هي فصيلة الدم التي تُلقب بـ (المعطي العام) لخلايا الدم الحمراء؟", options: ["AB+", "O-", "O+", "A-"], correct: 1 },
+            { cat: "science", q: "كم عدد الكروموسومات في الخلية الجسدية الطبيعية للإنسان؟", options: ["23 كروموسوم", "46 كروموسوم", "48 كروموسوم", "44 كروموسوم"], correct: 1 },
+            { cat: "science", q: "ما هو المعدن الوحيد الذي يوجد في الحالة السائلة عند درجة حرارة الغرفة؟", options: ["الزئبق", "الجاليوم", "الرصاص", "البروم"], correct: 0 },
+            { cat: "science", q: "في شبكات الحاسوب والبرمجة، ما هو رقم المنفذ (Port) الافتراضي لبروتوكول HTTPS الآمن؟", options: ["80", "443", "22", "8080"], correct: 1 },
+            { cat: "science", q: "ما هو الفيتامين الذي يؤدي نقصه الحاد في الجسم إلى مرض (الإسقربوط) ونزيف اللثة؟", options: ["فيتامين D", "فيتامين C", "فيتامين B12", "فيتامين K"], correct: 1 },
+            { cat: "science", q: "أين تقع أصغر عظمة في جسم الإنسان (عظمة الركاب)؟", options: ["في الأذن الوسطى", "في الأنف", "في عقلة الأصبع", "في الرسغ"], correct: 0 },
+            { cat: "science", q: "ما هي الوحدة الأساسية لقياس المقاومة الكهربائية في الفيزياء؟", options: ["الأمبير", "الفولت", "الأوم (Ohm)", "الواط"], correct: 2 },
+            { cat: "science", q: "ما هو أصلب معدن طبيعي معروف على وجه الأرض وفق مقياس موهس؟", options: ["التيتانيوم", "الكوارتز", "الألماس", "التنجستن"], correct: 2 },
+            { cat: "science", q: "ما هو الكوكب الذي يدور حول الشمس في اتجاه عقارب الساعة (عكس باقي الكواكب)؟", options: ["المريخ", "الزهرة", "المشتري", "نبتون"], correct: 1 },
+
+            // قرآن وتاريخ وثقافة إسلامية
+            { cat: "islamic", q: "من هو الصحابي الجليل الوحيد الذي ذُكر اسمه صراحةً في القرآن الكريم؟", options: ["أبو بكر الصديق", "زيد بن حارثة", "عمر بن الخطاب", "بلال بن رباح"], correct: 1 },
+            { cat: "islamic", q: "ما هي السورة القرآنية الوحيدة التي لا تبدأ بالبسملة؟", options: ["سورة التوبة", "سورة الأنفال", "سورة الحشر", "سورة القصص"], correct: 0 },
+            { cat: "islamic", q: "في أي سنة هجرية وقعت غزوة بدر الكبرى؟", options: ["السنة الأولى للهجرة", "السنة الثانية للهجرة", "السنة الثالثة للهجرة", "السنة الخامسة للهجرة"], correct: 1 },
+            { cat: "islamic", q: "من هو القائد المسلم الذي فتح بلاد الأندلس عام 92 هـ؟", options: ["عقبة بن نافع", "طارق بن زياد", "قتيبة بن مسلم", "عمرو بن العاص"], correct: 1 },
+            { cat: "islamic", q: "ما هي السورة التي ذُكرت فيها البسملة مرتين؟", options: ["سورة البقرة", "سورة النمل", "سورة الكهف", "سورة مريم"], correct: 1 },
+            { cat: "islamic", q: "من هو مؤسس علم الاجتماع ومؤلف كتاب (المقدمة) الشهير؟", options: ["ابن خلدون", "ابن رشد", "الفارابي", "ابن بطوطة"], correct: 0 },
+            { cat: "islamic", q: "في أي معركة انتصر المسلمون بقيادة سيف الدين قطز على التتار؟", options: ["معركة حطين", "معركة عين جالوت", "معركة اليرموك", "معركة القادسية"], correct: 1 },
+            { cat: "islamic", q: "من هو العالم المسلم الذي يُعد أول من وصف الدورة الدموية الصغرى في الرئتين؟", options: ["ابن النفيس", "الرازي", "ابن الهيثم", "جابر بن حيان"], correct: 0 },
+
+            // جغرافيا وعواصم ومعلومات عامة متقدمة
+            { cat: "geo", q: "ما هو المضيق البحري الذي يصل بين الخليج العربي وخليج عُمان؟", options: ["مضيق باب المندب", "مضيق هرمز", "مضيق جبل طارق", "مضيق البوسفور"], correct: 1 },
+            { cat: "geo", q: "ما هي الدولة التي تمتلك أكبر عدد من البحيرات الطبيعية في العالم؟", options: ["روسيا", "كندا", "البرازيل", "فنلندا"], correct: 1 },
+            { cat: "geo", q: "ما هي العاصمة الإدارية والفعلية لدولة سويسرا؟", options: ["زيورخ", "جنيف", "برن (Bern)", "بازل"], correct: 2 },
+            { cat: "geo", q: "ما هي أطول سلسلة جبال فوق سطح الأرض؟", options: ["جبال الهيمالايا", "جبال الأنديز", "جبال الألب", "جبال روكي"], correct: 1 },
+            { cat: "geo", q: "ما هي العملة الرسمية لدولة اليابان؟", options: ["اليوان", "الين (Yen)", "الوون", "الرينغيت"], correct: 1 },
+            { cat: "geo", q: "أي نهر يمر عبر أكبر عدد من الدول في العالم (10 دول أوروبية)؟", options: ["نهر الراين", "نهر الدانوب", "نهر الفولغا", "نهر التايمز"], correct: 1 },
+            { cat: "geo", q: "ما هي عاصمة دولة أستراليا؟", options: ["سيدني", "ملبورن", "كانبرا (Canberra)", "بريسبان"], correct: 2 },
+            { cat: "geo", q: "ما هي أصغر دولة في العالم من حيث المساحة؟", options: ["موناكو", "الفاتيكان", "سان مارينو", "مالطا"], correct: 1 }
         ];
 
-        // محرك توليد أسئلة حسابية ومعلوماتية ديناميكية لا تنتهي أبداً وبدون تكرار
-        function generateDynamicQuestion() {
-            const types = ['math', 'pool'];
-            const chosenType = types[Math.floor(Math.random() * types.length)];
+        // ============================================================================
+        // 🌐 محرك الـ APIs المجانية المباشرة بالعربية
+        // ============================================================================
 
-            if (chosenType === 'math') {
-                const num1 = Math.floor(Math.random() * 20) + 1;
-                const num2 = Math.floor(Math.random() * 20) + 1;
-                const ops = ['+', '-', '*'];
-                const op = ops[Math.floor(Math.random() * ops.length)];
-                
-                let ans = 0;
-                let opText = '';
-                if (op === '+') { ans = num1 + num2; opText = `كم الناتج: ${num1} + ${num2} ؟`; }
-                else if (op === '-') { ans = num1 > num2 ? num1 - num2 : num2 - num1; opText = `كم الناتج: ${num1 > num2 ? num1 : num2} - ${num1 > num2 ? num2 : num1} ؟`; }
-                else { const small1 = Math.floor(Math.random() * 10) + 1; const small2 = Math.floor(Math.random() * 10) + 1; ans = small1 * small2; opText = `كم الناتج: ${small1} × ${small2} ؟`; }
-
-                let wrong1 = ans + (Math.floor(Math.random() * 3) + 1);
-                let wrong2 = ans - (Math.floor(Math.random() * 3) + 1);
-                if (wrong2 < 0) wrong2 = ans + 5;
-                let wrong3 = ans + 7;
-
-                let options = [String(ans), String(wrong1), String(wrong2), String(wrong3)];
-                options = options.sort(() => Math.random() - 0.5);
-                const correctIdx = options.indexOf(String(ans));
-
-                return { q: opText, options, correct: correctIdx };
-            } else {
-                const randItem = questionPool[Math.floor(Math.random() * questionPool.length)];
-                let opts = [...randItem.options];
-                let correctOptText = opts[randItem.correct];
-                opts = opts.sort(() => Math.random() - 0.5);
-                const newCorrectIdx = opts.indexOf(correctOptText);
-                return { q: randItem.q, options: opts, correct: newCorrectIdx };
+        // 1. ترجمة نص فوري مجاناً عبر Google GTX API بدون مفتاح
+        async function translateToArabic(text) {
+            try {
+                const decoded = new DOMParser().parseFromString(text, "text/html").body.textContent;
+                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(decoded)}`;
+                const res = await fetch(url);
+                const data = await res.json();
+                return data[0].map(item => item[0]).join("");
+            } catch (e) {
+                return null;
             }
         }
+
+        // 2. جلب سؤال حي من OpenTDB API العالمي (متوسط/صعب) وترجمته للعربية
+        async function fetchFromOpenTdbApi() {
+            try {
+                if (apiOpenTdbCache.length === 0) {
+                    const res = await fetch("https://opentdb.com/api.php?amount=6&difficulty=medium&type=multiple");
+                    const json = await res.json();
+                    if (json.results && json.results.length > 0) {
+                        apiOpenTdbCache = json.results;
+                    }
+                }
+                if (apiOpenTdbCache.length === 0) return null;
+
+                const rawItem = apiOpenTdbCache.pop();
+                const allEnOpts = [...rawItem.incorrect_answers, rawItem.correct_answer];
+                // نجمع السؤال والاختيارات في طلب ترجمة واحد سريع مفصول بـ |||
+                const combinedEn = [rawItem.question, ...allEnOpts].join(" ||| ");
+                const translatedCombined = await translateToArabic(combinedEn);
+                if (!translatedCombined) return null;
+
+                const parts = translatedCombined.split("|||").map(s => s.trim());
+                if (parts.length < 5) return null;
+
+                const arQuestion = parts[0];
+                const arCorrect = parts[4];
+                let arOptions = [parts[1], parts[2], parts[3], arCorrect];
+                // إزالة أي تشابه محتمل وخلط الاختيارات
+                arOptions = Array.from(new Set(arOptions));
+                if (arOptions.length < 4) return null;
+
+                arOptions.sort(() => Math.random() - 0.5);
+                return {
+                    q: arQuestion,
+                    options: arOptions,
+                    correct: arOptions.indexOf(arCorrect),
+                    source: "🌐 OpenTrivia API"
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // 3. جلب سؤال قرآني ديناميكي من AlQuran Cloud API المجاني (114 سورة بالعربية)
+        async function fetchFromQuranApi() {
+            try {
+                if (!apiQuranSurahsCache) {
+                    const res = await fetch("https://api.alquran.cloud/v1/surah");
+                    const json = await res.json();
+                    if (json.data) apiQuranSurahsCache = json.data;
+                }
+                if (!apiQuranSurahsCache || apiQuranSurahsCache.length === 0) return null;
+
+                const surah = apiQuranSurahsCache[Math.floor(Math.random() * apiQuranSurahsCache.length)];
+                const mode = Math.random() > 0.45 ? "ayahs" : "type";
+
+                if (mode === "ayahs") {
+                    const correctAns = `${surah.numberOfAyahs} آية`;
+                    const setOpts = new Set([correctAns]);
+                    while (setOpts.size < 4) {
+                        const rnd = Math.max(3, surah.numberOfAyahs + (Math.floor(Math.random() * 25) - 12));
+                        setOpts.add(`${rnd} آية`);
+                    }
+                    const opts = Array.from(setOpts).sort(() => Math.random() - 0.5);
+                    return {
+                        q: `كم يبلغ عدد آيات (${surah.name}) في القرآن الكريم؟`,
+                        options: opts,
+                        correct: opts.indexOf(correctAns),
+                        source: "📖 AlQuran API"
+                    };
+                } else {
+                    // سؤال عن ترتيب السورة في المصحف
+                    const correctAns = `السورة رقم ${surah.number}`;
+                    const setOpts = new Set([correctAns]);
+                    while (setOpts.size < 4) {
+                        const rnd = Math.floor(Math.random() * 114) + 1;
+                        setOpts.add(`السورة رقم ${rnd}`);
+                    }
+                    const opts = Array.from(setOpts).sort(() => Math.random() - 0.5);
+                    return {
+                        q: `ما هو ترتيب (${surah.name}) في المصحف الشريف؟`,
+                        options: opts,
+                        correct: opts.indexOf(correctAns),
+                        source: "📖 AlQuran API"
+                    };
+                }
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // 4. مولد ألغاز الذكاء والمنطق الرياضي المتقدم (IQ & Math Sequences)
+        function generateAdvancedIqQuestion() {
+            const subType = Math.floor(Math.random() * 3);
+            let qText = "";
+            let ans = 0;
+
+            if (subType === 0) {
+                // متتابعة هندسية أو حسابية
+                const start = Math.floor(Math.random() * 6) + 2;
+                const step = Math.floor(Math.random() * 5) + 3;
+                const n1 = start;
+                const n2 = n1 + step;
+                const n3 = n2 + step * 2;
+                const n4 = n3 + step * 3;
+                ans = n4 + step * 4;
+                qText = `أكمل المتتابعة المنطقية التالية: (${n1} ، ${n2} ، ${n3} ، ${n4} ، ...)؟`;
+            } else if (subType === 1) {
+                // معادلة ترتيب العمليات الحسابية
+                const a = Math.floor(Math.random() * 9) + 4;
+                const b = Math.floor(Math.random() * 7) + 3;
+                const c = Math.floor(Math.random() * 12) + 5;
+                ans = (a * b) + c;
+                qText = `احسب بدقة: ( ${a} × ${b} ) + ${c} = ؟`;
+            } else {
+                // نسبة مئوية أو جذور
+                const percents = [
+                    { p: 25, base: 160, res: 40 },
+                    { p: 15, base: 200, res: 30 },
+                    { p: 20, base: 350, res: 70 },
+                    { p: 30, base: 250, res: 75 },
+                    { p: 40, base: 150, res: 60 },
+                    { p: 75, base: 120, res: 90 }
+                ];
+                const pick = percents[Math.floor(Math.random() * percents.length)];
+                ans = pick.res;
+                qText = `كم تساوي نسبة ${pick.p}% من العدد ${pick.base} ؟`;
+            }
+
+            const optsSet = new Set([String(ans)]);
+            const offsets = [-6, -4, -2, 2, 4, 6, 8, 10, -8];
+            while (optsSet.size < 4) {
+                const off = offsets[Math.floor(Math.random() * offsets.length)];
+                const candidate = Math.max(1, ans + off);
+                optsSet.add(String(candidate));
+            }
+            const opts = Array.from(optsSet).sort(() => Math.random() - 0.5);
+            return {
+                q: qText,
+                options: opts,
+                correct: opts.indexOf(String(ans)),
+                source: "🧠 مولد الذكاء المنطقي"
+            };
+        }
+
+        // الدالة المركزية لاختيار سؤال غير مكرر حسب التصنيف
+        async function getNextSmartQuestion() {
+            let result = null;
+
+            if (currentCategory === 'islamic') {
+                result = await fetchFromQuranApi();
+            } else if (currentCategory === 'iq') {
+                result = generateAdvancedIqQuestion();
+            } else if (currentCategory === 'all') {
+                const roll = Math.random();
+                if (roll < 0.38) result = await fetchFromOpenTdbApi();
+                else if (roll < 0.65) result = await fetchFromQuranApi();
+                else if (roll < 0.82) result = generateAdvancedIqQuestion();
+            }
+
+            // إذا لم يرجع من الـ API أو اختار تصنيف محدد، نسحب من البنك المتقدم مع ضمان عدم التكرار
+            if (!result || seenQuestions.has(result.q)) {
+                let pool = ADVANCED_ARABIC_BANK;
+                if (currentCategory !== 'all' && currentCategory !== 'iq') {
+                    pool = ADVANCED_ARABIC_BANK.filter(item => item.cat === currentCategory);
+                }
+                let unseenPool = pool.filter(item => !seenQuestions.has(item.q));
+                if (unseenPool.length === 0) {
+                    // إذا أنهى كل البنك، نولد سؤال ذكاء جديد أو نفرغ الذاكرة
+                    if (Math.random() > 0.4) {
+                        result = generateAdvancedIqQuestion();
+                    } else {
+                        seenQuestions.clear();
+                        unseenPool = pool;
+                    }
+                }
+                if (!result && unseenPool.length > 0) {
+                    const chosen = unseenPool[Math.floor(Math.random() * unseenPool.length)];
+                    const opts = [...chosen.options];
+                    const correctTxt = opts[chosen.correct];
+                    opts.sort(() => Math.random() - 0.5);
+                    result = {
+                        q: chosen.q,
+                        options: opts,
+                        correct: opts.indexOf(correctTxt),
+                        source: "📚 بنك العباقرة المتقدم"
+                    };
+                }
+            }
+
+            markQuestionAsSeen(result.q);
+            return result;
+        }
+
+        // ============================================================================
+        // 👤 تهيئة حساب المستخدم ومزامنة الجولات الـ 30 اليومية
+        // ============================================================================
 
         async function initUser() {
             try {
-                let u = null;
                 if (tid && tid !== "undefined" && tid !== "null") {
-                    let { data: u1 } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
-                    if (u1) u = u1;
-                    else {
-                        let { data: u2 } = await client.from('users').select('*').eq('telegram_id', Number(tid)).maybeSingle();
-                        if (u2) u = u2;
-                    }
+                    const { data } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
+                    if (data) userData = data;
                 }
-                if (!u) {
-                    let { data: latest } = await client.from('users').select('*').order('created_at', { ascending: false }).limit(1).maybeSingle();
-                    if (latest) u = latest;
+
+                if (!userData) {
+                    if (tg) tg.showAlert("⚠️ يرجى فتح اللعبة من داخل البوت.");
+                    return;
                 }
-                if (u) {
-                    userData = u;
-                    tid = String(u.telegram_id || tid);
-                    localStorage.setItem('telegram_id', tid);
-                    localStorage.setItem('megatask_uid', tid);
-                    updateUI();
-                } else {
-                    userData = { telegram_id: tid || "123456789", gamepoints: 0 };
-                    updateUI();
+
+                const today = new Date().toISOString().slice(0, 10);
+                if (userData.daily_game_date !== today) {
+                    const { data: resetU } = await client
+                        .from('users')
+                        .update({ daily_game_rounds: 0, daily_game_date: today })
+                        .eq('telegram_id', tid)
+                        .select()
+                        .single();
+                    if (resetU) userData = resetU;
                 }
+
+                updateHUD();
+                await startNewQuizRound();
             } catch (e) {
                 console.error("Init error:", e);
-                userData = { telegram_id: tid || "123456789", gamepoints: 0 };
-                updateUI();
+            }
+        }
+
+        function updateHUD() {
+            if (!userData) return;
+            const diamonds = Number(userData.gamepoints || 0);
+            const roundsUsed = Math.min(MAX_DAILY_ROUNDS, Number(userData.daily_game_rounds || 0));
+
+            document.getElementById('user-diamonds-counter').innerText = `${diamonds.toLocaleString()} 💎`;
+            document.getElementById('daily-rounds-badge').innerText = `🎮 ${roundsUsed}/${MAX_DAILY_ROUNDS}`;
+            document.getElementById('round-diamonds').innerText = `${roundNetDiamonds >= 0 ? '+' : ''}${roundNetDiamonds} 💎`;
+            document.getElementById('streak-combo').innerText = `${streakCombo} 🔥`;
+        }
+
+        function changeCategory(cat, el) {
+            currentCategory = cat;
+            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            loadNextQuestionInRound();
+        }
+
+        // ============================================================================
+        // 🎮 إدارة جولة الكويز (5 أسئلة = 1 جولة من الـ 30 جولة اليومية)
+        // ============================================================================
+
+        async function startNewQuizRound() {
+            document.getElementById('round-modal').style.display = 'none';
+
+            const today = new Date().toISOString().slice(0, 10);
+            let usedRounds = Number(userData?.daily_game_rounds || 0);
+            if (userData?.daily_game_date !== today) usedRounds = 0;
+
+            if (usedRounds >= MAX_DAILY_ROUNDS) {
+                if (tg) tg.showAlert("🛑 لقد استنفدت الحد الأقصى للجولات اليومية (30 / 30 جولة)!\n\nتتجدد الجولات عند منتصف الليل.");
+                exitToGamesHub();
+                return;
             }
 
-            loadNextQuestion();
+            // خصم جولة واحدة من الـ 30 جولة اليومية
+            const newRounds = usedRounds + 1;
+            const { data: updated } = await client
+                .from('users')
+                .update({ daily_game_rounds: newRounds, daily_game_date: today })
+                .eq('telegram_id', tid)
+                .select()
+                .single();
+
+            if (updated) userData = updated;
+
+            // إعادة تهيئة متغيرات الجولة ووسائل المساعدة
+            qIndexInRound = 0;
+            correctInRound = 0;
+            roundNetDiamonds = 0;
+            document.getElementById('life-5050').disabled = false;
+            document.getElementById('life-time').disabled = false;
+            document.getElementById('life-skip').disabled = false;
+
+            updateHUD();
+            await loadNextQuestionInRound();
         }
 
-        function updateUI() {
-            if (!userData) return;
-            const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
-            const diamonds = Number(userData[gpField] || 0);
-            document.getElementById('user-diamonds-counter').innerText = diamonds.toLocaleString();
-            document.getElementById('session-score').innerText = sessionScore;
-        }
+        async function loadNextQuestionInRound() {
+            clearInterval(timerInterval);
+            if (qIndexInRound >= QUESTIONS_PER_ROUND) {
+                finishQuizRound();
+                return;
+            }
 
-        function loadNextQuestion() {
-            currentQuestion = generateDynamicQuestion();
+            isAnswering = false;
+            document.getElementById('q-step-counter').innerText = `السؤال: ${qIndexInRound + 1} / ${QUESTIONS_PER_ROUND}`;
+            document.getElementById('question-box').innerText = "⏳ جاري سحب سؤال ذكي جديد...";
+            document.getElementById('options-box').innerHTML = "";
+
+            currentQuestion = await getNextSmartQuestion();
+            document.getElementById('api-source-lbl').innerText = currentQuestion.source || "🌐 API المباشر";
             document.getElementById('question-box').innerText = currentQuestion.q;
-            
+
             const optBox = document.getElementById('options-box');
             optBox.innerHTML = '';
 
             currentQuestion.options.forEach((opt, idx) => {
                 const btn = document.createElement('button');
                 btn.className = 'option-btn';
+                btn.id = `opt-btn-${idx}`;
                 btn.innerText = opt;
                 btn.onclick = () => selectOption(idx, currentQuestion.correct, btn);
                 optBox.appendChild(btn);
             });
 
-            startTimer();
+            startQuestionTimer(QUESTION_TIME_LIMIT);
         }
 
-        function startTimer() {
+        function startQuestionTimer(seconds) {
             clearInterval(timerInterval);
-            timeLeft = 5;
+            timeLeft = seconds;
             const bar = document.getElementById('timer-bar');
-            bar.style.width = '100%';
+            const txt = document.getElementById('timer-seconds-txt');
 
+            function updateTimerUI() {
+                txt.innerText = `⏱️ ${timeLeft} ث`;
+                txt.style.color = timeLeft <= 4 ? "var(--red)" : "var(--main-green)";
+                bar.style.width = `${Math.min(100, (timeLeft / QUESTION_TIME_LIMIT) * 100)}%`;
+            }
+
+            updateTimerUI();
             timerInterval = setInterval(() => {
                 timeLeft--;
-                bar.style.width = `${(timeLeft / 5) * 100}%`;
+                updateTimerUI();
 
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
@@ -246,93 +673,195 @@
         }
 
         async function handleTimeOut() {
+            if (isAnswering) return;
+            isAnswering = true;
+
             const allBtns = document.querySelectorAll('.option-btn');
             allBtns.forEach(b => b.disabled = true);
-            document.getElementById('question-box').innerText = "⏰ انتهى الوقت! تم خصم ألماسة.";
-            
-            await updateUserDiamonds(-1);
+            if (allBtns[currentQuestion.correct]) {
+                allBtns[currentQuestion.correct].classList.add('correct');
+            }
+
+            streakCombo = 0;
+            roundNetDiamonds -= 1;
+            qIndexInRound++;
+            updateHUD();
 
             setTimeout(() => {
-                loadNextQuestion();
-            }, 1200);
+                loadNextQuestionInRound();
+            }, 1300);
         }
 
         async function selectOption(selected, correct, btn) {
+            if (isAnswering) return;
+            isAnswering = true;
             clearInterval(timerInterval);
+
             const allBtns = document.querySelectorAll('.option-btn');
             allBtns.forEach(b => b.disabled = true);
 
             if (selected === correct) {
                 btn.classList.add('correct');
-                sessionScore += 4; // تحديث نقاط الجلسة بمقدار 4
-                updateUI();
-
-                // فتح نافذة جمع 4 ألماسات والإعلان
-                document.getElementById('claim-modal').style.display = 'flex';
+                correctInRound++;
+                streakCombo++;
+                roundNetDiamonds += 2; // +2 ألماسة لكل إجابة صحيحة
             } else {
                 btn.classList.add('wrong');
-                allBtns[correct].classList.add('correct');
-                
-                await updateUserDiamonds(-1);
+                if (allBtns[correct]) allBtns[correct].classList.add('correct');
+                streakCombo = 0;
+                roundNetDiamonds -= 1; // -1 ألماسة للخطأ
+            }
 
-                setTimeout(() => {
-                    loadNextQuestion();
-                }, 1400);
+            qIndexInRound++;
+            updateHUD();
+
+            setTimeout(() => {
+                loadNextQuestionInRound();
+            }, 1200);
+        }
+
+        // ============================================================================
+        // 🛠️ وسائل المساعدة الثلاث (Lifelines)
+        // ============================================================================
+
+        function useLifeline5050() {
+            if (isAnswering || !currentQuestion) return;
+            document.getElementById('life-5050').disabled = true;
+
+            const wrongIndices = [0, 1, 2, 3].filter(i => i !== currentQuestion.correct);
+            wrongIndices.sort(() => Math.random() - 0.5);
+
+            // إخفاء إجابتين خاطئتين
+            const hide1 = document.getElementById(`opt-btn-${wrongIndices[0]}`);
+            const hide2 = document.getElementById(`opt-btn-${wrongIndices[1]}`);
+            if (hide1) { hide1.classList.add('hidden-opt'); hide1.disabled = true; }
+            if (hide2) { hide2.classList.add('hidden-opt'); hide2.disabled = true; }
+        }
+
+        function useLifelineTime() {
+            if (isAnswering) return;
+            document.getElementById('life-time').disabled = true;
+            timeLeft += 8;
+            document.getElementById('timer-seconds-txt').innerText = `⏱️ ${timeLeft} ث ❄️`;
+        }
+
+        async function useLifelineSkip() {
+            if (isAnswering) return;
+            document.getElementById('life-skip').disabled = true;
+            await loadNextQuestionInRound();
+        }
+
+        // ============================================================================
+        // 🏆 نهاية الجولة وحفظ الألماس بعد مشاهدة إعلان واحد فقط
+        // ============================================================================
+
+        async function finishQuizRound() {
+            const modal = document.getElementById('round-modal');
+            const titleEl = document.getElementById('modal-title');
+            const summaryEl = document.getElementById('modal-summary');
+            const emojiEl = document.getElementById('modal-emoji');
+            const btnClaim = document.getElementById('btn-claim-ad');
+            const btnNext = document.getElementById('btn-next-round');
+
+            // بونص العلامة الكاملة (5/5) = +3 ألماسات إضافية!
+            let perfectBonus = 0;
+            if (correctInRound === QUESTIONS_PER_ROUND) {
+                perfectBonus = 3;
+                roundNetDiamonds += perfectBonus;
+            }
+
+            modal.style.display = 'flex';
+
+            if (roundNetDiamonds > 0) {
+                emojiEl.innerText = correctInRound === 5 ? "👑" : "🎉";
+                titleEl.innerText = correctInRound === 5 ? "علامة كاملة خارقة (5/5)!" : "أحسنت في هذه الجولة!";
+                summaryEl.innerHTML = `
+                    ✅ الإجابات الصحيحة: <b>${correctInRound} من ${QUESTIONS_PER_ROUND}</b><br>
+                    ${perfectBonus > 0 ? `<span style="color:var(--main-green);">🔥 بونص العلامة الكاملة: +${perfectBonus} 💎</span><br>` : ''}
+                    💎 صافي أرباح الجولة: <b style="color: var(--gold); font-size: 16px;">+${roundNetDiamonds} ألماسة</b>
+                `;
+                btnClaim.style.display = 'block';
+                btnClaim.disabled = false;
+                btnClaim.innerText = `📺 شاهد الإعلان واجمع +${roundNetDiamonds} 💎`;
+                btnNext.style.display = 'none';
+            } else {
+                // إذا كانت المحصلة صفراً أو سالبة، نخصم الخسارة (إن وجدت) ونسمح بجولة جديدة فوراً
+                emojiEl.innerText = "💔";
+                titleEl.innerText = "حظ أوفر في الجولة القادمة!";
+                summaryEl.innerHTML = `
+                    الإجابات الصحيحة: <b>${correctInRound} من ${QUESTIONS_PER_ROUND}</b><br>
+                    صافي الجولة: <b style="color: var(--red);">${roundNetDiamonds} 💎</b>
+                `;
+                btnClaim.style.display = 'none';
+                btnNext.style.display = 'block';
+
+                if (roundNetDiamonds < 0) {
+                    await saveDiamondsToDatabase(roundNetDiamonds, "خصم جولة كويز العباقرة");
+                }
             }
         }
 
-        async function claimQuizDiamonds() {
-            document.getElementById('claim-modal').style.display = 'none';
+        async function claimRoundDiamondsWithAd() {
+            const btnClaim = document.getElementById('btn-claim-ad');
+            const btnNext = document.getElementById('btn-next-round');
+            btnClaim.disabled = true;
+            btnClaim.innerText = "⏳ جاري عرض الإعلان...";
 
             try {
                 if (typeof show_10959333 === 'function') {
                     await show_10959333();
-                } else {
-                    console.warn("Monetag SDK not found, bypassing ad.");
                 }
+                await saveDiamondsToDatabase(roundNetDiamonds, `فوز في جولة كويز العباقرة (${correctInRound}/5)`);
 
-                await updateUserDiamonds(4); // إضافة 4 ألماسات لحساب المستخدم بعد مشاهدة الإعلان
-
-                loadNextQuestion();
-
+                btnClaim.style.display = 'none';
+                btnNext.style.display = 'block';
+                if (tg) tg.showAlert(`🎉 مبروك! تمت إضافة +${roundNetDiamonds} ألماسة 💎 إلى حسابك بنجاح!`);
             } catch (err) {
-                console.error("Ad error:", err);
-                tg.showAlert("❌ يجب مشاهدة الإعلان لجمع الـ4 ألماسات.");
-                document.getElementById('claim-modal').style.display = 'flex';
+                console.warn("Ad error:", err);
+                btnClaim.disabled = false;
+                btnClaim.innerText = `🔄 إعادة محاولة مشاهدة الإعلان (+${roundNetDiamonds} 💎)`;
+                btnNext.style.display = 'block'; // نتيح له تخطي الجولة حتى لا يعلق أبداً!
+                if (tg) tg.showAlert("⚠️ لم يكتمل عرض الإعلان! اضغط إعادة المحاولة لجمع الألماس أو ابدأ جولة جديدة.");
             }
         }
 
-        async function updateUserDiamonds(amount) {
-            if (!userData) return;
+        async function saveDiamondsToDatabase(delta, logTitle) {
+            if (!userData || delta === 0) return;
 
-            const gpField = userData.gamepoints !== undefined ? 'gamepoints' : (userData.diamonds !== undefined ? 'diamonds' : 'gamepoints');
-            let currentDiamonds = Number(userData[gpField] || 0);
-            let newDiamonds = currentDiamonds + amount;
-            if (newDiamonds < 0) newDiamonds = 0;
+            const currentD = Number(userData.gamepoints || 0);
+            const newD = Math.max(0, currentD + delta);
 
             try {
-                const updateObj = {};
-                updateObj[gpField] = newDiamonds;
-
                 const { data: updated, error } = await client
                     .from('users')
-                    .update(updateObj)
+                    .update({ gamepoints: newD })
                     .eq('telegram_id', String(tid))
                     .select('*')
                     .single();
 
                 if (!error && updated) {
                     userData = updated;
-                    updateUI();
                 } else {
-                    userData[gpField] = newDiamonds;
-                    updateUI();
+                    userData.gamepoints = newD;
                 }
+
+                await client.from('transactions').insert([{
+                    telegram_id: String(tid),
+                    type: 'points',
+                    title: logTitle,
+                    amount: `${delta > 0 ? '+' : ''}${delta} 💎`,
+                    status: 'مكتمل'
+                }]);
+
+                roundNetDiamonds = 0;
+                updateHUD();
             } catch (e) {
-                console.error("Update diamonds error:", e);
-                userData[gpField] = newDiamonds;
-                updateUI();
+                console.error("Save diamonds error:", e);
             }
+        }
+
+        function exitToGamesHub() {
+            window.location.href = `../games.html?id=${tid}&t=${Date.now()}`;
         }
 
         initUser();
