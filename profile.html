@@ -2,62 +2,327 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Profile - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: sans-serif; margin: 0; padding: 20px; padding-bottom: 110px; }
-        .profile-header { text-align: center; margin: 25px 0; }
-        .avatar { width: 80px; height: 80px; background: var(--main-green); border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; color: black; font-size: 30px; font-weight: bold; }
-        .menu-list { background: var(--card-bg); border-radius: 15px; border: 1px solid #2d333d; margin-bottom: 20px; }
-        .menu-item { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid #2d333d; }
-        .menu-item:last-child { border-bottom: none; }
+        :root { 
+            --main-green: #00d26a; 
+            --main-cyan: #00f2ff;
+            --gold: #ffaa00;
+            --dark-bg: #0d0f12; 
+            --card-bg: #1a1d23; 
+            --text-gray: #9ca3af; 
+        }
+        * { box-sizing: border-box; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 15px; padding-bottom: 115px; overflow-x: hidden; }
+
+        /* بطاقة البروفايل العلوية */
+        .profile-hero {
+            background: linear-gradient(145deg, #1b2029, #12151b);
+            border: 1px solid #2d333d;
+            border-radius: 22px;
+            padding: 20px 15px;
+            text-align: center;
+            margin-bottom: 16px;
+            position: relative;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+        .gender-toggle-btn {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            background: #11141a;
+            border: 1px solid #2d333d;
+            color: var(--text-gray);
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .gender-toggle-btn:active { transform: scale(0.95); border-color: var(--main-green); color: white; }
+
+        .avatar-wrapper {
+            position: relative;
+            width: 82px;
+            height: 82px;
+            margin: 0 auto 10px;
+        }
+        .avatar { 
+            width: 82px; 
+            height: 82px; 
+            background: linear-gradient(135deg, var(--main-green), #008f47); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: black; 
+            font-size: 32px; 
+            font-weight: 800; 
+            border: 3px solid #262c36;
+            box-shadow: 0 0 18px rgba(0, 210, 106, 0.3);
+            overflow: hidden;
+            object-fit: cover;
+        }
+        .level-pill {
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0d0f12;
+            border: 1px solid var(--main-green);
+            color: var(--main-green);
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .user-name { font-size: 19px; font-weight: bold; margin: 8px 0 4px; color: white; }
         
-        /* تنسيقات الهيستوري والسجلات */
-        .history-section-title { font-size: 15px; font-weight: bold; color: var(--main-green); margin: 20px 0 10px; display: flex; align-items: center; gap: 6px; }
-        .history-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
-        .history-tab { background: var(--card-bg); border: 1px solid #2d333d; color: var(--text-gray); padding: 7px 14px; border-radius: 10px; font-size: 11px; cursor: pointer; white-space: nowrap; transition: 0.2s; }
-        .history-tab.active { background: var(--main-green); color: black; font-weight: bold; border-color: var(--main-green); }
+        .title-badge {
+            display: inline-block;
+            background: rgba(255, 170, 0, 0.12);
+            border: 1px solid rgba(255, 170, 0, 0.4);
+            color: var(--gold);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .id-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #11141a;
+            border: 1px dashed #333a48;
+            padding: 5px 14px;
+            border-radius: 10px;
+            color: var(--text-gray);
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .id-pill:active { transform: scale(0.96); border-color: var(--main-cyan); color: white; }
+
+        /* شريط تقدم المستوى */
+        .xp-box { margin-top: 14px; text-align: right; background: #11141a; padding: 10px 12px; border-radius: 12px; border: 1px solid #232832; }
+        .xp-header { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-gray); margin-bottom: 6px; }
+        .xp-bar-bg { width: 100%; height: 7px; background: #22262f; border-radius: 10px; overflow: hidden; }
+        .xp-bar-fill { height: 100%; width: 10%; background: linear-gradient(90deg, var(--main-green), var(--main-cyan)); border-radius: 10px; transition: width 0.5s ease; }
+
+        /* بطاقات العملتين (عند الضغط عليها تحول لصفحة الإيداع) */
+        .wallets-section-title { font-size: 13px; color: var(--text-gray); margin: 0 0 8px 0; display: flex; justify-content: space-between; align-items: center; }
+        .wallets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+        .wallet-box {
+            background: linear-gradient(145deg, #1a1e26, #12151a);
+            border-radius: 18px;
+            padding: 15px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .wallet-box:active { transform: scale(0.96); }
+        .wallet-box.points-card {
+            border: 1.5px solid rgba(0, 210, 106, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 210, 106, 0.08);
+        }
+        .wallet-box.egp-card {
+            border: 1.5px solid rgba(0, 242, 255, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.08);
+        }
+        .wallet-top { font-size: 12px; color: #d1d5db; font-weight: bold; margin-bottom: 6px; }
+        .wallet-val { font-size: 23px; font-weight: 800; margin-bottom: 4px; }
+        .points-card .wallet-val { color: var(--main-green); }
+        .egp-card .wallet-val { color: var(--main-cyan); }
+        .wallet-sub { font-size: 10px; color: var(--text-gray); margin-bottom: 10px; }
+        .wallet-cta {
+            display: inline-block;
+            width: 100%;
+            padding: 6px 8px;
+            border-radius: 9px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .points-card .wallet-cta { background: rgba(0, 210, 106, 0.12); color: var(--main-green); }
+        .egp-card .wallet-cta { background: rgba(0, 242, 255, 0.15); color: var(--main-cyan); }
+
+        /* شبكة الإحصائيات التفصيلية */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 20px; }
+        .stat-item {
+            background: var(--card-bg);
+            border: 1px solid #2d333d;
+            border-radius: 14px;
+            padding: 12px 8px;
+            text-align: center;
+        }
+        .stat-item .icon { font-size: 18px; margin-bottom: 4px; display: block; }
+        .stat-item b { display: block; font-size: 15px; color: white; margin-bottom: 2px; }
+        .stat-item span { font-size: 10px; color: var(--text-gray); }
+
+        /* أزرار الاختصارات السريعة */
+        .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .q-btn {
+            background: #161920;
+            border: 1px solid #2d333d;
+            color: white;
+            padding: 12px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .q-btn:active { transform: scale(0.97); border-color: var(--main-green); }
+
+        /* التبويبات الرئيسية للسجلات وطلبات المتجر */
+        .section-header { font-size: 15px; font-weight: bold; color: var(--main-green); margin: 15px 0 10px; display: flex; align-items: center; justify-content: space-between; }
+        .history-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+        .history-tabs::-webkit-scrollbar { display: none; }
+        .history-tab { background: var(--card-bg); border: 1px solid #2d333d; color: var(--text-gray); padding: 8px 13px; border-radius: 10px; font-size: 11.5px; cursor: pointer; white-space: nowrap; transition: 0.2s; font-weight: bold; }
+        .history-tab.active { background: var(--main-green); color: black; border-color: var(--main-green); }
         
-        .history-container { display: flex; flex-direction: column; gap: 8px; max-height: 350px; overflow-y: auto; }
-        .history-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 12px; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
-        .history-info b { display: block; color: white; font-size: 13px; margin-bottom: 3px; }
-        .history-info span { color: var(--text-gray); font-size: 10px; }
-        .history-amount { font-weight: bold; font-size: 13px; }
+        .history-container { display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; padding-left: 2px; }
+        .history-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 14px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; gap: 10px; }
+        .history-info b { display: block; color: white; font-size: 13px; margin-bottom: 4px; }
+        .history-info span { color: var(--text-gray); font-size: 10.5px; display: block; }
+        .history-amount { font-weight: bold; font-size: 13px; white-space: nowrap; text-align: left; }
         .history-amount.positive { color: var(--main-green); }
-        .history-amount.negative { color: #ff3b30; }
+        .history-amount.egp-pos { color: var(--main-cyan); }
+        .history-amount.negative { color: #ff4d4d; }
 
-        .status-box { text-align: center; padding: 25px; color: var(--text-gray); font-size: 12px; background: var(--card-bg); border-radius: 12px; border: 1px dashed #2d333d; }
+        .order-status-pill { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; }
+        .st-pending { background: rgba(255, 170, 0, 0.15); color: var(--gold); border: 1px solid var(--gold); }
+        .st-completed { background: rgba(0, 210, 106, 0.15); color: var(--main-green); border: 1px solid var(--main-green); }
+        .st-rejected { background: rgba(255, 77, 77, 0.15); color: #ff4d4d; border: 1px solid #ff4d4d; }
 
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+        .status-box { text-align: center; padding: 28px 15px; color: var(--text-gray); font-size: 12px; background: var(--card-bg); border-radius: 14px; border: 1px dashed #2d333d; }
+
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
     </style>
 </head>
 <body>
 
-    <div class="profile-header">
-        <div class="avatar" id="avatar">U</div>
-        <div id="name" style="font-size: 20px; font-weight: bold;">تحميل...</div>
-        <div id="id-display" style="color: var(--text-gray); font-size: 12px;">ID: 00000</div>
+    <!-- الهيدر ومعلومات البروفايل واللقب -->
+    <div class="profile-hero">
+        <button class="gender-toggle-btn" id="gender-btn" onclick="toggleUserGender()">🧔 ذكر</button>
+        
+        <div class="avatar-wrapper">
+            <div class="avatar" id="avatar">U</div>
+            <div class="level-pill" id="level-badge">LVL 1</div>
+        </div>
+
+        <div class="user-name" id="name">جاري التحميل...</div>
+        <div class="title-badge" id="streak-title-badge">🔥 اللقب: مبتدئ</div>
+        <br>
+        <div class="id-pill" onclick="copyUserId()">
+            <span id="id-display">ID: 000000</span>
+            <span>📋 نسخ</span>
+        </div>
+
+        <!-- شريط التقدم للمستوى القادم -->
+        <div class="xp-box">
+            <div class="xp-header">
+                <span id="xp-current-lbl">تقدم المستوى (بناءً على الستريك والمهام)</span>
+                <span id="xp-percent-lbl" style="color: var(--main-green); font-weight: bold;">0%</span>
+            </div>
+            <div class="xp-bar-bg">
+                <div class="xp-bar-fill" id="xp-bar-fill"></div>
+            </div>
+        </div>
     </div>
 
-    <div class="menu-list">
-        <div class="menu-item"><span>💎 النقاط</span><b id="p">0</b></div>
-        <div class="menu-item"><span>🎯 المهام</span><b id="t">0</b></div>
-        <div class="menu-item"><span>🤝 العمولات</span><b id="r">0</b></div>
+    <!-- قسم المحفظتين (النقاط والجنيه) - الضغط على أي منهما يحول لصفحة الإيداع -->
+    <div class="wallets-section-title">
+        <span>💼 محافظي المالية</span>
+        <span style="font-size: 11px; color: var(--main-cyan);">اضغط على أي رصيد للشحن 📥</span>
     </div>
 
-    <!-- قسم السجلات والهيستوري -->
-    <div class="history-section-title">📜 سجل العمليات والهيستوري</div>
+    <div class="wallets-grid">
+        <!-- بطاقة رصيد النقاط -->
+        <div class="wallet-box points-card" onclick="goDeposit()">
+            <div class="wallet-top">🪙 رصيد النقاط</div>
+            <div class="wallet-val" id="p">0</div>
+            <div class="wallet-sub" id="p-egp-equiv">يعادل ≈ 0.00 ج.م</div>
+            <div class="wallet-cta">➕ شحن / تعزيز النقاط</div>
+        </div>
+
+        <!-- بطاقة رصيد الجنيه -->
+        <div class="wallet-box egp-card" onclick="goDeposit()">
+            <div class="wallet-top">💵 رصيد الجنيه</div>
+            <div class="wallet-val" id="egp">0.00 ج.م</div>
+            <div class="wallet-sub">للشراء المباشر من المتجر</div>
+            <div class="wallet-cta">📥 إيداع وشحن جنيه</div>
+        </div>
+    </div>
+
+    <!-- شبكة الإحصائيات الشاملة (6 بطاقات) -->
+    <div class="stats-grid">
+        <div class="stat-item">
+            <span class="icon">📈</span>
+            <b id="stat-total-earned" style="color: var(--main-green);">0</b>
+            <span>إجمالي ما جمعته</span>
+        </div>
+        <div class="stat-item">
+            <span class="icon">🎯</span>
+            <b id="t">0</b>
+            <span>المهام المنجزة</span>
+        </div>
+        <div class="stat-item">
+            <span class="icon">🔥</span>
+            <b id="stat-streak" style="color: var(--gold);">0 يوم</b>
+            <span>الستريك الحالي</span>
+        </div>
+        <div class="stat-item">
+            <span class="icon">🤝</span>
+            <b id="r" style="color: var(--main-green);">0</b>
+            <span>عمولات الإحالة</span>
+        </div>
+        <div class="stat-item">
+            <span class="icon">👥</span>
+            <b id="stat-valid-refs" style="color: var(--main-cyan);">0</b>
+            <span>دعوات صالحة</span>
+        </div>
+        <div class="stat-item">
+            <span class="icon">🛍️</span>
+            <b id="stat-orders-count">0</b>
+            <span>مشترياتي بالمتجر</span>
+        </div>
+    </div>
+
+    <!-- أزرار الوصول السريع -->
+    <div class="quick-actions">
+        <button class="q-btn" onclick="goStore()">🛍️ تصفح المتجر</button>
+        <button class="q-btn" onclick="goDeposit()" style="border-color: rgba(0, 242, 255, 0.4); color: var(--main-cyan);">💳 شحن رصيد فوري</button>
+    </div>
+
+    <!-- قسم السجلات والهيستوري وطلبات المتجر -->
+    <div class="section-header">
+        <span>📜 سجل العمليات ومشترياتي</span>
+    </div>
     
     <div class="history-tabs">
         <div class="history-tab active" onclick="filterHistory('all', this)">الكل</div>
-        <div class="history-tab" onclick="filterHistory('withdraw', this)">السحب والإيداع</div>
-        <div class="history-tab" onclick="filterHistory('store', this)">المتجر</div>
-        <div class="history-tab" onclick="filterHistory('points', this)">النقاط</div>
+        <div class="history-tab" onclick="filterHistory('orders', this)">📦 طلبات المتجر</div>
+        <div class="history-tab" onclick="filterHistory('deposit', this)">💵 الشحن والجنيه</div>
+        <div class="history-tab" onclick="filterHistory('points', this)">🪙 النقاط والمهام</div>
     </div>
 
     <div id="history-container" class="history-container">
@@ -79,25 +344,140 @@
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        const tid = new URLSearchParams(window.location.search).get('id') || tg.initDataUnsafe.user?.id;
+        const tid = String(new URLSearchParams(window.location.search).get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        let currentUser = null;
         let allTransactions = [];
+        let allStoreOrders = [];
+
+        // قوائم الألقاب لعرض لقب المستخدم في البروفايل
+        const MALE_TITLES = [
+            "جميل", "أنيق", "رائع", "بديع", "اخاذ", "جذاب", "خلاب", "ساحر", "متعلم", "قويم",
+            "فهيم", "ذكي", "مجتهد", "مثابر", "سمح", "كريم", "كفو", "شهم", "رجل", "عنيد",
+            "مغامر", "شنب", "محزم", "ذيب (ذيبان)", "نشمي", "مطنوخ", "محارب (مقاتل)", "عظيم", "شيخ", "شامخ",
+            "قوي", "شجاع", "مقدام", "بتار", "كسار", "صلب", "بطل", "فارس", "مغوار", "قائد",
+            "زعيم", "صنديد", "أشوس", "ملك", "صقر", "نمر", "جلاد", "مرعب", "أسد", "غضنفر",
+            "فتاك", "سفاح", "جبار", "أسطورة"
+        ];
+
+        const FEMALE_TITLES = [
+            "جميلة", "أنيقة", "رائعة", "بديعة", "آخاذة", "جذابة", "خلابة", "ساحرة", "متعلمة", "قويمة",
+            "فهيمة", "ذكية", "مجتهدة", "مثابرة", "سمحة", "كريمة", "كفؤ", "شهيمة", "امرأة", "عنيدة",
+            "مغامرة", "محزمة", "ذيبانة", "نشمية", "مطنوخة", "محاربة (مقاتلة)", "عظيمة", "شيخة", "شامخة",
+            "قوية", "شجاعة", "مقدامة", "بتارة", "كسارة", "صلبة", "بطلة", "فارسة", "مغوارة", "قائدة",
+            "زعيمة", "صنديدة", "مهيبة", "ملكة", "صقرية", "لبؤة", "مرعبة", "ضارية", "فتاكة", "قاهرة",
+            "جبارة", "أسطورة"
+        ];
+
+        function getProfileTitle(streak, gender) {
+            if (!streak || streak <= 0) return "مبتدئ (ابدأ الستريك اليوم!)";
+            const list = (gender === 'female') ? FEMALE_TITLES : MALE_TITLES;
+            const idx = Math.max(0, Math.min(streak - 1, list.length - 1));
+            return list[idx];
+        }
 
         async function load() {
             if (!tid) return;
 
-            // جلب بيانات المستخدم الأساسية
-            let { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).single();
-            if(u) {
-                document.getElementById('name').innerText = u.name || "User";
-                document.getElementById('id-display').innerText = "ID: " + tid;
-                document.getElementById('avatar').innerText = (u.name || "U")[0].toUpperCase();
-                document.getElementById('p').innerText = (u.points || 0).toLocaleString();
-                document.getElementById('t').innerText = u.total_tasks || 0;
-                document.getElementById('r').innerText = u.total_ref_commission || 0;
+            // 1. جلب بيانات المستخدم الأساسية
+            let { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).maybeSingle();
+            if (u) {
+                currentUser = u;
+                renderUserProfile(u);
             }
 
-            // جلب الهيستوري والعمليات من قاعدة البيانات
+            // 2. جلب طلبات المتجر الخاصة بالمستخدم
+            await loadUserStoreOrders();
+
+            // 3. جلب سجل العمليات (الهيستوري)
             await loadHistoryData();
+        }
+
+        function renderUserProfile(u) {
+            const displayName = u.name || tg.initDataUnsafe.user?.first_name || "User";
+            const pts = Number(u.points || 0);
+            const egp = Number(u.egp_balance || 0);
+            const totalEarned = Number(u.total_earned || pts);
+            const tasksDone = Number(u.total_tasks || 0);
+            const streakDays = Number(u.streak || 0);
+            const refComm = Number(u.total_ref_commission || 0);
+            const validRefs = Number(u.invited_count || 0);
+            const gender = u.gender || 'male';
+
+            document.getElementById('name').innerText = displayName;
+            document.getElementById('id-display').innerText = "ID: " + tid;
+
+            // عرض صورة تيليجرام إن وجدت أو الحرف الأول
+            const tgPhoto = tg.initDataUnsafe.user?.photo_url;
+            const avatarEl = document.getElementById('avatar');
+            if (tgPhoto) {
+                avatarEl.innerHTML = `<img src="${tgPhoto}" style="width:100%; height:100%; object-fit:cover;">`;
+            } else {
+                avatarEl.innerText = displayName[0].toUpperCase();
+            }
+
+            // تحديث زر النوع واللقب
+            document.getElementById('gender-btn').innerText = (gender === 'female') ? "👩 أنثى" : "🧔 ذكر";
+            const currentTitle = getProfileTitle(streakDays, gender);
+            document.getElementById('streak-title-badge').innerText = `🔥 اللقب: ${currentTitle}`;
+
+            // حساب المستوى وشريط الـ XP
+            const level = Math.floor(streakDays / 15) + Math.floor(tasksDone / 25) + 1;
+            const progressInLevel = ((streakDays % 15) / 15) * 100;
+            const xpPercent = Math.min(100, Math.max(8, Math.round(progressInLevel)));
+            document.getElementById('level-badge').innerText = `LVL ${level}`;
+            document.getElementById('xp-percent-lbl').innerText = `${xpPercent}%`;
+            document.getElementById('xp-bar-fill').style.width = `${xpPercent}%`;
+
+            // تحديث بطاقتي العملات (النقاط والجنيه)
+            document.getElementById('p').innerText = pts.toLocaleString();
+            document.getElementById('p-egp-equiv').innerText = `يعادل ≈ ${(pts / 1000).toFixed(2)} ج.م`;
+            document.getElementById('egp').innerText = egp.toFixed(2) + " ج.م";
+
+            // تحديث شبكة الإحصائيات
+            document.getElementById('stat-total-earned').innerText = totalEarned.toLocaleString();
+            document.getElementById('t').innerText = tasksDone.toLocaleString();
+            document.getElementById('stat-streak').innerText = `${streakDays} يوم`;
+            document.getElementById('r').innerText = refComm.toLocaleString();
+            document.getElementById('stat-valid-refs').innerText = validRefs.toLocaleString();
+        }
+
+        // تبديل النوع (ذكر / أنثى) لتغيير ألقاب الستريك مباشرة من البروفايل
+        async function toggleUserGender() {
+            if (!currentUser) return;
+            const newGender = (currentUser.gender === 'female') ? 'male' : 'female';
+            const { data, error } = await client
+                .from('users')
+                .update({ gender: newGender })
+                .eq('telegram_id', String(tid))
+                .select()
+                .single();
+
+            if (!error && data) {
+                currentUser = data;
+                renderUserProfile(data);
+                tg.showAlert(`✅ تم تحديث تصنيف الألقاب إلى: ${newGender === 'female' ? 'أنثى 👩' : 'ذكر 🧔'}`);
+            }
+        }
+
+        function copyUserId() {
+            navigator.clipboard.writeText(tid).then(() => {
+                tg.showAlert(`✅ تم نسخ معرف حسابك (ID): ${tid}`);
+            });
+        }
+
+        async function loadUserStoreOrders() {
+            try {
+                let { data: orders } = await client
+                    .from('store_orders')
+                    .select('*')
+                    .eq('user_id', String(tid))
+                    .order('id', { ascending: false });
+
+                allStoreOrders = orders || [];
+                document.getElementById('stat-orders-count').innerText = allStoreOrders.length;
+            } catch (e) {
+                console.error("Orders load error:", e);
+            }
         }
 
         async function loadHistoryData() {
@@ -126,30 +506,66 @@
 
             if (type === 'all') {
                 renderHistory(allTransactions);
-            } else if (type === 'withdraw') {
-                const filtered = allTransactions.filter(t => t.type === 'withdraw' || t.type === 'deposit');
-                renderHistory(filtered);
-            } else if (type === 'store') {
-                const filtered = allTransactions.filter(t => t.type === 'store');
+            } else if (type === 'orders') {
+                renderStoreOrdersList();
+            } else if (type === 'deposit') {
+                const filtered = allTransactions.filter(t => t.type === 'deposit' || t.type === 'egp' || t.type === 'withdraw');
                 renderHistory(filtered);
             } else if (type === 'points') {
-                const filtered = allTransactions.filter(t => t.type === 'points');
+                const filtered = allTransactions.filter(t => t.type === 'points' || t.type === 'store');
                 renderHistory(filtered);
             }
+        }
+
+        // عرض سجل طلبات المتجر وحالتها
+        function renderStoreOrdersList() {
+            const container = document.getElementById('history-container');
+            if (!allStoreOrders || allStoreOrders.length === 0) {
+                container.innerHTML = '<div class="status-box">🛍️ لم تقم بأي طلبات شراء من المتجر حتى الآن.</div>';
+                return;
+            }
+
+            container.innerHTML = "";
+            allStoreOrders.forEach(o => {
+                const dateStr = new Date(o.created_at).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const isEgp = o.currency === 'egp';
+                const paidTxt = isEgp ? `${o.price_paid} ج.م` : `${Number(o.price_paid).toLocaleString()} نقطة`;
+
+                let statusBadge = `<span class="order-status-pill st-pending">⏳ قيد التنفيذ</span>`;
+                if (o.status === 'Completed') statusBadge = `<span class="order-status-pill st-completed">✅ تم التسليم</span>`;
+                if (o.status === 'Rejected') statusBadge = `<span class="order-status-pill st-rejected">❌ مرفوض ومسترد</span>`;
+
+                container.innerHTML += `
+                    <div class="history-card">
+                        <div class="history-info">
+                            <b>🛒 ${escapeHtml(o.product_title)}</b>
+                            <span>📱 البيانات: ${escapeHtml(o.buyer_input)} • 🕒 ${dateStr}</span>
+                        </div>
+                        <div style="text-align: left;">
+                            ${statusBadge}
+                            <div style="font-size: 11px; color: var(--text-gray); margin-top: 4px; font-weight: bold;">${paidTxt}</div>
+                        </div>
+                    </div>
+                `;
+            });
         }
 
         function renderHistory(list) {
             const container = document.getElementById('history-container');
             if (!list || list.length === 0) {
-                container.innerHTML = '<div class="status-box">📭 لا توجد عمليات في هذا القسم حالياً.</div>';
+                container.innerHTML = '<div class="status-box">📭 لا توجد عمليات مسجلة في هذا القسم حالياً.</div>';
                 return;
             }
 
             container.innerHTML = "";
             list.forEach(tx => {
                 const dateStr = new Date(tx.created_at).toLocaleString('ar-EG', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-                const isPositive = String(tx.amount).startsWith('+') || (typeof tx.amount === 'number' && tx.amount > 0);
-                const amountClass = isPositive ? 'positive' : 'negative';
+                const amtStr = String(tx.amount || "");
+                const isPositive = amtStr.startsWith('+') || (typeof tx.amount === 'number' && tx.amount > 0);
+                const isEgp = amtStr.includes('ج.م') || amtStr.includes('جنيه') || tx.type === 'egp' || tx.type === 'deposit';
+                
+                let amountClass = isPositive ? 'positive' : 'negative';
+                if (isPositive && isEgp) amountClass = 'egp-pos';
 
                 container.innerHTML += `
                     <div class="history-card">
@@ -158,7 +574,7 @@
                             <span>🕒 ${dateStr} • الحالة: ${escapeHtml(tx.status || 'مكتمل')}</span>
                         </div>
                         <div class="history-amount ${amountClass}">
-                            ${escapeHtml(tx.amount)}
+                            ${escapeHtml(amtStr)}
                         </div>
                     </div>
                 `;
@@ -169,6 +585,9 @@
             return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
+        // دوال التنقل (الضغط على أي رصيد يفتح صفحة الإيداع مباشرة)
+        function goDeposit() { window.location.href = `deposit.html?id=${tid}&t=${Date.now()}`; }
+        function goStore() { window.location.href = `store.html?id=${tid}&t=${Date.now()}`; }
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
         function goGames() { window.location.href = `games.html?id=${tid}&t=${Date.now()}`; }
