@@ -7,6 +7,8 @@
     <title>MegaTask Store - المتجر الذكي</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- استدعاء درع الحماية ضد تعدد الحسابات -->
+    <script src="security.js"></script>
     <style>
         :root { 
             --main-green: #00d26a; 
@@ -407,6 +409,12 @@
 
         async function init() {
             if (tid) {
+                // 🛡️ فحص درع الحماية ضد تعدد الحسابات على نفس الهاتف قبل فتح المتجر
+                if (typeof MegaSecurity !== 'undefined') {
+                    const secCheck = await MegaSecurity.verifyDeviceAndAccount(client, tid);
+                    if (!secCheck.allowed) return;
+                }
+
                 const { data } = await client.from('users').select('points, egp_balance').eq('telegram_id', tid).maybeSingle();
                 if (data) {
                     userPoints = Number(data.points || 0);
@@ -525,7 +533,6 @@
             });
         }
 
-        // --- نافذة عرض سلعة للبيع (نقاط أو جنيه) ---
         function openSellModal() {
             if (!tid) return tg.showAlert("❌ يرجى فتح المنصة من داخل البوت.");
             document.getElementById('sell-title').value = "";
@@ -563,7 +570,7 @@
         function updateSellProfitPreview() {
             const price = parseFloat(document.getElementById('sell-price').value) || 0;
             const box = document.getElementById('sell-profit-box');
-            const netProfit = price * 0.75; // صافي 75% بعد خصم 25% عمولة المتجر
+            const netProfit = price * 0.75;
 
             if (selectedSellCurrency === 'egp') {
                 box.style.borderColor = "var(--neon-blue)";
@@ -649,7 +656,6 @@
             }
         }
 
-        // --- نافذة وعملية الشراء (تدعم النقاط والجنيه) ---
         function openBuyModal(productId) {
             const p = allProducts.find(item => item.id === productId);
             if (!p) return;
@@ -679,7 +685,6 @@
             const isEgp = p.currency === 'egp';
             const price = Number(p.price);
 
-            // التحقق من الرصيد حسب عملة المنتج
             if (isEgp) {
                 if (userEgp < price) {
                     closeModal('buy-modal');
@@ -709,7 +714,6 @@
             btn.innerText = "⏳ جاري تنفيذ الطلب...";
 
             try {
-                // 1. خصم السعر من العملة المناسبة
                 let userUpdatePayload = {};
                 if (isEgp) {
                     userEgp = Number((userEgp - price).toFixed(2));
@@ -722,7 +726,6 @@
                 const { error: err1 } = await client.from('users').update(userUpdatePayload).eq('telegram_id', tid);
                 if (err1) throw err1;
 
-                // 2. تسجيل الطلب في جدول store_orders مع عملة الدفع
                 const { error: err2 } = await client.from('store_orders').insert([{
                     user_id: tid,
                     product_id: p.id,
@@ -734,12 +737,10 @@
                 }]);
                 if (err2) throw err2;
 
-                // 3. تحديث عدد المرات المباعة للمنتج
                 const newCompletedCount = (p.completed_count || 0) + 1;
                 await client.from('store_products').update({ completed_count: newCompletedCount }).eq('id', p.id);
                 p.completed_count = newCompletedCount;
 
-                // 4. توثيق العملية في جدول السجلات (Transactions)
                 await client.from('transactions').insert([{
                     telegram_id: String(tid),
                     type: 'store',
@@ -748,7 +749,6 @@
                     status: 'قيد التنفيذ'
                 }]);
 
-                // 5. إشعار المشتري في شات البوت
                 const orderMsg = 
                     `🛒 *تم استلام طلب شرائك بنجاح!* ✅\n` +
                     `━━━━━━━━━━━━━━━\n` +
@@ -775,7 +775,6 @@
             }
         }
 
-        // --- نافذة تحويل الجنيه لنقاط داخل المتجر ---
         function openExchangeModal() {
             document.getElementById('ex-egp-input').value = "";
             document.getElementById('ex-pts-preview').innerText = "ستحصل على: 0 نقطة";
@@ -822,7 +821,6 @@
             }
         }
 
-        // --- نافذة متابعة طلباتي وسلعي المعروضة ---
         async function openMyActivityModal() {
             document.getElementById('activity-modal').style.display = 'flex';
             const box = document.getElementById('my-activity-content');
