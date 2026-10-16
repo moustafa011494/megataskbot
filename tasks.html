@@ -9,6 +9,8 @@
     <title>Tasks & Ads - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- استدعاء درع الحماية ضد تعدد الحسابات -->
+    <script src="security.js"></script>
     <style>
         :root { --main-green: #00d26a; --main-cyan: #00f2ff; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
         * { box-sizing: border-box; }
@@ -457,7 +459,6 @@
             return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        // فحص ما إذا كان التاريخ اليوم لنظام إعادة تعيين عداد الإعلانات اليومي
         function isSameDay(d1, d2) {
             return d1.getFullYear() === d2.getFullYear() &&
                    d1.getMonth() === d2.getMonth() &&
@@ -468,6 +469,12 @@
             if (!tid) {
                 document.getElementById('tasks-list').innerHTML = '<div class="status-box">❌ يرجى فتح الصفحة من داخل البوت.</div>';
                 return;
+            }
+
+            // 🛡️ فحص درع الحماية ضد تعدد الحسابات على نفس الهاتف قبل تحميل المهام والإعلانات
+            if (typeof MegaSecurity !== 'undefined') {
+                const secCheck = await MegaSecurity.verifyDeviceAndAccount(client, tid);
+                if (!secCheck.allowed) return;
             }
 
             try {
@@ -491,7 +498,6 @@
             document.getElementById('user-task-earnings').innerText = (userData.task_earnings || 0).toLocaleString();
         }
 
-        // فحص عداد الإعلانات اليومي (حد أقصى 5 مرات) ومؤقت الـ 5 دقائق
         function checkAdsStatus() {
             if (!userData) return;
             const now = new Date();
@@ -500,7 +506,7 @@
             let watchCount = userData.ads_watch_count || 0;
             let watchDate = userData.ads_watch_date ? new Date(userData.ads_watch_date) : null;
             if (!watchDate || !isSameDay(watchDate, now)) {
-                watchCount = 0; // إعادة تعيين العداد ليوم جديد
+                watchCount = 0;
             }
 
             const watchRemaining = Math.max(0, MAX_DAILY_ADS - watchCount);
@@ -592,7 +598,13 @@
             }
         }
 
-        function triggerAd(type) {
+        async function triggerAd(type) {
+            // 🛡️ تأكيد الحماية قبل فتح الإعلان
+            if (typeof MegaSecurity !== 'undefined') {
+                const secCheck = await MegaSecurity.verifyDeviceAndAccount(client, tid);
+                if (!secCheck.allowed) return;
+            }
+
             currentAdType = type;
             const targetUrl = (type === 'watch') ? AD_LINK_WATCH : AD_LINK_ONCLICK;
             
@@ -651,7 +663,7 @@
             try {
                 const { data: currentUser, error: fetchErr } = await client
                     .from('users')
-                    .select(`points, ${dbFieldTime}, ${dbFieldCount}, ${dbFieldDate}, referred_by`)
+                    .select(`points, total_earned, ${dbFieldTime}, ${dbFieldCount}, ${dbFieldDate}, referred_by`)
                     .eq('telegram_id', tid)
                     .single();
 
@@ -698,7 +710,6 @@
                 const { error: updateErr } = await client.from('users').update(updatePayload).eq('telegram_id', tid);
                 if (updateErr) throw updateErr;
 
-                // تسجيل العملية في الهيستوري
                 await client.from('transactions').insert([{
                     telegram_id: String(tid),
                     type: 'points',
