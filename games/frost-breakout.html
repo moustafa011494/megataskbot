@@ -3,255 +3,267 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-
-<title>Frost Breakout - MegaTask</title>
+<title>Frost Breakout Pro - MegaTask</title>
 
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-    -webkit-tap-highlight-color:transparent;
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
-html,body{
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:#020814;
-    font-family:Arial,sans-serif;
-    color:#fff;
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #020814;
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    color: #fff;
+    touch-action: none;
 }
 
-body{
-    position:relative;
+canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
 }
 
-canvas{
-    position:fixed;
-    inset:0;
-    width:100%;
-    height:100%;
-    display:block;
+/* شريط المعلومات العلوي (5 خانات شاملة الجولات والقلوب) */
+#hud {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    direction: ltr;
+    pointer-events: none;
 }
 
-#hud{
-    position:fixed;
-    top:12px;
-    left:10px;
-    right:10px;
-    z-index:20;
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:7px;
-    direction:ltr;
+.stat {
+    min-width: 0;
+    padding: 7px 4px;
+    border: 1px solid rgba(90, 210, 255, 0.25);
+    border-radius: 12px;
+    background: rgba(3, 18, 36, 0.82);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 15px rgba(0, 170, 255, 0.08);
+    text-align: center;
 }
 
-.stat{
-    min-width:0;
-    padding:8px 5px;
-    border:1px solid rgba(90,210,255,.22);
-    border-radius:12px;
-    background:rgba(3,18,36,.78);
-    backdrop-filter:blur(10px);
-    box-shadow:0 0 15px rgba(0,170,255,.08);
-    text-align:center;
+.stat small {
+    display: block;
+    color: #8ba9bd;
+    font-size: 8.5px;
+    font-weight: bold;
+    letter-spacing: 0.4px;
 }
 
-.stat small{
-    display:block;
-    color:#8ba9bd;
-    font-size:9px;
-    font-weight:bold;
-    letter-spacing:.5px;
+.stat b {
+    display: block;
+    margin-top: 2px;
+    color: #eafaff;
+    font-size: 13.5px;
 }
 
-.stat b{
-    display:block;
-    margin-top:2px;
-    color:#eafaff;
-    font-size:15px;
+#score { color: #62d9ff; }
+#level { color: #00d26a; }
+#lives { color: #ff5e6c; font-size: 12px; }
+#roundsHud { color: #ffaa00; }
+#balance { color: #ffd95c; }
+
+/* شريط القدرات النشطة */
+#powerup-hud {
+    position: fixed;
+    top: 66px;
+    left: 12px;
+    right: 12px;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    pointer-events: none;
 }
 
-#score{
-    color:#62d9ff;
+.p-badge {
+    background: rgba(0, 25, 50, 0.85);
+    border: 1px solid #00f2ff;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 14px;
+    font-size: 11px;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
 }
 
-#level{
-    color:#b7f1ff;
+#message {
+    position: fixed;
+    top: 96px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 21;
+    padding: 7px 16px;
+    border-radius: 20px;
+    background: rgba(0, 25, 48, 0.9);
+    border: 1px solid rgba(80, 210, 255, 0.4);
+    color: #bfeeff;
+    font-size: 12px;
+    font-weight: bold;
+    opacity: 0;
+    pointer-events: none;
+    transition: 0.25s;
+    white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 }
 
-#time{
-    color:#fff;
+#message.show { opacity: 1; }
+
+#overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    background: radial-gradient(circle at 50% 35%, rgba(0, 150, 255, 0.15), transparent 45%), rgba(1, 7, 16, 0.85);
+    backdrop-filter: blur(8px);
 }
 
-#balance{
-    color:#ffd95c;
+.panel {
+    width: min(390px, 100%);
+    padding: 24px 18px 20px;
+    border: 1px solid rgba(93, 218, 255, 0.28);
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(8, 29, 50, 0.96), rgba(2, 12, 24, 0.98));
+    box-shadow: 0 0 50px rgba(0, 150, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    text-align: center;
 }
 
-#message{
-    position:fixed;
-    top:86px;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:21;
-    padding:7px 14px;
-    border-radius:20px;
-    background:rgba(0,20,40,.75);
-    border:1px solid rgba(80,210,255,.2);
-    color:#bfeeff;
-    font-size:12px;
-    opacity:0;
-    pointer-events:none;
-    transition:.25s;
-    white-space:nowrap;
+.logo {
+    font-size: 46px;
+    margin-bottom: 4px;
+    filter: drop-shadow(0 0 14px rgba(0, 200, 255, 0.4));
 }
 
-#message.show{
-    opacity:1;
+h1 { font-size: 24px; margin-bottom: 6px; color: #65e4ff; }
+
+.subtitle {
+    color: #9bb5c7;
+    font-size: 12.5px;
+    line-height: 1.65;
+    margin-bottom: 14px;
 }
 
-#overlay{
-    position:fixed;
-    inset:0;
-    z-index:30;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-    background:
-        radial-gradient(circle at 50% 35%,rgba(0,150,255,.13),transparent 40%),
-        rgba(1,7,16,.72);
-    backdrop-filter:blur(7px);
+.features-pills {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 15px;
+}
+.f-pill {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(100, 220, 255, 0.2);
+    padding: 4px 9px;
+    border-radius: 10px;
+    font-size: 10.5px;
+    color: #cceeff;
 }
 
-.panel{
-    width:min(390px,100%);
-    padding:27px 20px 22px;
-    border:1px solid rgba(93,218,255,.22);
-    border-radius:24px;
-    background:linear-gradient(180deg,rgba(8,29,50,.96),rgba(2,12,24,.97));
-    box-shadow:
-        0 0 50px rgba(0,150,255,.12),
-        inset 0 1px 0 rgba(255,255,255,.05);
-    text-align:center;
+.result {
+    display: none;
+    margin: 0 auto 15px;
+    padding: 14px 12px;
+    border-radius: 16px;
+    background: rgba(0, 120, 190, 0.12);
+    border: 1px solid rgba(70, 200, 255, 0.25);
 }
 
-.logo{
-    font-size:48px;
-    margin-bottom:5px;
-    filter:drop-shadow(0 0 14px rgba(0,200,255,.35));
+.result .big {
+    color: #64dcff;
+    font-size: 26px;
+    font-weight: 900;
 }
 
-h1{
-    font-size:25px;
-    margin-bottom:8px;
+.result .reward {
+    margin-top: 5px;
+    color: #ffd95c;
+    font-size: 14px;
+    font-weight: bold;
 }
 
-.subtitle{
-    color:#91aabd;
-    font-size:13px;
-    line-height:1.7;
-    margin-bottom:18px;
+button {
+    width: 100%;
+    border: 0;
+    border-radius: 15px;
+    padding: 13px 16px;
+    margin-top: 8px;
+    font-size: 14.5px;
+    font-weight: 900;
+    cursor: pointer;
+    color: #00111d;
+    background: linear-gradient(135deg, #65e4ff, #27a9ef);
+    box-shadow: 0 7px 25px rgba(0, 170, 255, 0.22);
+    transition: 0.2s;
 }
 
-.result{
-    display:none;
-    margin:0 auto 17px;
-    padding:12px;
-    border-radius:15px;
-    background:rgba(0,120,190,.10);
-    border:1px solid rgba(70,200,255,.15);
+button:active { transform: scale(0.98); }
+
+button.ad-claim-btn {
+    background: linear-gradient(135deg, #00d26a, #009e4f);
+    color: #000;
+    box-shadow: 0 7px 25px rgba(0, 210, 106, 0.28);
+    display: none;
 }
 
-.result .big{
-    color:#64dcff;
-    font-size:27px;
-    font-weight:900;
+button.secondary {
+    color: #d4e7ef;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: none;
 }
 
-.result .reward{
-    margin-top:5px;
-    color:#ffd95c;
-    font-size:14px;
-    font-weight:bold;
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
-button{
-    width:100%;
-    border:0;
-    border-radius:15px;
-    padding:14px 16px;
-    margin-top:9px;
-    font-size:15px;
-    font-weight:900;
-    cursor:pointer;
-    color:#00111d;
-    background:linear-gradient(135deg,#65e4ff,#27a9ef);
-    box-shadow:0 7px 25px rgba(0,170,255,.18);
+#loading {
+    color: #82dfff;
+    font-size: 11.5px;
+    margin-top: 10px;
 }
 
-button:active{
-    transform:scale(.98);
+#touchHint {
+    position: fixed;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 15;
+    color: rgba(190, 230, 245, 0.55);
+    font-size: 11px;
+    pointer-events: none;
 }
 
-button.secondary{
-    color:#d4e7ef;
-    background:rgba(255,255,255,.055);
-    border:1px solid rgba(255,255,255,.09);
-    box-shadow:none;
-}
-
-button:disabled{
-    opacity:.45;
-    cursor:not-allowed;
-}
-
-#loading{
-    color:#82dfff;
-    font-size:12px;
-    margin-top:10px;
-}
-
-#touchHint{
-    position:fixed;
-    bottom:10px;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:15;
-    color:rgba(190,230,245,.45);
-    font-size:10px;
-    pointer-events:none;
-}
-
-.flash{
-    position:fixed;
-    inset:0;
-    z-index:25;
-    pointer-events:none;
-    background:#fff;
-    opacity:0;
-}
-
-.shake{
-    animation:shake .16s linear;
-}
-
-@keyframes shake{
-    0%{transform:translate(0,0)}
-    25%{transform:translate(4px,-2px)}
-    50%{transform:translate(-4px,2px)}
-    75%{transform:translate(3px,1px)}
-    100%{transform:translate(0,0)}
-}
-
-@media(max-width:380px){
-    .stat b{font-size:13px}
-    .stat small{font-size:8px}
+.flash {
+    position: fixed;
+    inset: 0;
+    z-index: 25;
+    pointer-events: none;
+    background: #fff;
+    opacity: 0;
 }
 </style>
 </head>
@@ -260,2159 +272,1041 @@ button:disabled{
 
 <canvas id="game"></canvas>
 
+<!-- شريط الإحصائيات العلوي -->
 <div id="hud">
-
     <div class="stat">
         <small>SCORE</small>
         <b id="score">0</b>
     </div>
-
     <div class="stat">
         <small>LVL</small>
         <b id="level">1</b>
     </div>
-
     <div class="stat">
-        <small>TIME</small>
-        <b id="time">0.00s</b>
+        <small>LIVES</small>
+        <b id="lives">❤️❤️</b>
     </div>
-
     <div class="stat">
-        <small>BALANCE</small>
+        <small>ROUNDS</small>
+        <b id="roundsHud">0/30</b>
+    </div>
+    <div class="stat">
+        <small>DIAMONDS</small>
         <b id="balance">0 💎</b>
     </div>
-
 </div>
+
+<!-- شريط عرض القدرات الخارقة النشطة -->
+<div id="powerup-hud"></div>
 
 <div id="message"></div>
 
-<div id="touchHint">
-    حرّك المضرب بإصبعك
-</div>
+<div id="touchHint">↔️ حرّك المضرب بإصبعك والتقط كبسولات القوة!</div>
 
 <div class="flash" id="flash"></div>
 
+<!-- نافذة البداية والنهاية -->
 <div id="overlay">
-
     <div class="panel">
-
         <div class="logo">❄️</div>
-
-        <h1>Frost Breakout</h1>
-
+        <h1>Frost Breakout Pro</h1>
         <div class="subtitle">
-            اكسر الطوب الجليدي وارفع الـScore<br>
-            كل <b>100 Score = 💎 1</b> عند نهاية الجولة
+            حطّم الطوب الجليدي والتقط الكبسولات الخارقة!<br>
+            كل <b>80 Score = +1 💎</b> + بونص إضافي عند جمع الألماس!
+        </div>
+
+        <div class="features-pills">
+            <span class="f-pill">⚡ 3 كرات متعددة</span>
+            <span class="f-pill">🔥 كرة نارية خارقة</span>
+            <span class="f-pill">🧨 طوب متفجر</span>
+            <span class="f-pill">🛡️ درع جليدي</span>
         </div>
 
         <div class="result" id="result">
-
-            <div class="big" id="finalScore">
-                0
-            </div>
-
-            <div class="reward" id="finalReward">
-                +0 💎
-            </div>
-
+            <div class="big" id="finalScore">0 SCORE</div>
+            <div class="reward" id="finalReward">+0 💎</div>
         </div>
 
+        <!-- زر مشاهدة الإعلان لجمع الألماس مع بونص -->
+        <button id="claimAdBtn" class="ad-claim-btn">
+            📺 شاهد الإعلان واجمع الألماس الآن
+        </button>
+
         <button id="startBtn">
-            🎮 ابدأ الجولة — 1 💎
+            🎮 ابدأ الجولة الآن (مجاناً)
         </button>
 
         <button class="secondary" id="backBtn">
-            ↩️ العودة للألعاب
+            ↩️ العودة لمركز الألعاب
         </button>
 
-        <div id="loading">
-            جاري تحميل الحساب...
-        </div>
-
+        <div id="loading">جاري تحميل الحساب...</div>
     </div>
-
 </div>
 
 <script>
-
-/* =========================================================
-   CONFIG
-========================================================= */
-
-const SUPABASE_URL =
-"https://smukfrwnguvmxvfwqwrv.supabase.co";
-
-const SUPABASE_KEY =
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-
-const db =
-supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-);
-
-const tg =
-window.Telegram?.WebApp || null;
-
-if(tg){
-
-    try{
-
-        tg.expand();
-        tg.ready();
-
-    }catch(e){}
-
+// دعم roundRect للمتصفحات القديمة
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        r = Math.min(r, w / 2, h / 2);
+        this.beginPath();
+        this.moveTo(x + r, y);
+        this.arcTo(x + w, y, x + w, y + h, r);
+        this.arcTo(x + w, y + h, x, y + h, r);
+        this.arcTo(x, y + h, x, y, r);
+        this.arcTo(x, y, x + w, y, r);
+        this.closePath();
+        return this;
+    };
 }
 
-
 /* =========================================================
-   ACCOUNT
+   CONFIG & SUPABASE
 ========================================================= */
+const SUPABASE_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const params =
-new URLSearchParams(
-    window.location.search
-);
+const tg = window.Telegram?.WebApp || null;
+if (tg) {
+    try { tg.expand(); tg.ready(); } catch (e) {}
+}
 
-let tid =
-String(
+const MAX_DAILY_ROUNDS = 30;
+const params = new URLSearchParams(window.location.search);
+let tid = String(
     params.get("id") ||
     tg?.initDataUnsafe?.user?.id ||
     localStorage.getItem("telegram_id") ||
+    localStorage.getItem("megatask_uid") ||
     ""
 ).trim();
 
 let uid = null;
 let user = null;
-let diamondField = null;
-
+let diamondField = "gamepoints";
+let pendingRewardToClaim = 0;
+let roundsPlayedThisSession = 0;
 
 /* =========================================================
    ELEMENTS
 ========================================================= */
-
-const canvas =
-document.getElementById("game");
-
-const ctx =
-canvas.getContext("2d");
-
-const scoreEl =
-document.getElementById("score");
-
-const levelEl =
-document.getElementById("level");
-
-const timeEl =
-document.getElementById("time");
-
-const balanceEl =
-document.getElementById("balance");
-
-const overlay =
-document.getElementById("overlay");
-
-const startBtn =
-document.getElementById("startBtn");
-
-const backBtn =
-document.getElementById("backBtn");
-
-const loading =
-document.getElementById("loading");
-
-const resultBox =
-document.getElementById("result");
-
-const finalScore =
-document.getElementById("finalScore");
-
-const finalReward =
-document.getElementById("finalReward");
-
-const message =
-document.getElementById("message");
-
-const flash =
-document.getElementById("flash");
-
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const scoreEl = document.getElementById("score");
+const levelEl = document.getElementById("level");
+const livesEl = document.getElementById("lives");
+const roundsHudEl = document.getElementById("roundsHud");
+const balanceEl = document.getElementById("balance");
+const powerupHud = document.getElementById("powerup-hud");
+const overlay = document.getElementById("overlay");
+const startBtn = document.getElementById("startBtn");
+const claimAdBtn = document.getElementById("claimAdBtn");
+const backBtn = document.getElementById("backBtn");
+const loading = document.getElementById("loading");
+const resultBox = document.getElementById("result");
+const finalScore = document.getElementById("finalScore");
+const finalReward = document.getElementById("finalReward");
+const message = document.getElementById("message");
+const flash = document.getElementById("flash");
+const touchHint = document.getElementById("touchHint");
 
 /* =========================================================
-   CANVAS
+   CANVAS RESIZE
 ========================================================= */
-
 let W = innerWidth;
 let H = innerHeight;
+let DPR = Math.min(devicePixelRatio || 1, 2);
 
-let DPR =
-Math.min(
-    devicePixelRatio || 1,
-    2
-);
-
-function resize(){
-
+function resize() {
     W = innerWidth;
     H = innerHeight;
+    DPR = Math.min(devicePixelRatio || 1, 2);
 
-    DPR =
-    Math.min(
-        devicePixelRatio || 1,
-        2
-    );
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
-    canvas.width =
-    W * DPR;
-
-    canvas.height =
-    H * DPR;
-
-    canvas.style.width =
-    W + "px";
-
-    canvas.style.height =
-    H + "px";
-
-    ctx.setTransform(
-        DPR,
-        0,
-        0,
-        DPR,
-        0,
-        0
-    );
-
-    if(!gameRunning){
-
-        paddle.y =
-        H - 125;
-
-        ball.y =
-        H - 158;
+    if (!gameRunning) {
+        paddle.y = H - 115;
     }
 }
-
-addEventListener(
-    "resize",
-    resize
-);
-
+addEventListener("resize", resize);
 
 /* =========================================================
-   GAME VARIABLES
+   GAME STATE & POWER-UPS
 ========================================================= */
-
 let gameRunning = false;
-
 let animationId = null;
-
 let score = 0;
-
 let level = 1;
-
-let startTime = 0;
-
-let elapsed = 0;
-
+let lives = 2;
 let lastFrame = 0;
 
-let ball = {
-
-    x:0,
-
-    y:0,
-
-    r:8,
-
-    vx:7.5,
-
-    vy:-7.5
-
-};
-
 let paddle = {
-
-    x:0,
-
-    y:0,
-
-    w:110,
-
-    h:12,
-
-    targetX:0
-
+    x: 0,
+    y: 0,
+    baseW: 112,
+    w: 112,
+    h: 13,
+    targetX: 0,
+    wideTimer: 0
 };
 
+let balls = [];
 let bricks = [];
-
+let capsules = [];
 let particles = [];
-
 let stars = [];
 
-let roundReward = 0;
+let fireballTimer = 0;
+let bottomShieldActive = false;
 
-let completedRounds = 0;
-
-
-/* =========================================================
-   STARS
-========================================================= */
-
-function createStars(){
-
+function createStars() {
     stars = [];
-
-    const count =
-    Math.max(
-        35,
-        Math.floor(W/10)
-    );
-
-    for(let i=0;i<count;i++){
-
+    const count = Math.max(35, Math.floor(W / 10));
+    for (let i = 0; i < count; i++) {
         stars.push({
-
-            x:Math.random()*W,
-
-            y:Math.random()*H,
-
-            r:Math.random()*1.5+.3,
-
-            a:Math.random()*.6+.15,
-
-            s:Math.random()*.35+.05
-
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: Math.random() * 1.5 + 0.3,
+            a: Math.random() * 0.6 + 0.15,
+            s: Math.random() * 0.4 + 0.08
         });
-
     }
 }
-
 createStars();
 
-
 /* =========================================================
-   USER LOOKUP
+   USER INITIALIZATION & DAILY ROUNDS SYNC
 ========================================================= */
-
-async function initUser(){
-
-    try{
-
-        if(
-            !tid ||
-            tid === "undefined" ||
-            tid === "null"
-        ){
-
-            const {
-                data:latest,
-                error:latestError
-            } =
-            await db
-            .from("users")
-            .select("*")
-            .order(
-                "created_at",
-                {ascending:false}
-            )
-            .limit(1)
-            .maybeSingle();
-
-            if(latestError){
-
-                console.error(
-                    "LATEST USER ERROR:",
-                    latestError
-                );
-            }
-
-            if(latest){
-
-                user = latest;
-
-                tid =
-                String(
-                    latest.telegram_id
-                );
-            }
-        }
-
-
-        if(!user){
-
-            let r =
-            await db
-            .from("users")
-            .select("*")
-            .eq(
-                "telegram_id",
-                String(tid)
-            )
-            .maybeSingle();
-
-            console.log(
-                "STRING USER:",
-                r.data,
-                r.error
-            );
-
-            if(r.data){
-
-                user = r.data;
-            }
-
-
-            if(!user && !r.error){
-
-                const n =
-                Number(tid);
-
-                if(
-                    Number.isFinite(n)
-                ){
-
-                    r =
-                    await db
-                    .from("users")
-                    .select("*")
-                    .eq(
-                        "telegram_id",
-                        n
-                    )
-                    .maybeSingle();
-
-                    console.log(
-                        "NUMBER USER:",
-                        r.data,
-                        r.error
-                    );
-
-                    if(r.data){
-
-                        user = r.data;
-                    }
-                }
-            }
-        }
-
-
-        if(!user){
-
-            const {
-                data:firstUser,
-                error:firstError
-            } =
-            await db
-            .from("users")
-            .select("*")
-            .limit(1)
-            .maybeSingle();
-
-            console.log(
-                "FALLBACK USER:",
-                firstUser,
-                firstError
-            );
-
-            if(firstUser){
-
-                user = firstUser;
-
-                tid =
-                String(
-                    firstUser.telegram_id
-                );
-            }
-        }
-
-
-        if(!user){
-
-            loading.textContent =
-            "❌ لم يتم العثور على الحساب";
-
+async function initUser() {
+    try {
+        if (!tid || tid === "undefined" || tid === "null") {
+            loading.textContent = "❌ يرجى فتح اللعبة من داخل البوت";
             return false;
         }
 
+        let r = await db.from("users").select("*").eq("telegram_id", String(tid)).maybeSingle();
+        if (r.data) user = r.data;
 
-        uid =
-        String(
-            user.telegram_id
-        );
+        if (!user && !r.error && Number.isFinite(Number(tid))) {
+            r = await db.from("users").select("*").eq("telegram_id", Number(tid)).maybeSingle();
+            if (r.data) user = r.data;
+        }
 
+        if (!user) {
+            loading.textContent = "❌ لم يتم العثور على الحساب في قاعدة البيانات";
+            return false;
+        }
+
+        uid = String(user.telegram_id);
         tid = uid;
+        localStorage.setItem("telegram_id", uid);
+        localStorage.setItem("megatask_uid", uid);
 
-        localStorage.setItem(
-            "telegram_id",
-            uid
-        );
+        diamondField = user.gamepoints !== undefined ? "gamepoints" : (user.diamonds !== undefined ? "diamonds" : "gamepoints");
 
-
-        diamondField =
-        user.gamepoints !== undefined
-        ? "gamepoints"
-        : user.diamonds !== undefined
-        ? "diamonds"
-        : null;
-
-
-        if(!diamondField){
-
-            loading.textContent =
-            "❌ لم يتم العثور على رصيد الألماس";
-
-            console.error(
-                "No gamepoints/diamonds field",
-                user
-            );
-
-            return false;
+        // تصفير عداد الجولات تلقائياً إذا بدأ يوم جديد
+        const today = new Date().toISOString().slice(0, 10);
+        if (user.daily_game_date !== today) {
+            const { data: resetData } = await db
+                .from("users")
+                .update({ daily_game_rounds: 0, daily_game_date: today })
+                .eq("telegram_id", uid)
+                .select("*")
+                .maybeSingle();
+            if (resetData) user = resetData;
+            else {
+                user.daily_game_rounds = 0;
+                user.daily_game_date = today;
+            }
         }
 
-
-        updateDiamondUI();
-
-        loading.textContent =
-        "✅ الحساب جاهز";
-
+        updateHUD();
+        loading.textContent = `✅ الحساب جاهز • الجولات المتبقية اليوم: ${Math.max(0, MAX_DAILY_ROUNDS - Number(user.daily_game_rounds || 0))}`;
         return true;
-
-    }catch(e){
-
-        console.error(
-            "INIT USER ERROR:",
-            e
-        );
-
-        loading.textContent =
-        "❌ حدث خطأ في تحميل الحساب";
-
+    } catch (e) {
+        console.error("INIT USER ERROR:", e);
+        loading.textContent = "❌ حدث خطأ في الاتصال بالسيرفر";
         return false;
     }
 }
 
-
-/* =========================================================
-   BALANCE
-========================================================= */
-
-function updateDiamondUI(){
-
-    if(
-        !user ||
-        !diamondField
-    ){
-
-        balanceEl.textContent =
-        "0 💎";
-
+function updateDiamondUI() {
+    if (!user) {
+        balanceEl.textContent = "0 💎";
         return;
     }
-
-    const value =
-    Number(
-        user[diamondField] || 0
-    );
-
-    balanceEl.textContent =
-    `${value} 💎`;
+    const val = Number(user[diamondField] || 0);
+    balanceEl.textContent = `${val.toLocaleString()} 💎`;
+    const roundsUsed = Math.min(MAX_DAILY_ROUNDS, Number(user.daily_game_rounds || 0));
+    roundsHudEl.textContent = `${roundsUsed}/${MAX_DAILY_ROUNDS}`;
 }
 
+async function changeDiamonds(amount, logTitle = "") {
+    if (!user || amount === 0) return false;
 
-/* =========================================================
-   CHANGE DIAMONDS
-========================================================= */
+    const current = Number(user[diamondField] || 0);
+    const next = Math.max(0, current + Number(amount));
 
-async function changeDiamonds(amount){
+    const { data, error } = await db
+        .from("users")
+        .update({ [diamondField]: next })
+        .eq("telegram_id", String(uid))
+        .select("*")
+        .maybeSingle();
 
-    if(
-        !user ||
-        !diamondField
-    ){
-
+    if (error) {
+        console.error("DIAMOND UPDATE:", error);
         return false;
     }
 
-    const current =
-    Number(
-        user[diamondField] || 0
-    );
-
-    const next =
-    Math.max(
-        0,
-        current +
-        Number(amount)
-    );
-
-    const payload = {
-
-        [diamondField]:next
-
-    };
-
-    let r =
-    await db
-    .from("users")
-    .update(payload)
-    .eq(
-        "telegram_id",
-        String(uid)
-    )
-    .select("*")
-    .maybeSingle();
-
-
-    if(
-        !r.data &&
-        !r.error
-    ){
-
-        const n =
-        Number(uid);
-
-        if(
-            Number.isFinite(n)
-        ){
-
-            r =
-            await db
-            .from("users")
-            .update(payload)
-            .eq(
-                "telegram_id",
-                n
-            )
-            .select("*")
-            .maybeSingle();
-        }
-    }
-
-
-    if(r.error){
-
-        console.error(
-            "DIAMOND UPDATE:",
-            r.error
-        );
-
-        return false;
-    }
-
-
-    if(r.data){
-
-        user = r.data;
-
-    }else{
-
-        user[diamondField] =
-        next;
-    }
-
+    if (data) user = data;
+    else user[diamondField] = next;
 
     updateDiamondUI();
 
+    if (logTitle) {
+        try {
+            await db.from("transactions").insert([{
+                telegram_id: String(uid),
+                type: "points",
+                title: logTitle,
+                amount: `${amount > 0 ? '+' : ''}${amount} 💎`,
+                status: "مكتمل"
+            }]);
+        } catch (e) {
+            console.warn("Transaction log error:", e);
+        }
+    }
     return true;
 }
 
-
 /* =========================================================
-   TRANSACTION
+   TOAST & FLASH
 ========================================================= */
-
-async function addTransaction(
-    amount,
-    title
-){
-
-    try{
-
-        if(!uid) return;
-
-        await db
-        .from("transactions")
-        .insert({
-
-            telegram_id:uid,
-
-            type:"points",
-
-            title:title,
-
-            amount:Number(amount)
-
-        });
-
-    }catch(e){
-
-        console.warn(
-            "TRANSACTION:",
-            e
-        );
-    }
-}
-
-
-/* =========================================================
-   TOAST
-========================================================= */
-
 let toastTimer;
-
-function showToast(text){
-
-    clearTimeout(
-        toastTimer
-    );
-
-    message.textContent =
-    text;
-
-    message.classList.add(
-        "show"
-    );
-
-    toastTimer =
-    setTimeout(
-        ()=>{
-
-            message.classList.remove(
-                "show"
-            );
-
-        },
-        2200
-    );
+function showToast(text) {
+    clearTimeout(toastTimer);
+    message.textContent = text;
+    message.classList.add("show");
+    toastTimer = setTimeout(() => message.classList.remove("show"), 2000);
 }
 
+function screenFlash() {
+    flash.style.opacity = "0.14";
+    setTimeout(() => { flash.style.opacity = "0"; }, 70);
+}
 
 /* =========================================================
-   RESET GAME
+   GAME SETUP & BRICKS
 ========================================================= */
+function spawnSingleBall(x, y, angleOffset = null) {
+    const speed = getBallSpeed();
+    const angle = angleOffset !== null ? angleOffset : (Math.random() > 0.5 ? 0.5 : -0.5);
+    return {
+        x: x,
+        y: y,
+        r: 8,
+        vx: Math.sin(angle) * speed,
+        vy: -Math.abs(Math.cos(angle) * speed)
+    };
+}
 
-function resetGame(){
-
+function resetGame() {
     score = 0;
-
     level = 1;
-
-    elapsed = 0;
-
-    roundReward = 0;
-
+    lives = 2;
+    fireballTimer = 0;
+    bottomShieldActive = true; // يبدأ اللاعب بحاجز جليدي مجاني يحميه أول مرة!
+    capsules = [];
     particles = [];
 
+    paddle.baseW = 112;
+    paddle.w = 112;
+    paddle.h = 13;
+    paddle.x = W / 2 - paddle.w / 2;
+    paddle.y = H - 115;
+    paddle.targetX = W / 2;
+    paddle.wideTimer = 0;
 
-    paddle.w = 110;
-
-    paddle.h = 12;
-
-    paddle.x =
-    W/2 -
-    paddle.w/2;
-
-    /* المضرب أعلى */
-
-    paddle.y =
-    H - 125;
-
-    paddle.targetX =
-    W/2;
-
-
-    /* سرعة بداية أعلى بكثير */
-
-    const speed = 7.5;
-
-    const angle =
-    Math.random() > .5
-    ? 0.55
-    : -0.55;
-
-
-    ball.x =
-    W/2;
-
-    /* الكرة أعلى بما يتناسب مع المضرب */
-
-    ball.y =
-    H - 158;
-
-    ball.r = 8;
-
-
-    ball.vx =
-    Math.cos(angle) *
-    speed *
-    (Math.random()>0.5 ? 1 : -1);
-
-
-    ball.vy =
-    -Math.abs(
-        Math.sin(angle) *
-        speed
-    );
-
-
+    balls = [spawnSingleBall(W / 2, H - 145)];
     createBricks();
-
     updateHUD();
 }
 
-
-/* =========================================================
-   BRICKS
-========================================================= */
-
-function createBricks(){
-
+function createBricks() {
     bricks = [];
-
-    const cols =
-    W < 400 ? 6 : 7;
-
-    const rows =
-    Math.min(
-        5 +
-        Math.floor(level/2),
-        8
-    );
-
+    const cols = W < 400 ? 6 : 7;
+    const rows = Math.min(5 + Math.floor((level - 1) / 2), 8);
     const gap = 6;
-
     const side = 12;
-
-    const bw =
-    (
-        W -
-        side*2 -
-        gap*(cols-1)
-    ) / cols;
-
+    const bw = (W - side * 2 - gap * (cols - 1)) / cols;
     const bh = 21;
+    const top = 115;
 
-    const top = 125;
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const rand = Math.random();
+            let bType = "normal"; // طوب جليدي عادي
+            let hp = 1;
 
-
-    for(
-        let r=0;
-        r<rows;
-        r++
-    ){
-
-        for(
-            let c=0;
-            c<cols;
-            c++
-        ){
+            if (rand < 0.10) {
+                bType = "tnt"; // طوب متفجر يفجر ما حوله
+                hp = 1;
+            } else if (rand < 0.28 || level >= 3) {
+                if (Math.random() < 0.35) {
+                    bType = "gold"; // طوب ذهبي مدرع
+                    hp = 2;
+                }
+            }
 
             bricks.push({
-
-                x:
-                side +
-                c*(bw+gap),
-
-                y:
-                top +
-                r*(bh+gap),
-
-                w:bw,
-
-                h:bh,
-
-                alive:true,
-
-                hp:
-                1 +
-                Math.floor(
-                    level/5
-                )
-
+                x: side + c * (bw + gap),
+                y: top + r * (bh + gap),
+                w: bw,
+                h: bh,
+                alive: true,
+                type: bType,
+                hp: hp
             });
         }
     }
 }
 
-
-/* =========================================================
-   LEVEL
-========================================================= */
-
-function calculateLevel(){
-
-    return Math.min(
-        15,
-        1 +
-        Math.floor(
-            score/300
-        )
-    );
-}
-
-
-/* =========================================================
-   BALL SPEED
-========================================================= */
-
-function getBallSpeed(){
-
-    /*
-       سرعة أعلى بكثير:
-
-       البداية = 7.5
-
-       تزيد تدريجياً مع السكور
-
-       الحد الأقصى = 14
-    */
-
-    const base = 7.5;
-
-    const bonus =
-    Math.min(
-        6.5,
-        score / 220
-    );
-
+function getBallSpeed() {
+    const base = 7.4;
+    const bonus = Math.min(5.5, (level - 1) * 0.65 + score / 450);
     return base + bonus;
 }
 
-
-/* =========================================================
-   HUD
-========================================================= */
-
-function updateHUD(){
-
-    scoreEl.textContent =
-    Math.floor(score);
-
-    levelEl.textContent =
-    level;
-
-    /*
-       ثواني + أجزاء من الثانية
-       مثال: 12.37s
-    */
-
-    timeEl.textContent =
-    elapsed.toFixed(2) +
-    "s";
-
+function updateHUD() {
+    scoreEl.textContent = Math.floor(score);
+    levelEl.textContent = level;
+    livesEl.textContent = lives > 0 ? "❤️".repeat(lives) : "💔";
     updateDiamondUI();
+
+    // عرض القدرات النشطة
+    let pHtml = "";
+    if (fireballTimer > 0) pHtml += `<span class="p-badge" style="border-color:#ff6b00;">🔥 كرة نارية (${Math.ceil(fireballTimer)}s)</span>`;
+    if (paddle.wideTimer > 0) pHtml += `<span class="p-badge" style="border-color:#00d26a;">↔️ مضرب عملاق (${Math.ceil(paddle.wideTimer)}s)</span>`;
+    if (bottomShieldActive) pHtml += `<span class="p-badge" style="border-color:#00f2ff;">🛡️ درع الجليد مفعل</span>`;
+    powerupHud.innerHTML = pHtml;
 }
 
-
 /* =========================================================
-   PARTICLES
+   PARTICLES & EXPLOSIONS
 ========================================================= */
-
-function burst(
-    x,
-    y,
-    count=8
-){
-
-    for(
-        let i=0;
-        i<count;
-        i++
-    ){
-
-        const a =
-        Math.random() *
-        Math.PI*2;
-
-        const speed =
-        Math.random()*3+1;
-
-
+function burst(x, y, count = 10, color = "#72ddff") {
+    for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 3.8 + 1;
         particles.push({
-
-            x:x,
-
-            y:y,
-
-            vx:
-            Math.cos(a) *
-            speed,
-
-            vy:
-            Math.sin(a) *
-            speed,
-
-            life:1,
-
-            size:
-            Math.random()*3+1
-
+            x, y,
+            vx: Math.cos(a) * speed,
+            vy: Math.sin(a) * speed,
+            life: 1,
+            color,
+            size: Math.random() * 3 + 1.2
         });
     }
 }
 
-
-function updateParticles(dt){
-
-    for(
-        let i=particles.length-1;
-        i>=0;
-        i--
-    ){
-
-        const p =
-        particles[i];
-
+function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
         p.x += p.vx;
-
         p.y += p.vy;
+        p.vy += 0.05;
+        p.life -= dt * 2.4;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
 
-        p.vy += .04;
+/* =========================================================
+   FALLING POWER-UP CAPSULES
+========================================================= */
+function maybeDropCapsule(x, y) {
+    if (Math.random() > 0.24) return; // نسبة 24% لسقوط كبسولة من الطوبة
+    const types = [
+        { type: "multiball", icon: "⚡", color: "#00f2ff", label: "⚡ 3 كرات متعددة!" },
+        { type: "fireball", icon: "🔥", color: "#ff6b00", label: "🔥 الكرة النارية الخارقة!" },
+        { type: "wide", icon: "↔️", color: "#00d26a", label: "↔️ تكبير المضرب!" },
+        { type: "shield", icon: "🛡️", color: "#38bdf8", label: "🛡️ درع الجليد السفلي!" },
+        { type: "gem", icon: "💎", color: "#ffd95c", label: "💎 +25 Score إضافي!" }
+    ];
+    const picked = types[Math.floor(Math.random() * types.length)];
+    capsules.push({
+        x, y,
+        r: 13,
+        vy: 3.1,
+        ...picked
+    });
+}
 
-        p.life -=
-        dt * 2.5;
+function updateCapsules() {
+    for (let i = capsules.length - 1; i >= 0; i--) {
+        const c = capsules[i];
+        c.y += c.vy;
 
+        // فحص التقاط الكبسولة بالمضرب
+        if (
+            c.y + c.r >= paddle.y &&
+            c.y - c.r <= paddle.y + paddle.h &&
+            c.x >= paddle.x - 8 &&
+            c.x <= paddle.x + paddle.w + 8
+        ) {
+            applyPowerup(c);
+            burst(c.x, paddle.y, 14, c.color);
+            capsules.splice(i, 1);
+            continue;
+        }
 
-        if(p.life<=0){
-
-            particles.splice(
-                i,
-                1
-            );
+        if (c.y - c.r > H) {
+            capsules.splice(i, 1);
         }
     }
 }
 
+function applyPowerup(cap) {
+    showToast(cap.label);
+    if (cap.type === "multiball") {
+        if (balls.length < 5 && balls[0]) {
+            const ref = balls[0];
+            balls.push(spawnSingleBall(ref.x, ref.y, -0.45));
+            balls.push(spawnSingleBall(ref.x, ref.y, 0.45));
+        }
+    } else if (cap.type === "fireball") {
+        fireballTimer = 6.5;
+    } else if (cap.type === "wide") {
+        paddle.wideTimer = 9;
+        paddle.w = 155;
+    } else if (cap.type === "shield") {
+        bottomShieldActive = true;
+    } else if (cap.type === "gem") {
+        score += 25;
+    }
+    updateHUD();
+}
 
-function drawParticles(){
+/* =========================================================
+   COLLISION & BALL PHYSICS
+========================================================= */
+function circleRectCollision(c, r) {
+    const closestX = Math.max(r.x, Math.min(c.x, r.x + r.w));
+    const closestY = Math.max(r.y, Math.min(c.y, r.y + r.h));
+    const dx = c.x - closestX;
+    const dy = c.y - closestY;
+    return (dx * dx + dy * dy) < c.r * c.r;
+}
 
-    for(
-        const p of particles
-    ){
+function explodeBrickNeighbors(targetBrick) {
+    screenFlash();
+    burst(targetBrick.x + targetBrick.w / 2, targetBrick.y + targetBrick.h / 2, 24, "#ff5722");
+    showToast("🧨 انفجار متسلسل!");
 
-        ctx.globalAlpha =
-        Math.max(
-            0,
-            p.life
+    for (const b of bricks) {
+        if (!b.alive) continue;
+        const dist = Math.hypot(
+            (b.x + b.w / 2) - (targetBrick.x + targetBrick.w / 2),
+            (b.y + b.h / 2) - (targetBrick.y + targetBrick.h / 2)
         );
+        if (dist <= targetBrick.w * 1.65) {
+            b.alive = false;
+            score += 10;
+            burst(b.x + b.w / 2, b.y + b.h / 2, 8, "#ffaa00");
+        }
+    }
+}
 
-        ctx.beginPath();
-
-        ctx.arc(
-            p.x,
-            p.y,
-            p.size,
-            0,
-            Math.PI*2
-        );
-
-        ctx.fillStyle =
-        "#72ddff";
-
-        ctx.fill();
+function updateBalls(dt) {
+    if (fireballTimer > 0) fireballTimer = Math.max(0, fireballTimer - dt);
+    if (paddle.wideTimer > 0) {
+        paddle.wideTimer = Math.max(0, paddle.wideTimer - dt);
+        if (paddle.wideTimer === 0) {
+            paddle.w = Math.max(72, paddle.baseW - (level - 1) * 4);
+        }
     }
 
+    const targetSpeed = getBallSpeed();
+
+    for (let bIdx = balls.length - 1; bIdx >= 0; bIdx--) {
+        const ball = balls[bIdx];
+
+        const curSpeed = Math.hypot(ball.vx, ball.vy);
+        if (curSpeed > 0.001) {
+            const mul = targetSpeed / curSpeed;
+            ball.vx *= mul;
+            ball.vy *= mul;
+        }
+
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+
+        // حوائط اليمين واليسار
+        if (ball.x - ball.r <= 0) {
+            ball.x = ball.r;
+            ball.vx = Math.abs(ball.vx);
+        } else if (ball.x + ball.r >= W) {
+            ball.x = W - ball.r;
+            ball.vx = -Math.abs(ball.vx);
+        }
+
+        // السقف العلوي
+        if (ball.y - ball.r <= 82) {
+            ball.y = 82 + ball.r;
+            ball.vy = Math.abs(ball.vy);
+        }
+
+        // الارتداد من المضرب
+        if (ball.vy > 0 && circleRectCollision(ball, paddle)) {
+            ball.y = paddle.y - ball.r - 1;
+            const hit = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+            const maxAngle = Math.PI * 0.41;
+            const angle = hit * maxAngle;
+            const s = getBallSpeed();
+
+            ball.vx = Math.sin(angle) * s;
+            ball.vy = -Math.cos(angle) * s;
+            burst(ball.x, paddle.y, 7, "#65dcff");
+        }
+
+        // التصادم مع الطوب
+        for (const b of bricks) {
+            if (!b.alive) continue;
+            if (circleRectCollision(ball, b)) {
+                if (fireballTimer > 0) {
+                    b.hp = 0; // الكرة النارية تدمر الطوبة فوراً دون ارتداد
+                } else {
+                    b.hp--;
+                }
+
+                if (b.hp <= 0) {
+                    b.alive = false;
+                    score += (b.type === "gold" ? 15 : 8);
+                    maybeDropCapsule(b.x + b.w / 2, b.y + b.h / 2);
+
+                    if (b.type === "tnt") {
+                        explodeBrickNeighbors(b);
+                    } else {
+                        burst(ball.x, ball.y, 12, b.type === "gold" ? "#ffd95c" : "#72ddff");
+                        screenFlash();
+                    }
+                } else {
+                    score += 5;
+                    burst(ball.x, ball.y, 5, "#ffd95c");
+                }
+
+                // الكرة العادية ترتد، أما الكرة النارية فتخترق الطوب
+                if (fireballTimer <= 0) {
+                    const centerX = b.x + b.w / 2;
+                    const centerY = b.y + b.h / 2;
+                    const dx = ball.x - centerX;
+                    const dy = ball.y - centerY;
+                    if (Math.abs(dx / b.w) > Math.abs(dy / b.h)) {
+                        ball.vx *= -1;
+                    } else {
+                        ball.vy *= -1;
+                    }
+                }
+                break;
+            }
+        }
+
+        // فحص سقوط الكرة لأسفل الشاشة
+        if (ball.y + ball.r >= H - 22 && bottomShieldActive && ball.vy > 0) {
+            bottomShieldActive = false;
+            ball.vy = -Math.abs(ball.vy);
+            burst(ball.x, H - 22, 18, "#00f2ff");
+            showToast("🛡️ درع الجليد أنقذ الكرة!");
+            continue;
+        }
+
+        if (ball.y - ball.r > H) {
+            balls.splice(bIdx, 1);
+        }
+    }
+
+    // إذا سقطت كل الكرات من الشاشة
+    if (balls.length === 0) {
+        lives--;
+        updateHUD();
+        if (lives > 0) {
+            showToast("💔 فقدت كرة! بقيت لك محاولة أخيرة!");
+            balls.push(spawnSingleBall(paddle.x + paddle.w / 2, paddle.y - 20));
+        } else {
+            endGame();
+            return;
+        }
+    }
+
+    // إذا تم تدمير جميع الطوب في المستوى الحالي ننتقل للمستوى التالي
+    if (bricks.length > 0 && bricks.every(b => !b.alive)) {
+        level++;
+        score += 30; // مكافأة إنهاء المستوى
+        paddle.w = paddle.wideTimer > 0 ? 155 : Math.max(72, paddle.baseW - (level - 1) * 4);
+        createBricks();
+        showToast(`❄️ المستوى ${level}! (+30 Score بونص)`);
+    }
+}
+
+/* =========================================================
+   DRAWING FUNCTIONS
+========================================================= */
+function drawBackground() {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#020a18");
+    g.addColorStop(0.5, "#03172a");
+    g.addColorStop(1, "#01060d");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    for (const s of stars) {
+        s.y += s.s;
+        if (s.y > H) { s.y = 0; s.x = Math.random() * W; }
+        ctx.globalAlpha = s.a;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = "#bcefff";
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // رسم حاجز الجليد السفلي إن كان مفعلاً
+    if (bottomShieldActive) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(0, 242, 255, 0.7)";
+        ctx.lineWidth = 4;
+        ctx.shadowColor = "#00f2ff";
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.moveTo(0, H - 18);
+        ctx.lineTo(W, H - 18);
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+function drawBricks() {
+    for (const b of bricks) {
+        if (!b.alive) continue;
+
+        const g = ctx.createLinearGradient(b.x, b.y, b.x, b.y + b.h);
+        if (b.type === "tnt") {
+            g.addColorStop(0, "#ff7b72");
+            g.addColorStop(1, "#c91c1c");
+        } else if (b.type === "gold") {
+            g.addColorStop(0, "#ffe57f");
+            g.addColorStop(1, "#c68400");
+        } else {
+            g.addColorStop(0, "#8cecff");
+            g.addColorStop(1, "#177db2");
+        }
+
+        ctx.fillStyle = g;
+        ctx.roundRect(b.x, b.y, b.w, b.h, 5);
+        ctx.fill();
+
+        ctx.strokeStyle = b.type === "gold" ? "rgba(255,230,120,0.65)" : "rgba(210,250,255,0.45)";
+        ctx.stroke();
+
+        if (b.type === "tnt") {
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 10px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText("🧨", b.x + b.w / 2, b.y + b.h - 6);
+        }
+    }
+}
+
+function drawCapsules() {
+    for (const c of capsules) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(5, 20, 35, 0.9)";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = c.color;
+        ctx.stroke();
+
+        ctx.font = "13px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(c.icon, c.x, c.y + 1);
+        ctx.restore();
+    }
+}
+
+function drawPaddle() {
+    const g = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.h);
+    if (paddle.wideTimer > 0) {
+        g.addColorStop(0, "#a7f3d0");
+        g.addColorStop(0.5, "#00d26a");
+        g.addColorStop(1, "#047857");
+    } else {
+        g.addColorStop(0, "#d9fbff");
+        g.addColorStop(0.4, "#65dcff");
+        g.addColorStop(1, "#1684b5");
+    }
+
+    ctx.shadowColor = paddle.wideTimer > 0 ? "rgba(0, 210, 106, 0.7)" : "rgba(50, 210, 255, 0.65)";
+    ctx.shadowBlur = 14;
+    ctx.fillStyle = g;
+    ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 8);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+function drawBalls() {
+    const isFire = fireballTimer > 0;
+    for (const ball of balls) {
+        const g = ctx.createRadialGradient(ball.x - 2, ball.y - 2, 1, ball.x, ball.y, ball.r * 2.3);
+        if (isFire) {
+            g.addColorStop(0, "#fff");
+            g.addColorStop(0.4, "#ff9800");
+            g.addColorStop(1, "rgba(255, 60, 0, 0)");
+        } else {
+            g.addColorStop(0, "#ffffff");
+            g.addColorStop(0.35, "#baf4ff");
+            g.addColorStop(1, "rgba(30, 180, 255, 0)");
+        }
+
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r * 2.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = isFire ? "#ffeb3b" : "#f5fdff";
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function drawParticles() {
+    for (const p of particles) {
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color || "#72ddff";
+        ctx.fill();
+    }
     ctx.globalAlpha = 1;
 }
 
-
 /* =========================================================
-   BACKGROUND
+   MAIN GAME LOOP
 ========================================================= */
+function gameLoop(timestamp) {
+    if (!gameRunning) return;
+    if (!lastFrame) lastFrame = timestamp;
 
-function drawBackground(){
+    const dt = Math.min(0.033, (timestamp - lastFrame) / 1000);
+    lastFrame = timestamp;
 
-    const g =
-    ctx.createLinearGradient(
-        0,
-        0,
-        0,
-        H
-    );
+    paddle.x += (paddle.targetX - (paddle.x + paddle.w / 2)) * Math.min(1, dt * 16);
+    paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
 
-    g.addColorStop(
-        0,
-        "#020a18"
-    );
-
-    g.addColorStop(
-        .5,
-        "#03172a"
-    );
-
-    g.addColorStop(
-        1,
-        "#01060d"
-    );
-
-    ctx.fillStyle = g;
-
-    ctx.fillRect(
-        0,
-        0,
-        W,
-        H
-    );
-
-
-    for(
-        const s of stars
-    ){
-
-        s.y += s.s;
-
-        if(s.y>H){
-
-            s.y=0;
-
-            s.x =
-            Math.random()*W;
-        }
-
-        ctx.globalAlpha =
-        s.a;
-
-        ctx.beginPath();
-
-        ctx.arc(
-            s.x,
-            s.y,
-            s.r,
-            0,
-            Math.PI*2
-        );
-
-        ctx.fillStyle =
-        "#bcefff";
-
-        ctx.fill();
-    }
-
-    ctx.globalAlpha=1;
-
-
-    const glow =
-    ctx.createRadialGradient(
-        W/2,
-        H*.35,
-        10,
-        W/2,
-        H*.35,
-        H*.65
-    );
-
-    glow.addColorStop(
-        0,
-        "rgba(0,170,255,.07)"
-    );
-
-    glow.addColorStop(
-        1,
-        "rgba(0,0,0,0)"
-    );
-
-    ctx.fillStyle=glow;
-
-    ctx.fillRect(
-        0,
-        0,
-        W,
-        H
-    );
-}
-
-
-/* =========================================================
-   DRAW BRICKS
-========================================================= */
-
-function drawBricks(){
-
-    for(
-        const b of bricks
-    ){
-
-        if(!b.alive) continue;
-
-
-        const g =
-        ctx.createLinearGradient(
-            b.x,
-            b.y,
-            b.x,
-            b.y+b.h
-        );
-
-        g.addColorStop(
-            0,
-            "#8cecff"
-        );
-
-        g.addColorStop(
-            1,
-            "#177db2"
-        );
-
-        ctx.fillStyle=g;
-
-        ctx.beginPath();
-
-        ctx.roundRect(
-            b.x,
-            b.y,
-            b.w,
-            b.h,
-            5
-        );
-
-        ctx.fill();
-
-
-        ctx.strokeStyle =
-        "rgba(210,250,255,.45)";
-
-        ctx.stroke();
-
-
-        ctx.fillStyle =
-        "rgba(255,255,255,.28)";
-
-        ctx.fillRect(
-            b.x+4,
-            b.y+3,
-            Math.max(
-                5,
-                b.w*.35
-            ),
-            2
-        );
-    }
-}
-
-
-/* =========================================================
-   DRAW PADDLE
-========================================================= */
-
-function drawPaddle(){
-
-    const g =
-    ctx.createLinearGradient(
-        paddle.x,
-        paddle.y,
-        paddle.x,
-        paddle.y+paddle.h
-    );
-
-    g.addColorStop(
-        0,
-        "#d9fbff"
-    );
-
-    g.addColorStop(
-        .4,
-        "#65dcff"
-    );
-
-    g.addColorStop(
-        1,
-        "#1684b5"
-    );
-
-    ctx.shadowColor =
-    "rgba(50,210,255,.65)";
-
-    ctx.shadowBlur = 14;
-
-    ctx.fillStyle=g;
-
-    ctx.beginPath();
-
-    ctx.roundRect(
-        paddle.x,
-        paddle.y,
-        paddle.w,
-        paddle.h,
-        8
-    );
-
-    ctx.fill();
-
-    ctx.shadowBlur=0;
-}
-
-
-/* =========================================================
-   DRAW BALL
-========================================================= */
-
-function drawBall(){
-
-    const g =
-    ctx.createRadialGradient(
-        ball.x-2,
-        ball.y-2,
-        1,
-        ball.x,
-        ball.y,
-        ball.r*2.2
-    );
-
-    g.addColorStop(
-        0,
-        "#ffffff"
-    );
-
-    g.addColorStop(
-        .35,
-        "#baf4ff"
-    );
-
-    g.addColorStop(
-        1,
-        "rgba(30,180,255,0)"
-    );
-
-    ctx.fillStyle=g;
-
-    ctx.beginPath();
-
-    ctx.arc(
-        ball.x,
-        ball.y,
-        ball.r*2.2,
-        0,
-        Math.PI*2
-    );
-
-    ctx.fill();
-
-
-    ctx.fillStyle="#f5fdff";
-
-    ctx.beginPath();
-
-    ctx.arc(
-        ball.x,
-        ball.y,
-        ball.r,
-        0,
-        Math.PI*2
-    );
-
-    ctx.fill();
-}
-
-
-/* =========================================================
-   COLLISION
-========================================================= */
-
-function circleRectCollision(
-    c,
-    r
-){
-
-    const closestX =
-    Math.max(
-        r.x,
-        Math.min(
-            c.x,
-            r.x+r.w
-        )
-    );
-
-    const closestY =
-    Math.max(
-        r.y,
-        Math.min(
-            c.y,
-            r.y+r.h
-        )
-    );
-
-    const dx =
-    c.x-closestX;
-
-    const dy =
-    c.y-closestY;
-
-    return (
-        dx*dx +
-        dy*dy
-    ) <
-    c.r*c.r;
-}
-
-
-/* =========================================================
-   BALL UPDATE
-========================================================= */
-
-function updateBall(dt){
-
-    const speed =
-    getBallSpeed();
-
-
-    const currentSpeed =
-    Math.sqrt(
-        ball.vx*ball.vx +
-        ball.vy*ball.vy
-    );
-
-
-    if(
-        currentSpeed <
-        speed
-    ){
-
-        const mul =
-        speed /
-        Math.max(
-            currentSpeed,
-            .001
-        );
-
-        ball.vx *= mul;
-
-        ball.vy *= mul;
-    }
-
-
-    ball.x += ball.vx;
-
-    ball.y += ball.vy;
-
-
-    /* WALLS */
-
-    if(
-        ball.x-ball.r<=0
-    ){
-
-        ball.x=ball.r;
-
-        ball.vx =
-        Math.abs(
-            ball.vx
-        );
-
-    }else if(
-        ball.x+ball.r>=W
-    ){
-
-        ball.x =
-        W-ball.r;
-
-        ball.vx =
-        -Math.abs(
-            ball.vx
-        );
-    }
-
-
-    if(
-        ball.y-ball.r<=85
-    ){
-
-        ball.y =
-        85+ball.r;
-
-        ball.vy =
-        Math.abs(
-            ball.vy
-        );
-    }
-
-
-    /* PADDLE */
-
-    if(
-        ball.vy>0 &&
-        circleRectCollision(
-            ball,
-            paddle
-        )
-    ){
-
-        ball.y =
-        paddle.y -
-        ball.r -
-        1;
-
-
-        const hit =
-        (
-            ball.x -
-            (
-                paddle.x +
-                paddle.w/2
-            )
-        ) /
-        (paddle.w/2);
-
-
-        const maxAngle =
-        Math.PI*.42;
-
-
-        const angle =
-        hit*maxAngle;
-
-
-        const s =
-        getBallSpeed();
-
-
-        ball.vx =
-        Math.sin(angle)*s;
-
-        ball.vy =
-        -Math.cos(angle)*s;
-
-
-        burst(
-            ball.x,
-            paddle.y,
-            7
-        );
-    }
-
-
-    /* BRICKS */
-
-    for(
-        const b of bricks
-    ){
-
-        if(!b.alive) continue;
-
-
-        if(
-            circleRectCollision(
-                ball,
-                b
-            )
-        ){
-
-            b.hp--;
-
-
-            if(
-                b.hp<=0
-            ){
-
-                b.alive=false;
-
-                /* كل طوبة = 7 Score */
-
-                score += 7;
-
-
-                burst(
-                    ball.x,
-                    ball.y,
-                    12
-                );
-
-
-                screenFlash();
-
-            }else{
-
-                score += 10;
-
-
-                burst(
-                    ball.x,
-                    ball.y,
-                    5
-                );
-            }
-
-
-            const centerX =
-            b.x+b.w/2;
-
-            const centerY =
-            b.y+b.h/2;
-
-
-            const dx =
-            ball.x-centerX;
-
-            const dy =
-            ball.y-centerY;
-
-
-            if(
-                Math.abs(dx/b.w) >
-                Math.abs(dy/b.h)
-            ){
-
-                ball.vx *= -1;
-
-            }else{
-
-                ball.vy *= -1;
-            }
-
-            break;
-        }
-    }
-
-
-    /* CLEAR LEVEL */
-
-    if(
-        bricks.every(
-            b=>!b.alive
-        )
-    ){
-
-        level++;
-
-        createBricks();
-
-        ball.vy *= 1.05;
-
-        showToast(
-            "❄️ مستوى جديد!"
-        );
-    }
-
-
-    /* GAME OVER */
-
-    if(
-        ball.y-ball.r>H
-    ){
-
-        endGame();
-
-        return;
-    }
-
-
-    const newLevel =
-    calculateLevel();
-
-
-    if(
-        newLevel!==level
-    ){
-
-        level=newLevel;
-
-
-        paddle.w =
-        Math.max(
-            65,
-            110 -
-            (level-1)*4
-        );
-
-
-        createBricks();
-
-
-        showToast(
-            `🔥 Level ${level}`
-        );
-    }
-}
-
-
-/* =========================================================
-   GAME LOOP
-========================================================= */
-
-function gameLoop(timestamp){
-
-    if(!gameRunning){
-
-        return;
-    }
-
-
-    if(!lastFrame){
-
-        lastFrame =
-        timestamp;
-    }
-
-
-    const dt =
-    Math.min(
-        .033,
-        (timestamp-lastFrame)/1000
-    );
-
-
-    lastFrame =
-    timestamp;
-
-
-    elapsed =
-    (
-        Date.now() -
-        startTime
-    ) / 1000;
-
-
-    paddle.x +=
-    (
-        paddle.targetX -
-        (
-            paddle.x +
-            paddle.w/2
-        )
-    ) *
-    Math.min(
-        1,
-        dt*14
-    );
-
-
-    paddle.x =
-    Math.max(
-        0,
-        Math.min(
-            W-paddle.w,
-            paddle.x
-        )
-    );
-
-
-    updateBall(dt);
-
+    updateBalls(dt);
+    updateCapsules();
     updateParticles(dt);
-
     updateHUD();
 
-
     ctx.save();
-
     drawBackground();
-
     drawBricks();
-
+    drawCapsules();
     drawPaddle();
-
-    drawBall();
-
+    drawBalls();
     drawParticles();
-
     ctx.restore();
 
-
-    animationId =
-    requestAnimationFrame(
-        gameLoop
-    );
+    if (gameRunning) {
+        animationId = requestAnimationFrame(gameLoop);
+    }
 }
 
-
 /* =========================================================
-   START GAME REQUEST
+   START ROUND (SYNCED WITH 30 DAILY ROUNDS & MONETAG ADS)
 ========================================================= */
+async function startGameRequest() {
+    if (gameRunning) return;
 
-async function startGameRequest(){
+    startBtn.disabled = true;
+    loading.textContent = "⏳ جاري التحقق من الجولات...";
 
-    if(gameRunning){
-
-        return;
-    }
-
-
-    if(
-        !user ||
-        !diamondField
-    ){
-
-        const ok =
-        await initUser();
-
-
-        if(!ok){
-
-            showToast(
-                "⚠️ لم يتم العثور على حسابك"
-            );
-
+    if (!user) {
+        const ok = await initUser();
+        if (!ok) {
+            startBtn.disabled = false;
             return;
         }
     }
 
+    const today = new Date().toISOString().slice(0, 10);
+    let roundsUsed = Number(user.daily_game_rounds || 0);
+    if (user.daily_game_date !== today) roundsUsed = 0;
 
-    const balance =
-    Number(
-        user[diamondField] || 0
-    );
-
-
-    if(balance<1){
-
-        showToast(
-            "💎 تحتاج إلى 1 ألماسة لبدء الجولة"
-        );
-
+    if (roundsUsed >= MAX_DAILY_ROUNDS) {
+        startBtn.disabled = false;
+        loading.textContent = "🛑 وصلت للحد الأقصى للجولات اليومية (30/30)";
+        if (tg) tg.showAlert("🛑 لقد استنفدت الـ 30 جولة اليومية الخاصة بك!\n\nتتجدد الجولات تلقائياً عند منتصف الليل.");
         return;
     }
 
-
-    startBtn.disabled=true;
-
-
-    loading.textContent =
-    "جاري بدء الجولة...";
-
-
-    const paid =
-    await changeDiamonds(-1);
-
-
-    if(!paid){
-
-        startBtn.disabled=false;
-
-        showToast(
-            "❌ تعذر خصم الألماسة"
-        );
-
-        return;
-    }
-
-
-    completedRounds++;
-
-
-    if(
-        completedRounds % 3 === 0
-    ){
-
-        try{
-
-            if(
-                typeof show_10959333 ===
-                "function"
-            ){
-
+    // عرض إعلان كل جولتين عند بدء جولة جديدة لضمان ظهور الإعلانات
+    if (roundsPlayedThisSession > 0 && roundsPlayedThisSession % 2 === 0) {
+        loading.textContent = "📺 جاري عرض إعلان قصير لبدء الجولة...";
+        try {
+            if (typeof show_10959333 === "function") {
                 await show_10959333();
             }
-
-        }catch(e){
-
-            console.warn(
-                "MONETAG:",
-                e
-            );
+        } catch (e) {
+            console.warn("Monetag ad skipped:", e);
         }
     }
 
+    // تحديث عداد الجولات اليومية في قاعدة البيانات ليظهر في صفحة الألعاب الرئيسية فوراً
+    const nextRoundCount = roundsUsed + 1;
+    const { data: updatedUser, error } = await db
+        .from("users")
+        .update({
+            daily_game_rounds: nextRoundCount,
+            daily_game_date: today
+        })
+        .eq("telegram_id", String(uid))
+        .select("*")
+        .maybeSingle();
 
+    if (!error && updatedUser) {
+        user = updatedUser;
+    } else {
+        user.daily_game_rounds = nextRoundCount;
+        user.daily_game_date = today;
+    }
+
+    roundsPlayedThisSession++;
+    updateHUD();
     startRound();
 }
 
+function startRound() {
+    pendingRewardToClaim = 0;
+    claimAdBtn.style.display = "none";
+    resultBox.style.display = "none";
+    overlay.style.display = "none";
+    touchHint.style.display = "block";
 
-/* =========================================================
-   START ROUND
-========================================================= */
-
-function startRound(){
-
-    resultBox.style.display =
-    "none";
-
-    overlay.style.display =
-    "none";
-
-    touchHint.style.display =
-    "block";
-
-    gameRunning=true;
-
-    startTime =
-    Date.now();
-
-    lastFrame=0;
-
-
+    gameRunning = true;
+    lastFrame = 0;
     resetGame();
-
-
-    animationId =
-    requestAnimationFrame(
-        gameLoop
-    );
+    animationId = requestAnimationFrame(gameLoop);
 }
 
-
 /* =========================================================
-   END GAME
+   END GAME & AD REWARD CLAIM
 ========================================================= */
+async function endGame() {
+    if (!gameRunning) return;
+    gameRunning = false;
+    cancelAnimationFrame(animationId);
 
-async function endGame(){
+    // كل 80 سكور = 1 ألماسة
+    const baseDiamonds = Math.floor(score / 80);
+    pendingRewardToClaim = baseDiamonds;
 
-    if(!gameRunning){
+    finalScore.textContent = Math.floor(score) + " SCORE";
+    resultBox.style.display = "block";
+    overlay.style.display = "flex";
+    touchHint.style.display = "none";
+    startBtn.disabled = false;
 
-        return;
+    if (baseDiamonds > 0) {
+        const totalWithAdBonus = baseDiamonds + 1; // +1 ألماسة بونص عند مشاهدة الإعلان
+        finalReward.textContent = `أرباح الجولة: +${baseDiamonds} 💎 (+1 💎 بونص الإعلان!)`;
+        claimAdBtn.style.display = "block";
+        claimAdBtn.disabled = false;
+        claimAdBtn.textContent = `📺 شاهد الإعلان واجمع +${totalWithAdBonus} 💎 الآن`;
+        startBtn.textContent = "🔄 تخطي وبدء جولة جديدة";
+        loading.textContent = "شاهد الإعلان لجمع ألماساتك مع البونص!";
+    } else {
+        finalReward.textContent = "اكسر مزيداً من الطوب (80 Score = +1 💎)";
+        claimAdBtn.style.display = "none";
+        startBtn.textContent = "🎮 العب جولة أخرى الآن";
+        loading.textContent = `الجولات المتبقية اليوم: ${Math.max(0, MAX_DAILY_ROUNDS - Number(user?.daily_game_rounds || 0))}`;
     }
+}
 
+claimAdBtn.addEventListener("click", async () => {
+    if (pendingRewardToClaim <= 0) return;
 
-    gameRunning=false;
+    claimAdBtn.disabled = true;
+    claimAdBtn.textContent = "⏳ جاري عرض الإعلان...";
 
-
-    cancelAnimationFrame(
-        animationId
-    );
-
-
-    roundReward =
-    Math.floor(
-        score/100
-    );
-
-
-    finalScore.textContent =
-    Math.floor(score) +
-    " SCORE";
-
-
-    finalReward.textContent =
-    "+" +
-    roundReward +
-    " 💎";
-
-
-    resultBox.style.display =
-    "block";
-
-
-    overlay.style.display =
-    "flex";
-
-
-    touchHint.style.display =
-    "none";
-
-
-    if(
-        roundReward>0
-    ){
-
-        const rewarded =
-        await changeDiamonds(
-            roundReward
-        );
-
-
-        if(rewarded){
-
-            await addTransaction(
-                roundReward,
-                "مكافأة لعبة Frost Breakout"
-            );
-
-
-            showToast(
-                `🎉 حصلت على ${roundReward} 💎`
-            );
+    try {
+        if (typeof show_10959333 === "function") {
+            await show_10959333();
         }
 
-    }else{
+        const totalReward = pendingRewardToClaim + 1;
+        const ok = await changeDiamonds(totalReward, `فوز في لعبة Frost Breakout (${Math.floor(score)} Score)`);
 
-        showToast(
-            "❄️ حاول الوصول إلى 100 Score"
-        );
+        if (ok) {
+            pendingRewardToClaim = 0;
+            claimAdBtn.style.display = "none";
+            finalReward.textContent = `✅ تمت إضافة +${totalReward} 💎 إلى رصيدك!`;
+            startBtn.textContent = "🎮 العب جولة جديدة الآن";
+            loading.textContent = "تم حفظ الألماس في حسابك بنجاح!";
+            showToast(`🎉 مبروك! استلمت +${totalReward} 💎`);
+        }
+    } catch (e) {
+        console.warn("Ad not completed:", e);
+        claimAdBtn.disabled = false;
+        claimAdBtn.textContent = `🔄 أعد مشاهدة الإعلان لجمع +${pendingRewardToClaim + 1} 💎`;
+        if (tg) tg.showAlert("⚠️ يرجى إكمال مشاهدة الإعلان لاستلام الألماس والبونص!");
     }
-
-
-    startBtn.disabled=false;
-
-
-    startBtn.textContent =
-    "🎮 العب مرة أخرى — 1 💎";
-
-
-    loading.textContent =
-    "الجولة انتهت";
-}
-
+});
 
 /* =========================================================
-   FLASH
+   CONTROLS & NAVIGATION
 ========================================================= */
-
-function screenFlash(){
-
-    flash.style.opacity=".12";
-
-
-    setTimeout(
-        ()=>{
-            flash.style.opacity="0";
-        },
-        70
-    );
+function movePaddle(clientX) {
+    paddle.targetX = Math.max(0, Math.min(W, clientX));
 }
 
+addEventListener("touchstart", e => {
+    if (gameRunning && e.touches[0]) movePaddle(e.touches[0].clientX);
+}, { passive: true });
 
-/* =========================================================
-   TOUCH / MOUSE
-========================================================= */
+addEventListener("touchmove", e => {
+    if (gameRunning && e.touches[0]) movePaddle(e.touches[0].clientX);
+}, { passive: true });
 
-function movePaddle(
-    clientX
-){
+addEventListener("mousemove", e => {
+    if (gameRunning) movePaddle(e.clientX);
+});
 
-    paddle.targetX =
-    Math.max(
-        0,
-        Math.min(
-            W,
-            clientX
-        )
-    );
+startBtn.addEventListener("click", startGameRequest);
+
+function goBack() {
+    const id = String(uid || tid || localStorage.getItem("telegram_id") || "");
+    window.location.href = `../games.html?id=${encodeURIComponent(id)}&t=${Date.now()}`;
 }
-
-
-addEventListener(
-    "touchstart",
-    e=>{
-
-        if(!gameRunning){
-
-            return;
-        }
-
-
-        if(e.touches[0]){
-
-            movePaddle(
-                e.touches[0].clientX
-            );
-        }
-
-    },
-    {passive:true}
-);
-
-
-addEventListener(
-    "touchmove",
-    e=>{
-
-        if(!gameRunning){
-
-            return;
-        }
-
-
-        if(e.touches[0]){
-
-            movePaddle(
-                e.touches[0].clientX
-            );
-        }
-
-    },
-    {passive:true}
-);
-
-
-addEventListener(
-    "mousemove",
-    e=>{
-
-        if(!gameRunning){
-
-            return;
-        }
-
-
-        movePaddle(
-            e.clientX
-        );
-    }
-);
-
+backBtn.addEventListener("click", goBack);
 
 /* =========================================================
-   BUTTONS
+   INIT
 ========================================================= */
-
-startBtn.addEventListener(
-    "click",
-    startGameRequest
-);
-
-
-function goBack(){
-
-    const id =
-    String(
-        uid ||
-        tid ||
-        localStorage.getItem(
-            "telegram_id"
-        ) ||
-        ""
-    );
-
-
-    window.location.href =
-    "../games.html?id=" +
-    encodeURIComponent(id);
-}
-
-
-backBtn.addEventListener(
-    "click",
-    goBack
-);
-
-
-/* =========================================================
-   INITIAL LOAD
-========================================================= */
-
 resize();
-
-
-(async()=>{
-
-    loading.textContent =
-    "جاري تحميل الحساب...";
-
-
-    const ok =
+(async () => {
+    loading.textContent = "جاري تحميل الحساب...";
     await initUser();
-
-
-    startBtn.disabled=false;
-
-
-    if(ok){
-
-        startBtn.textContent =
-        "🎮 ابدأ الجولة — 1 💎";
-
-    }else{
-
-        startBtn.textContent =
-        "🔄 حاول مرة أخرى";
-
-        loading.textContent =
-        "تعذر تحميل الحساب — اضغط مرة أخرى";
-    }
-
 })();
-
 </script>
 
 </body>
-    </html>
+</html>
