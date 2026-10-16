@@ -4,7 +4,7 @@
 const MegaSecurity = (function () {
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-    const ADMIN_MASTER_ID = "875021647"; // حساب الأدمن المستثنى من قيود الـ VPN
+    const ADMIN_MASTER_ID = "8750"; // حساب الأدمن المستثنى من قيود الـ VPN
 
     let _deviceFp = null;
     let _userIp = null;
