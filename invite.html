@@ -9,6 +9,8 @@
     <title>Invite & Earn - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- استدعاء درع الحماية ضد تعدد الحسابات والإحالات الذاتية -->
+    <script src="security.js"></script>
     <style>
         :root { 
             --main-green: #00d26a; 
@@ -387,6 +389,12 @@
         }
 
         async function init() {
+            // 🛡️ فحص درع الحماية لمنع فتح أكثر من حساب على نفس الهاتف
+            if (typeof MegaSecurity !== 'undefined') {
+                const secCheck = await MegaSecurity.verifyDeviceAndAccount(client, tid);
+                if (!secCheck.allowed) return;
+            }
+
             const url = `https://t.me/${botUser}?start=${tid}`;
             document.getElementById('ref-url').innerText = url;
             document.getElementById('my-id-text').innerText = tid || "---";
@@ -785,14 +793,24 @@
             el.classList.add('active');
         }
 
-        // تفعيل كود الدعوة بالنظام الآمن الجديد (هدية ترحيبية +10 نقاط والاحتساب عند النشاط)
+        // تفعيل كود الدعوة بالنظام الآمن الجديد + درع منع الإحالة الذاتية من نفس الفون
         async function submitInvite() {
             const rawValue = document.getElementById('input-promo').value.trim();
             const refCode = extractRefCode(rawValue);
 
             if (!refCode || refCode === tid) return tg.showAlert("❌ كود أو رابط غير صالح!");
 
-            let { data: inviter } = await client.from('users').select('*').eq('telegram_id', refCode).maybeSingle();
+            let inviter = null;
+            // 🛡️ فحص درع الحماية لمنع دعوة النفس من نفس الهاتف أو نفس شبكة الـ IP
+            if (typeof MegaSecurity !== 'undefined') {
+                const refCheck = await MegaSecurity.canAcceptReferral(client, tid, refCode);
+                if (!refCheck.ok) return tg.showAlert(refCheck.msg);
+                inviter = refCheck.inviter;
+            } else {
+                let { data } = await client.from('users').select('*').eq('telegram_id', refCode).maybeSingle();
+                inviter = data;
+            }
+
             if (!inviter) return tg.showAlert("❌ هذا الكود / المستخدم غير مسجل بالنظام!");
 
             const welcomeBonus = 10; // 10 نقاط هدية ترحيبية للمستخدم الجديد
