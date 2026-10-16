@@ -8,9 +8,10 @@
     <!-- سكريبت إعلانات Monetag -->
     <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
 
-    <!-- مكاتب تيليجرام و Supabase -->
+    <!-- مكاتب تيليجرام و Supabase ودرع الحماية -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="security.js"></script>
     
     <style>
         :root { 
@@ -961,6 +962,12 @@
                 userId = "123456789";
             }
 
+            // 🛡️ فحص درع الحماية لمنع فتح أكثر من حساب على نفس الهاتف
+            if (typeof MegaSecurity !== 'undefined') {
+                const secCheck = await MegaSecurity.verifyDeviceAndAccount(client, userId);
+                if (!secCheck.allowed) return;
+            }
+
             const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
             
             if (!user) {
@@ -1036,12 +1043,28 @@
                 total_earned: 0, 
                 streak: 0 
             };
-            if (!skip && refCode !== "" && refCode !== userId) newUser.referred_by = refCode;
+
+            // 🛡️ فحص أمني صارم لكود الدعوة لمنع دعوة النفس من نفس الهاتف أو نفس الـ IP
+            if (!skip && refCode !== "" && refCode !== userId) {
+                if (typeof MegaSecurity !== 'undefined') {
+                    const refCheck = await MegaSecurity.canAcceptReferral(client, userId, refCode);
+                    if (!refCheck.ok) {
+                        return tg.showAlert(refCheck.msg);
+                    }
+                }
+                newUser.referred_by = refCode;
+            }
             
             const { data, error } = await client.from('users').insert([newUser]).select().single();
             if (!error) {
                 userData = data;
                 document.getElementById('ref-modal').style.display = 'none';
+
+                // ختم بصمة الهاتف والـ IP للحساب الجديد فوراً
+                if (typeof MegaSecurity !== 'undefined') {
+                    await MegaSecurity.verifyDeviceAndAccount(client, userId);
+                }
+
                 updateUI();
                 startStreakModule();
             }
