@@ -3,309 +3,1524 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>MegaTask - Games Hub</title>
+<title>MegaTask Arcade - مركز الألعاب</title>
+
+<!-- خطوط احترافية للألعاب والأرقام -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@700;800&family=Tajawal:wght@500;700;800;900&display=swap" rel="stylesheet">
+
+<!-- إعلانات Monetag ومكاتب تيليجرام و Supabase -->
 <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<!-- درع الحماية ضد تعدد الحسابات -->
+<script src="security.js"></script>
+
 <style>
-:root{--g:#00d26a;--bg:#0d0f12;--card:#1a1d23;--gray:#9ca3af;--cyan:#00f2ff;--gold:#ffaa00;--purple:#bc13fe}
-html,body{background:var(--bg);color:#fff;font-family:'Segoe UI',sans-serif;margin:0;padding:0 0 110px;width:100%;max-width:100vw;overflow-x:hidden}
-.header{padding:20px;text-align:center}.header h2{margin:0;color:var(--g);font-size:22px}.header p{margin:5px 0 0;font-size:12px;color:var(--gray)}
+:root {
+    --emerald: #00e676;
+    --emerald-dark: #00994d;
+    --cyan: #00e5ff;
+    --cyan-dark: #0088a3;
+    --amber: #ffb300;
+    --amber-dark: #b27d00;
+    --crimson: #ff3d57;
+    --violet: #9d4edd;
+    --bg-deep: #07090e;
+    --panel-bg: #11151f;
+    --panel-border: #232a3b;
+    --text-muted: #8b95a9;
+}
 
-.game-stats-bar{display:flex;justify-content:space-around;background:var(--card);margin:0 15px 15px;border:1px solid #2d333d;border-radius:16px;padding:12px}
-.stat-box{text-align:center;flex:1}.stat-box b{display:block;font-size:18px}.stat-box span{font-size:11px;color:var(--gray)}
-.clickable-stat{cursor:pointer;transition:.2s;border-radius:10px;padding:4px 8px}.clickable-stat:active{background:#00f2ff26;transform:scale(.97)}
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
 
-/* بانر البطولة الأسبوعية وصندوق الهدايا الحصري */
-.tourney-banner{margin:0 15px 15px;background:linear-gradient(135deg,rgba(255,170,0,0.15),rgba(188,19,254,0.12));border:1.5px solid var(--gold);border-radius:18px;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;box-shadow:0 4px 15px rgba(255,170,0,0.12)}
-.tourney-info h4{margin:0 0 3px 0;color:var(--gold);font-size:14px}
-.tourney-info p{margin:0;font-size:11px;color:#d1d5db;line-height:1.4}
-.btn-mystery-box{background:linear-gradient(135deg,var(--purple),#8000db);color:white;border:none;padding:10px 14px;border-radius:12px;font-size:12px;font-weight:bold;cursor:pointer;white-space:nowrap;box-shadow:0 0 12px rgba(188,19,254,0.4)}
-.btn-mystery-box:active{transform:scale(0.95)}
+html, body {
+    margin: 0;
+    padding: 0 0 115px;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    background-color: var(--bg-deep);
+    background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.08) 0%, transparent 55%),
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 100% 100%, 28px 28px, 28px 28px;
+    color: #fff;
+    font-family: 'Tajawal', sans-serif;
+}
 
-.daily-games-box{margin:0 15px 15px;background:linear-gradient(135deg,#16191e,#18251f);border:1px solid #00d26a66;border-radius:16px;padding:14px;text-align:center}
-.daily-games-title{font-size:13px;font-weight:bold;color:var(--g)}.daily-games-count{font-size:24px;font-weight:bold;margin:5px 0}.daily-games-count span{color:var(--cyan)}
-.daily-games-timer{font-size:11px;color:var(--gray)}.daily-progress{height:6px;background:#252932;border-radius:10px;overflow:hidden;margin-top:9px}.daily-progress-bar{height:100%;width:0;background:var(--g);transition:.3s}
+.num-font {
+    font-family: 'Chakra Petch', sans-serif;
+    letter-spacing: 0.5px;
+}
 
-.game-container{margin:0 15px 20px;background:var(--card);border:1px solid #2d333d;border-radius:20px;padding:20px;text-align:center;box-shadow:0 10px 20px #0006}
-.game-title{font-size:16px;font-weight:bold;color:#fff;margin-bottom:5px;display:flex;align-items:center;justify-content:center;gap:8px}
-.clicker-target{width:120px;height:120px;background:linear-gradient(135deg,#00d26a,#009e4f);border-radius:50%;margin:15px auto;display:flex;align-items:center;justify-content:center;font-size:36px;cursor:pointer;box-shadow:0 5px 20px #00d26a66;transition:.1s;user-select:none}.clicker-target:active{transform:scale(.92)}
+/* شريط الهيدر العلوي للأركيد */
+.arcade-top-bar {
+    padding: 16px 15px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.arcade-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.brand-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: #151b29;
+    border: 1.5px solid var(--emerald);
+    box-shadow: 0 4px 0 var(--emerald-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.arcade-brand-text h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.3px;
+}
+.arcade-brand-text span {
+    font-size: 11px;
+    color: var(--emerald);
+    font-weight: 700;
+}
+.online-pill {
+    background: #121722;
+    border: 1px solid #252f42;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--emerald);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--emerald);
+    animation: pulseDot 1.6s infinite;
+}
+@keyframes pulseDot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.35); opacity: 0.5; }
+}
 
-.other-games-section{padding:0 15px;margin-top:25px;text-align:right}.section-title{color:var(--g);font-size:14px;margin:0 0 15px;border-right:3px solid var(--g);padding-right:10px}
-.games-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.game-card-item{background:#16191e;border:1px solid #2d333d;padding:20px 10px;border-radius:20px;text-align:center;font-size:13px;font-weight:bold;cursor:pointer;transition:.3s}.game-card-item:active{transform:scale(.97)}.game-card-item span{font-size:28px;display:block;margin-bottom:8px}.game-card-full{grid-column:span 2;background:linear-gradient(135deg,#16191e,#1a2634);border-color:#00f2ff55}
+/* كبسولات الرصيد الثلاثية الأبعاد */
+.wallets-hud {
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 10px;
+    padding: 0 15px;
+    margin-bottom: 16px;
+}
+.hud-box {
+    background: var(--panel-bg);
+    border: 1.5px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 12px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 5px 0 #0a0c12;
+}
+.hud-box.convert-trigger {
+    border-color: rgba(0, 229, 255, 0.45);
+    box-shadow: 0 5px 0 #072936;
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s;
+}
+.hud-box.convert-trigger:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #072936;
+}
+.hud-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.hud-icon.pts-ic { background: rgba(255, 179, 0, 0.12); border: 1px solid rgba(255, 179, 0, 0.35); }
+.hud-icon.dia-ic { background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.35); }
 
-.modal-overlay{display:none;position:fixed;inset:0;background:#000d;z-index:9999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}.modal-box{background:var(--card);border:1px solid #2d333d;border-radius:20px;padding:25px;width:100%;max-width:340px;text-align:center;box-sizing:border-box}
-.btn-confirm-modal,.btn-close-modal{width:100%;border:0;padding:13px;border-radius:12px;font-size:14px;font-weight:bold;cursor:pointer;margin-top:15px}.btn-confirm-modal{background:var(--g);color:#000}.btn-close-modal{background:#252932;color:#ccc;padding:10px;font-size:13px;margin-top:8px}
+.hud-details { text-align: right; flex: 1; }
+.hud-details small { display: block; font-size: 10.5px; color: var(--text-muted); font-weight: 700; }
+.hud-details b { font-size: 19px; display: block; line-height: 1.2; }
+.convert-tag {
+    position: absolute;
+    top: -8px;
+    left: 10px;
+    background: var(--cyan);
+    color: #000;
+    font-size: 9.5px;
+    font-weight: 900;
+    padding: 2px 7px;
+    border-radius: 6px;
+}
 
-.navbar{position:fixed;bottom:0;left:0;width:100%;background:#1a1d23fa;display:flex;justify-content:space-around;padding:12px 0;border-top:1px solid #2d333d;z-index:1000}.nav-item{text-align:center;color:var(--gray);font-size:11px;text-decoration:none;cursor:pointer}.nav-item.active{color:var(--g)}
+/* شريط طاقة الجولات اليومية (30 جولة) + زر الشحن */
+.energy-panel {
+    margin: 0 15px 16px;
+    background: var(--panel-bg);
+    border: 1.5px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 5px 0 #0a0c12;
+}
+.energy-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.energy-label {
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.energy-counter {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--emerald);
+}
+.energy-bar-track {
+    width: 100%;
+    height: 12px;
+    background: #090b10;
+    border: 1px solid #222938;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 2px;
+}
+.energy-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--emerald),
+        var(--emerald) 8px,
+        #00b359 8px,
+        #00b359 16px
+    );
+    border-radius: 5px;
+    transition: width 0.35s ease;
+}
+.energy-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+.energy-timer { font-size: 11px; color: var(--text-muted); font-weight: 700; }
+.btn-refill-energy {
+    background: #192233;
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 0 var(--amber-dark);
+    transition: 0.1s;
+}
+.btn-refill-energy:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+/* صندوق الكنز اليومي (Mystery Vault) */
+.vault-card {
+    margin: 0 15px 16px;
+    background: #151221;
+    border: 1.5px solid #48286b;
+    border-radius: 18px;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 5px 0 #0d0a14;
+}
+.vault-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.vault-svg-box {
+    width: 48px;
+    height: 48px;
+    background: #211936;
+    border: 1px solid #6c3baa;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.vault-text h4 { margin: 0 0 3px; font-size: 14px; font-weight: 800; color: #f3e8ff; }
+.vault-text p { margin: 0; font-size: 11px; color: #b79ced; line-height: 1.4; }
+.btn-vault {
+    background: var(--amber);
+    color: #000;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 4px 0 var(--amber-dark);
+    transition: 0.1s;
+    font-family: inherit;
+}
+.btn-vault:active:not(:disabled) {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--amber-dark);
+}
+.btn-vault.opened {
+    background: #232836;
+    color: #7c869b;
+    box-shadow: 0 3px 0 #11141c;
+    cursor: not-allowed;
+}
+
+/* مفاعل النقرات السريعة التفاعلي (3D Plasma Core) */
+.reactor-section {
+    margin: 0 15px 20px;
+    background: var(--panel-bg);
+    border: 1.5px solid var(--panel-border);
+    border-radius: 22px;
+    padding: 18px 15px;
+    text-align: center;
+    box-shadow: 0 6px 0 #0a0c12;
+    position: relative;
+    overflow: hidden;
+}
+.reactor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.reactor-title {
+    font-size: 15px;
+    font-weight: 900;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.reactor-daily-pill {
+    background: #0b0e15;
+    border: 1px solid #262f42;
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    color: var(--amber);
+    font-weight: 800;
+}
+
+.reactor-core-wrap {
+    position: relative;
+    width: 154px;
+    height: 154px;
+    margin: 10px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.reactor-ring-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    pointer-events: none;
+}
+.ring-bg { fill: none; stroke: #1d2433; stroke-width: 8; }
+.ring-progress {
+    fill: none;
+    stroke: var(--cyan);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 440;
+    stroke-dashoffset: 440;
+    transition: stroke-dashoffset 0.2s ease;
+}
+
+.reactor-btn {
+    width: 118px;
+    height: 118px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #1fd18a, #056e40 75%, #033d23);
+    border: 3px solid #5efcc1;
+    box-shadow: 0 7px 0 #034729, 0 0 25px rgba(0, 230, 118, 0.35);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    position: relative;
+    z-index: 2;
+}
+.reactor-btn:active:not(.disabled) {
+    transform: translateY(5px) scale(0.96);
+    box-shadow: 0 2px 0 #034729, 0 0 15px rgba(0, 230, 118, 0.5);
+}
+.reactor-btn.disabled {
+    filter: grayscale(0.85);
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.reactor-batch-num {
+    font-size: 13px;
+    font-weight: 800;
+    color: #fff;
+    margin-top: 2px;
+}
+.reactor-status {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-top: 8px;
+    min-height: 20px;
+}
+
+/* أرقام طائرة عند الضغط على المفاعل */
+.floating-tap {
+    position: fixed;
+    pointer-events: none;
+    font-family: 'Chakra Petch', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--cyan);
+    text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    z-index: 9999;
+    animation: floatUpTap 0.75s ease-out forwards;
+}
+@keyframes floatUpTap {
+    0% { opacity: 1; transform: translateY(0) scale(0.9); }
+    100% { opacity: 0; transform: translateY(-55px) scale(1.25); }
+}
+
+/* شبكة الألعاب الـ 7 بتصميم كروت الكونسول */
+.section-header-row {
+    padding: 0 15px;
+    margin: 22px 0 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.section-title {
+    font-size: 15px;
+    font-weight: 900;
+    color: #fff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.section-title::before {
+    content: "";
+    display: inline-block;
+    width: 5px;
+    height: 18px;
+    background: var(--emerald);
+    border-radius: 4px;
+}
+
+.games-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 0 15px;
+}
+.arcade-card {
+    background: var(--panel-bg);
+    border: 1.5px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 5px 0 #090b10;
+    transition: transform 0.12s, border-color 0.2s;
+}
+.arcade-card:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 0 #090b10;
+    border-color: var(--cyan);
+}
+.arcade-card.featured-wide {
+    grid-column: span 2;
+    flex-direction: row;
+    text-align: right;
+    justify-content: space-between;
+    padding: 16px;
+    background: linear-gradient(135deg, #111826, #0f212e);
+    border-color: #1f4966;
+}
+.game-svg-emblem {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: #181f2e;
+    border: 1px solid #2a344b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    flex-shrink: 0;
+}
+.featured-wide .game-svg-emblem {
+    margin-bottom: 0;
+    width: 60px;
+    height: 60px;
+}
+.game-card-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 4px;
+}
+.game-card-sub {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+.game-reward-pill {
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.3);
+    color: var(--cyan);
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 8px;
+}
+.hot-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: var(--crimson);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 6px;
+}
+
+/* مهام الأركيد اليومية */
+.quests-box {
+    margin: 0 15px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.quest-row {
+    background: var(--panel-bg);
+    border: 1.5px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 11px 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+.quest-info b { display: block; font-size: 12.5px; color: #fff; margin-bottom: 2px; }
+.quest-info span { font-size: 11px; color: var(--amber); font-weight: 700; }
+.btn-quest {
+    background: var(--emerald);
+    color: #000;
+    border: none;
+    padding: 7px 13px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 3px 0 var(--emerald-dark);
+    font-family: inherit;
+    white-space: nowrap;
+}
+.btn-quest:disabled {
+    background: #1d2331;
+    color: #6c7589;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* لوحة شرف أباطرة الألماس */
+.lb-container {
+    margin: 0 15px 20px;
+    background: var(--panel-bg);
+    border: 1.5px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 12px;
+}
+.lb-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-bottom: 1px solid #1c2230;
+    font-size: 12.5px;
+}
+.lb-item:last-child { border-bottom: none; }
+.lb-rank {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: #1b2230;
+    color: var(--text-muted);
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+.lb-rank.r1 { background: var(--amber); color: #000; }
+.lb-rank.r2 { background: #cbd5e1; color: #000; }
+.lb-rank.r3 { background: #d97706; color: #000; }
+
+/* النوافذ المنبثقة */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 7, 11, 0.88);
+    backdrop-filter: blur(6px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.modal-box {
+    background: var(--panel-bg);
+    border: 1.5px solid #2e384f;
+    border-radius: 22px;
+    padding: 24px 20px;
+    width: 100%;
+    max-width: 345px;
+    text-align: center;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.7);
+}
+.btn-confirm-modal {
+    width: 100%;
+    background: var(--emerald);
+    color: #000;
+    border: none;
+    padding: 13px;
+    border-radius: 13px;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    margin-top: 14px;
+    box-shadow: 0 4px 0 var(--emerald-dark);
+    font-family: inherit;
+}
+.btn-confirm-modal:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--emerald-dark); }
+.btn-close-modal {
+    width: 100%;
+    background: #1e2433;
+    color: #cbd5e1;
+    border: none;
+    padding: 11px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    font-family: inherit;
+}
+
+/* شريط التنقل السفلي */
+.navbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(17, 21, 31, 0.98);
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    border-top: 1px solid #232a3b;
+    z-index: 1000;
+}
+.nav-item {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+.nav-item.active { color: var(--emerald); }
 </style>
 </head>
 <body>
 
-<div class="header">
-<h2>🎮 مركز ألعاب MegaTask</h2>
-<p>العب الألعاب واجمع الألماس 💎 وحوله لرصيد حقيقي بالبوت!</p>
+<!-- الهيدر العلوي -->
+<div class="arcade-top-bar">
+    <div class="arcade-brand">
+        <div class="brand-badge">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M6 12H10M8 10V14M15 11H15.01M17 13H17.01M7.5 6H16.5C19.5 6 21 8.5 20.5 13.5C20.1 17.5 18.5 19 16.5 19C15 19 14 17.5 12 17.5C10 17.5 9 19 7.5 19C5.5 19 3.9 17.5 3.5 13.5C3 8.5 4.5 6 7.5 6Z" stroke="#00e676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <div class="arcade-brand-text">
+            <h1>MEGATASK ARCADE</h1>
+            <span>العب • اجمع الألماس • حوّله لرصيد</span>
+        </div>
+    </div>
+    <div class="online-pill">
+        <span class="pulse-dot"></span>
+        <span>متصل</span>
+    </div>
 </div>
 
-<div class="game-stats-bar">
-<div class="stat-box"><b id="user-real-points" style="color:#ffaa00">0</b><span>رصيدك الحقيقي بالبوت</span></div>
-<div class="stat-box clickable-stat" onclick="openConvertModal()"><b id="game-diamonds-counter" style="color:#00f2ff">0 💎</b><span>رصيد الألماس (اضغط للتحويل ↗)</span></div>
+<!-- كبسولات الأرصدة (نقاط البوت + الألماس القابل للتحويل) -->
+<div class="wallets-hud">
+    <div class="hud-box">
+        <div class="hud-icon pts-ic">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="#ffb300" stroke-width="2"/>
+                <path d="M12 7V17M9.5 9.5C9.5 8.5 10.5 8 12 8C13.5 8 14.5 8.5 14.5 9.5C14.5 11 9.5 11 9.5 13.5C9.5 14.5 10.5 15.5 12 15.5C13.5 15.5 14.5 14.5 14.5 13.5" stroke="#ffb300" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <div class="hud-details">
+            <small>رصيد البوت</small>
+            <b id="user-real-points" class="num-font" style="color: var(--amber);">0</b>
+        </div>
+    </div>
+
+    <div class="hud-box convert-trigger" onclick="openConvertModal()">
+        <span class="convert-tag">تحويل ↗</span>
+        <div class="hud-icon dia-ic">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M6 3H18L22 9L12 21L2 9L6 3Z" stroke="#00e5ff" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M2 9H22M12 21L8 9L6 3M12 21L16 9L18 3" stroke="#00e5ff" stroke-width="1.5"/>
+            </svg>
+        </div>
+        <div class="hud-details">
+            <small>خزنة الألماس</small>
+            <b id="game-diamonds-counter" class="num-font" style="color: var(--cyan);">0</b>
+        </div>
+    </div>
 </div>
 
-<!-- بانر البطولة الأسبوعية وصندوق الهدايا الحصري الجديد -->
-<div class="tourney-banner">
-<div class="tourney-info">
-<h4>🎁 صندوق الهدايا اليومي</h4>
-<p>افتح الصندوق كل 24 ساعة لاكتشاف كنز عشوائي من الألماس!</p>
-</div>
-<button class="btn-mystery-box" onclick="openMysteryBox()">فتح الصندوق 🔓</button>
-</div>
-
-<div class="daily-games-box">
-<div class="daily-games-title">🎮 جولات الألعاب اليوم</div>
-<div class="daily-games-count"><span id="daily-rounds">0</span> / 30</div>
-<div class="daily-progress"><div id="daily-progress-bar" class="daily-progress-bar"></div></div>
-<div id="daily-rounds-timer" class="daily-games-timer">⏱️ تتجدد الجولات عند منتصف الليل</div>
-</div>
-
-<div class="game-container">
-<div class="game-title">⚡ لعبة النقرات السريعة</div>
-<div style="font-size:11px;color:#ffaa00;margin-bottom:10px">ضغطات اليوم: <span id="daily-clicks-count">0</span> / 100</div>
-<div class="clicker-target" id="clicker-btn" onclick="handleCardClick()">🪙</div>
-<div id="clicker-status-msg" style="font-size:12px;color:var(--gray);margin-top:8px;min-height:20px">اضغط على الدائرة للبدء!</div>
+<!-- شريط طاقة الجولات اليومية (30 جولة) + شحن جولات إضافية -->
+<div class="energy-panel">
+    <div class="energy-top">
+        <div class="energy-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#00e676"><path d="M13 2L3 14H12L11 22L21 10H12L13 2Z"/></svg>
+            <span>طاقة الجولات اليومية</span>
+        </div>
+        <div class="energy-counter num-font"><span id="daily-rounds">0</span> / 30</div>
+    </div>
+    <div class="energy-bar-track">
+        <div id="daily-progress-bar" class="energy-bar-fill"></div>
+    </div>
+    <div class="energy-footer">
+        <span id="daily-rounds-timer" class="energy-timer">⏱️ تتجدد: 00:00:00</span>
+        <button class="btn-refill-energy" onclick="refillBonusRoundsWithAd()">⚡ شحن +5 جولات (إعلان)</button>
+    </div>
 </div>
 
-<!-- نافذة تحويل الألماس -->
-<div id="convert-modal" class="modal-overlay">
-<div class="modal-box">
-<h3 style="color:#00f2ff;margin-top:0">💎 تحويل الألماس لرصيد البوت</h3>
-<p style="font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:15px">لديك <b id="modal-game-diamonds" style="color:#00f2ff">0 💎</b> متاح تحويلها.<br>قاعدة التحويل: <b style="color:#ffaa00">10 ألماسات = 1 نقطة بوت حقيقية</b></p>
-<button class="btn-confirm-modal" onclick="confirmAndWatchAdConversion()">📺 مشاهدة إعلان وتحويل الألماس الآن</button>
-<button class="btn-close-modal" onclick="closeConvertModal()">إلغاء</button>
-</div>
+<!-- خزنة الهدايا اليومية العشوائية -->
+<div class="vault-card">
+    <div class="vault-left">
+        <div class="vault-svg-box">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="8" width="18" height="13" rx="2" stroke="#ffb300" stroke-width="2"/>
+                <path d="M12 8V21M3 12H21M7.5 8C6 8 5 6.5 5 5.5C5 4 6.5 3 8 3C10 3 12 5.5 12 8C12 5.5 14 3 16 3C17.5 3 19 4 19 5.5C19 6.5 18 8 16.5 8" stroke="#ffb300" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <div class="vault-text">
+            <h4>خزنة الألماس العشوائية</h4>
+            <p>افتح الخزنة كل 24 ساعة واربح من <b>15 إلى 50 ألماسة</b> فوراً!</p>
+        </div>
+    </div>
+    <button id="btn-mystery-box" class="btn-vault" onclick="openMysteryBox()">فتح الخزنة</button>
 </div>
 
-<div class="other-games-section">
-<h3 class="section-title">جميع الألعاب المتاحة 🕹️</h3>
+<!-- مفاعل النقرات السريعة التفاعلي (Reactor Core) -->
+<div class="reactor-section">
+    <div class="reactor-header">
+        <div class="reactor-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#00e5ff" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="#00e5ff"/></svg>
+            <span>مفاعل شحن الألماس السريع</span>
+        </div>
+        <div class="reactor-daily-pill num-font"><span id="daily-clicks-count">0</span> / 100</div>
+    </div>
+
+    <div class="reactor-core-wrap">
+        <svg class="reactor-ring-svg" viewBox="0 0 160 160">
+            <circle class="ring-bg" cx="80" cy="80" r="70"></circle>
+            <circle id="reactor-progress-ring" class="ring-progress" cx="80" cy="80" r="70"></circle>
+        </svg>
+        <div class="reactor-btn" id="clicker-btn" onclick="handleCardClick(event)">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                <path d="M6 3H18L22 9L12 21L2 9L6 3Z" fill="rgba(255,255,255,0.2)" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+                <path d="M12 21L8 9L6 3M12 21L16 9L18 3M2 9H22" stroke="#ffffff" stroke-width="1.5"/>
+            </svg>
+            <span id="batch-clicks-label" class="reactor-batch-num num-font">0 / 10</span>
+        </div>
+    </div>
+
+    <div id="clicker-status-msg" class="reactor-status">اضغط على نواة المفاعل لشحن 10/10 واستلام +10 ألماسات!</div>
+</div>
+
+<!-- قسم الألعاب المتاحة بتصميم SVG مخصص -->
+<div class="section-header-row">
+    <h3 class="section-title">منصات اللعب المتاحة</h3>
+    <span style="font-size: 11px; color: var(--text-muted);">اختر لعبتك المفضلة</span>
+</div>
+
 <div class="games-grid">
-<div class="game-card-item" onclick="openGame('tictactoe')"><span>❌</span>إكس أو الذكية</div>
-<div class="game-card-item" onclick="openGame('chests')"><span>🎁</span>صناديق الحظ</div>
-<div class="game-card-item" onclick="openGame('memory')"><span>🧠</span>لعبة الذاكرة</div>
-<div class="game-card-item" onclick="openGame('quiz')"><span>❓</span>كويز ذكاء</div>
-<div class="game-card-item" onclick="openGame('seahorse')"><span>🌊</span>مغامرة الحصان</div>
-<div class="game-card-item" onclick="openGame('space')"><span>🚀</span>حرب الفضاء</div>
-<div class="game-card-item game-card-full" onclick="openGame('frost-breakout')"><span>❄️</span>فرست بريك آوت (Frost Breakout)</div>
-</div>
+    <!-- 1. Frost Breakout (عرض كامل مميز) -->
+    <div class="arcade-card featured-wide" onclick="openGame('frost-breakout')">
+        <span class="hot-badge">🔥 الأكثر ربحاً</span>
+        <div style="flex: 1; padding-left: 12px;">
+            <h4 class="game-card-title" style="font-size: 16px; color: var(--cyan);">فرست بريك آوت (Frost Breakout)</h4>
+            <div class="game-card-sub">حطّم الجليد بالكرات النارية والتقط كبسولات القوة</div>
+            <span class="game-reward-pill">كل 80 سكور = +1 ألماسة + بونص</span>
+        </div>
+        <div class="game-svg-emblem">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="4" width="7" height="4" rx="1" fill="#00e5ff"/>
+                <rect x="14" y="4" width="7" height="4" rx="1" fill="#ffb300"/>
+                <rect x="8.5" y="10" width="7" height="4" rx="1" fill="#ff3d57"/>
+                <circle cx="12" cy="16" r="2.5" fill="#fff"/>
+                <rect x="6" y="20" width="12" height="2.5" rx="1.2" fill="#00e676"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 2. حرب الفضاء -->
+    <div class="arcade-card" onclick="openGame('space')">
+        <span class="hot-badge" style="background: var(--violet);">PRO</span>
+        <div class="game-svg-emblem">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L15 9L21 12L15 15L12 22L9 15L3 12L9 9L12 2Z" stroke="#00e676" stroke-width="2" stroke-linejoin="round"/>
+                <circle cx="12" cy="12" r="3" fill="#00e5ff"/>
+            </svg>
+        </div>
+        <h4 class="game-card-title">حرب الفضاء</h4>
+        <div class="game-card-sub">ليزر تلقائي ودروع</div>
+        <span class="game-reward-pill">10 نيازك = +1 💎</span>
+    </div>
+
+    <!-- 3. كويز العباقرة -->
+    <div class="arcade-card" onclick="openGame('quiz')">
+        <span class="hot-badge" style="background: var(--emerald); color:#000;">API</span>
+        <div class="game-svg-emblem">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <path d="M9.09 9C9.3251 8.33167 9.78915 7.76811 10.4 7.40913C11.0108 7.05016 11.7289 6.91894 12.4272 7.03871C13.1255 7.15849 13.7588 7.52152 14.2151 8.06353C14.6713 8.60553 14.9211 9.29152 14.92 10C14.92 12 11.92 13 11.92 13M12 17H12.01M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="#ffb300" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <h4 class="game-card-title">كويز العباقرة</h4>
+        <div class="game-card-sub">أسئلة API متجددة</div>
+        <span class="game-reward-pill">الصح = +2 💎</span>
+    </div>
+
+    <!-- 4. إكس أو الذكية -->
+    <div class="arcade-card" onclick="openGame('tictactoe')">
+        <div class="game-svg-emblem">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <path d="M4 4L10 10M10 4L4 10" stroke="#ff3d57" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="17" cy="17" r="3.5" stroke="#00e5ff" stroke-width="2.5"/>
+                <path d="M12 3V21M3 12H21" stroke="#3b465e" stroke-width="1.5"/>
+            </svg>
+        </div>
+        <h4 class="game-card-title">إكس أو الذكية</h4>
+        <div class="game-card-sub">تحدي الذكاء الاصطناعي</div>
+        <span class="game-reward-pill">فوز سريع 💎</span>
+    </div>
+
+    <!-- 5. صناديق الحظ -->
+    <div class="arcade-card" onclick="openGame('chests')">
+        <div class="game-svg-emblem">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <rect x="3" y="6" width="18" height="14" rx="3" stroke="#9d4edd" stroke-width="2"/>
+                <path d="M3 11H21M12 9V14" stroke="#ffb300" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <h4 class="game-card-title">صناديق الحظ</h4>
+        <div class="game-card-sub">اختر الصندوق الرابح</div>
+        <span class="game-reward-pill">جوائز مضاعفة 💎</span>
+    </div>
+
+    <!-- 6. لعبة الذاكرة -->
+    <div class="arcade-card" onclick="openGame('memory')">
+        <div class="game-svg-emblem">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <rect x="4" y="4" width="7" height="7" rx="1.5" stroke="#00e676" stroke-width="2"/>
+                <rect x="13" y="4" width="7" height="7" rx="1.5" stroke="#00e5ff" stroke-width="2"/>
+                <rect x="4" y="13" width="7" height="7" rx="1.5" stroke="#00e5ff" stroke-width="2"/>
+                <rect x="13" y="13" width="7" height="7" rx="1.5" stroke="#00e676" stroke-width="2"/>
+            </svg>
+        </div>
+        <h4 class="game-card-title">تحدي الذاكرة</h4>
+        <div class="game-card-sub">طابق البطاقات بسرعة</div>
+        <span class="game-reward-pill">تركيز وأرباح 💎</span>
+    </div>
+
+    <!-- 7. مغامرة الحصان -->
+    <div class="arcade-card" onclick="openGame('seahorse')">
+        <div class="game-svg-emblem">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                <path d="M2 16C4 14 6 14 8 16C10 18 12 18 14 16C16 14 18 14 20 16C21 17 22 17 22 17M2 11C4 9 6 9 8 11C10 13 12 13 14 11C16 9 18 9 20 11" stroke="#00e5ff" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <h4 class="game-card-title">مغامرة الأعماق</h4>
+        <div class="game-card-sub">تخطى الحواجز البحرية</div>
+        <span class="game-reward-pill">تحدي المهارة 💎</span>
+    </div>
 </div>
 
+<!-- مهام الأركيد اليومية الإضافية -->
+<div class="section-header-row">
+    <h3 class="section-title">مهام الأركيد اليومية</h3>
+    <span style="font-size: 11px; color: var(--amber);">مكافآت إضافية</span>
+</div>
+
+<div class="quests-box" id="daily-quests-container">
+    <!-- يتم توليدها تلقائياً -->
+</div>
+
+<!-- لوحة شرف أباطرة الألماس -->
+<div class="section-header-row">
+    <h3 class="section-title">أباطرة الألماس (Top 5)</h3>
+    <span style="font-size: 11px; color: var(--cyan);">الأعلى رصيداً</span>
+</div>
+
+<div class="lb-container" id="diamonds-leaderboard">
+    <div style="text-align: center; padding: 12px; color: var(--text-muted); font-size: 12px;">⏳ جاري تحميل المتصدرين...</div>
+</div>
+
+<!-- نافذة تحويل الألماس لرصيد البوت -->
+<div id="convert-modal" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="color: var(--cyan); margin-top: 0;">💎 خزنة تحويل الألماس</h3>
+        <p style="font-size: 13px; color: #cbd5e1; line-height: 1.7; margin-bottom: 15px;">
+            رصيدك المتاح للتحويل: <b id="modal-game-diamonds" class="num-font" style="color: var(--cyan);">0 💎</b><br>
+            سعر الصرف: <b style="color: var(--amber);">كل 10 ألماسات = 1 نقطة بوت حقيقية</b><br>
+            <span id="modal-points-preview" style="color: var(--emerald); font-size: 12px; font-weight: bold;"></span>
+        </p>
+        <button id="btn-confirm-convert" class="btn-confirm-modal" onclick="confirmAndWatchAdConversion()">
+            📺 مشاهدة إعلان وتحويل الألماس فوراً
+        </button>
+        <button class="btn-close-modal" onclick="closeConvertModal()">إلغاء</button>
+    </div>
+</div>
+
+<!-- شريط التنقل السفلي -->
 <nav class="navbar">
-<div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
-<div onclick="goTasks()" class="nav-item">📋<br>الربح من المهام</div>
-<div onclick="goGames()" class="nav-item active" style="width:40px;height:40px;border-radius:50%;background:var(--g);color:#000!important;line-height:40px;margin-top:-20px;font-size:20px;text-align:center">🎮</div>
-<div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
-<div onclick="goProfile()" class="nav-item">👤<br>الملف الشخصي</div>
+    <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
+    <div onclick="goTasks()" class="nav-item">📋<br>المهام</div>
+    <div onclick="goGames()" class="nav-item active" style="width:42px;height:42px;border-radius:50%;background:var(--emerald);color:#000!important;line-height:42px;margin-top:-20px;font-size:20px;text-align:center;box-shadow:0 4px 0 var(--emerald-dark);">🎮</div>
+    <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
+    <div onclick="goProfile()" class="nav-item">👤<br>حسابي</div>
 </nav>
 
 <script>
-const tg=window.Telegram.WebApp;tg.ready();tg.expand();
-const client=supabase.createClient(
-"https://smukfrwnguvmxvfwqwrv.supabase.co",
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+const client = supabase.createClient(
+    "https://smukfrwnguvmxvfwqwrv.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"
 );
 
-let tid=new URLSearchParams(location.search).get("id")||tg.initDataUnsafe?.user?.id||localStorage.getItem("telegram_id")||localStorage.getItem("megatask_uid");
-if(tid&&tid!=="undefined"&&tid!=="null"){tid=String(tid);localStorage.setItem("telegram_id",tid);localStorage.setItem("megatask_uid",tid)}
-
-let userData=null,dailyRoundTimer=null,cooldownInterval=null;
-let clickerData={date:new Date().toDateString(),dailyClicks:0,batchClicks:0,cooldownUntil:0};
-
-async function init(){
-if(!tid)return tg.showAlert("❌ لم يتم العثور على Telegram ID. افتح الصفحة من داخل Telegram.");
-try{
-const{data:u,error}=await client.from("users").select("telegram_id,points,gamepoints,total_earned,daily_game_rounds,daily_game_date").eq("telegram_id",String(tid)).maybeSingle();
-if(error)return tg.showAlert("❌ حدث خطأ أثناء تحميل بيانات الحساب:\n\n"+error.message);
-if(!u)return tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
-userData=u;tid=String(u.telegram_id);
-localStorage.setItem("telegram_id",tid);localStorage.setItem("megatask_uid",tid);
-
-await prepareDailyRounds();
-
-document.getElementById("user-real-points").innerText=Number(userData.points||0).toLocaleString();
-document.getElementById("game-diamonds-counter").innerText=Number(userData.gamepoints||0).toLocaleString()+" 💎";
-
-const saved=localStorage.getItem(`clicker_game_${tid}`);
-if(saved)try{
-const x=JSON.parse(saved);
-if(x.date===new Date().toDateString()){clickerData.dailyClicks=+x.dailyClicks||0;clickerData.batchClicks=+x.batchClicks||0;clickerData.cooldownUntil=+x.cooldownUntil||0}
-}catch(e){}
-
-updateClickerUI();checkCooldownTimer();
-}catch(e){console.error(e);tg.showAlert("❌ حدث خطأ أثناء تحميل بيانات الحساب:\n\n"+e.message)}
+let tid = new URLSearchParams(location.search).get("id") || tg.initDataUnsafe?.user?.id || localStorage.getItem("telegram_id") || localStorage.getItem("megatask_uid");
+if (tid && tid !== "undefined" && tid !== "null") {
+    tid = String(tid).trim();
+    localStorage.setItem("telegram_id", tid);
+    localStorage.setItem("megatask_uid", tid);
 }
 
-async function prepareDailyRounds(){
-const today=new Date().toISOString().slice(0,10);
-let used=Number(userData.daily_game_rounds||0);
+let userData = null;
+let dailyRoundTimer = null;
+let cooldownInterval = null;
+let isAdBusy = false; // قفل لمنع تكرار الضغط أثناء تحميل الإعلان
 
-if(userData.daily_game_date!==today){
-used=0;
-const{data,error}=await client.from("users").update({daily_game_rounds:0,daily_game_date:today}).eq("telegram_id",String(tid)).select("telegram_id,points,gamepoints,total_earned,daily_game_rounds,daily_game_date").single();
-if(!error&&data)userData=data;
-}
-updateDailyRounds();
-startDailyTimer();
+// الحصول على تاريخ اليوم بالتوقيت المحلي (لتجنب تضارب توقيت UTC مع منتصف الليل المحلي)
+function getLocalTodayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function updateDailyRounds(){
-let n=Math.min(30,Number(userData?.daily_game_rounds||0));
-document.getElementById("daily-rounds").innerText=n;
-document.getElementById("daily-progress-bar").style.width=(n/30*100)+"%";
-}
-
-function startDailyTimer(){
-if(dailyRoundTimer)clearInterval(dailyRoundTimer);
-const tick=()=>{
-const now=new Date(),next=new Date(now);
-next.setHours(24,0,0,0);
-let x=Math.max(0,next-now),s=Math.floor(x/1000),h=Math.floor(s/3600);
-s%=3600;let m=Math.floor(s/60);s%=60;
-document.getElementById("daily-rounds-timer").innerText=`⏱️ تتجدد الجولات بعد ${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+let clickerData = {
+    date: getLocalTodayStr(),
+    dailyClicks: 0,
+    batchClicks: 0,
+    cooldownUntil: 0
 };
-tick();dailyRoundTimer=setInterval(tick,1000);
+
+function triggerHaptic(style = 'light') {
+    try {
+        if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred(style);
+    } catch (e) {}
 }
 
-function saveClickerState(){if(tid)localStorage.setItem(`clicker_game_${tid}`,JSON.stringify({date:new Date().toDateString(),dailyClicks:clickerData.dailyClicks,batchClicks:clickerData.batchClicks,cooldownUntil:clickerData.cooldownUntil}))}
+async function init() {
+    if (!tid) return tg.showAlert("❌ لم يتم العثور على معرف تيليجرام، افتح الصفحة من داخل البوت.");
 
-function updateClickerUI(){
-document.getElementById("daily-clicks-count").innerText=clickerData.dailyClicks;
-if(userData){
-document.getElementById("game-diamonds-counter").innerText=Number(userData.gamepoints||0).toLocaleString()+" 💎";
-document.getElementById("user-real-points").innerText=Number(userData.points||0).toLocaleString();
-}
-}
+    // 🛡️ 1. فحص درع الحماية ضد تعدد الحسابات على نفس الهاتف
+    if (typeof MegaSecurity !== "undefined") {
+        const secCheck = await MegaSecurity.verifyDeviceAndAccount(client, tid);
+        if (!secCheck.allowed) return;
+    }
 
-function handleCardClick(){
-const now=Date.now();
-if(!userData)return tg.showAlert("⚠️ بيانات حسابك لم يتم تحميلها بعد.");
-if(clickerData.cooldownUntil>now)return;
-if(clickerData.dailyClicks>=100)return tg.showAlert("🛑 لقد وصلت للحد الأقصى للضغطات اليومية (100 ضغطة). عود غداً لمزيد من الأرباح!");
-clickerData.dailyClicks++;clickerData.batchClicks++;saveClickerState();updateClickerUI();
-if(clickerData.batchClicks>=10)triggerClickerAd();
-else document.getElementById("clicker-status-msg").innerText=`متبقي ${10-clickerData.batchClicks} ضغطات للإعلان القادم`;
-}
+    try {
+        const { data: u, error } = await client
+            .from("users")
+            .select("telegram_id,name,points,gamepoints,total_earned,daily_game_rounds,daily_game_date,referred_by")
+            .eq("telegram_id", String(tid))
+            .maybeSingle();
 
-async function triggerClickerAd(){
-const status=document.getElementById("clicker-status-msg");status.innerText="⏳ جاري عرض الإعلان للحصول على الـ10 ألماسات...";
-try{
-if(typeof show_10959333==="function")await show_10959333();
-let n=Number(userData.gamepoints||0)+10;
-const{data,error}=await client.from("users").update({gamepoints:n}).eq("telegram_id",String(tid)).select("telegram_id,points,gamepoints,total_earned,daily_game_rounds,daily_game_date").single();
-if(error)throw error;
-userData=data;clickerData.batchClicks=0;clickerData.cooldownUntil=Date.now()+300000;
-saveClickerState();updateClickerUI();startCooldownTimer();
-tg.showAlert("🎉 رائع!\n\nتم إتمام الـ10 ضغطات وإضافة +10 ألماسات 💎 إلى حسابك.\n\nبدأ مؤقت الـ5 دقائق.");
-}catch(e){
-console.error(e);tg.showAlert("❌ لم يتم احتساب الألماس. تأكد من إكمال الإعلان ثم حاول مرة أخرى.");
-clickerData.batchClicks=0;saveClickerState();updateClickerUI();status.innerText="اضغط على الدائرة للمتابعة";
-}
-}
+        if (error) return tg.showAlert("❌ خطأ أثناء تحميل بيانات الحساب:\n" + error.message);
+        if (!u) return tg.showAlert("❌ لم يتم العثور على حسابك في قاعدة البيانات.");
 
-function startCooldownTimer(){
-if(cooldownInterval)clearInterval(cooldownInterval);
-const btn=document.getElementById("clicker-btn"),msg=document.getElementById("clicker-status-msg");btn.style.opacity=".5";
-cooldownInterval=setInterval(()=>{
-let r=clickerData.cooldownUntil-Date.now();
-if(r<=0){clearInterval(cooldownInterval);cooldownInterval=null;btn.style.opacity="1";msg.innerText="🟢 انتهى وقت الانتظار! يمكنك الضغط الآن.";return}
-let m=Math.floor(r/60000),s=Math.floor(r%60000/1000);msg.innerText=`⏳ يرجى الانتظار: ${m}:${s<10?"0":""}${s}`;
-},1000)
-}
+        userData = u;
+        tid = String(u.telegram_id);
+        localStorage.setItem("telegram_id", tid);
+        localStorage.setItem("megatask_uid", tid);
 
-function checkCooldownTimer(){
-if(clickerData.cooldownUntil>Date.now())startCooldownTimer();
-else document.getElementById("clicker-status-msg").innerText="اضغط على الدائرة للبدء!";
+        await prepareDailyRounds();
+
+        // استرجاع حالة المفاعل اليومية
+        const saved = localStorage.getItem(`clicker_game_${tid}`);
+        if (saved) {
+            try {
+                const x = JSON.parse(saved);
+                if (x.date === getLocalTodayStr()) {
+                    clickerData.dailyClicks = +x.dailyClicks || 0;
+                    clickerData.batchClicks = +x.batchClicks || 0;
+                    clickerData.cooldownUntil = +x.cooldownUntil || 0;
+                }
+            } catch (e) {}
+        }
+
+        updateAllUI();
+        checkCooldownTimer();
+        loadDiamondsLeaderboard();
+    } catch (e) {
+        console.error(e);
+    }
 }
 
-// ⭐ ميزة صندوق الهدايا اليومي العشوائي الجديد
-async function openMysteryBox(){
-const lastOpen=localStorage.getItem(`mystery_box_${tid}`);
-const today=new Date().toDateString();
-if(lastOpen===today){
-return tg.showAlert("⏳ لقد فتحت صندوق الهدايا اليوم بالفعل! عود غداً في منتصف الليل لفتح صندوق جديد 🎁");
+async function prepareDailyRounds() {
+    const today = getLocalTodayStr();
+    if (userData.daily_game_date !== today) {
+        const { data, error } = await client
+            .from("users")
+            .update({ daily_game_rounds: 0, daily_game_date: today })
+            .eq("telegram_id", String(tid))
+            .select("telegram_id,name,points,gamepoints,total_earned,daily_game_rounds,daily_game_date,referred_by")
+            .single();
+        if (!error && data) userData = data;
+    }
+    startDailyTimer();
 }
 
-try{
-if(typeof show_10959333==="function")await show_10959333();
+function updateAllUI() {
+    if (!userData) return;
 
-// جائزة عشوائية بين 15 و 50 ألماسة
-const prizes=[15, 20, 25, 30, 40, 50];
-const wonDiamonds=prizes[Math.floor(Math.random()*prizes.length)];
+    // 1. الأرصدة
+    document.getElementById("user-real-points").innerText = Number(userData.points || 0).toLocaleString();
+    document.getElementById("game-diamonds-counter").innerText = Number(userData.gamepoints || 0).toLocaleString();
 
-let newGamePts=Number(userData.gamepoints||0)+wonDiamonds;
-const{data,error}=await client.from("users").update({gamepoints:newGamePts}).eq("telegram_id",String(tid)).select("telegram_id,points,gamepoints,total_earned,daily_game_rounds,daily_game_date").single();
-if(!error&&data) userData=data;
+    // 2. شريط الجولات اليومية
+    const roundsUsed = Math.min(30, Math.max(0, Number(userData.daily_game_rounds || 0)));
+    document.getElementById("daily-rounds").innerText = roundsUsed;
+    document.getElementById("daily-progress-bar").style.width = ((roundsUsed / 30) * 100) + "%";
 
-localStorage.setItem(`mystery_box_${tid}`, today);
-updateClickerUI();
+    // 3. حالة خزنة الهدايا اليومية
+    const vaultBtn = document.getElementById("btn-mystery-box");
+    const openedToday = localStorage.getItem(`mystery_box_${tid}`) === getLocalTodayStr();
+    if (openedToday) {
+        vaultBtn.className = "btn-vault opened";
+        vaultBtn.innerText = "تم الفتح ✅";
+    } else {
+        vaultBtn.className = "btn-vault";
+        vaultBtn.innerText = "فتح الخزنة 🔓";
+    }
 
-await client.from("transactions").insert([{
-telegram_id:String(tid),
-type:"points",
-title:"صندوق الهدايا اليومي للألعاب (ألماس)",
-amount:`+${wonDiamonds} 💎`,
-status:"مكتمل"
-}]);
+    // 4. حلقة المفاعل والضغطات
+    document.getElementById("daily-clicks-count").innerText = clickerData.dailyClicks;
+    document.getElementById("batch-clicks-label").innerText = `${clickerData.batchClicks} / 10`;
+    const ring = document.getElementById("reactor-progress-ring");
+    const circumference = 440;
+    const offset = circumference - (clickerData.batchClicks / 10) * circumference;
+    ring.style.strokeDashoffset = offset;
 
-tg.showAlert(`🎁 مبروك! فتحت الصندوق اليومي وربحت ${wonDiamonds} ألماسة 💎 تمت إضافتها لرصيدك!`);
-}catch(e){
-tg.showAlert("❌ لم تكتمل مشاهدة إعلان الصندوق، يجب مشاهدته للنهاية لاستلام الهدية.");
-}
-}
-
-function openConvertModal(){
-if(!userData)return tg.showAlert("⚠️ بيانات حسابك لم يتم تحميلها بعد.");
-let d=Number(userData.gamepoints||0);
-if(d<10)return tg.showAlert("⚠️ يجب أن تمتلك 10 ألماسات على الأقل للتحويل.");
-document.getElementById("modal-game-diamonds").innerText=d.toLocaleString()+" 💎";
-document.getElementById("convert-modal").style.display="flex";
-}
-
-function closeConvertModal(){document.getElementById("convert-modal").style.display="none"}
-
-async function confirmAndWatchAdConversion(){
-if(!userData)return;
-let d=Number(userData.gamepoints||0);
-if(d<10)return tg.showAlert("⚠️ لا توجد ألماسات كافية للتحويل.");
-let points=Math.floor(d/10),used=points*10;
-let newPoints=Number(userData.points||0)+points,remaining=d-used;
-closeConvertModal();
-try{
-if(typeof show_10959333==="function")await show_10959333();
-let obj={points:newPoints,gamepoints:remaining};
-if(userData.total_earned!==undefined)obj.total_earned=Number(userData.total_earned||0)+points;
-const{data,error}=await client.from("users").update(obj).eq("telegram_id",String(tid)).select("telegram_id,points,gamepoints,total_earned,daily_game_rounds,daily_game_date").single();
-if(error)throw error;
-userData=data;updateClickerUI();
-await client.from("transactions").insert([{telegram_id:String(tid),type:"points",title:"تحويل أرباح الألعاب (ألماس) لرصيد البوت",amount:`+${points.toLocaleString()} نقطة`,status:"مكتمل"}]);
-tg.showAlert(`🎉 تم التحويل بنجاح!\n\n💎 تم استخدام: ${used.toLocaleString()} ألماسة\n💰 تمت إضافة: +${points.toLocaleString()} نقطة إلى رصيد البوت`);
-}catch(e){console.error(e);tg.showAlert("❌ لم يتم التحويل. تأكد من إكمال الإعلان ثم حاول مرة أخرى.")}
+    // 5. تحديث مهام الأركيد اليومية
+    renderDailyQuests();
 }
 
-function openGame(gameType){
-if(!tid)return tg.showAlert("⚠️ لم يتم التعرف على حسابك.");
-if(Number(userData?.daily_game_rounds||0)>=30)return tg.showAlert("🛑 لقد وصلت للحد الأقصى وهو 30 جولة اليوم.\n\nتتجدد الجولات عند منتصف الليل.");
-const paths={
-memory:"games/memory.html",quiz:"games/quiz.html",chests:"games/chests.html",
-tictactoe:"games/tictactoe.html",seahorse:"games/game-seahorse.html",
-space:"games/game-space.html","frost-breakout":"games/frost-breakout.html"
-};
-if(paths[gameType])location.href=`${paths[gameType]}?id=${tid}`;
+function startDailyTimer() {
+    if (dailyRoundTimer) clearInterval(dailyRoundTimer);
+    const tick = () => {
+        const now = new Date(), next = new Date(now);
+        next.setHours(24, 0, 0, 0);
+        let diff = Math.max(0, next - now);
+        let s = Math.floor(diff / 1000);
+        let h = Math.floor(s / 3600);
+        s %= 3600;
+        let m = Math.floor(s / 60);
+        s %= 60;
+        document.getElementById("daily-rounds-timer").innerText =
+            `⏱️ تتجدد: ${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    };
+    tick();
+    dailyRoundTimer = setInterval(tick, 1000);
 }
 
-function goHome(){location.href=`index.html?id=${tid}&t=${Date.now()}`}
-function goTasks(){location.href=`tasks.html?id=${tid}&t=${Date.now()}`}
-function goGames(){location.href=`games.html?id=${tid}&t=${Date.now()}`}
-function goProfile(){location.href=`profile.html?id=${tid}&t=${Date.now()}`}
-function goInvite(){location.href=`invite.html?id=${tid}&t=${Date.now()}`}
+function saveClickerState() {
+    if (tid) {
+        localStorage.setItem(`clicker_game_${tid}`, JSON.stringify({
+            date: getLocalTodayStr(),
+            dailyClicks: clickerData.dailyClicks,
+            batchClicks: clickerData.batchClicks,
+            cooldownUntil: clickerData.cooldownUntil
+        }));
+    }
+}
+
+// رسم رقم طائر عند مكان اللمس
+function spawnFloatingTapText(e) {
+    const el = document.createElement("div");
+    el.className = "floating-tap";
+    el.innerText = "+1 ⚡";
+    const x = e?.clientX || (window.innerWidth / 2);
+    const y = e?.clientY || (window.innerHeight / 2);
+    el.style.left = (x - 20) + "px";
+    el.style.top = (y - 20) + "px";
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 750);
+}
+
+function handleCardClick(e) {
+    if (!userData || isAdBusy) return;
+    const now = Date.now();
+    if (clickerData.cooldownUntil > now) return;
+
+    if (clickerData.dailyClicks >= 100) {
+        return tg.showAlert("🛑 وصلت للحد الأقصى للضغطات اليومية (100/100). عد غداً لمزيد من الألماس!");
+    }
+
+    triggerHaptic('light');
+    spawnFloatingTapText(e);
+
+    clickerData.dailyClicks++;
+    clickerData.batchClicks++;
+    saveClickerState();
+    updateAllUI();
+
+    if (clickerData.batchClicks >= 10) {
+        triggerClickerAd();
+    } else {
+        document.getElementById("clicker-status-msg").innerText =
+            `⚡ متبقي ${10 - clickerData.batchClicks} ضغطات لاكتمال شحن المفاعل واستلام +10 💎`;
+    }
+}
+
+async function triggerClickerAd() {
+    if (isAdBusy) return;
+    isAdBusy = true;
+
+    const status = document.getElementById("clicker-status-msg");
+    const btn = document.getElementById("clicker-btn");
+    btn.classList.add("disabled");
+    status.innerText = "⏳ اكتملت الشحنة! جاري عرض الإعلان لإضافة +10 ألماسات...";
+
+    try {
+        if (typeof show_10959333 === "function") await show_10959333();
+
+        let n = Number(userData.gamepoints || 0) + 10;
+        const { data, error } = await client
+            .from("users")
+            .update({ gamepoints: n })
+            .eq("telegram_id", String(tid))
+            .select("telegram_id,name,points,gamepoints,total_earned,daily_game_rounds,daily_game_date,referred_by")
+            .single();
+
+        if (error) throw error;
+
+        userData = data;
+        clickerData.batchClicks = 0;
+        clickerData.cooldownUntil = Date.now() + 300000; // 5 دقائق
+        saveClickerState();
+        updateAllUI();
+        startCooldownTimer();
+        triggerHaptic('heavy');
+
+        tg.showAlert("🎉 تم شحن المفاعل بنجاح!\n\nتمت إضافة +10 ألماسات 💎 إلى خزنتك.\nبدأ مؤقت تبريد المفاعل (5 دقائق).");
+    } catch (e) {
+        console.error(e);
+        // إذا ألغى الإعلان نرجع العداد لـ 9 ليضغط ضغطة واحدة ويعيد المحاولة دون ضياع ضغطاته
+        clickerData.dailyClicks = Math.max(0, clickerData.dailyClicks - 1);
+        clickerData.batchClicks = 9;
+        saveClickerState();
+        btn.classList.remove("disabled");
+        updateAllUI();
+        status.innerText = "⚠️ لم يكتمل الإعلان! اضغط ضغطة واحدة لإعادة المحاولة.";
+        tg.showAlert("❌ يجب إكمال مشاهدة الإعلان لاحتساب الـ 10 ألماسات.");
+    } finally {
+        isAdBusy = false;
+    }
+}
+
+function startCooldownTimer() {
+    if (cooldownInterval) clearInterval(cooldownInterval);
+    const btn = document.getElementById("clicker-btn");
+    const msg = document.getElementById("clicker-status-msg");
+    btn.classList.add("disabled");
+
+    cooldownInterval = setInterval(() => {
+        let r = clickerData.cooldownUntil - Date.now();
+        if (r <= 0) {
+            clearInterval(cooldownInterval);
+            cooldownInterval = null;
+            btn.classList.remove("disabled");
+            msg.innerText = "🟢 المفاعل جاهز! اضغط على النواة للبدء.";
+            return;
+        }
+        let m = Math.floor(r / 60000);
+        let s = Math.floor((r % 60000) / 1000);
+        msg.innerText = `⏳ تبريد المفاعل: ${m}:${s < 10 ? "0" : ""}${s}`;
+    }, 1000);
+}
+
+function checkCooldownTimer() {
+    if (clickerData.cooldownUntil > Date.now()) startCooldownTimer();
+}
+
+// ⭐ ميزة شحن +5 جولات إضافية بمشاهدة إعلان (حد أقصى مرتين يومياً)
+async function refillBonusRoundsWithAd() {
+    if (!userData || isAdBusy) return;
+    const today = getLocalTodayStr();
+    const refillKey = `rounds_refill_${tid}_${today}`;
+    const refillsToday = Number(localStorage.getItem(refillKey) || 0);
+
+    if (refillsToday >= 2) {
+        return tg.showAlert("🛑 لقد استخدمت شحن الجولات الإضافية مرتين اليوم (الحد الأقصى). انتظر التحديث اليومي!");
+    }
+
+    const currentRounds = Number(userData.daily_game_rounds || 0);
+    if (currentRounds < 5) {
+        return tg.showAlert("⚡ طاقة جولاتك لا تزال ممتلئة! العب بعض الجولات أولاً ثم يمكنك شحن +5 جولات إضافية.");
+    }
+
+    isAdBusy = true;
+    try {
+        if (typeof show_10959333 === "function") await show_10959333();
+
+        const newRounds = Math.max(0, currentRounds - 5);
+        const { data, error } = await client
+            .from("users")
+            .update({ daily_game_rounds: newRounds })
+            .eq("telegram_id", String(tid))
+            .select("telegram_id,name,points,gamepoints,total_earned,daily_game_rounds,daily_game_date,referred_by")
+            .single();
+
+        if (!error && data) userData = data;
+        localStorage.setItem(refillKey, String(refillsToday + 1));
+        updateAllUI();
+        triggerHaptic('medium');
+        tg.showAlert(`⚡ تم شحن +5 جولات إضافية بنجاح!\n(المتبقي لك من الشحن الإضافي اليوم: ${1 - refillsToday})`);
+    } catch (e) {
+        tg.showAlert("❌ لم تكتمل مشاهدة الإعلان لشحن الجولات.");
+    } finally {
+        isAdBusy = false;
+    }
+}
+
+// ⭐ خزنة الهدايا اليومية العشوائية
+async function openMysteryBox() {
+    if (!userData || isAdBusy) return;
+    const today = getLocalTodayStr();
+    const lastOpen = localStorage.getItem(`mystery_box_${tid}`);
+
+    if (lastOpen === today) {
+        return tg.showAlert("⏳ لقد فتحت خزنة الألماس اليوم بالفعل! تتجدد الخزنة عند منتصف الليل 🎁");
+    }
+
+    isAdBusy = true;
+    try {
+        if (typeof show_10959333 === "function") await show_10959333();
+
+        const prizes = [15, 20, 25, 30, 40, 50];
+        const wonDiamonds = prizes[Math.floor(Math.random() * prizes.length)];
+
+        let newGamePts = Number(userData.gamepoints || 0) + wonDiamonds;
+        const { data, error } = await client
+            .from("users")
+            .update({ gamepoints: newGamePts })
+            .eq("telegram_id", String(tid))
+            .select("telegram_id,name,points,gamepoints,total_earned,daily_game_rounds,daily_game_date,referred_by")
+            .single();
+
+        if (!error && data) userData = data;
+
+        localStorage.setItem(`mystery_box_${tid}`, today);
+        updateAllUI();
+        triggerHaptic('heavy');
+
+        await client.from("transactions").insert([{
+            telegram_id: String(tid),
+            type: "points",
+            title: "جائزة خزنة الأركيد اليومية",
+            amount: `+${wonDiamonds} 💎`,
+            status: "مكتمل"
+        }]);
+
+        tg.showAlert(`🎁 مبروك! فتحت الخزنة اليومية وربحت +${wonDiamonds} ألماسة 💎 تمت إضافتها لرصيدك!`);
+    } catch (e) {
+        tg.showAlert("❌ لم تكتمل مشاهدة الإعلان، يجب مشاهدته للنهاية لفتح الخزنة.");
+    } finally {
+        isAdBusy = false;
+    }
+}
+
+// ⭐ نظام مهام الأركيد اليومية (3 مهام تفاعلية)
+function renderDailyQuests() {
+    const container = document.getElementById("daily-quests-container");
+    const today = getLocalTodayStr();
+    const claimedQuests = JSON.parse(localStorage.getItem(`arcade_quests_${tid}_${today}`) || "[]");
+
+    const roundsPlayed = Number(userData?.daily_game_rounds || 0);
+    const clicksDone = clickerData.dailyClicks || 0;
+    const boxOpened = localStorage.getItem(`mystery_box_${tid}`) === today;
+
+    const quests = [
+        { id: "q_rounds", title: "العب 5 جولات في أي لعبة اليوم", reward: 15, progress: `${Math.min(5, roundsPlayed)}/5`, done: roundsPlayed >= 5 },
+        { id: "q_clicks", title: "اشحن المفاعل بـ 30 ضغطة اليوم", reward: 10, progress: `${Math.min(30, clicksDone)}/30`, done: clicksDone >= 30 },
+        { id: "q_vault", title: "افتح خزنة الألماس اليومية", reward: 10, progress: boxOpened ? "1/1" : "0/1", done: boxOpened }
+    ];
+
+    container.innerHTML = quests.map(q => {
+        const isClaimed = claimedQuests.includes(q.id);
+        let btnHtml = "";
+        if (isClaimed) {
+            btnHtml = `<button class="btn-quest" disabled>تم الاستلام ✅</button>`;
+        } else if (q.done) {
+            btnHtml = `<button class="btn-quest" onclick="claimArcadeQuest('${q.id}', ${q.reward}, '${q.title}')">استلام +${q.reward} 💎</button>`;
+        } else {
+            btnHtml = `<button class="btn-quest" disabled>${q.progress}</button>`;
+        }
+
+        return `
+            <div class="quest-row">
+                <div class="quest-info">
+                    <b>🎯 ${q.title}</b>
+                    <span>المكافأة: +${q.reward} ألماسة 💎</span>
+                </div>
+                ${btnHtml}
+            </div>
+        `;
+    }).join("");
+}
+
+async function claimArcadeQuest(questId, rewardDiamonds, questTitle) {
+    if (!userData || isAdBusy) return;
+    const today = getLocalTodayStr();
+    const key = `arcade_quests_${tid}_${today}`;
+    const claimed = JSON.parse(localStorage.getItem(key) || "[]");
+    if (claimed.includes(questId)) return;
+
+    const newD = Number(userData.gamepoints || 0) + rewardDiamonds;
+    const { data, error } = await client
+        .from("users")
+        .update({ gamepoints: newD })
+        .eq("telegram_id", String(tid))
+        .select("telegram_id,name,points,gamepoints,total_earned,daily_game_rounds,daily_game_date,referred_by")
+        .single();
+
+    if (!error && data) {
+        userData = data;
+        claimed.push(questId);
+        localStorage.setItem(key, JSON.stringify(claimed));
+        updateAllUI();
+        triggerHaptic('medium');
+
+        await client.from("transactions").insert([{
+            telegram_id: String(tid),
+            type: "points",
+            title: `مكافأة مهمة أركيد: ${questTitle}`,
+            amount: `+${rewardDiamonds} 💎`,
+            status: "مكتمل"
+        }]);
+
+        tg.showAlert(`🎉 أحسنت! استلمت +${rewardDiamonds} ألماسة 💎 من مهام الأركيد اليومية!`);
+    }
+}
+
+// ⭐ لوحة شرف أباطرة الألماس (تستبعد أصحاب الرصيد 0)
+async function loadDiamondsLeaderboard() {
+    const box = document.getElementById("diamonds-leaderboard");
+    try {
+        const { data } = await client
+            .from("users")
+            .select("telegram_id, name, gamepoints")
+            .gt("gamepoints", 0)
+            .order("gamepoints", { ascending: false })
+            .limit(5);
+
+        if (!data || data.length === 0) {
+            box.innerHTML = `<div style="text-align:center; padding:10px; color:var(--text-muted); font-size:12px;">كن أول من يجمع الألماس ويتصدر قائمة الأباطرة!</div>`;
+            return;
+        }
+
+        box.innerHTML = data.map((u, idx) => {
+            const r = idx + 1;
+            const rClass = r === 1 ? "r1" : r === 2 ? "r2" : r === 3 ? "r3" : "";
+            const isMe = String(u.telegram_id) === String(tid);
+            return `
+                <div class="lb-item">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="lb-rank num-font ${rClass}">${r}</div>
+                        <b style="color:${isMe ? 'var(--emerald)' : '#fff'};">${u.name || 'لاعب'} ${isMe ? '(أنت)' : ''}</b>
+                    </div>
+                    <span class="num-font" style="color:var(--cyan); font-weight:800;">${Number(u.gamepoints).toLocaleString()} 💎</span>
+                </div>
+            `;
+        }).join("");
+    } catch (e) {
+        box.innerHTML = "";
+    }
+}
+
+// ⭐ تحويل الألماس لرصيد البوت الحقيقي (+ 10% عمولة إحالة للداعي)
+function openConvertModal() {
+    if (!userData) return tg.showAlert("⚠️ بيانات حسابك لم يتم تحميلها بعد.");
+    let d = Number(userData.gamepoints || 0);
+    if (d < 10) return tg.showAlert("⚠️ الحد الأدنى للتحويل هو 10 ألماسات (كل 10 💎 = 1 نقطة بوت).");
+
+    const ptsToGet = Math.floor(d / 10);
+    document.getElementById("modal-game-diamonds").innerText = d.toLocaleString() + " 💎";
+    document.getElementById("modal-points-preview").innerText = `ستحصل فوراً على: +${ptsToGet.toLocaleString()} نقطة بوت`;
+    document.getElementById("convert-modal").style.display = "flex";
+}
+
+function closeConvertModal() {
+    document.getElementById("convert-modal").style.display = "none";
+}
+
+async function confirmAndWatchAdConversion() {
+    if (!userData || isAdBusy) return;
+    let d = Number(userData.gamepoints || 0);
+    if (d < 10) return tg.showAlert("⚠️ لا توجد ألماسات كافية للتحويل.");
+
+    let points = Math.floor(d / 10);
+    let used = points * 10;
+    let newPoints = Number(userData.points || 0) + points;
+    let remaining = d - used;
+
+    closeConvertModal();
+    isAdBusy = true;
+
+    try {
+        if (typeof show_10959333 === "function") await show_10959333();
+
+        let obj = {
+            points: newPoints,
+            gamepoints: remaining,
+            total_earned: Number(userData.total_earned || 0) + points
+        };
+
+        const { data, error } = await client
+            .from("users")
+            .update(obj)
+            .eq("telegram_id", String(tid))
+            .select("telegram_id,name,points,gamepoints,total_earned,daily_game_rounds,daily_game_date,referred_by")
+            .single();
+
+        if (error) throw error;
+        userData = data;
+        updateAllUI();
+        loadDiamondsLeaderboard();
+
+        await client.from("transactions").insert([{
+            telegram_id: String(tid),
+            type: "points",
+            title: `تحويل ${used} ألماسة إلى نقاط البوت`,
+            amount: `+${points.toLocaleString()} نقطة`,
+            status: "مكتمل"
+        }]);
+
+        // عمولة إحالة 10% للداعي عند تحويل الألماس لنقاط
+        if (userData.referred_by && String(userData.referred_by) !== String(tid)) {
+            const refBonus = Math.max(1, Math.floor(points * 0.10));
+            const { data: refU } = await client.from("users").select("points, total_earned").eq("telegram_id", String(userData.referred_by)).maybeSingle();
+            if (refU) {
+                await client.from("users").update({
+                    points: Number(refU.points || 0) + refBonus,
+                    total_earned: Number(refU.total_earned || 0) + refBonus
+                }).eq("telegram_id", String(userData.referred_by));
+            }
+        }
+
+        tg.showAlert(`🎉 تم التحويل بنجاح!\n\n💎 الألماس المحول: ${used.toLocaleString()} ألماسة\n🪙 النقاط المضافة لرصيدك: +${points.toLocaleString()} نقطة`);
+    } catch (e) {
+        console.error(e);
+        tg.showAlert("❌ لم يكتمل الإعلان! يرجى إكمال الإعلان لتحويل الألماس.");
+    } finally {
+        isAdBusy = false;
+    }
+}
+
+function openGame(gameType) {
+    if (!tid) return tg.showAlert("⚠️ لم يتم التعرف على حسابك.");
+    if (Number(userData?.daily_game_rounds || 0) >= 30) {
+        return tg.showAlert("🛑 وصلت للحد الأقصى (30 جولة اليوم)!\n\n💡 يمكنك الضغط على زر (⚡ شحن +5 جولات) أعلى الصفحة لمواصلة اللعب فوراً!");
+    }
+    triggerHaptic('light');
+    const paths = {
+        memory: "games/memory.html",
+        quiz: "games/quiz.html",
+        chests: "games/chests.html",
+        tictactoe: "games/tictactoe.html",
+        seahorse: "games/game-seahorse.html",
+        space: "games/game-space.html",
+        "frost-breakout": "games/frost-breakout.html"
+    };
+    if (paths[gameType]) location.href = `${paths[gameType]}?id=${tid}`;
+}
+
+function goHome() { location.href = `index.html?id=${tid}&t=${Date.now()}`; }
+function goTasks() { location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
+function goGames() { location.href = `games.html?id=${tid}&t=${Date.now()}`; }
+function goProfile() { location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
+function goInvite() { location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
 
 init();
 </script>
