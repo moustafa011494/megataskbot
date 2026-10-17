@@ -6,16 +6,19 @@
     <title>Deposit - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- درع الحماية ضد تعدد الحسابات والـ VPN -->
+    <script src="security.js"></script>
     <style>
         :root { 
             --main-green: #00d26a; 
             --main-cyan: #00f2ff;
+            --binance-yellow: #FCD535;
             --dark-bg: #0d0f12; 
             --card-bg: #1a1d23; 
             --text-gray: #9ca3af; 
         }
-        * { box-sizing: border-box; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 18px 15px 110px; overflow-x: hidden; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 18px 15px 115px; overflow-x: hidden; }
         
         .page-title { text-align: right; font-size: 20px; margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; }
 
@@ -59,6 +62,25 @@
             border-color: var(--main-cyan);
             background: rgba(0, 242, 255, 0.08);
             box-shadow: 0 0 12px rgba(0, 242, 255, 0.2);
+        }
+        .method-card.binance-special {
+            border-color: rgba(252, 213, 53, 0.5);
+            background: linear-gradient(145deg, #211e12, #171a20);
+        }
+        .method-card.binance-special.active {
+            border-color: var(--binance-yellow);
+            box-shadow: 0 0 15px rgba(252, 213, 53, 0.3);
+        }
+        .auto-tag {
+            position: absolute;
+            top: -8px;
+            left: 8px;
+            background: var(--binance-yellow);
+            color: #000;
+            font-size: 9.5px;
+            font-weight: 900;
+            padding: 2px 7px;
+            border-radius: 6px;
         }
         .method-logo {
             width: 38px;
@@ -105,10 +127,10 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             gap: 10px;
         }
-        .transfer-number { font-size: 14px; font-weight: bold; color: var(--main-green); word-break: break-all; }
+        .transfer-number { font-size: 14px; font-weight: bold; color: var(--main-green); word-break: break-all; font-family: monospace; }
         .btn-copy {
             background: rgba(0, 210, 106, 0.15);
             color: var(--main-green);
@@ -121,6 +143,16 @@
             flex-shrink: 0;
         }
         .btn-copy:active { transform: scale(0.95); }
+
+        /* حاسبة وملاحظة باينانس التلقائية */
+        #binance-extra-box {
+            display: none;
+            background: rgba(252, 213, 53, 0.06);
+            border: 1px dashed rgba(252, 213, 53, 0.45);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
 
         .inst-steps { margin: 0; padding-right: 18px; font-size: 12px; color: #cbd5e1; line-height: 1.8; }
         .inst-steps li { margin-bottom: 4px; }
@@ -155,6 +187,20 @@
         }
         .deposit-btn:active { transform: scale(0.98); }
         .deposit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* سجل طلبات الشحن أسفل الصفحة */
+        .history-section { margin-top: 25px; }
+        .history-card {
+            background: var(--card-bg);
+            border: 1px solid #282e38;
+            border-radius: 13px;
+            padding: 11px 13px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
 
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
@@ -200,10 +246,26 @@
             </div>
         </div>
 
-        <label style="font-size: 11px; color: var(--text-gray); display: block; margin-bottom: 5px;">📌 حوّل المبلغ إلى هذا الرقم / الحساب:</label>
+        <label style="font-size: 11px; color: var(--text-gray); display: block; margin-bottom: 5px;" id="lbl-target-account">📌 حوّل المبلغ إلى هذا الرقم / الحساب:</label>
         <div class="transfer-target-box">
             <span class="transfer-number" id="inst-target-account">---</span>
             <button type="button" class="btn-copy" onclick="copyTargetAccount()">📋 نسخ</button>
+        </div>
+
+        <!-- 🟡 إضافات Binance Pay التلقائية (تظهر فقط عند اختيار باينانس) -->
+        <div id="binance-extra-box">
+            <label style="font-size: 11px; color: var(--binance-yellow); display: block; margin-bottom: 5px; font-weight: bold;">
+                ⚡ لشحن فوري بدون انتظار: ضع هذا الكود في خانة الملاحظة (Note) داخل تطبيق باينانس أثناء الإرسال:
+            </label>
+            <div class="transfer-target-box" style="margin-bottom: 10px; border-color: rgba(252, 213, 53, 0.4);">
+                <span class="transfer-number" id="binance-note-id" style="color: var(--binance-yellow);">---</span>
+                <button type="button" class="btn-copy" style="border-color: var(--binance-yellow); color: var(--binance-yellow); background: rgba(252,213,53,0.12);" onclick="copyBinanceNote()">📋 نسخ الكود</button>
+            </div>
+
+            <label style="font-size: 11px; color: #cbd5e1; display: block; margin-bottom: 5px;">
+                💲 حاسبة الـ USDT السريعة (1 USDT = <span id="usdt-rate-lbl">50</span> ج.م):
+            </label>
+            <input type="number" id="usdt-calc-input" placeholder="أدخل المبلغ بالـ USDT (مثلاً: 1 أو 0.5)" step="0.1" min="0.1" oninput="syncUsdtToEgp()" style="padding: 10px 12px; font-size: 13px; border-color: var(--binance-yellow);">
         </div>
 
         <ol class="inst-steps" id="inst-steps-list">
@@ -213,24 +275,30 @@
 
     <!-- إدخال المبلغ بالجنيه فقط -->
     <div class="input-group">
-        <label>2️⃣ المبلغ المراد إيداعه (بالجنيه المصري فقط)</label>
+        <label id="lbl-amount-field">2️⃣ المبلغ المراد إيداعه (بالجنيه المصري فقط)</label>
         <input type="number" id="deposit-amount" placeholder="مثلاً: 50 جنيه" min="1" step="0.5" oninput="updateConversionHint()">
         <div id="conversion-hint" class="conversion-hint-box"></div>
     </div>
 
     <!-- رقم المحول منه أو رقم العملية -->
     <div class="input-group">
-        <label>3️⃣ رقم الحساب المحول منه / رقم العملية (TX ID)</label>
+        <label id="lbl-wallet-field">3️⃣ رقم الحساب المحول منه / رقم العملية (Order ID / TX ID)</label>
         <input type="text" id="deposit-wallet" placeholder="أدخل الرقم الذي حولت منه أو رقم العملية">
     </div>
 
     <!-- البريد الإلكتروني أو ملاحظة -->
     <div class="input-group">
-        <label>4️⃣ البريد الإلكتروني (اختياري)</label>
+        <label>4️⃣ البريد الإلكتروني أو ملاحظة (اختياري)</label>
         <input type="email" id="deposit-email" placeholder="example@gmail.com">
     </div>
 
     <button id="submit-deposit-btn" class="deposit-btn" onclick="processDeposit()">تأكيد وإرسال طلب الإيداع ↗</button>
+
+    <!-- سجل عمليات الشحن الأخيرة -->
+    <div class="history-section">
+        <label style="display: block; margin-bottom: 10px; font-size: 13.5px; font-weight: bold; color: var(--main-cyan);">📂 آخر عمليات الشحن الخاصة بي:</label>
+        <div id="my-deposits-history"></div>
+    </div>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
@@ -243,24 +311,64 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
+        // =========================================================================
+        // 🟡 إعدادات بوابة Binance Pay التلقائية (ضع الـ Binance ID الخاص بك هنا)
+        // =========================================================================
+        const MY_BINANCE_PAY_ID = "494159809";
+        const USDT_TO_EGP_RATE = 53.0; // نفس السعر المحدد في main1.py
+
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
 
         let depositMethodsList = [];
         let selectedMethodObj = null;
+        let lastKnownEgp = 0;
 
         async function init() {
+            document.getElementById('binance-note-id').innerText = tid || "ID";
+            document.getElementById('usdt-rate-lbl').innerText = USDT_TO_EGP_RATE;
+
+            if (tid && typeof MegaSecurity !== 'undefined') {
+                MegaSecurity.verifyDeviceAndAccount(client, tid).catch(() => {});
+            }
+
             await loadDepositMethods();
+            await refreshUserBalances();
+            await loadMyDepositsHistory();
+
+            // رادار حي يفحص كل 5 ثوانٍ إذا قام البوت باعتماد دفعة باينانس التلقائية
+            setInterval(async () => {
+                await refreshUserBalances();
+                await loadMyDepositsHistory();
+            }, 5000);
+        }
+
+        async function refreshUserBalances() {
             if (!tid) return;
             const { data } = await client.from('users').select('points, egp_balance').eq('telegram_id', tid).maybeSingle();
             if (data) {
-                document.getElementById('current-egp').innerText = Number(data.egp_balance || 0).toFixed(2) + " ج.م";
+                const newEgp = Number(data.egp_balance || 0);
+                document.getElementById('current-egp').innerText = newEgp.toFixed(2) + " ج.م";
                 document.getElementById('current-points').innerText = (data.points || 0).toLocaleString() + " نقطة";
+                lastKnownEgp = newEgp;
             }
+        }
+
+        // حاسبة تحويل USDT إلى جنيه مصري تلقائياً
+        function syncUsdtToEgp() {
+            const usdtVal = parseFloat(document.getElementById('usdt-calc-input').value) || 0;
+            const egpField = document.getElementById('deposit-amount');
+            if (usdtVal > 0) {
+                egpField.value = (usdtVal * USDT_TO_EGP_RATE).toFixed(2);
+            } else {
+                egpField.value = "";
+            }
+            updateConversionHint();
         }
 
         // تحديث التوضيح التلقائي للمبلغ بالجنيه فقط
@@ -277,38 +385,46 @@
             }
         }
 
-        // جلب وسائل الإيداع مع اللوجو والوصف من قاعدة البيانات
+        // جلب وسائل الإيداع من قاعدة البيانات + دمج بوابة Binance Pay التلقائية في المقدمة
         async function loadDepositMethods() {
             const grid = document.getElementById('methods-grid');
-            const { data, error } = await client.from('deposit_methods').select('*').order('id', { ascending: true });
+            const { data } = await client.from('deposit_methods').select('*').order('id', { ascending: true });
 
-            if (!error && data && data.length > 0) {
-                depositMethodsList = data;
-            } else {
-                depositMethodsList = [
-                    { id: 1, name: "فودافون كاش", description: "01000000000", logo: null }
-                ];
-            }
+            const autoBinanceMethod = {
+                id: "binance_auto",
+                name: "Binance Pay ⚡",
+                description: MY_BINANCE_PAY_ID,
+                logo: null,
+                isBinanceAuto: true
+            };
+
+            const dbMethods = (data || []).filter(m => {
+                const n = (m.name || "").toLowerCase();
+                return !n.includes("binance") && !n.includes("بينانس") && !n.includes("باينانس");
+            });
+
+            depositMethodsList = [autoBinanceMethod, ...dbMethods];
 
             grid.innerHTML = "";
             depositMethodsList.forEach((m, index) => {
                 const card = document.createElement('div');
-                card.className = "method-card";
+                card.className = "method-card" + (m.isBinanceAuto ? " binance-special" : "");
                 card.id = `method-card-${index}`;
                 card.onclick = () => selectDepositMethod(index);
 
+                const badgeHtml = m.isBinanceAuto ? `<span class="auto-tag">تلقائي فوري ⚡</span>` : '';
                 const logoHtml = m.logo 
                     ? `<img src="${m.logo}" class="method-logo" alt="${m.name}">`
-                    : `<div class="method-fallback-icon">💳</div>`;
+                    : `<div class="method-fallback-icon" style="${m.isBinanceAuto ? 'border-color:#FCD535; color:#FCD535; background:rgba(252,213,53,0.12);' : ''}">${m.isBinanceAuto ? '🟡' : '💳'}</div>`;
 
                 card.innerHTML = `
+                    ${badgeHtml}
                     ${logoHtml}
                     <div class="method-title">${m.name}</div>
                 `;
                 grid.appendChild(card);
             });
 
-            // اختيار أول وسيلة تلقائياً
             if (depositMethodsList.length > 0) {
                 selectDepositMethod(0);
             }
@@ -329,6 +445,11 @@
             const instName = document.getElementById('inst-method-name');
             const instTarget = document.getElementById('inst-target-account');
             const instSteps = document.getElementById('inst-steps-list');
+            const binanceExtra = document.getElementById('binance-extra-box');
+            const lblTarget = document.getElementById('lbl-target-account');
+            const lblWallet = document.getElementById('lbl-wallet-field');
+            const walletInput = document.getElementById('deposit-wallet');
+            const submitBtn = document.getElementById('submit-deposit-btn');
 
             instBox.style.display = 'block';
             instName.innerText = `طريقة الإيداع عبر ${selectedMethodObj.name}`;
@@ -341,37 +462,54 @@
             } else {
                 instLogo.style.display = 'none';
                 instFallback.style.display = 'flex';
+                instFallback.innerText = selectedMethodObj.isBinanceAuto ? "🟡" : "💳";
             }
 
-            // تخصيص شرح طريقة الإيداع ذكياً بناءً على اسم الوسيلة
             const lowerName = (selectedMethodObj.name || "").toLowerCase();
-            if (lowerName.includes("فودافون") || lowerName.includes("كاش") || lowerName.includes("اتصالات") || lowerName.includes("اورنج") || lowerName.includes("وي")) {
+
+            if (selectedMethodObj.isBinanceAuto || lowerName.includes("binance") || lowerName.includes("بينانس") || lowerName.includes("usdt")) {
+                binanceExtra.style.display = 'block';
+                lblTarget.innerText = "📌 معرف الدفع الفوري (Binance ID / UID):";
+                lblWallet.innerText = "3️⃣ رقم عملية باينانس (Order ID أو Transaction ID):";
+                walletInput.placeholder = "الصق Order ID من إيصال باينانس للتفعيل التلقائي الفوري...";
+                submitBtn.innerText = "⚡ فحص العملية وإضافة الرصيد تلقائياً الآن";
+                submitBtn.style.background = "linear-gradient(135deg, #FCD535, #e6b800)";
+
                 instSteps.innerHTML = `
-                    <li>انسخ رقم المحفظة الموضح بالأعلى بالضغط على زر <b>(نسخ)</b>.</li>
-                    <li>قم بتحويل المبلغ المطلوب (بالجنيه) من محفظتك الإلكترونية إلى هذا الرقم.</li>
-                    <li>اكتب <b>المبلغ بالجنيه</b> الذي قمت بتحويله في الخانة بالأسفل.</li>
-                    <li>اكتب <b>رقم هاتفك الذي قمت بالتحويل منه</b> في خانة رقم الحساب لتأكيد العملية فوراً.</li>
-                `;
-            } else if (lowerName.includes("انستا") || lowerName.includes("instapay")) {
-                instSteps.innerHTML = `
-                    <li>انسخ عنوان الدفع (IPA) أو الرقم الموضح بالأعلى.</li>
-                    <li>افتح تطبيق <b>InstaPay</b> وحوّل المبلغ المطلوب بالجنيه المصري.</li>
-                    <li>أدخل المبلغ المحول بالجنيه في الخانة بالأسفل.</li>
-                    <li>أدخل <b>عنوان انستا باي الخاص بك أو رقم المرجع (Reference)</b> في خانة التأكيد.</li>
-                `;
-            } else if (lowerName.includes("usdt") || lowerName.includes("بينانس") || lowerName.includes("binance") || lowerName.includes("payeer")) {
-                instSteps.innerHTML = `
-                    <li>انسخ معرف المحفظة (ID / Address) الموضح بالأعلى.</li>
-                    <li>قم بإرسال القيمة المقابلة للمبلغ، ثم اكتب <b>المبلغ المعادل بالجنيه المصري</b> بالأسفل.</li>
-                    <li>انسخ <b>رقم العملية (TX ID / Order ID)</b> وضعه في خانة رقم العملية بالأسفل.</li>
+                    <li>افتح تطبيق <b>Binance</b> واختر <b>Binance Pay ⬅ إرسال (Send)</b>.</li>
+                    <li>أرسل المبلغ بعملة <b>USDT</b> إلى معرف البوت الموضح بالأعلى، وضع كود الملاحظة <b>(${tid})</b> في خانة <b>Note</b> ليتم التعرف على دفعتك تلقائياً!</li>
+                    <li>أو انسخ <b>رقم الطلب (Order ID)</b> من إيصال التحويل وضعه في الخانة (3) بالأسفل ليُضاف الرصيد في 10 ثوانٍ.</li>
                 `;
             } else {
-                instSteps.innerHTML = `
-                    <li>انسخ بيانات الحساب أو الرقم الموضح في الصندوق بالأعلى.</li>
-                    <li>قم بتحويل المبلغ المطلوب عبر <b>${selectedMethodObj.name}</b>.</li>
-                    <li>أدخل <b>المبلغ بالجنيه المصري</b> في الخانة المخصصة بالأسفل.</li>
-                    <li>أدخل <b>رقم الحساب المحول منه أو رقم الإيصال</b> ثم اضغط تأكيد الإيداع.</li>
-                `;
+                binanceExtra.style.display = 'none';
+                lblTarget.innerText = "📌 حوّل المبلغ إلى هذا الرقم / الحساب:";
+                lblWallet.innerText = "3️⃣ رقم الحساب المحول منه / رقم العملية (TX ID):";
+                walletInput.placeholder = "أدخل الرقم الذي حولت منه أو رقم العملية";
+                submitBtn.innerText = "تأكيد وإرسال طلب الإيداع ↗";
+                submitBtn.style.background = "linear-gradient(135deg, #00f2ff, #0077ff)";
+
+                if (lowerName.includes("فودافون") || lowerName.includes("كاش") || lowerName.includes("اتصالات") || lowerName.includes("اورنج") || lowerName.includes("وي")) {
+                    instSteps.innerHTML = `
+                        <li>انسخ رقم المحفظة الموضح بالأعلى بالضغط على زر <b>(نسخ)</b>.</li>
+                        <li>قم بتحويل المبلغ المطلوب (بالجنيه) من محفظتك الإلكترونية إلى هذا الرقم.</li>
+                        <li>اكتب <b>المبلغ بالجنيه</b> الذي قمت بتحويله في الخانة بالأسفل.</li>
+                        <li>اكتب <b>رقم هاتفك الذي قمت بالتحويل منه</b> في خانة رقم الحساب لتأكيد العملية فوراً.</li>
+                    `;
+                } else if (lowerName.includes("انستا") || lowerName.includes("instapay")) {
+                    instSteps.innerHTML = `
+                        <li>انسخ عنوان الدفع (IPA) أو الرقم الموضح بالأعلى.</li>
+                        <li>افتح تطبيق <b>InstaPay</b> وحوّل المبلغ المطلوب بالجنيه المصري.</li>
+                        <li>أدخل المبلغ المحول بالجنيه في الخانة بالأسفل.</li>
+                        <li>أدخل <b>عنوان انستا باي الخاص بك أو رقم المرجع (Reference)</b> في خانة التأكيد.</li>
+                    `;
+                } else {
+                    instSteps.innerHTML = `
+                        <li>انسخ بيانات الحساب أو الرقم الموضح في الصندوق بالأعلى.</li>
+                        <li>قم بتحويل المبلغ المطلوب عبر <b>${selectedMethodObj.name}</b>.</li>
+                        <li>أدخل <b>المبلغ بالجنيه المصري</b> في الخانة المخصصة بالأسفل.</li>
+                        <li>أدخل <b>رقم الحساب المحول منه أو رقم الإيصال</b> ثم اضغط تأكيد الإيداع.</li>
+                    `;
+                }
             }
         }
 
@@ -379,8 +517,13 @@
             if (!selectedMethodObj || !selectedMethodObj.description) return;
             navigator.clipboard.writeText(selectedMethodObj.description).then(() => {
                 tg.showAlert(`✅ تم نسخ: ${selectedMethodObj.description}`);
-            }).catch(() => {
-                tg.showAlert(`📌 البيانات: ${selectedMethodObj.description}`);
+            });
+        }
+
+        function copyBinanceNote() {
+            if (!tid) return;
+            navigator.clipboard.writeText(tid).then(() => {
+                tg.showAlert(`✅ تم نسخ كود الملاحظة (${tid})!\nضعه في خانة Note أثناء الإرسال في تطبيق باينانس ليُضاف رصيدك تلقائياً!`);
             });
         }
 
@@ -392,15 +535,31 @@
 
             if (!selectedMethodObj) return tg.showAlert("❌ يرجى اختيار وسيلة الإيداع أولاً!");
             if (isNaN(amount) || amount <= 0) return tg.showAlert("❌ يرجى إدخال مبلغ صحيح بالجنيه للإيداع!");
-            if (!wallet) return tg.showAlert("❌ يرجى إدخال رقم المحفظة المحول منها أو رقم العملية (TX ID)!");
+            if (!wallet) return tg.showAlert("❌ يرجى إدخال رقم المحفظة المحول منها أو رقم العملية (Order ID / TX ID)!");
+
+            const isBinance = Boolean(selectedMethodObj.isBinanceAuto);
+
+            // التحقق من عدم تكرار رقم عملية باينانس
+            if (isBinance) {
+                const { data: existTx } = await client
+                    .from('deposits')
+                    .select('id, status')
+                    .or(`tx_id.eq.${wallet},wallet_info.eq.${wallet}`)
+                    .maybeSingle();
+
+                if (existTx) {
+                    return tg.showAlert(existTx.status === 'Completed'
+                        ? "✅ رقم عملية باينانس هذا تم اعتماده وإضافة رصيده لحسابك بالفعل!"
+                        : "⏳ رقم هذه العملية قيد الفحص التلقائي حالياً، سيتم إضافة الرصيد خلال ثوانٍ!");
+                }
+            }
 
             btn.disabled = true;
-            btn.innerText = "⏳ جاري إرسال الطلب...";
+            btn.innerText = isBinance ? "⏳ جاري مطابقة العملية مع سيرفر Binance..." : "⏳ جاري إرسال الطلب...";
 
             const method = selectedMethodObj.name;
-            const txId = "DEP-" + Math.floor(100000 + Math.random() * 900000);
+            const txId = isBinance ? wallet : ("DEP-" + Math.floor(100000 + Math.random() * 900000));
             
-            // 1. إرسال الطلب لجدول الإيداعات (بالجنيه)
             const { error } = await client.from('deposits').insert([{
                 telegram_id: tid,
                 tx_id: txId,
@@ -412,22 +571,62 @@
             }]);
 
             if (!error) {
-                // 2. تسجيل العملية في جدول السجلات (الهيستوري) بالجنيه
-                await client.from('transactions').insert([{
-                    telegram_id: String(tid),
-                    type: 'deposit',
-                    title: `طلب شحن رصيد (${method})`,
-                    amount: `+${amount.toFixed(2)} ج.م`,
-                    status: 'قيد المراجعة'
-                }]);
+                if (!isBinance) {
+                    await client.from('transactions').insert([{
+                        telegram_id: String(tid),
+                        type: 'deposit',
+                        title: `طلب شحن رصيد (${method})`,
+                        amount: `+${amount.toFixed(2)} ج.م`,
+                        status: 'قيد المراجعة'
+                    }]);
+                }
 
-                tg.showAlert(`✅ تم إرسال طلب الإيداع بنجاح!\n\n🆔 رقم المعاملة: ${txId}\n💵 المبلغ: ${amount.toFixed(2)} ج.م\n\nسيتم مراجعة التحويل وإضافة الجنيهات لرصيدك قريباً.`);
-                goHome();
+                document.getElementById('deposit-wallet').value = "";
+                await loadMyDepositsHistory();
+
+                if (isBinance) {
+                    tg.showAlert(`⚡ تم إرسال رقم العملية (${wallet}) للرادار التلقائي!\n\nيقوم البوت الآن بمطابقة الدفعة مع محفظة Binance وسيُضاف الرصيد لحسابك تلقائياً خلال 10 ثوانٍ!`);
+                } else {
+                    tg.showAlert(`✅ تم إرسال طلب الإيداع بنجاح!\n\n🆔 رقم المعاملة: ${txId}\n💵 المبلغ: ${amount.toFixed(2)} ج.م\n\nسيتم مراجعة التحويل وإضافة الجنيهات لرصيدك قريباً.`);
+                }
             } else {
-                btn.disabled = false;
-                btn.innerText = "تأكيد وإرسال طلب الإيداع ↗";
                 tg.showAlert("❌ خطأ أثناء إرسال الطلب: " + error.message);
             }
+
+            btn.disabled = false;
+            btn.innerText = isBinance ? "⚡ فحص العملية وإضافة الرصيد تلقائياً الآن" : "تأكيد وإرسال طلب الإيداع ↗";
+        }
+
+        async function loadMyDepositsHistory() {
+            const box = document.getElementById('my-deposits-history');
+            if (!tid || !box) return;
+            const { data } = await client
+                .from('deposits')
+                .select('*')
+                .eq('telegram_id', String(tid))
+                .order('id', { ascending: false })
+                .limit(6);
+
+            if (!data || data.length === 0) {
+                box.innerHTML = `<div style="text-align:center; font-size:12px; color:var(--text-gray); padding:10px;">لا توجد عمليات شحن سابقة حتى الآن.</div>`;
+                return;
+            }
+
+            box.innerHTML = data.map(d => {
+                let stHtml = `<span style="color:#ffaa00;">⏳ قيد الفحص</span>`;
+                if (d.status === 'Completed') stHtml = `<span style="color:var(--main-green);">✅ تم الإيداع</span>`;
+                if (d.status === 'Rejected') stHtml = `<span style="color:#ff4d4d;">❌ مرفوض</span>`;
+
+                return `
+                    <div class="history-card">
+                        <div>
+                            <b>${d.method} (${Number(d.amount).toFixed(2)} ج.م)</b>
+                            <div style="font-size:10.5px; color:var(--text-gray); font-family:monospace;">ID: ${d.tx_id || d.id}</div>
+                        </div>
+                        <b>${stHtml}</b>
+                    </div>
+                `;
+            }).join("");
         }
 
         function goHome() { window.location.href = `index.html?id=${tid}`; }
