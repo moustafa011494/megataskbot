@@ -2,243 +2,970 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Temp Mail - MegaTask</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        * { box-sizing: border-box; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; padding-bottom: 110px; }
-        
-        .header { text-align: center; padding: 10px 0 20px; }
-        .header h2 { margin: 0; font-size: 22px; color: var(--main-green); }
-        .header p { margin: 5px 0 0; font-size: 13px; color: var(--text-gray); }
+    <title>MegaTask - البريد المؤقت الذكي Pro</title>
 
-        /* صندوق الإيميل */
-        .email-box { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.05); }
-        .email-display { background: #000; border: 1px solid #333; border-radius: 12px; padding: 12px 10px; font-size: 14px; color: var(--main-green); font-weight: bold; margin: 10px 0 15px; word-break: break-all; user-select: all; }
-        
-        .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn { background: var(--main-green); color: black; border: none; padding: 12px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px; }
-        .btn:active { transform: scale(0.96); }
-        .btn-secondary { background: #252932; color: white; border: 1px solid #333842; }
+    <!-- إعلانات Monetag ومكاتب تيليجرام و Supabase ودرع الحماية -->
+    <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="security.js"></script>
+
+    <style>
+        :root {
+            --emerald: #00e676;
+            --emerald-dark: #00994d;
+            --cyan: #00e5ff;
+            --amber: #ffb300;
+            --crimson: #ff3d57;
+            --bg-dark: #070a0f;
+            --card-bg: #111621;
+            --card-border: #222b3d;
+            --text-muted: #8b96ab;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.07) 0%, transparent 50%),
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 26px 26px, 26px 26px;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            margin: 0;
+            padding: 14px 14px 115px;
+            overflow-x: hidden;
+        }
+
+        /* الشريط العلوي */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .btn-back {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .wallets-row {
+            display: flex;
+            gap: 8px;
+        }
+        .w-pill {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 6px 11px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .w-pill.pts { border-color: rgba(0, 230, 118, 0.45); color: var(--emerald); }
+        .w-pill.vip { border-color: rgba(255, 179, 0, 0.45); color: var(--amber); cursor: pointer; }
+
+        /* الهيدر الرئيسي وبطاقة الإيميل */
+        .mail-hero-card {
+            background: linear-gradient(145deg, #131926, #0d111a);
+            border: 1.5px solid var(--card-border);
+            border-radius: 22px;
+            padding: 18px 15px;
+            margin-bottom: 14px;
+            box-shadow: 0 6px 0 #05070b;
+            text-align: center;
+            position: relative;
+        }
+        .server-status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .live-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            color: var(--emerald);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--emerald);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--emerald);
+            animation: pulseAnim 1.5s infinite;
+        }
+        @keyframes pulseAnim {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.4; }
+        }
+
+        .email-display-box {
+            background: #06080c;
+            border: 1.5px solid #253248;
+            border-radius: 14px;
+            padding: 13px 12px;
+            margin: 8px 0 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            direction: ltr;
+        }
+        .email-text {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14.5px;
+            font-weight: bold;
+            color: var(--cyan);
+            word-break: break-all;
+            text-align: left;
+            flex: 1;
+            user-select: all;
+        }
+        .btn-qr-mini {
+            background: #161f30;
+            border: 1px solid #2d3d59;
+            color: #fff;
+            padding: 6px 9px;
+            border-radius: 9px;
+            font-size: 12px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* أزرار التحكم بالإيميل */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr 1fr;
+            gap: 8px;
+        }
+        .btn {
+            background: var(--emerald);
+            color: #000;
+            border: none;
+            padding: 11px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--emerald-dark);
+            transition: 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--emerald-dark); }
+        .btn-cyan { background: var(--cyan); box-shadow: 0 4px 0 #0088a3; }
+        .btn-dark {
+            background: #1b2233;
+            color: #e2e8f0;
+            border: 1px solid #2e3b54;
+            box-shadow: 0 4px 0 #090c12;
+        }
+
+        /* شريط الإيميلات المحفوظة (التبديل السريع) + الهوية المساعدة */
+        .tools-strip {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .strip-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: #cbd5e1;
+            padding: 10px;
+            border-radius: 13px;
+            font-size: 11.5px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+        .strip-btn:active { border-color: var(--cyan); color: #fff; }
+
+        /* بطاقة الهوية المساعدة للتسجيل */
+        #helper-identity-box {
+            display: none;
+            background: #0e131d;
+            border: 1px dashed var(--amber);
+            border-radius: 15px;
+            padding: 12px;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+        .id-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+            border-bottom: 1px solid #1c2436;
+        }
+        .id-row:last-child { border-bottom: none; }
+        .copy-chip {
+            background: rgba(255, 179, 0, 0.12);
+            border: 1px solid rgba(255, 179, 0, 0.35);
+            color: var(--amber);
+            padding: 3px 9px;
+            border-radius: 7px;
+            font-family: monospace;
+            font-size: 12px;
+            cursor: pointer;
+        }
 
         /* شريط صندوق الوارد */
-        .inbox-header { display: flex; justify-content: space-between; align-items: center; margin: 25px 5px 12px; }
-        .inbox-header h3 { margin: 0; font-size: 16px; color: white; }
-        .btn-refresh-manual { background: none; border: 1px solid #333842; color: var(--main-green); font-size: 11px; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .inbox-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 18px 4px 10px;
+        }
+        .inbox-header h3 {
+            margin: 0;
+            font-size: 15px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .inbox-count-badge {
+            background: var(--cyan);
+            color: #000;
+            font-size: 11px;
+            font-weight: 900;
+            padding: 1px 7px;
+            border-radius: 10px;
+        }
+        .btn-refresh-manual {
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid var(--emerald);
+            color: var(--emerald);
+            font-size: 11.5px;
+            padding: 6px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-        .messages-list { display: flex; flex-direction: column; gap: 10px; }
-        .msg-card { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 15px; padding: 15px; cursor: pointer; transition: 0.2s; text-align: right; }
-        .msg-card:active { border-color: var(--main-green); }
-        .msg-sender { font-size: 13px; font-weight: bold; color: var(--main-green); margin-bottom: 4px; display: flex; justify-content: space-between; }
-        .msg-date { font-size: 10px; color: var(--text-gray); font-weight: normal; }
-        .msg-subject { font-size: 13px; color: white; margin-bottom: 4px; }
-        .msg-snippet { font-size: 11px; color: var(--text-gray); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* كروت الرسائل الواردة + شريط كود الـ OTP المستخرج */
+        .messages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .msg-card {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-right: 4px solid var(--emerald);
+            border-radius: 16px;
+            padding: 14px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: right;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .msg-card:active { transform: scale(0.99); border-color: var(--cyan); }
+        .msg-sender {
+            font-size: 12.5px;
+            font-weight: bold;
+            color: var(--cyan);
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .msg-date { font-size: 10.5px; color: var(--text-muted); font-weight: normal; }
+        .msg-subject { font-size: 13.5px; color: #fff; font-weight: bold; margin-bottom: 5px; }
+        .msg-snippet { font-size: 11.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-        .empty-inbox { text-align: center; padding: 40px 15px; color: var(--text-gray); font-size: 13px; line-height: 1.6; }
+        /* شريط الـ OTP الذكي على الكارت */
+        .otp-detected-bar {
+            margin-top: 10px;
+            background: rgba(0, 230, 118, 0.12);
+            border: 1px dashed var(--emerald);
+            border-radius: 10px;
+            padding: 8px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .otp-code-num {
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: 900;
+            color: var(--emerald);
+            letter-spacing: 2px;
+        }
+        .btn-copy-otp {
+            background: var(--emerald);
+            color: #000;
+            border: none;
+            padding: 5px 11px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-        /* نافذة قراءة الرسالة */
-        #mail-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
-        .modal-body { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 20px; padding: 20px; width: 100%; max-height: 80vh; overflow-y: auto; text-align: right; }
-        .modal-title { font-size: 16px; color: var(--main-green); margin-bottom: 8px; }
-        .modal-meta { font-size: 11px; color: var(--text-gray); border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; }
-        .modal-content { font-size: 13px; line-height: 1.7; color: #ddd; word-break: break-word; }
+        .empty-inbox {
+            text-align: center;
+            padding: 38px 15px;
+            background: var(--card-bg);
+            border: 1.5px dashed var(--card-border);
+            border-radius: 18px;
+            color: var(--text-muted);
+            font-size: 12.5px;
+            line-height: 1.7;
+        }
 
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
-        .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; cursor: pointer; text-decoration: none; }
-        .nav-item.active { color: var(--main-green); }
+        /* النوافذ المنبثقة (قراءة الرسالة / تخصيص الإيميل / المحفوظات) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 7, 12, 0.9);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-body {
+            background: var(--card-bg);
+            border: 1.5px solid #2d3850;
+            border-radius: 22px;
+            padding: 18px;
+            width: 100%;
+            max-width: 440px;
+            max-height: 86vh;
+            overflow-y: auto;
+            text-align: right;
+        }
+        .modal-title { font-size: 15.5px; color: var(--emerald); margin: 0 0 6px; font-weight: bold; }
+        .modal-meta { font-size: 11px; color: var(--text-muted); border-bottom: 1px solid #252f42; padding-bottom: 10px; margin-bottom: 12px; line-height: 1.6; }
+        
+        /* قارئ الرسائل المعزول والآمن */
+        .mail-reader-box {
+            background: #ffffff;
+            color: #111827;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 13px;
+            line-height: 1.65;
+            max-height: 45vh;
+            overflow-y: auto;
+            word-break: break-word;
+            direction: auto;
+        }
+        .mail-reader-box a { color: #0284c7; font-weight: bold; word-break: break-all; }
+
+        .input-field {
+            width: 100%;
+            background: #06080c;
+            border: 1.5px solid #263147;
+            color: #fff;
+            padding: 11px 12px;
+            border-radius: 11px;
+            font-size: 13px;
+            margin-bottom: 10px;
+            outline: none;
+        }
+
+        .saved-acc-item {
+            background: #0b0e15;
+            border: 1px solid #232c3f;
+            border-radius: 11px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(17, 22, 33, 0.98);
+            display: flex;
+            justify-content: space-around;
+            padding: 11px 0;
+            border-top: 1px solid var(--card-border);
+            z-index: 1000;
+        }
+        .nav-item { text-align: center; color: var(--text-muted); font-size: 11px; font-weight: bold; cursor: pointer; text-decoration: none; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h2>البريد المؤقت 📧</h2>
-        <p>أنشئ بريداً مؤقتاً لاستقبال رسائل وأكواد التفعيل فوراً</p>
-    </div>
-
-    <div class="email-box">
-        <span style="font-size: 12px; color: var(--text-gray);">عنوان البريد النشط الخاص بك:</span>
-        <div class="email-display" id="active-email">⏳ جاري الاتصال وتوليد البريد...</div>
-        
-        <div class="actions-grid">
-            <button class="btn" onclick="copyEmail()">📋 نسخ الإيميل</button>
-            <button class="btn btn-secondary" onclick="confirmNewEmail()">🔄 إيميل جديد</button>
+    <!-- الشريط العلوي -->
+    <div class="top-bar">
+        <button class="btn-back" onclick="goHome()">↩️ الرئيسية</button>
+        <div class="wallets-row">
+            <div class="w-pill pts">🪙 <span id="user-points">0</span> نقطة</div>
+            <div class="w-pill vip" id="vip-badge-btn" onclick="activateMailVip()">⚡ VIP بدون إعلان</div>
         </div>
     </div>
 
+    <!-- البطاقة الرئيسية للبريد المؤقت -->
+    <div class="mail-hero-card">
+        <div class="server-status-row">
+            <div class="live-indicator">
+                <span class="pulse-dot"></span>
+                <span id="provider-badge">متصل بالرادار السحابي</span>
+            </div>
+            <span id="auto-poll-txt">🔄 فحص تلقائي كل 5ث</span>
+        </div>
+
+        <div class="email-display-box">
+            <div class="email-text" id="active-email">⏳ جاري توليد بريد نشط...</div>
+            <button class="btn-qr-mini" onclick="openQrModal()" title="رمز QR">📱 QR</button>
+        </div>
+
+        <div class="actions-grid">
+            <button class="btn" onclick="copyEmailWithReward()">📋 نسخ الإيميل (+2ن)</button>
+            <button class="btn btn-cyan" onclick="generateRandomEmailWithReward()">🔄 بريد عشوائي</button>
+            <button class="btn btn-dark" onclick="openCustomModal()">✍️ اسم مخصص</button>
+        </div>
+    </div>
+
+    <!-- شريط الأدوات المساعدة (صناديق البريد المحفوظة + هوية التسجيل المساعدة) -->
+    <div class="tools-strip">
+        <div class="strip-btn" onclick="openSavedAccountsModal()">
+            📂 إيميلاتي النشطة (<span id="saved-count">1</span>)
+        </div>
+        <div class="strip-btn" onclick="toggleHelperIdentity()">
+            🪪 اسم وباسورد جاهز للتسجيل
+        </div>
+    </div>
+
+    <!-- بطاقة الهوية المساعدة للتسجيل في المواقع -->
+    <div id="helper-identity-box">
+        <div style="color: var(--amber); font-weight: bold; margin-bottom: 6px; display: flex; justify-content: space-between;">
+            <span>🪪 بيانات مساعدة للتسجيل السريع (اضغط للنسخ):</span>
+            <span style="cursor: pointer; color: var(--cyan);" onclick="generateHelperIdentity()">🔄 تغيير</span>
+        </div>
+        <div class="id-row">
+            <span style="color: var(--text-muted);">الاسم الكامل:</span>
+            <span class="copy-chip" id="help-name" onclick="copyTextValue(this.innerText)">Mostafa Salem</span>
+        </div>
+        <div class="id-row">
+            <span style="color: var(--text-muted);">كلمة سر قوية:</span>
+            <span class="copy-chip" id="help-pass" onclick="copyTextValue(this.innerText)">Mega#99281@Tx</span>
+        </div>
+    </div>
+
+    <!-- شريط صندوق الوارد -->
     <div class="inbox-header">
-        <h3>صندوق الوارد (الواردات) 📥</h3>
-        <button class="btn-refresh-manual" onclick="manualRefresh()">🔄 تحديث الآن</button>
+        <h3>
+            <span>📥 صندوق الوارد والأكواد</span>
+            <span class="inbox-count-badge" id="inbox-counter">0</span>
+        </h3>
+        <button class="btn-refresh-manual" id="btn-manual-ref" onclick="manualRefresh()">🔄 تحديث الآن</button>
     </div>
 
+    <!-- قائمة الرسائل -->
     <div id="messages-container" class="messages-list">
-        <div id="empty-inbox-msg" class="empty-inbox">⏳ بانتظار وصول رسائل أو أكواد التفعيل...</div>
+        <div id="empty-inbox-msg" class="empty-inbox">
+            📡 <b>رادار الرسائل يعمل الآن...</b><br>
+            انسخ الإيميل بالأعلى واستخدمه في أي موقع أو تطبيق، وستظهر الرسالة وكود التفعيل (OTP) هنا تلقائياً خلال ثوانٍ!
+        </div>
     </div>
 
-    <!-- نافذة قراءة الرسالة -->
-    <div id="mail-modal">
+    <!-- 1. نافذة قراءة الرسالة الكاملة + إرسالها لشات البوت -->
+    <div id="mail-modal" class="modal-overlay">
         <div class="modal-body">
             <h4 class="modal-title" id="m-subject">الموضوع</h4>
             <div class="modal-meta" id="m-meta">من: ...</div>
-            <div class="modal-content" id="m-body">المحتوى...</div>
-            <button class="btn" style="width: 100%; margin-top: 20px;" onclick="closeModal()">إغلاق النافذة</button>
+
+            <!-- شريط الكود المستخرج داخل النافذة إن وجد -->
+            <div id="modal-otp-box" class="otp-detected-bar" style="display: none; margin-bottom: 12px;">
+                <span>🔑 كود التفعيل المستخرج: <b class="otp-code-num" id="modal-otp-val">----</b></span>
+                <button class="btn-copy-otp" onclick="copyOtpCode(document.getElementById('modal-otp-val').innerText)">نسخ الكود 📋</button>
+            </div>
+
+            <div class="mail-reader-box" id="m-body">المحتوى...</div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px;">
+                <button class="btn btn-cyan" onclick="forwardCurrentMailToBot()">📲 حفظ في شات البوت</button>
+                <button class="btn btn-dark" onclick="closeModal('mail-modal')">✖ إغلاق</button>
+            </div>
         </div>
     </div>
 
+    <!-- 2. نافذة إنشاء إيميل باسم مخصص (Custom Email) -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-body">
+            <h4 class="modal-title" style="color: var(--cyan);">✍️ إنشاء بريد مؤقت باسمك المفضل</h4>
+            <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px;">
+                اكتب الاسم الذي تريده باللغة الإنجليزية أو الأرقام (مثلاً: <code>mostafa.vip</code>):
+            </p>
+            <input type="text" id="custom-user-input" class="input-field" style="direction: ltr; text-align: left;" placeholder="username (e.g. mostafa99)">
+            <select id="custom-domain-select" class="input-field" style="direction: ltr; text-align: left;"></select>
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <button class="btn" style="flex: 1;" onclick="createCustomEmailAccount()">✅ إنشاء وتفعيل الآن</button>
+                <button class="btn btn-dark" style="flex: 1;" onclick="closeModal('custom-modal')">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. نافذة التبديل بين الإيميلات المحفوظة (Multi-Inbox Vault) -->
+    <div id="saved-modal" class="modal-overlay">
+        <div class="modal-body">
+            <h4 class="modal-title">📂 خزنة إيميلاتك النشطة (آخر 5 إيميلات)</h4>
+            <p style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px;">
+                يمكنك العودة لأي بريد أنشأته سابقاً لاستقبال رسائل إضافية عليه بضغطة زر:
+            </p>
+            <div id="saved-accounts-list"></div>
+            <button class="btn btn-dark" style="width: 100%; margin-top: 10px;" onclick="closeModal('saved-modal')">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- 4. نافذة رمز QR للبريد المؤقت -->
+    <div id="qr-modal" class="modal-overlay">
+        <div class="modal-body" style="text-align: center;">
+            <h4 class="modal-title" style="color: var(--cyan);">📱 رمز QR للبريد المؤقت</h4>
+            <p style="font-size: 11px; color: var(--text-muted);">امسح الرمز من أي جهاز آخر لنسخ البريد مباشرة</p>
+            <img id="qr-mail-img" src="" style="width: 180px; height: 180px; border-radius: 12px; border: 4px solid #fff; margin: 10px auto; display: block; background: #fff;">
+            <button class="btn btn-dark" style="width: 100%; margin-top: 10px;" onclick="closeModal('qr-modal')">إغلاق</button>
+        </div>
+    </div>
+
+    <!-- شريط التنقل السفلي -->
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
-        <div onclick="goTasks()" class="nav-item">📋<br>الربح من المهام</div>
-        <div onclick="goGames()" class="nav-item" style="background: var(--main-green); width: 40px; height: 40px; border-radius: 50%; color: black; line-height: 40px; margin-top: -20px; font-size: 20px; text-align: center; cursor: pointer;">🎮</div>
+        <div onclick="goTasks()" class="nav-item">📋<br>المهام</div>
+        <div onclick="goGames()" class="nav-item" style="background: var(--emerald); width: 40px; height: 40px; border-radius: 50%; color: black; line-height: 40px; margin-top: -20px; font-size: 20px; text-align: center; cursor: pointer;">🎮</div>
         <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
-        <div onclick="goProfile()" class="nav-item">👤<br>الملف الشخصي</div>
+        <div onclick="goProfile()" class="nav-item">👤<br>حسابي</div>
     </nav>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+        const tg = window.Telegram?.WebApp;
+        if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        let tid = String(
+            tg?.initDataUnsafe?.user?.id ||
+            params.get('id') ||
+            localStorage.getItem('telegram_id') ||
+            localStorage.getItem('megatask_uid') ||
+            ""
+        ).trim();
+        if (tid === "undefined" || tid === "null") tid = "";
 
+        let userData = null;
         let currentAccount = null;
+        let savedAccounts = [];
+        let availableDomains = [];
         let pollTimer = null;
         let isFetching = false;
         let storedMessages = {};
+        let currentlyOpenedMsg = null;
+
+        const MAX_DAILY_MAIL_REWARDS = 10;
+
+        function notifyUser(msg) {
+            if (tg && tg.showAlert) tg.showAlert(msg);
+            else alert(msg);
+        }
 
         function escapeHtml(str) {
             return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        async function initMail() {
-            const savedData = localStorage.getItem('temp_mail_account_v5');
-            if (savedData) {
+        function getTodayKey() {
+            const d = new Date();
+            return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+        }
+
+        function isVipActive() {
+            const until = Number(localStorage.getItem(`tempmail_vip_until_${tid}`) || 0);
+            return until > Date.now();
+        }
+
+        // =========================================================================
+        // 🔑 الرادار الذكي لاستخراج أكواد التفعيل (OTP 4-8 Digits) من نص الرسالة
+        // =========================================================================
+        function extractOtpFromText(subject, textBody) {
+            const combined = `${subject || ""} ${textBody || ""}`.replace(/<[^>]*>/g, " ");
+            // البحث عن كلمات مفتاحية متبوعة بكود أو رقم منفصل من 4 إلى 8 أرقام (مع استبعاد السنوات مثل 2025/2026)
+            const matches = combined.match(/\b(\d{4,8})\b/g);
+            if (!matches) return null;
+            for (const m of matches) {
+                if (m !== "2024" && m !== "2025" && m !== "2026" && m !== "2027" && m !== "1000") {
+                    return m;
+                }
+            }
+            return matches[0];
+        }
+
+        // =========================================================================
+        // 👤 تهيئة حساب المستخدم، درع الحماية، وبدء تشغيل البريد المؤقت
+        // =========================================================================
+        async function initPage() {
+            generateHelperIdentity();
+            updateVipBadgeUI();
+
+            // 1. جلب نقاط المستخدم فوراً
+            if (tid) {
                 try {
-                    currentAccount = JSON.parse(savedData);
-                    document.getElementById('active-email').innerText = currentAccount.address;
-                    fetchMessages();
-                } catch (e) {
-                    await generateNewEmail();
+                    const { data: u } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
+                    if (u) {
+                        userData = u;
+                        document.getElementById('user-points').innerText = Number(u.points || 0).toLocaleString();
+                    }
+                    // تشغيل درع الحماية في الخلفية
+                    if (typeof MegaSecurity !== 'undefined') {
+                        MegaSecurity.verifyDeviceAndAccount(client, tid).catch(() => {});
+                    }
+                } catch (e) {}
+            }
+
+            // 2. تحميل قائمة الإيميلات المحفوظة
+            try {
+                savedAccounts = JSON.parse(localStorage.getItem(`megatask_saved_mails_${tid}`) || "[]");
+            } catch (e) {
+                savedAccounts = [];
+            }
+
+            // 3. التحقق من وجود حساب نشط وصالح، أو توليد حساب جديد فوراً
+            if (savedAccounts.length > 0) {
+                currentAccount = savedAccounts[0];
+                document.getElementById('active-email').innerText = currentAccount.address;
+                updateProviderBadge();
+                updateSavedCountUI();
+                const valid = await verifyAndFetchMessages();
+                if (!valid) {
+                    await createNewTempEmail();
                 }
             } else {
-                await generateNewEmail();
+                await createNewTempEmail();
             }
 
             if (pollTimer) clearInterval(pollTimer);
-            pollTimer = setInterval(fetchMessages, 6000);
+            pollTimer = setInterval(verifyAndFetchMessages, 5000);
         }
 
-        function confirmNewEmail() {
-            const warningMsg = "⚠️ هل أنت متأكد من إنشاء بريد جديد؟\n\nسيتم حذف البريد الحالي وصندوق الرسائل الواردة نهائياً.";
-            if (tg.showConfirm) {
-                tg.showConfirm(warningMsg, (confirmed) => {
-                    if (confirmed) generateNewEmail();
-                });
+        function updateProviderBadge() {
+            const badge = document.getElementById('provider-badge');
+            if (!currentAccount) return;
+            const pMap = {
+                mailtm: "سيرفر Mail.tm السريع ⚡",
+                dropmail: "سيرفر DropMail السحابي 🌐",
+                guerrilla: "سيرفر Guerrilla الاحتياطي 🛡️"
+            };
+            badge.innerText = pMap[currentAccount.provider] || "متصل بالرادار";
+        }
+
+        function saveAccountToVault(acc) {
+            currentAccount = acc;
+            savedAccounts = savedAccounts.filter(a => a.address !== acc.address);
+            savedAccounts.unshift(acc);
+            if (savedAccounts.length > 5) savedAccounts = savedAccounts.slice(0, 5);
+            localStorage.setItem(`megatask_saved_mails_${tid}`, JSON.stringify(savedAccounts));
+            updateSavedCountUI();
+            updateProviderBadge();
+        }
+
+        function updateSavedCountUI() {
+            document.getElementById('saved-count').innerText = savedAccounts.length;
+        }
+
+        // =========================================================================
+        // 📺 نظام الإعلانات والمكافآت (+2 نقطة) ووضع الـ VIP
+        // =========================================================================
+        function updateVipBadgeUI() {
+            const btn = document.getElementById('vip-badge-btn');
+            if (isVipActive()) {
+                btn.innerText = "🟢 VIP مفعل";
+                btn.style.color = "var(--emerald)";
+                btn.style.borderColor = "var(--emerald)";
             } else {
-                if (confirm(warningMsg)) generateNewEmail();
+                btn.innerText = "⚡ VIP (5ن)";
             }
         }
 
-        async function generateNewEmail() {
-            const display = document.getElementById('active-email');
-            display.innerText = "⏳ جاري توليد بريد جديد...";
+        async function activateMailVip() {
+            if (isVipActive()) return notifyUser("🟢 وضع VIP مفعل لديك بالفعل (بدون إعلانات)!");
+            if (!userData || Number(userData.points || 0) < 5) {
+                return notifyUser("❌ تحتاج إلى 5 نقاط لتفعيل وضع VIP الخالي من الإعلانات لمدة 30 دقيقة!\n\n💡 انسخ الإيميل أو أنشئ بريداً جديداً مجاناً لتكسب +2 نقطة مع كل استخدام!");
+            }
+            if (!confirm("⚡ هل تريد خصم 5 نقاط وتفعيل وضع البريد المؤقت VIP لمدة 30 دقيقة بدون أي إعلانات؟")) return;
 
-            // تفريغ الرسائل عند طلب إيميل جديد فقط
-            storedMessages = {};
-            const container = document.getElementById('messages-container');
-            container.innerHTML = '<div id="empty-inbox-msg" class="empty-inbox">⏳ بانتظار وصول رسائل أو أكواد التفعيل...</div>';
+            const newPts = Number(userData.points) - 5;
+            const { data, error } = await client.from('users').update({ points: newPts }).eq('telegram_id', tid).select().single();
+            if (!error && data) {
+                userData = data;
+                document.getElementById('user-points').innerText = newPts.toLocaleString();
+                localStorage.setItem(`tempmail_vip_until_${tid}`, String(Date.now() + 30 * 60 * 1000));
+                updateVipBadgeUI();
 
-            // 1. تجربة DropMail
+                await client.from('transactions').insert([{
+                    telegram_id: String(tid),
+                    type: 'points',
+                    title: 'تفعيل وضع VIP للبريد المؤقت (30 دقيقة)',
+                    amount: '-5 نقاط',
+                    status: 'مكتمل'
+                }]);
+                notifyUser("🎉 تم تفعيل وضع VIP بنجاح!");
+            }
+        }
+
+        async function triggerAdAndReward(actionTitle) {
+            if (isVipActive()) return;
             try {
-                const res = await fetch("https://dropmail.me/api/graphql/web-test-20140228", {
+                if (typeof show_10959333 === 'function') {
+                    await Promise.race([
+                        show_10959333(),
+                        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 4500))
+                    ]);
+                }
+
+                const rewardKey = `tempmail_rewards_${tid}_${getTodayKey()}`;
+                const countToday = Number(localStorage.getItem(rewardKey) || 0);
+
+                if (userData && countToday < MAX_DAILY_MAIL_REWARDS) {
+                    const newPts = Number(userData.points || 0) + 2;
+                    const newTotal = Number(userData.total_earned || 0) + 2;
+                    const { data: updated } = await client.from('users').update({
+                        points: newPts,
+                        total_earned: newTotal
+                    }).eq('telegram_id', tid).select().single();
+
+                    if (updated) userData = updated;
+                    document.getElementById('user-points').innerText = Number(userData.points || 0).toLocaleString();
+                    localStorage.setItem(rewardKey, String(countToday + 1));
+
+                    await client.from('transactions').insert([{
+                        telegram_id: String(tid),
+                        type: 'points',
+                        title: actionTitle || 'مكافأة استخدام البريد المؤقت',
+                        amount: '+2 نقطة',
+                        status: 'مكتمل'
+                    }]);
+                }
+            } catch (e) {}
+        }
+
+        // =========================================================================
+        // 🌐 محرك توليد البريد المؤقت ثلاثي السيرفرات (Mail.tm -> DropMail -> Guerrilla)
+        // =========================================================================
+        async function fetchMailTmDomains() {
+            if (availableDomains.length > 0) return availableDomains;
+            try {
+                const res = await fetch("https://api.mail.tm/domains");
+                if (res.ok) {
+                    const data = await res.json();
+                    const list = data["hydra:member"] || [];
+                    availableDomains = list.filter(d => d.isActive).map(d => d.domain);
+                }
+            } catch (e) {}
+            return availableDomains;
+        }
+
+        async function createNewTempEmail(customPrefix = null, customDomain = null) {
+            const display = document.getElementById('active-email');
+            display.innerText = "⏳ جاري إنشاء بريد سحابي جديد...";
+            resetInboxUI();
+
+            // 1️⃣ المحرك الأول: Mail.tm الرسمي السريع (يدعم الاسم المخصص والعشوائي)
+            try {
+                const domains = await fetchMailTmDomains();
+                if (domains.length > 0) {
+                    const domain = customDomain || domains[Math.floor(Math.random() * domains.length)];
+                    const prefix = customPrefix
+                        ? customPrefix.toLowerCase().replace(/[^a-z0-9._-]/g, '')
+                        : "mt_" + Math.random().toString(36).substring(2, 9) + Math.floor(10 + Math.random() * 89);
+                    const address = `${prefix}@${domain}`;
+                    const password = "Pwd_" + Math.random().toString(36).substring(2, 10) + "!";
+
+                    const createRes = await fetch("https://api.mail.tm/accounts", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ address, password })
+                    });
+
+                    if (createRes.ok || createRes.status === 201) {
+                        const tokenRes = await fetch("https://api.mail.tm/token", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ address, password })
+                        });
+                        if (tokenRes.ok) {
+                            const tokenData = await tokenRes.json();
+                            const acc = {
+                                provider: "mailtm",
+                                address: address,
+                                password: password,
+                                token: tokenData.token,
+                                createdAt: Date.now()
+                            };
+                            saveAccountToVault(acc);
+                            display.innerText = acc.address;
+                            return true;
+                        }
+                    }
+                }
+            } catch (errMailTm) {
+                console.warn("Mail.tm fallback:", errMailTm);
+            }
+
+            // 2️⃣ المحرك الثاني: DropMail GraphQL
+            try {
+                const res = await fetch("https://dropmail.me/api/graphql/megatask_" + Math.floor(1000 + Math.random() * 9000), {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         query: "mutation { introduceSession { id, addresses { address } } }"
                     })
                 });
-
                 if (res.ok) {
                     const json = await res.json();
                     const sess = json.data?.introduceSession;
                     if (sess && sess.addresses && sess.addresses.length > 0) {
-                        currentAccount = {
+                        const acc = {
                             provider: "dropmail",
                             id: sess.id,
-                            address: sess.addresses[0].address
+                            address: sess.addresses[0].address,
+                            createdAt: Date.now()
                         };
-                        localStorage.setItem('temp_mail_account_v5', JSON.stringify(currentAccount));
-                        display.innerText = currentAccount.address;
-                        tg.showAlert("✅ تم إنشاء بريد مؤقت جديد بنجاح!");
-                        return;
+                        saveAccountToVault(acc);
+                        display.innerText = acc.address;
+                        return true;
                     }
                 }
-            } catch (err1) {
-                console.warn("DropMail fallback trigger:", err1);
+            } catch (errDrop) {
+                console.warn("DropMail fallback:", errDrop);
             }
 
-            // 2. بديل Guerrilla Mail
+            // 3️⃣ المحرك الثالث: Guerrilla Mail
             try {
                 const res = await fetch("https://api.guerrillamail.com/ajax.php?f=get_email_address");
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.email_addr) {
-                        currentAccount = {
+                        const acc = {
                             provider: "guerrilla",
                             token: data.sid_token,
-                            address: data.email_addr
+                            address: data.email_addr,
+                            createdAt: Date.now()
                         };
-                        localStorage.setItem('temp_mail_account_v5', JSON.stringify(currentAccount));
-                        display.innerText = currentAccount.address;
-                        tg.showAlert("✅ تم إنشاء بريد مؤقت جديد بنجاح!");
-                        return;
+                        saveAccountToVault(acc);
+                        display.innerText = acc.address;
+                        return true;
                     }
                 }
-            } catch (err2) {
-                console.error("Guerrilla fallback error:", err2);
+            } catch (errGuer) {
+                console.error("Guerrilla error:", errGuer);
             }
 
-            display.innerText = "❌ تعذر الاتصال، اضغط (إيميل جديد) للمحاولة";
+            display.innerText = "❌ اضغط (بريد عشوائي) لإعادة الاتصال";
+            return false;
         }
 
-        async function manualRefresh() {
-            const btn = document.querySelector('.btn-refresh-manual');
-            btn.innerText = "⏳ جاري الفحص...";
-            await fetchMessages();
-            setTimeout(() => { btn.innerText = "🔄 تحديث الآن"; }, 800);
+        function resetInboxUI() {
+            storedMessages = {};
+            document.getElementById('inbox-counter').innerText = "0";
+            document.getElementById('messages-container').innerHTML = `
+                <div id="empty-inbox-msg" class="empty-inbox">
+                    📡 <b>رادار الرسائل يعمل الآن...</b><br>
+                    انسخ الإيميل بالأعلى واستخدمه في أي موقع أو تطبيق، وستظهر الرسالة وكود التفعيل (OTP) هنا تلقائياً خلال ثوانٍ!
+                </div>`;
         }
 
-        async function fetchMessages() {
-            if (!currentAccount || !currentAccount.address || isFetching) return;
+        // =========================================================================
+        // 📥 جلب الرسائل وفحص صلاحية الجلسة واستخراج أكواد الـ OTP تلقائياً
+        // =========================================================================
+        async function verifyAndFetchMessages() {
+            if (!currentAccount || !currentAccount.address || isFetching) return true;
             isFetching = true;
 
             try {
-                if (currentAccount.provider === "dropmail") {
-                    const res = await fetch("https://dropmail.me/api/graphql/web-test-20140228", {
+                if (currentAccount.provider === "mailtm") {
+                    const res = await fetch("https://api.mail.tm/messages", {
+                        headers: { "Authorization": `Bearer ${currentAccount.token}` }
+                    });
+
+                    // إذا انتهت صلاحية التوكن (401) نعتبر الجلسة منتهية ليتم تجديدها
+                    if (res.status === 401) {
+                        isFetching = false;
+                        return false;
+                    }
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        const list = data["hydra:member"] || [];
+                        const formatted = list.map(m => ({
+                            id: String(m.id),
+                            from: m.from?.address || m.from?.name || "مرسل غير معروف",
+                            subject: m.subject || "(بدون عنوان)",
+                            snippet: m.intro || "اضغط لقراءة الرسالة...",
+                            date: new Date(m.createdAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+                            fullDate: new Date(m.createdAt).toLocaleString('ar-EG'),
+                            otp: extractOtpFromText(m.subject, m.intro),
+                            html: null,
+                            text: m.intro || ""
+                        }));
+                        renderIncomingMessages(formatted);
+                    }
+                } else if (currentAccount.provider === "dropmail") {
+                    const res = await fetch("https://dropmail.me/api/graphql/megatask_sync", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                             query: `query { session(id: "${currentAccount.id}") { mails { id, fromAddr, headerSubject, text, html, receivedAt } } }`
                         })
                     });
-
                     if (res.ok) {
                         const json = await res.json();
-                        const mails = json.data?.session?.mails || [];
+                        if (json.errors || !json.data?.session) {
+                            isFetching = false;
+                            return false;
+                        }
+                        const mails = json.data.session.mails || [];
                         const formatted = mails.map(m => ({
                             id: String(m.id),
                             from: m.fromAddr,
                             subject: m.headerSubject || "(بدون عنوان)",
-                            snippet: m.text ? m.text.slice(0, 80) : "اضغط لقراءة الرسالة...",
-                            date: new Date(m.receivedAt * 1000 || m.receivedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
-                            fullDate: new Date(m.receivedAt * 1000 || m.receivedAt).toLocaleString('ar-EG'),
+                            snippet: m.text ? m.text.slice(0, 90) : "اضغط لقراءة الرسالة...",
+                            date: new Date(m.receivedAt).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }),
+                            fullDate: new Date(m.receivedAt).toLocaleString('ar-EG'),
+                            otp: extractOtpFromText(m.headerSubject, m.text),
                             html: m.html,
                             text: m.text
                         }));
-                        displayMessages(formatted);
+                        renderIncomingMessages(formatted);
                     }
                 } else if (currentAccount.provider === "guerrilla") {
                     const res = await fetch(`https://api.guerrillamail.com/ajax.php?f=get_email_list&offset=0&sid_token=${currentAccount.token}`);
@@ -252,100 +979,259 @@
                             snippet: m.mail_excerpt || "اضغط لقراءة الرسالة...",
                             date: m.mail_date ? m.mail_date.split(" ")[1] : "الآن",
                             fullDate: m.mail_date || "الآن",
+                            otp: extractOtpFromText(m.mail_subject, m.mail_excerpt),
                             html: null,
-                            text: null
+                            text: m.mail_excerpt || ""
                         }));
-                        displayMessages(formatted);
+                        renderIncomingMessages(formatted);
                     }
                 }
+                return true;
             } catch (e) {
-                console.warn("Fetch poll error:", e);
+                return true;
             } finally {
                 isFetching = false;
             }
         }
 
-        // دالة العرض الذكية: لا تمسح ولا تعدل أي عنصر موجود بالفعل
-        function displayMessages(incomingList) {
+        function renderIncomingMessages(incomingList) {
             const container = document.getElementById('messages-container');
             const emptyBox = document.getElementById('empty-inbox-msg');
 
-            if (!incomingList || incomingList.length === 0) {
-                if (container.querySelectorAll('.msg-card').length === 0 && emptyBox) {
-                    emptyBox.style.display = 'block';
-                }
-                return;
-            }
+            if (!incomingList || incomingList.length === 0) return;
+            if (emptyBox) emptyBox.style.display = 'none';
 
-            if (emptyBox) {
-                emptyBox.style.display = 'none';
-            }
+            document.getElementById('inbox-counter').innerText = incomingList.length;
 
             incomingList.forEach(msg => {
                 const cardId = `msg-card-${msg.id}`;
                 storedMessages[String(msg.id)] = msg;
 
-                // إذا كانت الرسالة موجودة بالفعل على الشاشة لا نلمسها نهائياً
-                if (document.getElementById(cardId)) {
-                    return;
-                }
+                if (document.getElementById(cardId)) return;
 
-                // إضافة الرسالة الجديدة في أول القائمة
+                const otpHtml = msg.otp ? `
+                    <div class="otp-detected-bar" onclick="event.stopPropagation(); copyOtpCode('${msg.otp}')">
+                        <span>🔑 كود التفعيل: <b class="otp-code-num">${msg.otp}</b></span>
+                        <button class="btn-copy-otp">نسخ الكود 📋</button>
+                    </div>
+                ` : '';
+
                 const card = document.createElement('div');
                 card.id = cardId;
                 card.className = 'msg-card';
-                card.onclick = () => openMessage(msg.id);
+                card.onclick = () => openMessageModal(msg.id);
                 card.innerHTML = `
                     <div class="msg-sender">
-                        <span>${escapeHtml(msg.from)}</span>
-                        <span class="msg-date">${escapeHtml(msg.date)}</span>
+                        <span>👤 ${escapeHtml(msg.from)}</span>
+                        <span class="msg-date">🕒 ${escapeHtml(msg.date)}</span>
                     </div>
-                    <div class="msg-subject">✉️ <b>${escapeHtml(msg.subject)}</b></div>
+                    <div class="msg-subject">✉️ ${escapeHtml(msg.subject)}</div>
                     <div class="msg-snippet">${escapeHtml(msg.snippet)}</div>
+                    ${otpHtml}
                 `;
                 container.prepend(card);
             });
         }
 
-        async function openMessage(msgId) {
+        async function openMessageModal(msgId) {
             const msg = storedMessages[String(msgId)];
             if (!msg) return;
 
+            currentlyOpenedMsg = msg;
             document.getElementById('m-subject').innerText = msg.subject;
-            document.getElementById('m-meta').innerText = `من: ${msg.from} | التاريخ: ${msg.fullDate}`;
-            const bodyContainer = document.getElementById('m-body');
+            document.getElementById('m-meta').innerText = `من: ${msg.from} | إلى: ${currentAccount.address} | الوقت: ${msg.fullDate}`;
 
-            if (msg.html) {
-                bodyContainer.innerHTML = msg.html;
-            } else if (msg.text) {
-                bodyContainer.innerText = msg.text;
-            } else if (currentAccount.provider === "guerrilla") {
-                bodyContainer.innerText = "⏳ جاري قراءة محتوى الرسالة...";
-                document.getElementById('mail-modal').style.display = 'flex';
+            const bodyContainer = document.getElementById('m-body');
+            const modalOtpBox = document.getElementById('modal-otp-box');
+            modalOtpBox.style.display = 'none';
+
+            document.getElementById('mail-modal').style.display = 'flex';
+
+            // جلب النص الكامل من Mail.tm أو Guerrilla إذا لم يكن محملاً بعد
+            if (!msg.html && currentAccount.provider === "mailtm") {
+                bodyContainer.innerText = "⏳ جاري تحميل محتوى الرسالة بالكامل...";
+                try {
+                    const res = await fetch(`https://api.mail.tm/messages/${msgId}`, {
+                        headers: { "Authorization": `Bearer ${currentAccount.token}` }
+                    });
+                    if (res.ok) {
+                        const full = await res.json();
+                        msg.html = Array.isArray(full.html) ? full.html.join("") : full.html;
+                        msg.text = full.text || msg.snippet;
+                        msg.otp = extractOtpFromText(msg.subject, msg.text || msg.html);
+                    }
+                } catch (e) {}
+            } else if (!msg.html && currentAccount.provider === "guerrilla") {
+                bodyContainer.innerText = "⏳ جاري تحميل محتوى الرسالة...";
                 try {
                     const res = await fetch(`https://api.guerrillamail.com/ajax.php?f=fetch_email&email_id=${msgId}&sid_token=${currentAccount.token}`);
                     const full = await res.json();
-                    bodyContainer.innerHTML = full.mail_body || "الرسالة فارغة";
-                } catch (err) {
-                    bodyContainer.innerText = "❌ تعذر تحميل نص الرسالة.";
-                }
-                return;
-            } else {
-                bodyContainer.innerText = "الرسالة لا تحتوي على نص.";
+                    msg.html = full.mail_body || "";
+                    msg.text = full.mail_body || "";
+                    msg.otp = extractOtpFromText(msg.subject, msg.text);
+                } catch (e) {}
             }
 
-            document.getElementById('mail-modal').style.display = 'flex';
+            if (msg.otp) {
+                document.getElementById('modal-otp-val').innerText = msg.otp;
+                modalOtpBox.style.display = 'flex';
+            }
+
+            if (msg.html) {
+                bodyContainer.innerHTML = msg.html;
+            } else {
+                bodyContainer.innerText = msg.text || "الرسالة فارغة.";
+            }
         }
 
-        function closeModal() {
-            document.getElementById('mail-modal').style.display = 'none';
+        // ⭐ إرسال وحفظ الرسالة أو الكود في شات البوت مباشرة
+        async function forwardCurrentMailToBot() {
+            if (!currentlyOpenedMsg || !tid) return;
+            const m = currentlyOpenedMsg;
+            const cleanBody = (m.text || m.snippet || "").replace(/<[^>]*>/g, "").slice(0, 600);
+
+            const botText =
+                `📧 *رسالة محفوظة من البريد المؤقت*\n` +
+                `━━━━━━━━━━━━━━━\n` +
+                `📥 *الإيميل:* \`${currentAccount.address}\`\n` +
+                `👤 *من:* ${m.from}\n` +
+                `📌 *العنوان:* ${m.subject}\n` +
+                `${m.otp ? `🔑 *كود التفعيل المستخرج:* \`${m.otp}\`\n` : ''}` +
+                `━━━━━━━━━━━━━━━\n` +
+                `📝 *المحتوى:*\n${cleanBody}`;
+
+            try {
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(tid),
+                    message: botText,
+                    status: 'pending'
+                }]);
+                notifyUser("✅ تم إرسال الرسالة وكود التفعيل إلى محادثتك في البوت بنجاح!");
+            } catch (e) {
+                notifyUser("❌ تعذر الإرسال لشات البوت حالياً.");
+            }
         }
 
-        function copyEmail() {
+        // =========================================================================
+        // 🛠️ وظائف النسخ، الاسم المخصص، الإيميلات المحفوظة، والهوية المساعدة
+        // =========================================================================
+        function copyEmailWithReward() {
+            const email = document.getElementById('active-email').innerText;
+            if (!email.includes('@')) return notifyUser("⏳ انتظر اكتمال توليد البريد ثوانٍ...");
+            navigator.clipboard.writeText(email).then(() => {
+                notifyUser(`✅ تم نسخ البريد المؤقت:\n${email}`);
+                triggerAdAndReward('مكافأة نسخ واستخدام البريد المؤقت');
+            });
+        }
+
+        function copyOtpCode(code) {
+            navigator.clipboard.writeText(code).then(() => {
+                notifyUser(`🔑 تم نسخ كود التفعيل (${code}) بنجاح!`);
+                triggerAdAndReward('مكافأة استخراج كود تفعيل OTP');
+            });
+        }
+
+        async function generateRandomEmailWithReward() {
+            await createNewTempEmail();
+            triggerAdAndReward('مكافأة توليد بريد مؤقت جديد');
+        }
+
+        async function openCustomModal() {
+            document.getElementById('custom-user-input').value = "";
+            const sel = document.getElementById('custom-domain-select');
+            sel.innerHTML = "<option>⏳ جاري جلب النطاقات...</option>";
+            document.getElementById('custom-modal').style.display = 'flex';
+
+            const domains = await fetchMailTmDomains();
+            if (domains.length > 0) {
+                sel.innerHTML = domains.map(d => `<option value="${d}">@${d}</option>`).join("");
+            } else {
+                sel.innerHTML = `<option value="">@سيرفر تلقائي</option>`;
+            }
+        }
+
+        async function createCustomEmailAccount() {
+            const prefix = document.getElementById('custom-user-input').value.trim();
+            const domain = document.getElementById('custom-domain-select').value;
+            if (!prefix || prefix.length < 3) {
+                return notifyUser("⚠️ يرجى كتابة اسم مكون من 3 حروف أو أرقام على الأقل!");
+            }
+            closeModal('custom-modal');
+            const ok = await createNewTempEmail(prefix, domain);
+            if (ok) {
+                notifyUser(`🎉 تم إنشاء بريدك المخصص بنجاح:\n${currentAccount.address}`);
+                triggerAdAndReward('مكافأة إنشاء بريد مؤقت مخصص');
+            }
+        }
+
+        function openSavedAccountsModal() {
+            const listEl = document.getElementById('saved-accounts-list');
+            if (savedAccounts.length === 0) {
+                listEl.innerHTML = `<div style="text-align:center; color:#888; padding:15px;">لا توجد إيميلات محفوظة بعد.</div>`;
+            } else {
+                listEl.innerHTML = savedAccounts.map((acc, idx) => {
+                    const isCurrent = currentAccount && currentAccount.address === acc.address;
+                    return `
+                        <div class="saved-acc-item" style="border-color:${isCurrent ? 'var(--emerald)' : '#232c3f'};">
+                            <span style="direction:ltr; font-family:monospace; color:${isCurrent ? 'var(--emerald)' : '#fff'};">${acc.address}</span>
+                            ${isCurrent
+                                ? `<span style="color:var(--emerald); font-weight:bold;">النشط حالياً ✅</span>`
+                                : `<button class="btn-copy-otp" onclick="switchToSavedEmail(${idx})">تبديل ↩️</button>`}
+                        </div>
+                    `;
+                }).join("");
+            }
+            document.getElementById('saved-modal').style.display = 'flex';
+        }
+
+        async function switchToSavedEmail(index) {
+            const picked = savedAccounts[index];
+            if (!picked) return;
+            currentAccount = picked;
+            document.getElementById('active-email').innerText = currentAccount.address;
+            updateProviderBadge();
+            closeModal('saved-modal');
+            resetInboxUI();
+            await verifyAndFetchMessages();
+            notifyUser(`✅ تم التبديل إلى البريد:\n${currentAccount.address}`);
+        }
+
+        function toggleHelperIdentity() {
+            const box = document.getElementById('helper-identity-box');
+            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function generateHelperIdentity() {
+            const firsts = ["Mostafa", "Ahmed", "Karim", "Omar", "Youssef", "Tarek", "Ziad", "Rami"];
+            const lasts = ["Kamal", "Nabil", "Adel", "Samir", "Fathy", "Hassan", "Mansour"];
+            const name = firsts[Math.floor(Math.random() * firsts.length)] + " " + lasts[Math.floor(Math.random() * lasts.length)];
+            const pass = "Mt@" + Math.random().toString(36).slice(-5).toUpperCase() + Math.floor(100 + Math.random() * 899) + "!";
+            document.getElementById('help-name').innerText = name;
+            document.getElementById('help-pass').innerText = pass;
+        }
+
+        function copyTextValue(val) {
+            navigator.clipboard.writeText(val).then(() => {
+                notifyUser(`✅ تم نسخ: ${val}`);
+            });
+        }
+
+        function openQrModal() {
             const email = document.getElementById('active-email').innerText;
             if (!email.includes('@')) return;
-            navigator.clipboard.writeText(email);
-            tg.showAlert("✅ تم نسخ الإيميل المؤقت للحافظة بنجاح!");
+            document.getElementById('qr-mail-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(email)}`;
+            document.getElementById('qr-modal').style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        async function manualRefresh() {
+            const btn = document.getElementById('btn-manual-ref');
+            btn.innerText = "⏳ جاري الفحص...";
+            await verifyAndFetchMessages();
+            setTimeout(() => { btn.innerText = "🔄 تحديث الآن"; }, 600);
         }
 
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
@@ -353,7 +1239,8 @@
         function goGames() { window.location.href = `games.html?id=${tid}&t=${Date.now()}`; }
         function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
-        initMail();
+
+        initPage();
     </script>
 </body>
 </html>
