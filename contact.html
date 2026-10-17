@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>MegaTask - تواصل معنا ومركز المكافآت</title>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="security.js"></script>
+
+    <style>
+        :root {
+            --emerald: #00e676;
+            --emerald-dark: #00994d;
+            --cyan: #00e5ff;
+            --amber: #ffb300;
+            --crimson: #ff3d57;
+            --violet: #9d4edd;
+            --bg-dark: #070a0f;
+            --card-bg: #111621;
+            --card-border: #222b3d;
+            --text-muted: #8b96ab;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.08) 0%, transparent 50%),
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 26px 26px, 26px 26px;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            margin: 0;
+            padding: 14px 14px 115px;
+            overflow-x: hidden;
+        }
+
+        /* الشريط العلوي */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .btn-back {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .support-status {
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid rgba(0, 230, 118, 0.35);
+            color: var(--emerald);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .pulse-dot {
+            width: 7px; height: 7px; border-radius: 50%; background: var(--emerald);
+            box-shadow: 0 0 8px var(--emerald); animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* الهيدر */
+        .hero-card {
+            background: linear-gradient(145deg, #131926, #0d111a);
+            border: 1.5px solid var(--card-border);
+            border-radius: 20px;
+            padding: 16px 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 6px 0 #05070b;
+            text-align: center;
+        }
+        .hero-card h1 { margin: 0 0 5px; font-size: 19px; color: var(--cyan); }
+        .hero-card p { margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.55; }
+
+        /* 1. شبكة قنوات التواصل السريع المباشر */
+        .direct-channels-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+            margin-bottom: 16px;
+        }
+        .channel-btn {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: 16px;
+            padding: 12px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            color: #fff;
+            box-shadow: 0 4px 0 #05070b;
+            transition: transform 0.12s;
+        }
+        .channel-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #05070b; }
+        .channel-btn.whatsapp { border-color: rgba(37, 211, 102, 0.45); }
+        .channel-btn.tg-bot { border-color: rgba(0, 229, 255, 0.45); }
+        .channel-btn.tg-chan { border-color: rgba(157, 78, 221, 0.45); }
+        .channel-btn.email-ch { border-color: rgba(255, 179, 0, 0.45); }
+
+        .ch-icon {
+            width: 38px; height: 38px; border-radius: 11px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; flex-shrink: 0;
+            background: rgba(255,255,255,0.05);
+        }
+        .ch-info b { display: block; font-size: 12.5px; margin-bottom: 2px; }
+        .ch-info span { display: block; font-size: 10px; color: var(--text-muted); }
+
+        /* 2. بانر مكافآت مكتشفي الثغرات (Bug Bounty) */
+        .bounty-banner {
+            background: linear-gradient(135deg, rgba(255, 179, 0, 0.14), rgba(255, 61, 87, 0.12));
+            border: 1.5px dashed var(--amber);
+            border-radius: 18px;
+            padding: 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .bounty-icon {
+            font-size: 34px;
+            flex-shrink: 0;
+        }
+        .bounty-text h4 {
+            margin: 0 0 4px;
+            font-size: 13.5px;
+            color: var(--amber);
+        }
+        .bounty-text p {
+            margin: 0;
+            font-size: 11.5px;
+            color: #e2e8f0;
+            line-height: 1.55;
+        }
+
+        /* 3. شريط التبويبات الـ 4 */
+        .tabs-nav {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+        .tab-item {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: 14px;
+            padding: 10px 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 4px 0 #05070b;
+        }
+        .tab-item .ic { font-size: 19px; display: block; margin-bottom: 4px; }
+        .tab-item span { font-size: 10.5px; font-weight: bold; color: var(--text-muted); display: block; line-height: 1.2; }
+        .tab-item.active {
+            border-color: var(--emerald);
+            background: rgba(0, 230, 118, 0.12);
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--emerald-dark);
+        }
+        .tab-item.active span { color: #fff; }
+
+        /* حاوية النماذج */
+        .form-panel {
+            display: none;
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 18px;
+            box-shadow: 0 6px 0 #05070b;
+        }
+        .form-panel.active { display: block; }
+
+        .panel-title {
+            margin: 0 0 12px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 15px;
+            color: var(--cyan);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .field-group { margin-bottom: 12px; }
+        .field-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: bold;
+            color: #cbd5e1;
+            margin-bottom: 5px;
+        }
+        input[type="text"], input[type="file"], textarea, select {
+            width: 100%;
+            background: #06080c;
+            border: 1.5px solid #253045;
+            color: #fff;
+            padding: 11px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            outline: none;
+            font-family: inherit;
+        }
+        input:focus, textarea:focus, select:focus { border-color: var(--cyan); }
+
+        /* مستويات خطورة الثغرة والمكافآت */
+        .severity-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 7px;
+            margin-bottom: 12px;
+        }
+        .sev-card {
+            background: #080b11;
+            border: 1.5px solid #222b3d;
+            border-radius: 12px;
+            padding: 9px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .sev-card b { display: block; font-size: 11.5px; margin-bottom: 3px; }
+        .sev-card small { display: block; font-size: 9.5px; color: var(--text-muted); }
+        .sev-card.active-low { border-color: var(--emerald); background: rgba(0, 230, 118, 0.1); }
+        .sev-card.active-med { border-color: var(--amber); background: rgba(255, 179, 0, 0.12); }
+        .sev-card.active-high { border-color: var(--crimson); background: rgba(255, 61, 87, 0.14); }
+
+        /* نجوم التقييم التفاعلية */
+        .stars-box {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 12px 0;
+            direction: ltr;
+        }
+        .star-btn {
+            font-size: 34px;
+            cursor: pointer;
+            color: #2c3548;
+            transition: transform 0.15s, color 0.15s;
+            user-select: none;
+        }
+        .star-btn.lit {
+            color: var(--amber);
+            text-shadow: 0 0 12px rgba(255, 179, 0, 0.45);
+        }
+        .star-btn:active { transform: scale(1.25); }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--emerald);
+            color: #000;
+            border: none;
+            padding: 13px;
+            border-radius: 13px;
+            font-size: 13.5px;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--emerald-dark);
+            font-family: inherit;
+            transition: 0.1s;
+        }
+        .btn-submit:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--emerald-dark); }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* سجل بلاغاتي وتذاكري السابقة */
+        .section-title {
+            font-size: 14.5px;
+            font-weight: bold;
+            color: var(--cyan);
+            margin: 20px 4px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .ticket-card {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-right: 4px solid var(--cyan);
+            border-radius: 15px;
+            padding: 13px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        .ticket-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .t-code {
+            background: rgba(255, 179, 0, 0.15);
+            border: 1px dashed var(--amber);
+            color: var(--amber);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        .t-status { font-size: 11px; font-weight: bold; }
+        .admin-reply-box {
+            margin-top: 8px;
+            background: rgba(0, 230, 118, 0.1);
+            border: 1px solid rgba(0, 230, 118, 0.35);
+            border-radius: 10px;
+            padding: 8px 10px;
+            color: #a7f3d0;
+            line-height: 1.5;
+        }
+
+        /* كروت التقييمات العامة */
+        .review-item {
+            background: #0c1018;
+            border: 1px solid #1e2738;
+            border-radius: 13px;
+            padding: 11px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        /* شريط التنقل السفلي */
+        .navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(17, 22, 33, 0.98);
+            display: flex;
+            justify-content: space-around;
+            padding: 11px 0;
+            border-top: 1px solid var(--card-border);
+            z-index: 1000;
+        }
+        .nav-item { text-align: center; color: var(--text-muted); font-size: 11px; font-weight: bold; cursor: pointer; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+    <!-- الشريط العلوي -->
+    <div class="top-bar">
+        <button class="btn-back" onclick="goHome()">↩️ الرئيسية</button>
+        <div class="support-status">
+            <span class="pulse-dot"></span>
+            <span>فريق الدعم متصل الآن</span>
+        </div>
+    </div>
+
+    <!-- الهيدر -->
+    <div class="hero-card">
+        <h1>🎧 تواصل معنا ومركز المكافآت</h1>
+        <p>تواصل مع الإدارة مباشرة، أبلغ عن أي ثغرة واحصل على مكافأة مالية، اقترح مميزات جديدة، أو قيّم تجربتك في البوت!</p>
+    </div>
+
+    <!-- 1. قنوات التواصل المباشر (واتساب + بوت تليجرام + قناة + إيميل) -->
+    <div class="direct-channels-grid">
+        <div class="channel-btn whatsapp" onclick="openExternalContact('whatsapp')">
+            <div class="ch-icon">💬</div>
+            <div class="ch-info">
+                <b style="color: #25d366;">واتساب الإدارة</b>
+                <span>تواصل مباشر وسريع</span>
+            </div>
+        </div>
+
+        <div class="channel-btn tg-bot" onclick="openExternalContact('tg_support')">
+            <div class="ch-icon">🤖</div>
+            <div class="ch-info">
+                <b style="color: var(--cyan);">بوت الدعم الفني</b>
+                <span>مراسلة عبر تليجرام</span>
+            </div>
+        </div>
+
+        <div class="channel-btn tg-chan" onclick="openExternalContact('tg_channel')">
+            <div class="ch-icon">📢</div>
+            <div class="ch-info">
+                <b style="color: #d8b4fe;">القناة الرسمية</b>
+                <span>الأخبار وأكواد الهدايا</span>
+            </div>
+        </div>
+
+        <div class="channel-btn email-ch" onclick="openExternalContact('email')">
+            <div class="ch-icon">📧</div>
+            <div class="ch-info">
+                <b style="color: var(--amber);">البريد الرسمي</b>
+                <span>للإعلانات والشراكات</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. بانر مكافأة مكتشفي الثغرات -->
+    <div class="bounty-banner">
+        <div class="bounty-icon">🛡️</div>
+        <div class="bounty-text">
+            <h4>💰 مكافأة مالية فورية لمكتشفي الثغرات!</h4>
+            <p>هل اكتشفت ثغرة أمنية أو خطأ برمجي في البوت؟ أبلغنا عنها الآن من التبويب الأول بالأسفل وسيتم تعويضك بمكافأة مالية حقيقية (بالجنيه أو النقاط) حسب قوة الثغره!</p>
+        </div>
+    </div>
+
+    <!-- 3. التبويبات الـ 4 (ثغرة / مشكلة فنية أو شخصية / اقتراح إضافة / تقييم البوت) -->
+    <div class="tabs-nav">
+        <div class="tab-item active" onclick="switchTab('bug', this)">
+            <span class="ic">🐛</span>
+            <span>إبلاغ عن ثغرة (بمكافأة)</span>
+        </div>
+        <div class="tab-item" onclick="switchTab('issue', this)">
+            <span class="ic">🛠️</span>
+            <span>مشكلة فنية أو شخصية</span>
+        </div>
+        <div class="tab-item" onclick="switchTab('suggest', this)">
+            <span class="ic">💡</span>
+            <span>اقتراح إضافة جديدة</span>
+        </div>
+        <div class="tab-item" onclick="switchTab('rating', this)">
+            <span class="ic">⭐</span>
+            <span>تقييم البوت والآراء</span>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         التبويب 1: الإبلاغ عن ثغرة بمقابل مادي (Bug Bounty)
+    =========================================== -->
+    <div id="panel-bug" class="form-panel active">
+        <h3 class="panel-title">
+            <span>🛡️ الإبلاغ عن ثغرة واستلام المكافأة</span>
+            <span style="font-size: 11px; color: var(--amber);">مكافآت مضمونة 💵</span>
+        </h3>
+
+        <label style="display:block; font-size:12px; font-weight:bold; color:#cbd5e1; margin-bottom:6px;">اختر قوة ومستوى خطورة الثغرة:</label>
+        <div class="severity-grid">
+            <div id="sev-low" class="sev-card" onclick="selectBugSeverity('بسيطة', this)">
+                <b style="color: var(--emerald);">🟢 بسيطة</b>
+                <small>مكافأة: 500 - 2000 ن</small>
+            </div>
+            <div id="sev-med" class="sev-card active-med" onclick="selectBugSeverity('متوسطة', this)">
+                <b style="color: var(--amber);">🟡 متوسطة</b>
+                <small>مكافأة: 10 - 50 ج.م</small>
+            </div>
+            <div id="sev-high" class="sev-card" onclick="selectBugSeverity('حرجة / خطيرة', this)">
+                <b style="color: var(--crimson);">🔴 حرجة / خطيرة</b>
+                <small>مكافأة: 50 - 300 ج.م</small>
+            </div>
+        </div>
+
+        <div class="field-group">
+            <label>القسم أو الصفحة الموجود بها الثغرة:</label>
+            <select id="bug-location">
+                <option value="المهام والإعلانات">📋 صفحة المهام والإعلانات</option>
+                <option value="المتجر والطلبات">🛍️ المتجر والطلبات</option>
+                <option value="نظام الإحالات والدعوات">👥 نظام الإحالات والدعوات</option>
+                <option value="الألعاب والألماس">🎮 مركز الألعاب والألماس</option>
+                <option value="الشحن والأرصدة">💵 نظام الشحن والمحفظة</option>
+                <option value="الأدوات أو الأرقام أو الإيميل">🛠️ الأدوات / الأرقام / البريد المؤقت</option>
+                <option value="بوت التليجرام الأساسي">🤖 بوت التليجرام الأساسي</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label>اشرح تفاصيل الثغرة بدقة وكيف يمكن تكرارها:</label>
+            <textarea id="bug-desc" rows="4" placeholder="اكتب خطوات ظهور الثغرة بالتفصيل ليتمكن المطور من فحصها وصرف المكافأة لك فوراً..."></textarea>
+        </div>
+
+        <div class="field-group">
+            <label>إرفاق لقطة شاشة للثغرة (اختياري):</label>
+            <input type="file" id="bug-img" accept="image/*" onchange="compressAttachment(this, 'bug')">
+        </div>
+
+        <button id="btn-send-bug" class="btn-submit" onclick="submitTicket('bug')">
+            🚀 إرسال بلاغ الثغرة للإدارة للمراجعة والمكافأة
+        </button>
+    </div>
+
+    <!-- ==========================================
+         التبويب 2: الإبلاغ عن مشكلة فنية أو شخصية
+    =========================================== -->
+    <div id="panel-issue" class="form-panel">
+        <h3 class="panel-title">
+            <span>🛠️ الإبلاغ عن مشكلة فنية أو شخصية</span>
+            <span style="font-size: 11px; color: var(--emerald);">رد سريع ⚡</span>
+        </h3>
+
+        <div class="field-group">
+            <label>نوع المشكلة:</label>
+            <select id="issue-type">
+                <option value="مشكلة شحن رصيد (جنيه)">💵 مشكلة في شحن الرصيد (الإيداع)</option>
+                <option value="مشكلة طلب في المتجر">🛒 استفسار أو مشكلة في طلب بالمتجر</option>
+                <option value="مشكلة في المهام أو النقاط">📋 مشكلة في احتساب مهمة أو نقاط</option>
+                <option value="مشكلة في الحساب أو حظر خطأ">🚫 مشكلة في الحساب أو فك حظر</option>
+                <option value="شكوى شخصية أو بلاغ عن عضو">👤 مشكلة شخصية أو إبلاغ عن عضو مخالف</option>
+                <option value="استفسار عام آخر">💬 استفسار أو طلب مساعدة أخرى</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label>عنوان المشكلة أو رقم الطلب (إن وجد):</label>
+            <input type="text" id="issue-subject" placeholder="مثلاً: كود الطلب ORD-123456 أو رقم التحويل...">
+        </div>
+
+        <div class="field-group">
+            <label>تفاصيل المشكلة بالكامل:</label>
+            <textarea id="issue-desc" rows="4" placeholder="اشرح مشكلتك بكل وضوح وسيتواصل معك الدعم الفني لحلها في أسرع وقت..."></textarea>
+        </div>
+
+        <div class="field-group">
+            <label>إرفاق صورة أو لقطة شاشة (اختياري):</label>
+            <input type="file" id="issue-img" accept="image/*" onchange="compressAttachment(this, 'issue')">
+        </div>
+
+        <button id="btn-send-issue" class="btn-submit" onclick="submitTicket('issue')">
+            📩 إرسال التذكرة لفريق الدعم الفني
+        </button>
+    </div>
+
+    <!-- ==========================================
+         التبويب 3: اقتراح إضافة أو ميزة جديدة للبوت
+    =========================================== -->
+    <div id="panel-suggest" class="form-panel">
+        <h3 class="panel-title">
+            <span>💡 اقترح ميزة أو إضافة جديدة للبوت</span>
+            <span style="font-size: 11px; color: var(--amber);">نكافئ الأفكار المميزة 🎁</span>
+        </h3>
+
+        <div class="field-group">
+            <label>تصنيف الاقتراح:</label>
+            <select id="suggest-type">
+                <option value="أداة أو خدمة جديدة">🛠️ إضافة أداة أو خدمة جديدة في البوت</option>
+                <option value="لعبة جديدة">🎮 إضافة لعبة جديدة في قسم الألعاب</option>
+                <option value="منتج في المتجر">🛍️ توفير منتج أو خدمة معينة في المتجر</option>
+                <option value="تطوير الواجهة والسرعة">✨ تحسين شكل أو سرعة البوت</option>
+                <option value="فكرة ربحية أو مسابقة">🔥 فكرة مسابقة أو طريقة ربح جديدة</option>
+            </select>
+        </div>
+
+        <div class="field-group">
+            <label>اسم الميزة أو الفكرة المقترحة:</label>
+            <input type="text" id="suggest-title" placeholder="مثلاً: إضافة أداة كذا أو لعبة كذا...">
+        </div>
+
+        <div class="field-group">
+            <label>اشرح فكرتك وكيف ستفيد مستخدمي البوت:</label>
+            <textarea id="suggest-desc" rows="4" placeholder="اكتب تفاصيل فكرتك هنا... إذا أعجبت الإدارة وتم تنفيذها ستحصل على مكافأة تشجيعية في رصيدك!"></textarea>
+        </div>
+
+        <button id="btn-send-suggest" class="btn-submit" onclick="submitTicket('suggestion')">
+            ✨ إرسال الفكرة والاقتراح للإدارة
+        </button>
+    </div>
+
+    <!-- ==========================================
+         التبويب 4: تقييم البوت وآراء المستخدمين
+    =========================================== -->
+    <div id="panel-rating" class="form-panel">
+        <h3 class="panel-title">
+            <span>⭐ قيّم تجربتك في منصة MegaTask</span>
+            <span id="avg-rating-badge" style="font-size: 12px; color: var(--amber);">4.9 ★</span>
+        </h3>
+
+        <div style="text-align: center; font-size: 12.5px; color: #cbd5e1;">اضغط على النجوم لاختيار تقييمك للبوت:</div>
+        <div class="stars-box">
+            <span class="star-btn lit" onclick="setStarRating(1)">★</span>
+            <span class="star-btn lit" onclick="setStarRating(2)">★</span>
+            <span class="star-btn lit" onclick="setStarRating(3)">★</span>
+            <span class="star-btn lit" onclick="setStarRating(4)">★</span>
+            <span class="star-btn lit" onclick="setStarRating(5)">★</span>
+        </div>
+
+        <div class="field-group">
+            <label>اكتب رأيك أو تجربتك مع البوت (يظهر للإدارة وللأعضاء):</label>
+            <textarea id="rating-comment" rows="3" placeholder="ما أكثر شيء أعجبك في MegaTask؟ وما الذي تتمنى تطويره؟"></textarea>
+        </div>
+
+        <button id="btn-send-rating" class="btn-submit" onclick="submitTicket('rating')">
+            🌟 نشر تقييمي وإرساله للإدارة
+        </button>
+
+        <hr style="border-color: #1f283a; margin: 18px 0 12px;">
+        <div style="font-size: 13px; font-weight: bold; color: var(--emerald); margin-bottom: 10px;">💬 أحدث تقييمات وآراء الأعضاء:</div>
+        <div id="community-reviews-list">
+            <div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 10px;">⏳ جاري تحميل التقييمات...</div>
+        </div>
+    </div>
+
+    <!-- 4. سجل تذاكري وبلاغاتي السابقة والردود -->
+    <div class="section-title">
+        <span>📂 سجل بلاغاتي وتذاكري السابقة</span>
+        <button onclick="loadMyTickets()" style="background:none; border:1px solid var(--cyan); color:var(--cyan); border-radius:8px; padding:4px 10px; font-size:11px; font-weight:bold; cursor:pointer;">🔄 تحديث</button>
+    </div>
+    <div id="my-tickets-container">
+        <div style="text-align: center; padding: 20px; background: var(--card-bg); border-radius: 15px; color: var(--text-muted); font-size: 12px;">
+            لا توجد تذاكر أو بلاغات سابقة حتى الآن.
+        </div>
+    </div>
+
+    <!-- شريط التنقل السفلي -->
+    <nav class="navbar">
+        <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
+        <div onclick="goTasks()" class="nav-item">📋<br>المهام</div>
+        <div onclick="goStore()" class="nav-item">🛍️<br>المتجر</div>
+        <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
+        <div onclick="goProfile()" class="nav-item">👤<br>حسابي</div>
+    </nav>
+
+    <script>
+        const tg = window.Telegram?.WebApp;
+        if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+
+        // =========================================================================
+        // ⚙️ إعدادات روابط التواصل المباشر ومعرف الأدمن (عدّل الروابط الخاصة بك هنا)
+        // =========================================================================
+        const CONTACT_CONFIG = {
+            ADMIN_TELEGRAM_ID: "875021647", // يرسل إليه البوت كل التذاكر والثغرات فوراً في شات تليجرام
+            WHATSAPP_URL: "https://wa.me/201000000000?text=" + encodeURIComponent("مرحباً إدارة MegaTask، أحتاج للمساعدة بخصوص البوت:"),
+            TG_SUPPORT_BOT_URL: "https://t.me/MegaTask1Bot", // ضع رابط بوت التواصل أو يوزر حسابك هنا
+            TG_CHANNEL_URL: "https://t.me/MegaTask1Bot",     // ضع رابط قناتك الرسمية هنا
+            SUPPORT_EMAIL: "mostafashiref011494@gmail.com"
+        };
+
+        const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const client = supabase.createClient(S_URL, S_KEY);
+
+        const params = new URLSearchParams(window.location.search);
+        let tid = String(
+            tg?.initDataUnsafe?.user?.id ||
+            params.get('id') ||
+            localStorage.getItem('telegram_id') ||
+            localStorage.getItem('megatask_uid') ||
+            ""
+        ).trim();
+        if (tid === "undefined" || tid === "null") tid = "";
+
+        let userData = null;
+        let selectedBugSeverity = "متوسطة";
+        let selectedStars = 5;
+        let attachedImages = { bug: null, issue: null };
+
+        function notifyUser(txt) {
+            if (tg && tg.showAlert) tg.showAlert(txt);
+            else alert(txt);
+        }
+
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        async function initContactPage() {
+            if (tid) {
+                try {
+                    const { data } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
+                    if (data) userData = data;
+                    if (typeof MegaSecurity !== 'undefined') {
+                        MegaSecurity.verifyDeviceAndAccount(client, tid).catch(() => {});
+                    }
+                } catch (e) {}
+            }
+            loadMyTickets();
+            loadCommunityReviews();
+        }
+
+        // فتح روابط التواصل المباشر (واتساب / تليجرام / إيميل)
+        function openExternalContact(type) {
+            let url = "";
+            if (type === 'whatsapp') url = CONTACT_CONFIG.WHATSAPP_URL;
+            else if (type === 'tg_support') url = CONTACT_CONFIG.TG_SUPPORT_BOT_URL;
+            else if (type === 'tg_channel') url = CONTACT_CONFIG.TG_CHANNEL_URL;
+            else if (type === 'email') {
+                window.location.href = `mailto:${CONTACT_CONFIG.SUPPORT_EMAIL}?subject=MegaTask Support (ID: ${tid})`;
+                return;
+            }
+
+            if (url.startsWith("https://t.me") && tg?.openTelegramLink) {
+                tg.openTelegramLink(url);
+            } else if (tg?.openLink) {
+                tg.openLink(url);
+            } else {
+                window.open(url, "_blank");
+            }
+        }
+
+        function switchTab(tabKey, el) {
+            document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById(`panel-${tabKey}`).classList.add('active');
+        }
+
+        function selectBugSeverity(level, el) {
+            selectedBugSeverity = level;
+            document.getElementById('sev-low').className = 'sev-card';
+            document.getElementById('sev-med').className = 'sev-card';
+            document.getElementById('sev-high').className = 'sev-card';
+
+            if (level === 'بسيطة') el.classList.add('active-low');
+            else if (level === 'متوسطة') el.classList.add('active-med');
+            else el.classList.add('active-high');
+        }
+
+        function setStarRating(stars) {
+            selectedStars = stars;
+            const btns = document.querySelectorAll('.star-btn');
+            btns.forEach((b, idx) => {
+                if (idx < stars) b.classList.add('lit');
+                else b.classList.remove('lit');
+            });
+        }
+
+        // ضغط الصورة المرفقة إلى Base64 خفيف
+        function compressAttachment(input, key) {
+            if (!input.files || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxW = 550;
+                    let w = img.width, h = img.height;
+                    if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    attachedImages[key] = canvas.toDataURL('image/jpeg', 0.65);
+                };
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+
+        // =========================================================================
+        // 📤 إرسال التذكرة / الثغرة / الاقتراح / التقييم وحفظها وإشعار الأدمن فوراً
+        // =========================================================================
+        async function submitTicket(category) {
+            if (!tid) return notifyUser("❌ يرجى فتح الصفحة من داخل البوت أولاً.");
+
+            const ticketCode = "TKT-" + Math.floor(100000 + Math.random() * 900000);
+            const uName = userData?.name || tg?.initDataUnsafe?.user?.first_name || "مستخدم";
+
+            let subType = "";
+            let subject = "";
+            let message = "";
+            let ratingVal = null;
+            let screenshot = null;
+            let btnId = "";
+
+            if (category === 'bug') {
+                btnId = "btn-send-bug";
+                const loc = document.getElementById('bug-location').value;
+                const desc = document.getElementById('bug-desc').value.trim();
+                if (!desc || desc.length < 10) return notifyUser("⚠️ يرجى شرح تفاصيل الثغرة وخطواتها بوضوح (10 أحرف على الأقل)!");
+
+                subType = `خطورة: ${selectedBugSeverity}`;
+                subject = `ثغرة في: ${loc}`;
+                message = desc;
+                screenshot = attachedImages.bug;
+            } else if (category === 'issue') {
+                btnId = "btn-send-issue";
+                const iType = document.getElementById('issue-type').value;
+                const iSub = document.getElementById('issue-subject').value.trim() || "بدون كود مرجعي";
+                const iDesc = document.getElementById('issue-desc').value.trim();
+                if (!iDesc || iDesc.length < 8) return notifyUser("⚠️ يرجى كتابة تفاصيل المشكلة بوضوح!");
+
+                subType = iType;
+                subject = iSub;
+                message = iDesc;
+                screenshot = attachedImages.issue;
+            } else if (category === 'suggestion') {
+                btnId = "btn-send-suggest";
+                const sType = document.getElementById('suggest-type').value;
+                const sTitle = document.getElementById('suggest-title').value.trim();
+                const sDesc = document.getElementById('suggest-desc').value.trim();
+                if (!sTitle || !sDesc) return notifyUser("⚠️ يرجى كتابة عنوان وتفاصيل الفكرة المقترحة!");
+
+                subType = sType;
+                subject = sTitle;
+                message = sDesc;
+            } else if (category === 'rating') {
+                btnId = "btn-send-rating";
+                const rComment = document.getElementById('rating-comment').value.trim();
+                if (!rComment) return notifyUser("⚠️ يرجى كتابة تعليق بسيط مع تقييمك!");
+
+                subType = `${selectedStars} نجوم`;
+                subject = `تقييم البوت (${selectedStars}/5)`;
+                message = rComment;
+                ratingVal = selectedStars;
+            }
+
+            const btn = document.getElementById(btnId);
+            btn.disabled = true;
+            const origText = btn.innerText;
+            btn.innerText = "⏳ جاري الإرسال...";
+
+            try {
+                const payload = {
+                    ticket_code: ticketCode,
+                    telegram_id: String(tid),
+                    user_name: uName,
+                    category: category,
+                    sub_type: subType,
+                    subject: subject,
+                    message: message,
+                    rating: ratingVal,
+                    screenshot_url: screenshot,
+                    status: 'Pending'
+                };
+
+                // 1. الحفظ في جدول support_tickets في Supabase (إن وجد)
+                await client.from('support_tickets').insert([payload]).catch(() => {});
+
+                // 2. الحفظ أيضاً في الذاكرة المحلية ليظهر للمستخدم فوراً
+                const localList = JSON.parse(localStorage.getItem(`my_tickets_${tid}`) || "[]");
+                localList.unshift({ ...payload, created_at: new Date().toISOString() });
+                localStorage.setItem(`my_tickets_${tid}`, JSON.stringify(localList.slice(0, 20)));
+
+                // 3. إرسال إشعار فوري للأدمن (875021647) في شات تليجرام عبر جدول bot_messages
+                const catBadges = {
+                    bug: "🛡️ *بلاغ عن ثغرة جديدة (Bug Bounty)*",
+                    issue: "🛠️ *تذكرة دعم فني / مشكلة مستخدم*",
+                    suggestion: "💡 *اقتراح إضافة جديدة للبوت*",
+                    rating: `⭐ *تقييم جديد للبوت (${selectedStars}/5 نجوم)*`
+                };
+
+                const adminMsg =
+                    `${catBadges[category]}\n` +
+                    `━━━━━━━━━━━━━━━\n` +
+                    `🆔 *كود التذكرة:* \`${ticketCode}\`\n` +
+                    `👤 *المستخدم:* ${uName} (\`${tid}\`)\n` +
+                    `📌 *التصنيف:* ${subType}\n` +
+                    `📝 *العنوان:* ${subject}\n` +
+                    `💬 *التفاصيل:*\n${message}`;
+
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(CONTACT_CONFIG.ADMIN_TELEGRAM_ID),
+                    message: adminMsg,
+                    status: 'pending'
+                }]);
+
+                // 4. إرسال تأكيد للمستخدم نفسه في شات البوت
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(tid),
+                    message: `✅ *تم استلام رسالتك في مركز دعم MegaTask بنجاح!*\n━━━━━━━━━━━━━━━\n🆔 *كود التذكرة:* \`${ticketCode}\`\n📌 *الموضوع:* ${subject}\n⏳ *الحالة:* قيد المراجعة من الإدارة وسيتواصل معك الدعم الفني قريباً.`,
+                    status: 'pending'
+                }]);
+
+                // تفريغ الحقول بعد الإرسال
+                if (category === 'bug') { document.getElementById('bug-desc').value = ""; document.getElementById('bug-img').value = ""; attachedImages.bug = null; }
+                if (category === 'issue') { document.getElementById('issue-subject').value = ""; document.getElementById('issue-desc').value = ""; document.getElementById('issue-img').value = ""; attachedImages.issue = null; }
+                if (category === 'suggestion') { document.getElementById('suggest-title').value = ""; document.getElementById('suggest-desc').value = ""; }
+                if (category === 'rating') { document.getElementById('rating-comment').value = ""; loadCommunityReviews(); }
+
+                loadMyTickets();
+                notifyUser(`🎉 تم الإرسال بنجاح!\n🆔 رقم التذكرة: ${ticketCode}\n\nوصلت رسالتك للإدارة الآن، وتم إرسال نسخة تأكيد إلى محادثتك في البوت.`);
+            } catch (e) {
+                console.error(e);
+                notifyUser("❌ حدث خطأ أثناء الإرسال، يرجى المحاولة مرة أخرى.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = origText;
+            }
+        }
+
+        // =========================================================================
+        // 📂 عرض سجل تذاكر وبلاغات المستخدم والردود عليها
+        // =========================================================================
+        async function loadMyTickets() {
+            const container = document.getElementById('my-tickets-container');
+            let list = [];
+
+            if (tid) {
+                try {
+                    const { data } = await client
+                        .from('support_tickets')
+                        .select('*')
+                        .eq('telegram_id', String(tid))
+                        .order('id', { ascending: false })
+                        .limit(15);
+                    if (data && data.length > 0) list = data;
+                } catch (e) {}
+            }
+
+            if (list.length === 0) {
+                list = JSON.parse(localStorage.getItem(`my_tickets_${tid}`) || "[]");
+            }
+
+            if (list.length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 20px; background: var(--card-bg); border-radius: 15px; color: var(--text-muted); font-size: 12px;">لا توجد تذاكر أو بلاغات سابقة حتى الآن.</div>`;
+                return;
+            }
+
+            const catNames = { bug: "🛡️ بلاغ ثغرة", issue: "🛠️ مشكلة فنية/شخصية", suggestion: "💡 اقتراح إضافة", rating: "⭐ تقييم البوت" };
+
+            container.innerHTML = list.map(t => {
+                let stHtml = `<span class="t-status" style="color:var(--amber);">⏳ قيد المراجعة</span>`;
+                if (t.status === 'Resolved') stHtml = `<span class="t-status" style="color:var(--emerald);">✅ تم الحل والرد</span>`;
+                if (t.status === 'Rewarded') stHtml = `<span class="t-status" style="color:var(--cyan);">🎁 تم صرف المكافأة!</span>`;
+
+                return `
+                    <div class="ticket-card">
+                        <div class="ticket-top">
+                            <span class="t-code">${escapeHtml(t.ticket_code)}</span>
+                            ${stHtml}
+                        </div>
+                        <div style="font-weight:bold; color:#fff; margin-bottom:4px;">
+                            ${catNames[t.category] || '📌 تذكرة'} • ${escapeHtml(t.subject || '')}
+                        </div>
+                        <div style="color:var(--text-muted); line-height:1.5;">${escapeHtml(t.message)}</div>
+                        ${t.admin_reply ? `
+                            <div class="admin-reply-box">
+                                👮‍♂️ <b>رد الإدارة:</b><br>${escapeHtml(t.admin_reply)}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join("");
+        }
+
+        // عرض تقييمات الأعضاء في تبويب التقييم
+        async function loadCommunityReviews() {
+            const box = document.getElementById('community-reviews-list');
+            let reviews = [];
+
+            try {
+                const { data } = await client
+                    .from('support_tickets')
+                    .select('user_name, rating, message, created_at')
+                    .eq('category', 'rating')
+                    .order('id', { ascending: false })
+                    .limit(10);
+                if (data && data.length > 0) reviews = data;
+            } catch (e) {}
+
+            if (reviews.length === 0) {
+                reviews = [
+                    { user_name: "أحمد محمد", rating: 5, message: "بصراحة أفضل بوت مهام ومتجر تعاملت معه، صادق جداً وسريع!" },
+                    { user_name: "Karim Adel", rating: 5, message: "قسم الألعاب وأدوات المطورين جامد جداً والشحن وصلني في دقيقتين." },
+                    { user_name: "محمود طارق", rating: 5, message: "فكرة تحويل الجنيه لنقاط مع بونص 20% ممتازة للربح والترويج." }
+                ];
+            }
+
+            box.innerHTML = reviews.map(r => {
+                const sCount = Math.min(5, Math.max(1, Number(r.rating || 5)));
+                const starsStr = "★".repeat(sCount);
+                return `
+                    <div class="review-item">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                            <b style="color:var(--cyan);">👤 ${escapeHtml(r.user_name || 'عضو بالمنصة')}</b>
+                            <span style="color:var(--amber); letter-spacing:1px;">${starsStr}</span>
+                        </div>
+                        <div style="color:#d1d5db; line-height:1.5;">${escapeHtml(r.message)}</div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
+        function goStore() { window.location.href = `store.html?id=${tid}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
+
+        initContactPage();
+    </script>
+</body>
+</html>
