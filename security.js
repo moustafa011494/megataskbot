@@ -1,14 +1,54 @@
 /**
- * MegaTask - Anti-Multi-Account, Anti-VPN & Anti-Self-Referral Shield v3.0 (security.js)
+ * MegaTask - Ultimate Anti-VPN, Anti-Proxy & Anti-Multi-Account Shield v4.0 (security.js)
  */
 const MegaSecurity = (function () {
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-    const ADMIN_MASTER_ID = "8750"; // حساب الأدمن المستثنى من قيود الـ VPN
+    const ADMIN_MASTER_ID = "875021647"; // محمي فقط من الحظر الدائم في الداتابيز
 
     let _deviceFp = null;
     let _userIp = null;
     let _alreadyChecked = false;
+
+    // القائمة السوداء لشركات الـ VPN، البروكسي،، السيرفرات، و Cloudflare WARP
+    const VPN_ISP_BLACKLIST = [
+        "cloudflare", "warp", "m247", "datacamp", "digitalocean", "amazon", "aws",
+        "google cloud", "microsoft", "azure", "hetzner", "ovh", "linode", "akamai",
+        "choopa", "vultr", "contabo", "leaseweb", "cdn77", "tzulo", "quadranet",
+        "sharktech", "privax", "nord", "expressvpn", "proton", "surfshark", "cyberghost",
+        "windscribe", "mullvad", "opera", "zenmate", "psiphon", "hotspot shield", "anchorfree",
+        "kaspersky", "avast", "bitdefender", "pia", "private internet access", "vyprvpn",
+        "tunnelbear", "hide.me", "ipvanish", "strongvpn", "astrill", "purevpn", "torguard",
+        "airvpn", "ivpn", "perfect privacy", "goose vpn", "ultrasurf", "lantern",
+        "packethub", "worldstream", "g-core", "gcore", "scaleway", "kamatera", "ionos",
+        "upcloud", "hostinger", "hostwinds", "frantech", "buyvm", "ramnode", "time4vps",
+        "melbicom", "aeza", "pq.hosting", "stark industries", "tefincom", "netprotect",
+        "hosting", "datacenter", "data center", "vpn", "proxy", "vps", "colocation",
+        "tor exit", "relay", "anonymizer"
+    ];
+
+    // خريطة المناطق الزمنية للدول العربية لضمان كشف أي تغير في دولة الـ IP
+    const TIMEZONE_TO_COUNTRY = {
+        "africa/cairo": "EG",
+        "asia/riyadh": "SA",
+        "asia/baghdad": "IQ",
+        "africa/casablanca": "MA",
+        "africa/algiers": "DZ",
+        "africa/tunis": "TN",
+        "africa/tripoli": "LY",
+        "asia/amman": "JO",
+        "asia/damascus": "SY",
+        "asia/beirut": "LB",
+        "asia/gaza": "PS",
+        "asia/hebron": "PS",
+        "asia/dubai": "AE",
+        "asia/kuwait": "KW",
+        "asia/qatar": "QA",
+        "asia/bahrain": "BH",
+        "asia/muscat": "OM",
+        "asia/aden": "YE",
+        "africa/khartoum": "SD"
+    };
 
     // 1. توليد بصمة الهاردوير الفريدة للهاتف
     function generateHardwareFingerprint() {
@@ -60,52 +100,109 @@ const MegaSecurity = (function () {
         }
     }
 
-    // 2. جلب الـ IP ومعرفة هل هو VPN / Proxy ولا خط حقيقي عبر ipwho.is المجاني
-    async function fetchIpAndVpnStatus() {
+    // 2. الرادار الرباعي لفحص الـ IP وكشف جميع أنواع الـ VPN والـ Proxy
+    async function detectIpAndVpnMultiLayer() {
+        const deviceTz = (Intl.DateTimeFormat().resolvedOptions().timeZone || "").toLowerCase().trim();
+        let detectedIp = null;
+        let isVpn = false;
+        let vpnReason = "";
+
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000);
-            const res = await fetch("https://ipwho.is/", { signal: controller.signal });
-            clearTimeout(timeoutId);
-            const data = await res.json();
-            
-            if (data && data.success) {
-                const isVpnOrProxy = data.security?.vpn === true || 
-                                     data.security?.proxy === true || 
-                                     data.security?.tor === true || 
-                                     data.security?.hosting === true;
-                return {
-                    ip: data.ip || null,
-                    isVpn: isVpnOrProxy
-                };
+            // الفحص الأول عبر ipwho.is + الفحص الثاني عبر freeipapi.com بالتوازي
+            const [whoRes, freeApiRes] = await Promise.allSettled([
+                fetch("https://ipwho.is/").then(r => r.json()),
+                fetch("https://freeipapi.com/api/json").then(r => r.json())
+            ]);
+
+            let ipCountry = "";
+            let ipTz = "";
+            let ispOrgText = "";
+
+            if (whoRes.status === "fulfilled" && whoRes.value && whoRes.value.success !== false) {
+                const d = whoRes.value;
+                detectedIp = d.ip || detectedIp;
+                ipCountry = (d.country_code || "").toUpperCase();
+                ipTz = (d.timezone?.id || "").toLowerCase().trim();
+                ispOrgText = `${d.connection?.isp || ""} ${d.connection?.org || ""} ${d.connection?.domain || ""}`.toLowerCase();
+
+                if (d.security?.vpn || d.security?.proxy || d.security?.tor || d.security?.hosting) {
+                    isVpn = true;
+                    vpnReason = `خادم VPN مباشر (${ipCountry})`;
+                }
             }
-            return { ip: null, isVpn: false };
-        } catch (e) {
-            return { ip: null, isVpn: false };
+
+            if (freeApiRes.status === "fulfilled" && freeApiRes.value) {
+                const f = freeApiRes.value;
+                if (!detectedIp && f.ipAddress) detectedIp = f.ipAddress;
+                if (!ipCountry && f.countryCode) ipCountry = String(f.countryCode).toUpperCase();
+                if (f.isProxy === true) {
+                    isVpn = true;
+                    vpnReason = `اتصال Proxy / VPN مكتشف (${ipCountry || f.countryName})`;
+                }
+            }
+
+            // الكمين 1: فحص اسم شركة الإنترنت (ISP / Org / ASN) ضد شركات الـ VPN والاستضافة والـ WARP
+            if (!isVpn && ispOrgText) {
+                for (const keyword of VPN_ISP_BLACKLIST) {
+                    if (ispOrgText.includes(keyword)) {
+                        isVpn = true;
+                        vpnReason = `مزود خدمة غير مسموح (${keyword.toUpperCase()} - ${ipCountry})`;
+                        break;
+                    }
+                }
+            }
+
+            // الكمين 2: فحص اختلاف المنطقة الزمنية للموبايل عن دولة الـ IP (يمسك 100% من الـ VPN الأجنبي)
+            if (!isVpn && deviceTz && ipCountry) {
+                const expectedCountry = TIMEZONE_TO_COUNTRY[deviceTz];
+                if (expectedCountry && expectedCountry !== ipCountry) {
+                    isVpn = true;
+                    vpnReason = `اختلاف موقع الشبكة (${ipCountry}) عن توقيت الهاتف (${expectedCountry})`;
+                } else if (ipTz && deviceTz !== ipTz) {
+                    // إذا كانت القارة نفسها مختلفة بين ساعة الهاتف وعنوان الـ IP
+                    const devContinent = deviceTz.split('/')[0];
+                    const ipContinent = ipTz.split('/')[0];
+                    if (devContinent && ipContinent && devContinent !== ipContinent) {
+                        isVpn = true;
+                        vpnReason = `تغيير موقع الاتصال (${ipTz} ⬅ ${deviceTz})`;
+                    }
+                }
+            }
+
+            return { ip: detectedIp, isVpn: isVpn, reason: vpnReason };
+        } catch (err) {
+            return { ip: detectedIp, isVpn: false, reason: "" };
         }
     }
 
-    // 3. شاشة حظر الـ VPN
-    function showVpnBlockScreen() {
+    // 3. شاشة حظر الـ VPN والـ Proxy
+    function showVpnBlockScreen(reasonDetail, ipAddr) {
         const stopAll = () => {
             document.body.innerHTML = `
                 <div style="position:fixed; inset:0; background:#08090d; z-index:2147483647; display:flex; align-items:center; justify-content:center; padding:22px; text-align:center; font-family:'Segoe UI',Tahoma,sans-serif; direction:rtl; user-select:none;">
-                    <div style="background:#151821; border:2px solid #ffaa00; border-radius:24px; padding:28px 20px; max-width:360px; width:100%; box-shadow:0 0 50px rgba(255,170,0,0.35);">
+                    <div style="background:#151821; border:2px solid #ffaa00; border-radius:24px; padding:28px 20px; max-width:365px; width:100%; box-shadow:0 0 50px rgba(255,170,0,0.35);">
                         <div style="font-size:56px; margin-bottom:10px;">🛡️</div>
                         <h2 style="color:#ffaa00; margin:0 0 10px 0; font-size:20px;">تم اكتشاف اتصال VPN / Proxy!</h2>
-                        <p style="color:#d1d5db; font-size:13px; line-height:1.7; margin-bottom:16px;">
-                            عذراً، تشغيل برامج الـ VPN أو بروكسي الإنترنت محظور تماماً على منصة MegaTask لحماية أمان النظام والإعلانات.
+                        <p style="color:#d1d5db; font-size:13px; line-height:1.7; margin-bottom:14px;">
+                            عذراً، استخدام برامج الـ VPN أو تغيير الموقع الجغرافي أو تطبيقات البروكسي (مثل WARP) محظور تماماً على منصة MegaTask.
                         </p>
-                        <div style="background:#0c0e13; border:1px dashed #ffaa00; border-radius:12px; padding:12px; font-size:12px; color:#9ca3af; margin-bottom:16px; line-height:1.8;">
-                            💡 <b>ما يجب عليك فعله:</b><br>
-                            يرجى إيقاف تشغيل تطبيق الـ VPN أو البروكسي من هاتفك، ثم إعادة فتح البوت لتتمكن من المتابعة.
+                        <div style="background:#0c0e13; border:1px dashed #ffaa00; border-radius:12px; padding:12px; font-size:11.5px; color:#9ca3af; margin-bottom:16px; line-height:1.8;">
+                            🔍 <b style="color:#ffaa00;">تفاصيل الفحص الأمني:</b><br>
+                            <span style="color:#fff;">${reasonDetail || 'اتصال عبر خادم افتراضي'}</span><br>
+                            ${ipAddr ? `<span style="color:#888; font-family:monospace;">IP: ${ipAddr}</span>` : ''}
                         </div>
+                        <p style="font-size:12px; color:#00d26a; font-weight:bold; margin:0 0 14px 0;">
+                            💡 أوقف تشغيل الـ VPN من هاتفك ثم اضغط إعادة الفحص:
+                        </p>
+                        <button onclick="location.reload()" style="width:100%; background:#ffaa00; color:#000; border:none; padding:12px; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer;">
+                            🔄 أوقفت الـ VPN - إعادة الفحص الآن
+                        </button>
                     </div>
                 </div>
             `;
         };
         stopAll();
-        setTimeout(stopAll, 300);
+        setTimeout(stopAll, 350);
     }
 
     // 4. شاشة الحظر الدائم لتعدد الحسابات
@@ -130,7 +227,7 @@ const MegaSecurity = (function () {
             `;
         };
         stopAll();
-        setTimeout(stopAll, 300);
+        setTimeout(stopAll, 350);
     }
 
     function pickMasterAccount(matchedUsers, currentUser) {
@@ -150,12 +247,22 @@ const MegaSecurity = (function () {
         return pool[0];
     }
 
-    // 5. الفحص الرئيسي الشامل (تعدد الحسابات + كشف الـ VPN)
+    // 5. الفحص الرئيسي الشامل (كشف الـ VPN + منع تعدد الحسابات)
     async function verifyDeviceAndAccount(supabaseClient, passedTid) {
         try {
             const tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
             const urlId = new URLSearchParams(window.location.search).get('id');
             const currentTid = String(tgId || passedTid || urlId || localStorage.getItem('telegram_id') || "").trim();
+
+            _deviceFp = generateHardwareFingerprint();
+            const netCheck = await detectIpAndVpnMultiLayer();
+            _userIp = netCheck.ip;
+
+            // ⭐ 1. إيقاف فوري لأي اتصال VPN أو Proxy (على جميع الحسابات لتتمكن من تجربته بنفسك)
+            if (netCheck.isVpn) {
+                showVpnBlockScreen(netCheck.reason, _userIp);
+                return { allowed: false, reason: "vpn_detected" };
+            }
 
             if (!currentTid || currentTid === "undefined" || currentTid === "null") {
                 return { allowed: true };
@@ -163,16 +270,6 @@ const MegaSecurity = (function () {
 
             const db = supabaseClient || (window.supabase ? window.supabase.createClient(S_URL, S_KEY) : null);
             if (!db) return { allowed: true };
-
-            _deviceFp = generateHardwareFingerprint();
-            const ipData = await fetchIpAndVpnStatus();
-            _userIp = ipData.ip;
-
-            // ⭐ فحص الـ VPN (يُستثنى حساب الأدمن الأساسي فقط)
-            if (ipData.isVpn && currentTid !== ADMIN_MASTER_ID) {
-                showVpnBlockScreen();
-                return { allowed: false, reason: "vpn_detected" };
-            }
 
             const { data: myUser } = await db
                 .from('users')
@@ -268,11 +365,12 @@ const MegaSecurity = (function () {
         }
 
         const myFp = _deviceFp || generateHardwareFingerprint();
-        const ipData = await fetchIpAndVpnStatus();
-        const myIp = _userIp || ipData.ip;
+        const netCheck = await detectIpAndVpnMultiLayer();
+        const myIp = _userIp || netCheck.ip;
 
-        if (ipData.isVpn && String(myTid) !== ADMIN_MASTER_ID) {
-            return { ok: false, msg: "🚫 لا يمكنك استخدام أو تفعيل دعوات أثناء تشغيل الـ VPN!" };
+        if (netCheck.isVpn) {
+            showVpnBlockScreen(netCheck.reason, myIp);
+            return { ok: false, msg: "🚫 لا يمكنك تفعيل دعوات أثناء تشغيل الـ VPN!" };
         }
 
         const { data: inviter } = await supabaseClient
