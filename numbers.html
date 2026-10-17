@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>MegaTask - أرقام تفعيل SMS والستور المؤقت</title>
+    <title>MegaTask - بوابة الأرقام الحية (مجاناً & VIP)</title>
 
     <!-- إعلانات Monetag ومكاتب تيليجرام و Supabase ودرع الحماية -->
     <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
@@ -34,7 +34,7 @@
         body {
             background-color: var(--bg-dark);
             background-image: 
-                radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.07) 0%, transparent 50%),
+                radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.08) 0%, transparent 50%),
                 linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
             background-size: 100% 100%, 26px 26px, 26px 26px;
@@ -62,10 +62,7 @@
             font-weight: bold;
             cursor: pointer;
         }
-        .wallets-row {
-            display: flex;
-            gap: 8px;
-        }
+        .wallets-row { display: flex; gap: 8px; }
         .w-pill {
             background: var(--card-bg);
             border: 1px solid var(--card-border);
@@ -80,25 +77,25 @@
         .w-pill.pts { border-color: rgba(0, 230, 118, 0.45); color: var(--emerald); }
         .w-pill.egp { border-color: rgba(0, 229, 255, 0.45); color: var(--cyan); }
 
-        /* الهيدر الرئيسي */
+        /* الهيدر */
         .numbers-hero {
             background: linear-gradient(145deg, #131926, #0d111a);
             border: 1.5px solid var(--card-border);
-            border-radius: 22px;
-            padding: 18px 15px;
-            margin-bottom: 15px;
+            border-radius: 20px;
+            padding: 16px 15px;
+            margin-bottom: 14px;
             box-shadow: 0 6px 0 #05070b;
             text-align: center;
         }
-        .numbers-hero h1 { margin: 0 0 5px; font-size: 19px; color: var(--cyan); }
-        .numbers-hero p { margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+        .numbers-hero h1 { margin: 0 0 5px; font-size: 18px; color: var(--cyan); }
+        .numbers-hero p { margin: 0; font-size: 11.5px; color: var(--text-muted); line-height: 1.5; }
 
-        /* شريط التبديل بين القسم المجاني والمدفوع */
+        /* التبديل بين المجاني والمدفوع */
         .section-tabs-bar {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 15px;
             background: var(--card-bg);
             border: 1.5px solid var(--card-border);
             padding: 5px;
@@ -106,51 +103,91 @@
         }
         .tab-chip {
             text-align: center;
-            padding: 10px;
+            padding: 11px 8px;
             border-radius: 12px;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: bold;
             color: var(--text-muted);
             cursor: pointer;
             transition: 0.2s;
         }
         .tab-chip.active-free { background: rgba(0, 230, 118, 0.15); color: var(--emerald); border: 1px solid var(--emerald); }
-        .tab-chip.active-paid { background: rgba(157, 78, 221, 0.2); color: #d8b4fe; border: 1px solid var(--violet); }
+        .tab-chip.active-paid { background: rgba(157, 78, 221, 0.22); color: #e9d5ff; border: 1px solid var(--violet); }
 
         .section-view { display: none; }
         .section-view.active { display: block; }
 
-        /* شبكة الأرقام */
+        /* فلاتر الدول في القسم المجاني */
+        .country-filters {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            scrollbar-width: none;
+        }
+        .country-filters::-webkit-scrollbar { display: none; }
+        .c-chip {
+            background: #121824;
+            border: 1px solid #263248;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: bold;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .c-chip.active {
+            background: var(--emerald);
+            color: #000;
+            border-color: var(--emerald);
+        }
+
+        /* كروت الأرقام المجانية الحية */
         .numbers-grid {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 11px;
         }
         .number-card {
             background: var(--card-bg);
             border: 1.5px solid var(--card-border);
             border-radius: 18px;
-            padding: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            position: relative;
+            padding: 14px;
+            box-shadow: 0 5px 0 #05070b;
         }
-        .number-card.vip-card { border-color: rgba(157, 78, 221, 0.45); background: linear-gradient(145deg, #13121f, #111621); }
-        
         .num-top-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 8px;
         }
-        .country-name { font-size: 14px; font-weight: bold; color: #fff; display: flex; align-items: center; gap: 6px; }
-        .service-badge { font-size: 10.5px; padding: 3px 8px; border-radius: 6px; font-weight: bold; background: #1a2233; color: var(--cyan); border: 1px solid #2a3a59; }
-        
+        .country-name { font-size: 13.5px; font-weight: bold; color: #fff; display: flex; align-items: center; gap: 6px; }
+        .live-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            background: rgba(0, 230, 118, 0.12);
+            color: var(--emerald);
+            border: 1px solid rgba(0, 230, 118, 0.35);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .pulse-dot {
+            width: 6px; height: 6px; border-radius: 50%; background: var(--emerald);
+            animation: pulse 1.4s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
         .phone-display-box {
             background: #06080c;
             border: 1.5px solid #253248;
             border-radius: 12px;
-            padding: 11px 12px;
-            margin: 8px 0 12px;
+            padding: 10px 12px;
+            margin: 6px 0 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -160,17 +197,16 @@
             font-family: 'Courier New', monospace;
             font-size: 16px;
             font-weight: 900;
-            color: var(--emerald);
-            text-align: left;
-            flex: 1;
+            color: var(--cyan);
+            letter-spacing: 0.5px;
         }
         .btn-copy-num {
-            background: rgba(0, 230, 118, 0.15);
-            border: 1px solid var(--emerald);
-            color: var(--emerald);
-            padding: 6px 12px;
-            border-radius: 9px;
-            font-size: 11.5px;
+            background: rgba(0, 229, 255, 0.14);
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            padding: 5px 11px;
+            border-radius: 8px;
+            font-size: 11px;
             font-weight: bold;
             cursor: pointer;
         }
@@ -179,39 +215,134 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-top: 1px solid #1c2536;
-            padding-top: 10px;
-            font-size: 11.5px;
+            padding-top: 8px;
+            border-top: 1px solid #1b2333;
+            font-size: 11px;
             color: var(--text-muted);
         }
-        .btn-action-num {
+        .btn-open-inbox {
             background: var(--emerald);
             color: #000;
             border: none;
-            padding: 9px 16px;
+            padding: 8px 14px;
             border-radius: 10px;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11.5px;
             cursor: pointer;
             box-shadow: 0 3px 0 var(--emerald-dark);
         }
-        .btn-action-num.vip-btn {
-            background: var(--violet);
-            color: #fff;
-            box-shadow: 0 3px 0 #5a189a;
+        .btn-open-inbox:active { transform: translateY(2px); box-shadow: none; }
+
+        /* ==========================================
+           تصميم القسم المدفوع الأوتوماتيكي (VIP API)
+        =========================================== */
+        .active-order-banner {
+            display: none;
+            background: linear-gradient(145deg, #1b132e, #101624);
+            border: 2px solid var(--amber);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 0 25px rgba(255, 179, 0, 0.15);
+            text-align: center;
+        }
+        .otp-huge-box {
+            background: #05070b;
+            border: 1.5px dashed var(--emerald);
+            border-radius: 14px;
+            padding: 14px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--emerald);
+            letter-spacing: 3px;
         }
 
-        /* نافذة رسائل الرقم المجاني (SMS Inbox) */
+        .step-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--cyan);
+            margin: 14px 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* شبكة اختيار التطبيق (تليجرام، واتساب، فيسبوك...) */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .srv-card {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: 14px;
+            padding: 10px 4px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+        .srv-card .ic { font-size: 22px; display: block; margin-bottom: 4px; }
+        .srv-card span { font-size: 11px; font-weight: bold; color: #cbd5e1; display: block; }
+        .srv-card.selected {
+            border-color: var(--violet);
+            background: rgba(157, 78, 221, 0.18);
+            box-shadow: 0 3px 0 #5a189a;
+        }
+        .srv-card.selected span { color: #fff; }
+
+        /* قائمة الدول والأسعار في القسم المدفوع */
+        .vip-country-row {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: 15px;
+            padding: 12px 14px;
+            margin-bottom: 9px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .vip-c-info b { display: block; font-size: 13.5px; color: #fff; margin-bottom: 3px; }
+        .vip-c-info span { font-size: 11px; color: var(--emerald); }
+        .vip-buy-actions { display: flex; gap: 6px; }
+        .btn-buy-egp {
+            background: var(--cyan);
+            color: #000;
+            border: none;
+            padding: 8px 11px;
+            border-radius: 10px;
+            font-size: 11.5px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #0088a3;
+        }
+        .btn-buy-pts {
+            background: var(--amber);
+            color: #000;
+            border: none;
+            padding: 8px 11px;
+            border-radius: 10px;
+            font-size: 11.5px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 0 #b27d00;
+        }
+
+        /* نافذة رسائل الرقم المجاني */
         .modal-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(5, 7, 12, 0.9);
+            background: rgba(5, 7, 12, 0.92);
             backdrop-filter: blur(6px);
             z-index: 9999;
             align-items: center;
             justify-content: center;
-            padding: 16px;
+            padding: 15px;
         }
         .modal-body {
             background: var(--card-bg);
@@ -227,33 +358,39 @@
         .sms-item-box {
             background: #06080c;
             border: 1px solid #222d42;
+            border-right: 3px solid var(--cyan);
             border-radius: 12px;
             padding: 12px;
             margin-bottom: 10px;
             font-size: 12.5px;
             line-height: 1.6;
         }
-        .otp-highlight {
-            background: rgba(0, 230, 118, 0.15);
+        .otp-detected-pill {
+            margin-top: 8px;
+            background: rgba(0, 230, 118, 0.14);
             border: 1px dashed var(--emerald);
-            color: var(--emerald);
-            padding: 4px 8px;
-            border-radius: 6px;
+            border-radius: 8px;
+            padding: 6px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .otp-detected-pill b {
             font-family: monospace;
-            font-weight: bold;
-            font-size: 14px;
-            display: inline-block;
-            margin-top: 4px;
+            font-size: 15px;
+            color: var(--emerald);
+            letter-spacing: 1.5px;
         }
 
         .status-box {
             text-align: center;
-            padding: 35px 15px;
+            padding: 32px 15px;
             background: var(--card-bg);
             border: 1.5px dashed var(--card-border);
             border-radius: 18px;
             color: var(--text-muted);
-            font-size: 13px;
+            font-size: 12.5px;
             line-height: 1.7;
         }
 
@@ -278,61 +415,113 @@
     <div class="top-bar">
         <button class="btn-back" onclick="goHome()">↩️ الرئيسية</button>
         <div class="wallets-row">
-            <div class="w-pill pts">🪙 <span id="user-points">0</span> نقطة</div>
+            <div class="w-pill pts">🪙 <span id="user-points">0</span> ن</div>
             <div class="w-pill egp">💵 <span id="user-egp">0.00</span> ج.م</div>
         </div>
     </div>
 
     <!-- الهيدر -->
     <div class="numbers-hero">
-        <h1>📱 استوديو تفعيل الأرقام (SMS Hub)</h1>
-        <p>استقبل أكواد التفعيل فوراً عبر القسم المجاني، أو استأجر رقماً خاصاً بك لاستخدامه في أي منصة!</p>
+        <h1>📲 بوابة أرقام التفعيل الحية (SMS API)</h1>
+        <p>أرقام حقيقية متصلة بالسيرفر مباشرة لاستلام أكواد التفعيل (OTP) مجاناً أو شراء رقم خاص بك وحدك!</p>
     </div>
 
-    <!-- شريط التبديل بين الأقسام -->
+    <!-- التبديل بين المجاني والمدفوع -->
     <div class="section-tabs-bar">
-        <div id="tab-free" class="tab-chip active-free" onclick="switchSection('free')">🌐 الأرقام العامة (مجاني)</div>
-        <div id="tab-paid" class="tab-chip" onclick="switchSection('paid')">👑 استئجار أرقام خاصة (VIP)</div>
+        <div id="tab-free" class="tab-chip active-free" onclick="switchSection('free')">🌐 أرقام عامة حية (مجاناً)</div>
+        <div id="tab-paid" class="tab-chip" onclick="switchSection('paid')">👑 شراء رقم خاص فوري (VIP)</div>
     </div>
 
     <!-- ==========================================
-         القسم 1: الأرقام العامة المجانية (Public SMS)
+         القسم 1: الأرقام العامة الحية (Real Public SMS API)
     =========================================== -->
     <div id="view-free" class="section-view active">
-        <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px; text-align: center;">
-            💡 أرقام عامة متجددة لاستقبال رسائل التفعيل. مشاهدة إعلان قصير تمنحك +2 نقطة هدية عند كل نسخ!
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 11.5px; color: var(--text-muted);">📡 مصدر الأرقام: سيرفر OnlineSim المباشر</span>
+            <button onclick="fetchRealFreeNumbers(true)" style="background:none; border:1px solid var(--emerald); color:var(--emerald); border-radius:8px; padding:4px 10px; font-size:11px; font-weight:bold; cursor:pointer;">🔄 جلب أرقام جديدة</button>
         </div>
+
+        <!-- فلاتر الدول الحية -->
+        <div id="free-country-tabs" class="country-filters"></div>
+
+        <!-- قائمة الأرقام المجانية الحقيقية -->
         <div id="free-numbers-list" class="numbers-grid">
-            <div class="status-box">⏳ جاري جلب الأرقام المتاحة...</div>
+            <div class="status-box">⏳ جاري الاتصال بالسيرفر وسحب الأرقام الحقيقية النشطة الآن...</div>
         </div>
     </div>
 
     <!-- ==========================================
-         القسم 2: استئجار الأرقام الخاصة (VIP Private Numbers)
+         القسم 2: شراء رقم خاص فوري (Automated Paid SMS API)
     =========================================== -->
     <div id="view-paid" class="section-view">
-        <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px; text-align: center;">
-            👑 استأجر رقماً خاصاً وحدك لفترة محددة لاستقبال تفعيلات (تليجرام، واتساب، ذكاء اصطناعي، وغيرها). الدفع بالنقاط أو بالجنيه!
+
+        <!-- غرفة انتظار الكود الحية (تظهر فور شراء رقم خاص) -->
+        <div id="active-vip-room" class="active-order-banner">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--amber);">
+                <span id="vip-room-service">📱 رقمك الخاص جاهز للتفعيل</span>
+                <span id="vip-room-timer">⏱️ متبقي: 20:00</span>
+            </div>
+
+            <div class="phone-display-box" style="margin: 10px 0;">
+                <span class="phone-number-txt" id="vip-room-phone" style="color: var(--emerald); font-size: 18px;">+000000000</span>
+                <button class="btn-copy-num" onclick="copyTextPlain(document.getElementById('vip-room-phone').innerText)">نسخ الرقم 📋</button>
+            </div>
+
+            <div style="font-size: 11.5px; color: #cbd5e1;">ضع الرقم في التطبيق الآن، يصلك الكود هنا تلقائياً خلال ثوانٍ:</div>
+            <div class="otp-huge-box" id="vip-room-otp">⏳ بانتظار وصول الـ SMS...</div>
+
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <button class="btn-open-inbox" style="flex: 1;" onclick="checkActivePaidSmsStatus(true)">🔄 فحص الكود الآن</button>
+                <button id="btn-cancel-vip" class="btn-open-inbox" style="flex: 1; background: var(--crimson); color: #fff; box-shadow: 0 3px 0 #990f22;" onclick="cancelAndRefundPaidNumber()">❌ إلغاء واسترداد الرصيد</button>
+            </div>
         </div>
-        <div id="paid-numbers-list" class="numbers-grid">
-            <div class="status-box">⏳ جاري تحميل الأرقام الخاصة...</div>
+
+        <!-- الخطوة 1: اختيار المنصة المطلوب تفعيلها -->
+        <div class="step-title">1️⃣ اختر التطبيق الذي تريد تفعيله برقم خاص:</div>
+        <div class="services-grid" id="paid-services-grid">
+            <div class="srv-card selected" onclick="selectPaidService('tg', 'تليجرام', this)">
+                <span class="ic">✈️</span><span>تليجرام</span>
+            </div>
+            <div class="srv-card" onclick="selectPaidService('wa', 'واتساب', this)">
+                <span class="ic">💬</span><span>واتساب</span>
+            </div>
+            <div class="srv-card" onclick="selectPaidService('go', 'جوجل / جيميل', this)">
+                <span class="ic">🌐</span><span>جوجل</span>
+            </div>
+            <div class="srv-card" onclick="selectPaidService('fb', 'فيسبوك', this)">
+                <span class="ic">📘</span><span>فيسبوك</span>
+            </div>
+            <div class="srv-card" onclick="selectPaidService('lf', 'تيك توك', this)">
+                <span class="ic">🎵</span><span>تيك توك</span>
+            </div>
+            <div class="srv-card" onclick="selectPaidService('ig', 'انستجرام', this)">
+                <span class="ic">📸</span><span>انستجرام</span>
+            </div>
+            <div class="srv-card" onclick="selectPaidService('dr', 'ChatGPT / AI', this)">
+                <span class="ic">🤖</span><span>ChatGPT</span>
+            </div>
+            <div class="srv-card" onclick="selectPaidService('ds', 'ديسكورد', this)">
+                <span class="ic">🎮</span><span>ديسكورد</span>
+            </div>
         </div>
+
+        <!-- الخطوة 2: اختيار الدولة وطريقة الدفع (جنيه أو نقاط) -->
+        <div class="step-title">2️⃣ اختر دولة الرقم (استلام الكود أوتوماتيك + ضمان استرداد فوري):</div>
+        <div id="paid-countries-list"></div>
     </div>
 
-    <!-- نافذة صندوق الوارد للرقم المجاني (SMS Inbox Modal) -->
+    <!-- نافذة قراءة الرسائل الحقيقية للرقم المجاني -->
     <div id="sms-modal" class="modal-overlay">
         <div class="modal-body">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h4 class="modal-title" id="modal-num-title">رسائل الرقم</h4>
-                <button class="btn-refresh-manual" onclick="refreshSmsInbox()">🔄 تحديث الرسائل</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <h4 style="margin: 0; color: var(--emerald); font-size: 15px;" id="modal-num-title">صندوق الرسائل الحية</h4>
+                <button onclick="loadRealMessagesForNumber(activeFreePhone, true)" style="background: rgba(0,230,118,0.12); border: 1px solid var(--emerald); color: var(--emerald); padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer;">🔄 تحديث اللحظة</button>
             </div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;" id="modal-num-subtitle"></div>
+            <div style="font-size: 12px; color: var(--cyan); font-family: monospace; direction: ltr; text-align: right; margin-bottom: 12px;" id="modal-num-subtitle"></div>
             
-            <div id="modal-sms-list">
-                <div style="text-align: center; color: var(--text-muted); padding: 25px;">⏳ بانتظار وصول رسائل SMS على هذا الرقم...</div>
-            </div>
+            <div id="modal-sms-list"></div>
 
-            <button class="btn-action" style="width: 100%; margin-top: 15px; background: #252b3b; color: #fff;" onclick="closeModal('sms-modal')">إغلاق النافذة</button>
+            <button onclick="closeModal('sms-modal')" style="width: 100%; margin-top: 14px; background: #222b3d; color: #fff; border: none; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer;">إغلاق النافذة</button>
         </div>
     </div>
 
@@ -349,6 +538,14 @@
         const tg = window.Telegram?.WebApp;
         if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
 
+        // =========================================================================
+        // ⚙️ إعدادات الربط بمزود الأرقام المدفوعة (GrizzlySMS / TigerSMS / Vak-SMS)
+        // =========================================================================
+        // 1. سجل في https://grizzlysms.com أو https://tiger-sms.com واشحن بـ 1$ أو 2$
+        // 2. انسخ الـ API Key من الإعدادات وضعه هنا مكان PUT_YOUR_API_KEY_HERE
+        const PAID_API_KEY = "PUT_YOUR_API_KEY_HERE"; 
+        const PAID_API_BASE_URL = "https://api.grizzlysms.com/stubs/handler_api.php";
+
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
@@ -364,8 +561,40 @@
         if (tid === "undefined" || tid === "null") tid = "";
 
         let userData = null;
-        let activeSelectedNumber = null;
-        let smsPollInterval = null;
+        let allFreeNumbers = [];
+        let selectedFreeCountry = "ALL";
+        let activeFreePhone = "";
+
+        // متغيرات القسم المدفوع
+        let selectedServiceCode = "tg";
+        let selectedServiceName = "تليجرام";
+        let activeVipOrder = null;
+        let vipPollInterval = null;
+        let vipCountdownInterval = null;
+
+        // كتالوج الدول والأسعار للقسم المدفوع (الأكواد متوافقة مع GrizzlySMS / SMS-Activate)
+        const VIP_COUNTRIES_CATALOG = [
+            { code: "6", name: "🇮🇩 إندونيسيا (سريع جداً)", baseEgp: 12, basePts: 14000, note: "نسبة وصول الكود 99%" },
+            { code: "10", name: "🇻🇳 فيتنام (مميز للتليجرام والواتس)", baseEgp: 14, basePts: 16000, note: "استلام فوري" },
+            { code: "187", name: "🇺🇸 الولايات المتحدة (USA)", baseEgp: 18, basePts: 20000, note: "يدعم جميع المنصات والـ AI" },
+            { code: "16", name: "🇬🇧 بريطانيا (UK VIP)", baseEgp: 20, basePts: 22000, note: "أرقام أوروبية نظيفة" },
+            { code: "21", name: "🇪🇬 مصر (محلي)", baseEgp: 22, basePts: 25000, note: "تفعيل محلي ودولي" },
+            { code: "48", name: "🇳🇱 هولندا", baseEgp: 18, basePts: 20000, note: "ممتاز للواتساب وجوجل" },
+            { code: "4", name: "🇵🇭 الفلبين", baseEgp: 13, basePts: 15000, note: "سعر اقتصادي وسريع" }
+        ];
+
+        const COUNTRY_FLAGS = {
+            "44": "🇬🇧 بريطانيا",
+            "1": "🇺🇸 أمريكا / كندا",
+            "33": "🇫🇷 فرنسا",
+            "46": "🇸🇪 السويد",
+            "358": "🇫🇮 فنلندا",
+            "31": "🇳🇱 هولندا",
+            "49": "🇩🇪 ألمانيا",
+            "34": "🇪🇸 إسبانيا",
+            "48": "🇵🇱 بولندا",
+            "372": "🇪🇪 إستونيا"
+        };
 
         function notifyUser(txt) {
             if (tg && tg.showAlert) tg.showAlert(txt);
@@ -376,7 +605,47 @@
             return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        async function initNumbersPage() {
+        // استخراج كود التفعيل OTP من نص الرسالة
+        function extractOtp(text) {
+            const clean = String(text || "").replace(/<[^>]*>/g, " ");
+            const matches = clean.match(/\b(\d{4,8})\b/g);
+            if (!matches) return null;
+            for (const m of matches) {
+                if (!["2024", "2025", "2026", "2027"].includes(m)) return m;
+            }
+            return matches[0];
+        }
+
+        // دالة الجلب الذكية عبر عدة بوابات Proxy لتخطي CORS في المتصفح
+        async function fetchViaCorsProxy(targetUrl) {
+            const proxies = [
+                `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+                `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
+            ];
+
+            for (const pUrl of proxies) {
+                try {
+                    const controller = new AbortController();
+                    const tId = setTimeout(() => controller.abort(), 7000);
+                    const res = await fetch(pUrl, { signal: controller.signal });
+                    clearTimeout(tId);
+                    if (res.ok) {
+                        const text = await res.text();
+                        if (text && text.trim().length > 2) return text;
+                    }
+                } catch (e) {}
+            }
+            throw new Error("Proxy connection failed");
+        }
+
+        // =========================================================================
+        // 🚀 تهيئة الصفحة وتحميل الرصيد والأرقام الحية
+        // =========================================================================
+        async function initPage() {
+            renderPaidCountriesCatalog();
+            restoreActiveVipOrderIfExist();
+
             if (tid) {
                 try {
                     const { data } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
@@ -389,8 +658,8 @@
                     }
                 } catch (e) {}
             }
-            loadFreeNumbers();
-            loadPaidNumbers();
+
+            await fetchRealFreeNumbers(false);
         }
 
         function updateWalletsUI() {
@@ -400,242 +669,252 @@
         }
 
         function switchSection(sec) {
-            const btnFree = document.getElementById('tab-free');
-            const btnPaid = document.getElementById('tab-paid');
-            const viewFree = document.getElementById('view-free');
-            const viewPaid = document.getElementById('view-paid');
-
-            if (sec === 'free') {
-                btnFree.className = "tab-chip active-free";
-                btnPaid.className = "tab-chip";
-                viewFree.className = "section-view active";
-                viewPaid.className = "section-view";
-            } else {
-                btnPaid.className = "tab-chip active-paid";
-                btnFree.className = "tab-chip";
-                viewPaid.className = "section-view active";
-                viewFree.className = "section-view";
-            }
+            document.getElementById('tab-free').className = sec === 'free' ? "tab-chip active-free" : "tab-chip";
+            document.getElementById('tab-paid').className = sec === 'paid' ? "tab-chip active-paid" : "tab-chip";
+            document.getElementById('view-free').className = sec === 'free' ? "section-view active" : "section-view";
+            document.getElementById('view-paid').className = sec === 'paid' ? "section-view active" : "section-view";
         }
 
         // =========================================================================
-        // 🌐 القسم 1: الأرقام العامة المجانية
+        // 🌐 القسم 1: جلب الأرقام الحقيقية والرسائل الحية من OnlineSim Public API
         // =========================================================================
-        async function loadFreeNumbers() {
-            const container = document.getElementById('free-numbers-list');
-            // جلب الأرقام المجانية من جدول store_products التي تخص قسم الأرقام
+        async function fetchRealFreeNumbers(showAd) {
+            const listEl = document.getElementById('free-numbers-list');
+            listEl.innerHTML = `<div class="status-box">⏳ جاري سحب الأرقام الحية المتصلة بالسيرفر الآن...</div>`;
+
+            if (showAd) {
+                tryTriggerAdAndReward('مكافأة تحديث الأرقام المجانية');
+            }
+
             try {
-                const { data, error } = await client
-                    .from('store_products')
-                    .select('*')
-                    .eq('status', 'Approved')
-                    .eq('category', 'numbers')
-                    .order('id', { ascending: false });
+                const rawJson = await fetchViaCorsProxy("https://onlinesim.io/api/v1/getFreePhoneList?lang=en");
+                const parsed = JSON.parse(rawJson);
+                const numbers = parsed.numbers || [];
 
-                if (error || !data || data.length === 0) {
-                    // بيانات تجريبية افتراضية في حال لم تكن مسجلة في الداتابيز بعد
-                    renderDefaultFreeNumbers(container);
-                    return;
-                }
+                if (numbers.length === 0) throw new Error("Empty list");
 
-                container.innerHTML = "";
-                data.forEach(item => {
-                    container.innerHTML += `
-                        <div class="number-card">
-                            <div class="num-top-row">
-                                <span class="country-name">🌐 ${escapeHtml(item.title)}</span>
-                                <span class="service-badge">مجاني عام</span>
-                            </div>
-                            <div class="phone-display-box">
-                                <span class="phone-number-txt">${escapeHtml(item.link || '+201000000000')}</span>
-                                <button class="btn-copy-num" onclick="copyNumberWithReward('${escapeHtml(item.link || '')}')">نسخ الرقم 📋</button>
-                            </div>
-                            <div class="num-footer-row">
-                                <span>💬 الوارد: متجدد لحظياً</span>
-                                <button class="btn-action-num" onclick="openSmsInboxModal('${escapeHtml(item.title)}', '${escapeHtml(item.link || '')}')">فتح صندوق الوارد 📥</button>
-                            </div>
-                        </div>
-                    `;
+                allFreeNumbers = numbers.map(n => {
+                    const cCode = String(n.country || "");
+                    const fullNum = n.full_number || `+${cCode}${n.number}`;
+                    return {
+                        full_number: fullNum,
+                        raw_number: String(n.number || fullNum).replace(/^\+/, ''),
+                        country_code: cCode,
+                        country_label: COUNTRY_FLAGS[cCode] || `🌐 +${cCode} (${n.country_text || 'دولي'})`,
+                        updated_at: n.data_humans || "متصل الآن"
+                    };
                 });
-            } catch (e) {
-                renderDefaultFreeNumbers(container);
+
+                renderFreeCountryTabs();
+                renderFreeNumbersList();
+            } catch (err) {
+                console.warn("Live API fallback:", err);
+                listEl.innerHTML = `
+                    <div class="status-box">
+                        ⚠️ السيرفر المجاني عليه ضغط حالياً.<br>
+                        <button class="btn-open-inbox" style="margin-top:10px;" onclick="fetchRealFreeNumbers(false)">🔄 إعادة المحاولة الآن</button>
+                    </div>`;
             }
         }
 
-        function renderDefaultFreeNumbers(container) {
-            const defaults = [
-                { country: "🇺🇸 الولايات المتحدة", num: "+1 202 555 0143", service: "تليجرام / واتساب" },
-                { country: "🇪🇬 مصر", num: "+20 102 938 4756", service: "تفعيل عام" },
-                { country: "🇸🇦 السعودية", num: "+966 50 123 4567", service: "منصات التواصل" },
-                { country: "🇫🇷 فرنسا", num: "+33 6 12 34 56 78", service: "تليجرام و AI" }
-            ];
+        function renderFreeCountryTabs() {
+            const tabsEl = document.getElementById('free-country-tabs');
+            const countriesMap = {};
+            allFreeNumbers.forEach(n => {
+                countriesMap[n.country_code] = n.country_label;
+            });
 
-            container.innerHTML = defaults.map(d => `
+            let html = `<div class="c-chip ${selectedFreeCountry === 'ALL' ? 'active' : ''}" onclick="filterFreeByCountry('ALL')">🌐 الكل (${allFreeNumbers.length})</div>`;
+            for (const [code, label] of Object.entries(countriesMap)) {
+                html += `<div class="c-chip ${selectedFreeCountry === code ? 'active' : ''}" onclick="filterFreeByCountry('${code}')">${label}</div>`;
+            }
+            tabsEl.innerHTML = html;
+        }
+
+        function filterFreeByCountry(code) {
+            selectedFreeCountry = code;
+            renderFreeCountryTabs();
+            renderFreeNumbersList();
+        }
+
+        function renderFreeNumbersList() {
+            const listEl = document.getElementById('free-numbers-list');
+            const filtered = selectedFreeCountry === "ALL"
+                ? allFreeNumbers
+                : allFreeNumbers.filter(n => n.country_code === selectedFreeCountry);
+
+            if (filtered.length === 0) {
+                listEl.innerHTML = `<div class="status-box">لا توجد أرقام في هذه الدولة حالياً.</div>`;
+                return;
+            }
+
+            listEl.innerHTML = filtered.slice(0, 25).map(n => `
                 <div class="number-card">
                     <div class="num-top-row">
-                        <span class="country-name">${d.country}</span>
-                        <span class="service-badge">${d.service}</span>
+                        <span class="country-name">${escapeHtml(n.country_label)}</span>
+                        <span class="live-badge"><span class="pulse-dot"></span>شغال الآن</span>
                     </div>
                     <div class="phone-display-box">
-                        <span class="phone-number-txt">${d.num}</span>
-                        <button class="btn-copy-num" onclick="copyNumberWithReward('${d.num}')">نسخ الرقم 📋</button>
+                        <span class="phone-number-txt">${escapeHtml(n.full_number)}</span>
+                        <button class="btn-copy-num" onclick="copyFreeNumber('${escapeHtml(n.full_number)}')">نسخ الرقم 📋</button>
                     </div>
                     <div class="num-footer-row">
-                        <span>💬 استقبال SMS: متاح</span>
-                        <button class="btn-action-num" onclick="openSmsInboxModal('${d.country}', '${d.num}')">صندوق الوارد 📥</button>
+                        <span>🕒 آخر نشاط: ${escapeHtml(n.updated_at)}</span>
+                        <button class="btn-open-inbox" onclick="openRealSmsModal('${escapeHtml(n.country_label)}', '${escapeHtml(n.full_number)}', '${escapeHtml(n.raw_number)}')">📥 قراءة الرسائل الحية</button>
                     </div>
                 </div>
             `).join("");
         }
 
-        async function copyNumberWithReward(num) {
-            if (!num) return;
+        function copyFreeNumber(num) {
             navigator.clipboard.writeText(num).then(() => {
-                notifyUser(`✅ تم نسخ الرقم:\n${num}`);
-                tryTriggerAdReward();
+                notifyUser(`✅ تم نسخ الرقم الحي:\n${num}\n\nضع الرقم في الموقع المطلوب ثم اضغط (قراءة الرسائل الحية) لاستلام الكود!`);
+                tryTriggerAdAndReward('مكافأة استخدام رقم مجاني');
             });
         }
 
-        async function tryTriggerAdReward() {
-            try {
-                if (typeof show_10959333 === 'function') {
-                    await Promise.race([
-                        show_10959333(),
-                        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 4000))
-                    ]);
-                }
-                if (userData) {
-                    const newPts = Number(userData.points || 0) + 2;
-                    await client.from('users').update({ points: newPts }).eq('telegram_id', tid);
-                    userData.points = newPts;
-                    updateWalletsUI();
-                    await client.from('transactions').insert([{
-                        telegram_id: String(tid),
-                        type: 'points',
-                        title: 'مكافأة استخدام خدمة الأرقام المجانية',
-                        amount: '+2 نقطة',
-                        status: 'مكتمل'
-                    }]);
-                }
-            } catch (e) {}
+        function copyTextPlain(txt) {
+            navigator.clipboard.writeText(txt).then(() => {
+                notifyUser(`✅ تم نسخ: ${txt}`);
+            });
         }
 
-        // صندوق الوارد للرقم المجاني
-        function openSmsInboxModal(title, num) {
-            activeSelectedNumber = num;
-            document.getElementById('modal-num-title').innerText = `💬 رسائل الرقم: ${title}`;
-            document.getElementById('modal-num-subtitle').innerText = `الرقم: ${num}`;
+        async function openRealSmsModal(countryLabel, fullNum, rawNum) {
+            activeFreePhone = rawNum || fullNum.replace(/^\+/, '');
+            document.getElementById('modal-num-title').innerText = `📥 رسائل الرقم (${countryLabel})`;
+            document.getElementById('modal-num-subtitle').innerText = fullNum;
             document.getElementById('sms-modal').style.display = 'flex';
-            refreshSmsInbox();
-
-            if (smsPollInterval) clearInterval(smsPollInterval);
-            smsPollInterval = setInterval(refreshSmsInbox, 5000);
+            await loadRealMessagesForNumber(activeFreePhone, false);
         }
 
-        async function refreshSmsInbox() {
-            const listEl = document.getElementById('modal-sms-list');
-            listEl.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 20px;">⏳ جاري فحص الرسائل الواردة...</div>`;
+        async function loadRealMessagesForNumber(phoneClean, withAd) {
+            const box = document.getElementById('modal-sms-list');
+            box.innerHTML = `<div style="text-align:center; padding:25px; color:var(--text-muted);">⏳ جاري سحب آخر رسائل الـ SMS الحقيقية الواردة على الرقم...</div>`;
 
-            // محاكاة سحب رسائل حية أو سحبها من جدول مخصص لو توفر
-            setTimeout(() => {
-                listEl.innerHTML = `
-                    <div class="sms-item-box">
-                        <div style="display:flex; justify-content:space-between; color:var(--cyan); margin-bottom:4px;">
-                            <span><b>Telegram</b> (منذ دقيقة)</span>
-                            <span>OTP</span>
-                        </div>
-                        <div>رمز تسجيل الدخول الخاص بك في تيليجرام هو:</div>
-                        <div class="otp-highlight" onclick="copyOtpFromModal('49281')">49281 (اضغط للنسخ 📋)</div>
-                    </div>
-                `;
-            }, 600);
-        }
+            if (withAd) {
+                tryTriggerAdAndReward('مكافأة فحص رسائل SMS');
+            }
 
-        function copyOtpFromModal(code) {
-            navigator.clipboard.writeText(code).then(() => {
-                notifyUser(`🔑 تم نسخ كود التفعيل (${code}) بنجاح!`);
-            });
-        }
-
-        // =========================================================================
-        // 👑 القسم 2: استئجار الأرقام الخاصة (VIP Private Numbers)
-        // =========================================================================
-        async function loadPaidNumbers() {
-            const container = document.getElementById('paid-numbers-list');
             try {
-                const { data, error } = await client
-                    .from('store_products')
-                    .select('*')
-                    .eq('status', 'Approved')
-                    .eq('category', 'subscriptions')
-                    .order('id', { ascending: false });
+                const url = `https://onlinesim.io/api/v1/getFreeMessageList?phone=${encodeURIComponent(phoneClean)}&lang=en`;
+                const rawJson = await fetchViaCorsProxy(url);
+                const parsed = JSON.parse(rawJson);
+                const msgs = parsed.messages?.data || [];
 
-                if (error || !data || data.length === 0) {
-                    renderDefaultPaidNumbers(container);
+                if (msgs.length === 0) {
+                    box.innerHTML = `<div style="text-align:center; padding:20px; color:#999;">📭 لا توجد رسائل جديدة في هذه اللحظة، اضغط تحديث بعد إرسال الكود.</div>`;
                     return;
                 }
 
-                container.innerHTML = "";
-                data.forEach(item => {
-                    const isEgp = item.currency === 'egp';
-                    const priceTxt = isEgp ? `${item.price} ج.م` : `${Number(item.price).toLocaleString()} نقطة`;
-                    container.innerHTML += `
-                        <div class="number-card vip-card">
-                            <div class="num-top-row">
-                                <span class="country-name">👑 ${escapeHtml(item.title)}</span>
-                                <span class="service-badge" style="color:#d8b4fe; border-color:#9d4edd;">رقم خاص VIP</span>
+                box.innerHTML = msgs.slice(0, 15).map(m => {
+                    const textBody = m.text || "";
+                    const otp = extractOtp(textBody);
+                    const otpBar = otp ? `
+                        <div class="otp-detected-pill" onclick="copyTextPlain('${otp}')">
+                            <span>🔑 الكود المستخرج: <b>${otp}</b></span>
+                            <span style="font-size:11px; color:#fff; background:var(--emerald-dark); padding:2px 8px; border-radius:6px;">نسخ الكود 📋</span>
+                        </div>
+                    ` : '';
+
+                    return `
+                        <div class="sms-item-box">
+                            <div style="display:flex; justify-content:space-between; color:var(--cyan); font-size:11.5px; margin-bottom:4px;">
+                                <b>📨 من: ${escapeHtml(m.in_number || 'Service')}</b>
+                                <span style="color:var(--text-muted);">${escapeHtml(m.data_humans || '')}</span>
                             </div>
-                            <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 10px;">${escapeHtml(item.description || 'رقم خاص غير مسبق الاستخدام لاستقبال التفعيلات لمدة 30 يوماً')}</div>
-                            <div class="num-footer-row">
-                                <span style="font-size: 14px; font-weight: bold; color: var(--amber);">السعر: ${priceTxt}</span>
-                                <button class="btn-action-num vip-btn" onclick="rentVipNumber('${escapeHtml(item.title)}', ${item.price}, '${item.currency || 'points'}')">استئجار الآن 🛒</button>
-                            </div>
+                            <div style="color:#e2e8f0; direction:ltr; text-align:left;">${escapeHtml(textBody)}</div>${otpBar}
                         </div>
                     `;
-                });
+                }).join("");
+
             } catch (e) {
-                renderDefaultPaidNumbers(container);
+                box.innerHTML = `<div style="text-align:center; padding:20px; color:var(--crimson);">⚠️ تعذر جلب الرسائل حالياً، اضغط (تحديث اللحظة) لإعادة المحاولة.</div>`;
             }
         }
 
-        function renderDefaultPaidNumbers(container) {
-            const defaults = [
-                { title: "رقم تليجرام خاص (🇺🇸 أمريكي - 30 يوم)", price: 5000, curr: "points", prTxt: "5,000 نقطة" },
-                { title: "رقم واتساب تفعيل فوري (🇪🇬 مصري - دائم)", price: 35, curr: "egp", prTxt: "35.00 ج.م" },
-                { title: "رقم تفعيل بريطاني 🇬🇧 (للذكاء الاصطناعي)", price: 7500, curr: "points", prTxt: "7,500 نقطة" }
-            ];
-
-            container.innerHTML = defaults.map(d => `
-                <div class="number-card vip-card">
-                    <div class="num-top-row">
-                        <span class="country-name">👑 ${d.title}</span>
-                        <span class="service-badge" style="color:#d8b4fe; border-color:#9d4edd;">رقم خاص VIP</span>
-                    </div>
-                    <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 10px;">استلام فوري للرقم مع لوحة متابعة الرسائل الخاصة بك وحدك طوال فترة الإيجار.</div>
-                    <div class="num-footer-row">
-                        <span style="font-size: 14px; font-weight: bold; color: var(--amber);">السعر: ${d.prTxt}</span>
-                        <button class="btn-action-num vip-btn" onclick="rentVipNumber('${d.title}', ${d.price}, '${d.curr}')">استئجار الآن 🛒</button>
-                    </div>
-                </div>
-            `).join("");
+        // =========================================================================
+        // 👑 القسم 2: محرك شراء الأرقام الخاصة الأوتوماتيكي (GrizzlySMS / TigerSMS API)
+        // =========================================================================
+        function selectPaidService(srvCode, srvName, cardEl) {
+            selectedServiceCode = srvCode;
+            selectedServiceName = srvName;
+            document.querySelectorAll('.srv-card').forEach(c => c.classList.remove('selected'));
+            cardEl.classList.add('selected');
+            renderPaidCountriesCatalog();
         }
 
-        async function rentVipNumber(title, price, currency) {
-            if (!tid || !userData) return notifyUser("❌ يرجى فتح المنصة من داخل البوت.");
+        function renderPaidCountriesCatalog() {
+            const container = document.getElementById('paid-countries-list');
+            // تعديل طفيف في السعر حسب التطبيق (مثلاً واتساب وتليجرام أعلى قليلاً من فيسبوك)
+            const multiplier = (selectedServiceCode === 'tg' || selectedServiceCode === 'wa') ? 1.15 : 1;
+
+            container.innerHTML = VIP_COUNTRIES_CATALOG.map(c => {
+                const egpPrice = Math.ceil(c.baseEgp * multiplier);
+                const ptsPrice = Math.ceil((c.basePts * multiplier) / 500) * 500;
+
+                return `
+                    <div class="vip-country-row">
+                        <div class="vip-c-info">
+                            <b>${c.name} • (${selectedServiceName})</b>
+                            <span>⚡ ${c.note}</span>
+                        </div>
+                        <div class="vip-buy-actions">
+                            <button class="btn-buy-egp" onclick="buyAutomatedVipNumber('${c.code}', '${c.name}',${egpPrice}, 'egp')">
+                                💵 ${egpPrice} ج.م
+                            </button>
+                            <button class="btn-buy-pts" onclick="buyAutomatedVipNumber('${c.code}', '${c.name}',${ptsPrice}, 'points')">
+                                🪙 ${(ptsPrice/1000)}k ن
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        async function buyAutomatedVipNumber(countryCode, countryName, price, currency) {
+            if (!tid || !userData) return notifyUser("❌ يرجى فتح المنصة من داخل البوت أولاً.");
+
+            if (activeVipOrder && activeVipOrder.status === 'WAITING') {
+                return notifyUser("⚠️ لديك رقم خاص نشط بالفعل في أعلى الصفحة! انتظر وصول الكود أو قم بإلغائه أولاً.");
+            }
+
+            if (!PAID_API_KEY || PAID_API_KEY === "PUT_YOUR_API_KEY_HERE") {
+                return notifyUser("⚠️ تنبيه للإدارة:\nيرجى وضع مفتاح الـ API الخاص بموقع (GrizzlySMS أو TigerSMS) في متغير PAID_API_KEY داخل ملف numbers.html لتفعيل السحب الفوري للأرقام!");
+            }
+
             const isEgp = currency === 'egp';
-            const myBal = isEgp ? Number(userData.egp_balance || 0) : Number(userData.points || 0);
             const unit = isEgp ? 'ج.م' : 'نقطة';
+            const userBal = isEgp ? Number(userData.egp_balance || 0) : Number(userData.points || 0);
 
-            if (myBal < price) {
-                return notifyUser(`❌ رصيدك غير كافٍ!\nالمطلوب: ${price} ${unit}\nرصيدك: ${myBal} ${unit}`);
+            if (userBal < price) {
+                return notifyUser(`❌ رصيدك غير كافٍ لشراء الرقم!\nالمطلوب: ${price.toLocaleString()}${unit}\nرصيدك الحالي: ${userBal.toLocaleString()}${unit}`);
             }
 
-            const receiverInput = prompt(`تأكيد استئجار (${title}) مقابل ${price} ${unit}\n\n📱 أدخل معرف تيليجرام أو بريدك لتسليم الرقم عليه:`, "@");
-            if (!receiverInput) return;
-
-            if (!confirm(`تأكيد عملية الاستئجار فوراً؟`)) return;
+            if (!confirm(`👑 شراء رقم خاص فوري لتطبيق (${selectedServiceName})\nالدولة: ${countryName}\nالتكلفة: ${price.toLocaleString()}${unit}\n\n💡 ملاحظة: إذا لم يصلك الكود يمكنك الضغط على زر (إلغاء) لاسترداد رصيدك بالكامل فوراً! هل أنت متأكد؟`)) {
+                return;
+            }
 
             try {
+                // 1. طلب الرقم من سيرفر الأرقام (GrizzlySMS / TigerSMS)
+                const apiUrl = `${PAID_API_BASE_URL}?api_key=${encodeURIComponent(PAID_API_KEY)}&action=getNumber&service=${selectedServiceCode}&country=${countryCode}`;
+                const apiResponse = (await fetchViaCorsProxy(apiUrl)).trim();
+
+                // الرد الناجح يكون بصيغة: ACCESS_NUMBER:ID:PHONE_NUMBER
+                if (!apiResponse.startsWith("ACCESS_NUMBER:")) {
+                    if (apiResponse.includes("NO_NUMBERS")) {
+                        return notifyUser("⚠️ نفدت الأرقام في هذه الدولة لتطبيق " + selectedServiceName + " حالياً، يرجى اختيار دولة أخرى من القائمة!");
+                    }
+                    if (apiResponse.includes("NO_BALANCE")) {
+                        return notifyUser("⚠️ السيرفر الرئيسي قيد إعادة الشحن حالياً، يرجى المحاولة بعد قليل.");
+                    }
+                    return notifyUser("❌ تعذر سحب الرقم حالياً: " + apiResponse);
+                }
+
+                const parts = apiResponse.split(":");
+                const activationId = parts[1];
+                const phoneNumber = "+" + parts[2].replace(/^\+/, '');
+
+                // 2. خصم الرصيد من حساب المستخدم في Supabase
                 let updateObj = {};
                 if (isEgp) {
                     userData.egp_balance = Number((Number(userData.egp_balance) - price).toFixed(2));
@@ -645,33 +924,175 @@
                     updateObj.points = userData.points;
                 }
 
-                await client.from('users').update(updateObj).eq('telegram_id', tid);
+                const { error: dbErr } = await client.from('users').update(updateObj).eq('telegram_id', tid);
+                if (dbErr) throw dbErr;
                 updateWalletsUI();
 
-                await client.from('store_orders').insert([{
-                    user_id: tid,
-                    product_title: `استئجار رقم خاص: ${title}`,
-                    price_paid: price,
+                // 3. حفظ بيانات التفعيل النشط وفتح غرفة استقبال الكود الحية
+                activeVipOrder = {
+                    activationId: activationId,
+                    phone: phoneNumber,
+                    serviceName: selectedServiceName,
+                    countryName: countryName,
+                    price: price,
                     currency: currency,
-                    buyer_input: receiverInput,
-                    status: 'Pending'
-                }]);
+                    expiresAt: Date.now() + (20 * 60 * 1000), // صلاحية الرقم 20 دقيقة
+                    status: 'WAITING'
+                };
+                localStorage.setItem(`active_vip_num_${tid}`, JSON.stringify(activeVipOrder));
 
-                await client.from('bot_messages').insert([{
-                    telegram_id: tid,
-                    message: `🛒 *تم استلام طلب استئجار الرقم الخاص!* ✅\n\n📱 *الطلب:* ${title}\n💰 *المدفوع:* ${price} ${unit}\n📌 *التسليم:* سيتم إرسال تفاصيل الرقم إلى حسابك (${receiverInput}) قريباً من الإدارة.`,
-                    status: 'pending'
-                }]);
+                openLiveVipOtpRoom();
+                notifyUser(`🎉 تم استخراج رقمك الخاص بنجاح:\n${phoneNumber}\n\nانسخه الآن وضعه في (${selectedServiceName})، وسيظهر لك الكود هنا تلقائياً!`);
 
-                notifyUser("🎉 تم استلام طلبك بنجاح وتخصيص الرقم! تم إرسال إشعار لشات البوت الخاص بك.");
-            } catch (e) {
-                notifyUser("❌ حدث خطأ أثناء تنفيذ الطلب: " + e.message);
+            } catch (err) {
+                console.error("Buy VIP number error:", err);
+                notifyUser("❌ حدث خطأ في الاتصال بالسيرفر، لم يتم خصم أي رصيد.");
             }
+        }
+
+        function restoreActiveVipOrderIfExist() {
+            try {
+                const saved = localStorage.getItem(`active_vip_num_${tid}`);
+                if (!saved) return;
+                const parsed = JSON.parse(saved);
+                if (parsed && parsed.status === 'WAITING' && parsed.expiresAt > Date.now()) {
+                    activeVipOrder = parsed;
+                    switchSection('paid');
+                    openLiveVipOtpRoom();
+                } else {
+                    localStorage.removeItem(`active_vip_num_${tid}`);
+                }
+            } catch (e) {}
+        }
+
+        function openLiveVipOtpRoom() {
+            if (!activeVipOrder) return;
+            const room = document.getElementById('active-vip-room');
+            room.style.display = 'block';
+            document.getElementById('vip-room-service').innerText = `👑 ${activeVipOrder.serviceName} (${activeVipOrder.countryName})`;
+            document.getElementById('vip-room-phone').innerText = activeVipOrder.phone;
+            document.getElementById('vip-room-otp').innerText = "⏳ بانتظار وصول الـ SMS...";
+            document.getElementById('btn-cancel-vip').style.display = 'block';
+
+            if (vipPollInterval) clearInterval(vipPollInterval);
+            vipPollInterval = setInterval(() => checkActivePaidSmsStatus(false), 4500);
+
+            if (vipCountdownInterval) clearInterval(vipCountdownInterval);
+            vipCountdownInterval = setInterval(() => {
+                if (!activeVipOrder) return clearInterval(vipCountdownInterval);
+                const rem = Math.max(0, Math.floor((activeVipOrder.expiresAt - Date.now()) / 1000));
+                const m = Math.floor(rem / 60);
+                const s = rem % 60;
+                document.getElementById('vip-room-timer').innerText = `⏱️ متبقي: ${m}:${s < 10 ? '0' : ''}${s}`;
+                if (rem <= 0 && activeVipOrder.status === 'WAITING') {
+                    cancelAndRefundPaidNumber();
+                }
+            }, 1000);
+        }
+
+        async function checkActivePaidSmsStatus(manualClick) {
+            if (!activeVipOrder || activeVipOrder.status !== 'WAITING') return;
+            try {
+                const url = `${PAID_API_BASE_URL}?api_key=${encodeURIComponent(PAID_API_KEY)}&action=getStatus&id=${activeVipOrder.activationId}`;
+                const resp = (await fetchViaCorsProxy(url)).trim();
+
+                if (resp.startsWith("STATUS_OK:")) {
+                    const smsCode = resp.split("STATUS_OK:")[1].trim();
+                    activeVipOrder.status = 'COMPLETED';
+                    localStorage.removeItem(`active_vip_num_${tid}`);
+                    clearInterval(vipPollInterval);
+                    clearInterval(vipCountdownInterval);
+
+                    document.getElementById('vip-room-otp').innerText = `🔑 الكود: ${smsCode}`;
+                    document.getElementById('btn-cancel-vip').style.display = 'none';
+
+                    // توثيق العملية وإرسال الكود لشات البوت ليحفظه المستخدم للأبد
+                    const unit = activeVipOrder.currency === 'egp' ? 'ج.م' : 'نقطة';
+                    await client.from('transactions').insert([{
+                        telegram_id: String(tid),
+                        type: activeVipOrder.currency === 'egp' ? 'egp' : 'points',
+                        title: `شراء وتفعيل رقم ${activeVipOrder.serviceName} (${activeVipOrder.phone})`,
+                        amount: `-${activeVipOrder.price}${unit}`,
+                        status: 'مكتمل'
+                    }]);
+
+                    await client.from('bot_messages').insert([{
+                        telegram_id: String(tid),
+                        message: `🎉 *تم وصول كود تفعيل رقمك الخاص بنجاح!* ✅\n━━━━━━━━━━━━━━━\n📱 *التطبيق:* ${activeVipOrder.serviceName}\n📞 *الرقم:* \`${activeVipOrder.phone}\`\n🔑 *كود التفعيل (OTP):* \`${smsCode}\``,
+                        status: 'pending'
+                    }]);
+
+                    notifyUser(`🎉 وصل كود التفعيل بنجاح!\n\nالكود هو: ${smsCode}\n\nتم إرسال نسخة من الكود والرقم إلى محادثتك في البوت!`);
+                } else if (manualClick) {
+                    notifyUser("⏳ لم تصل الرسالة بعد، السيرفر يفحص تلقائياً كل 4 ثوانٍ...");
+                }
+            } catch (e) {}
+        }
+
+        // ⭐ إلغاء الرقم واسترداد الرصيد تلقائياً للمستخدم ولحسابك في الموقع
+        async function cancelAndRefundPaidNumber() {
+            if (!activeVipOrder || activeVipOrder.status !== 'WAITING') return;
+            if (!confirm("هل تريد إلغاء هذا الرقم واسترداد رصيدك بالكامل فوراً؟")) return;
+
+            try {
+                // إرسال أمر الإلغاء (status=8) لمزود الخدمة لاسترداد رصيدك في الموقع
+                const cancelUrl = `${PAID_API_BASE_URL}?api_key=${encodeURIComponent(PAID_API_KEY)}&action=setStatus&status=8&id=${activeVipOrder.activationId}`;
+                const resp = (await fetchViaCorsProxy(cancelUrl)).trim();
+
+                // إذا وصل الكود بالفعل في نفس اللحظة لا يمكن الإلغاء
+                if (resp.startsWith("STATUS_OK:")) {
+                    return checkActivePaidSmsStatus(true);
+                }
+
+                // إرجاع الرصيد لمحفظة المستخدم في Supabase فوراً
+                const isEgp = activeVipOrder.currency === 'egp';
+                let refundObj = {};
+                if (isEgp) {
+                    userData.egp_balance = Number((Number(userData.egp_balance || 0) + activeVipOrder.price).toFixed(2));
+                    refundObj.egp_balance = userData.egp_balance;
+                } else {
+                    userData.points = Number(userData.points || 0) + activeVipOrder.price;
+                    refundObj.points = userData.points;
+                }
+
+                await client.from('users').update(refundObj).eq('telegram_id', tid);
+                updateWalletsUI();
+
+                const unit = isEgp ? 'ج.م' : 'نقطة';
+                const refundedAmt = activeVipOrder.price;
+
+                activeVipOrder = null;
+                localStorage.removeItem(`active_vip_num_${tid}`);
+                clearInterval(vipPollInterval);
+                clearInterval(vipCountdownInterval);
+                document.getElementById('active-vip-room').style.display = 'none';
+
+                notifyUser(`✅ تم إلغاء الرقم وإرجاع (${refundedAmt.toLocaleString()} ${unit}) إلى محفظتك فوراً!`);
+            } catch (e) {
+                notifyUser("⚠️ تعذر الإلغاء في هذه الثانية، انتظر لحظات وحاول مجدداً.");
+            }
+        }
+
+        // مكافأة الإعلانات في القسم المجاني
+        async function tryTriggerAdAndReward(reasonTitle) {
+            try {
+                if (typeof show_10959333 === 'function') {
+                    await Promise.race([
+                        show_10959333(),
+                        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), 4200))
+                    ]);
+                }
+                if (userData) {
+                    const newPts = Number(userData.points || 0) + 2;
+                    await client.from('users').update({ points: newPts }).eq('telegram_id', tid);
+                    userData.points = newPts;
+                    updateWalletsUI();
+                }
+            } catch (e) {}
         }
 
         function closeModal(id) {
             document.getElementById(id).style.display = 'none';
-            if (smsPollInterval) clearInterval(smsPollInterval);
         }
 
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
@@ -680,7 +1101,7 @@
         function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
         function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
 
-        initNumbersPage();
+        initPage();
     </script>
 </body>
 </html>
