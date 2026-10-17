@@ -344,7 +344,7 @@
             <div class="btn-service" onclick="goDevTools()"><span>👨‍💻</span>أدوات المطور</div>
             <div class="btn-service" onclick="goTempMail()"><span>📧</span>بريد مؤقت</div>
             <div class="btn-service" onclick="goVirtualNumbers()"><span>📱</span>أرقام وهمية</div>
-            <div class="btn-service" onclick="showSoon('الخدمة الإضافية')" style="opacity: 0.6; border-style: dashed;"><span>🎯</span>قريباً..</div>
+            <div class="btn-service" onclick="gocontact()" ><span>📞</span>تواصل معنا</div>
         </div>
     </div>
 
@@ -1161,9 +1161,10 @@
             }
         }
 
-        function showSoon(sectionName) {
-            tg.showAlert(`🎯 قسم ${sectionName} قيد التجهيز والتطوير حالياً وسيتوفر قريباً بأعلى مكافآت!`);
-        }
+        function goContact() {
+    window.location.href = `contact.html?id=${userId}&t=${Date.now()}`;
+}
+
 
         // دوال التنقل
         function goHome() { window.location.href = `index.html?id=${userId}`; }
