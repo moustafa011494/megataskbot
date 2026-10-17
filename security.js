@@ -1,16 +1,15 @@
 /**
- * MegaTask - Ultimate Anti-VPN, Anti-Proxy & Anti-Multi-Account Shield v4.0 (security.js)
+ * MegaTask - Ultimate Anti-VPN, Anti-Proxy & Anti-Multi-Account Shield v4.1 (security.js)
  */
 const MegaSecurity = (function () {
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-    const ADMIN_MASTER_ID = "875021647"; // محمي فقط من الحظر الدائم في الداتابيز
+    const ADMIN_MASTER_ID = "875021647"; // حساب الأدمن المستثنى من حظر الـ VPN والحظر الدائم
 
     let _deviceFp = null;
     let _userIp = null;
     let _alreadyChecked = false;
 
-    // القائمة السوداء لشركات الـ VPN، البروكسي،، السيرفرات، و Cloudflare WARP
     const VPN_ISP_BLACKLIST = [
         "cloudflare", "warp", "m247", "datacamp", "digitalocean", "amazon", "aws",
         "google cloud", "microsoft", "azure", "hetzner", "ovh", "linode", "akamai",
@@ -27,7 +26,6 @@ const MegaSecurity = (function () {
         "tor exit", "relay", "anonymizer"
     ];
 
-    // خريطة المناطق الزمنية للدول العربية لضمان كشف أي تغير في دولة الـ IP
     const TIMEZONE_TO_COUNTRY = {
         "africa/cairo": "EG",
         "asia/riyadh": "SA",
@@ -50,7 +48,6 @@ const MegaSecurity = (function () {
         "africa/khartoum": "SD"
     };
 
-    // 1. توليد بصمة الهاردوير الفريدة للهاتف
     function generateHardwareFingerprint() {
         try {
             const components = [];
@@ -100,7 +97,6 @@ const MegaSecurity = (function () {
         }
     }
 
-    // 2. الرادار الرباعي لفحص الـ IP وكشف جميع أنواع الـ VPN والـ Proxy
     async function detectIpAndVpnMultiLayer() {
         const deviceTz = (Intl.DateTimeFormat().resolvedOptions().timeZone || "").toLowerCase().trim();
         let detectedIp = null;
@@ -108,7 +104,6 @@ const MegaSecurity = (function () {
         let vpnReason = "";
 
         try {
-            // الفحص الأول عبر ipwho.is + الفحص الثاني عبر freeipapi.com بالتوازي
             const [whoRes, freeApiRes] = await Promise.allSettled([
                 fetch("https://ipwho.is/").then(r => r.json()),
                 fetch("https://freeipapi.com/api/json").then(r => r.json())
@@ -141,7 +136,6 @@ const MegaSecurity = (function () {
                 }
             }
 
-            // الكمين 1: فحص اسم شركة الإنترنت (ISP / Org / ASN) ضد شركات الـ VPN والاستضافة والـ WARP
             if (!isVpn && ispOrgText) {
                 for (const keyword of VPN_ISP_BLACKLIST) {
                     if (ispOrgText.includes(keyword)) {
@@ -152,14 +146,12 @@ const MegaSecurity = (function () {
                 }
             }
 
-            // الكمين 2: فحص اختلاف المنطقة الزمنية للموبايل عن دولة الـ IP (يمسك 100% من الـ VPN الأجنبي)
             if (!isVpn && deviceTz && ipCountry) {
                 const expectedCountry = TIMEZONE_TO_COUNTRY[deviceTz];
                 if (expectedCountry && expectedCountry !== ipCountry) {
                     isVpn = true;
                     vpnReason = `اختلاف موقع الشبكة (${ipCountry}) عن توقيت الهاتف (${expectedCountry})`;
                 } else if (ipTz && deviceTz !== ipTz) {
-                    // إذا كانت القارة نفسها مختلفة بين ساعة الهاتف وعنوان الـ IP
                     const devContinent = deviceTz.split('/')[0];
                     const ipContinent = ipTz.split('/')[0];
                     if (devContinent && ipContinent && devContinent !== ipContinent) {
@@ -175,7 +167,6 @@ const MegaSecurity = (function () {
         }
     }
 
-    // 3. شاشة حظر الـ VPN والـ Proxy
     function showVpnBlockScreen(reasonDetail, ipAddr) {
         const stopAll = () => {
             document.body.innerHTML = `
@@ -205,7 +196,6 @@ const MegaSecurity = (function () {
         setTimeout(stopAll, 350);
     }
 
-    // 4. شاشة الحظر الدائم لتعدد الحسابات
     function showPermanentBanScreen(primaryAccountId, currentAccountId) {
         const stopAll = () => {
             document.body.innerHTML = `
@@ -247,7 +237,6 @@ const MegaSecurity = (function () {
         return pool[0];
     }
 
-    // 5. الفحص الرئيسي الشامل (كشف الـ VPN + منع تعدد الحسابات)
     async function verifyDeviceAndAccount(supabaseClient, passedTid) {
         try {
             const tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
@@ -258,8 +247,8 @@ const MegaSecurity = (function () {
             const netCheck = await detectIpAndVpnMultiLayer();
             _userIp = netCheck.ip;
 
-            // ⭐ 1. إيقاف فوري لأي اتصال VPN أو Proxy (على جميع الحسابات لتتمكن من تجربته بنفسك)
-            if (netCheck.isVpn) {
+            // ⭐ إيقاف الـ VPN على جميع المستخدمين مع استثناء حساب الأدمن الأساسي فقط
+            if (netCheck.isVpn && currentTid !== ADMIN_MASTER_ID) {
                 showVpnBlockScreen(netCheck.reason, _userIp);
                 return { allowed: false, reason: "vpn_detected" };
             }
@@ -293,7 +282,7 @@ const MegaSecurity = (function () {
                 if (fpMatches) matchedUsers.push(...fpMatches);
             }
 
-            if (_userIp) {
+            if (_userIp && !netCheck.isVpn) {
                 const { data: ipMatches } = await db
                     .from('users')
                     .select('telegram_id, name, points, total_tasks, device_fp, last_ip, is_banned, referred_by')
@@ -348,7 +337,8 @@ const MegaSecurity = (function () {
 
             localStorage.setItem("megatask_master_owner_id", currentTid);
             const updatePayload = { device_fp: _deviceFp };
-            if (_userIp) updatePayload.last_ip = _userIp;
+            // لا نحفظ IP الـ VPN على حساب الأدمن لكي يبقى الـ IP المصري الأصلي محفوظاً
+            if (_userIp && !netCheck.isVpn) updatePayload.last_ip = _userIp;
 
             await db.from('users').update(updatePayload).eq('telegram_id', currentTid);
             return { allowed: true, fp: _deviceFp, ip: _userIp };
@@ -368,7 +358,7 @@ const MegaSecurity = (function () {
         const netCheck = await detectIpAndVpnMultiLayer();
         const myIp = _userIp || netCheck.ip;
 
-        if (netCheck.isVpn) {
+        if (netCheck.isVpn && String(myTid) !== ADMIN_MASTER_ID) {
             showVpnBlockScreen(netCheck.reason, myIp);
             return { ok: false, msg: "🚫 لا يمكنك تفعيل دعوات أثناء تشغيل الـ VPN!" };
         }
