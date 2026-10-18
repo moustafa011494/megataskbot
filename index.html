@@ -344,7 +344,7 @@
             <div class="btn-service" onclick="goDevTools()"><span>👨‍💻</span>أدوات المطور</div>
             <div class="btn-service" onclick="goTempMail()"><span>📧</span>بريد مؤقت</div>
             <div class="btn-service" onclick="goVirtualNumbers()"><span>📱</span>أرقام وهمية</div>
-            <div class="btn-service" onclick="gocontact()" ><span>📞</span>تواصل معنا</div>
+            <div class="btn-service" onclick="goContact()"><span>📞</span>تواصل معنا</div>
         </div>
     </div>
 
@@ -371,7 +371,6 @@
                 let _pendingAction = null;
                 let _wasBrokenBeforeClaim = false;
 
-                // جوائز عجلة الحظ المخفضة (الحد الأقصى 10 نقاط)
                 const WHEEL_SECTORS = [
                     { label: "2 نقطة", value: 2, color: "#161920", text: "#00d26a" },
                     { label: "5 نقاط", value: 5, color: "#1e232d", text: "#00d26a" },
@@ -957,10 +956,11 @@
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
-            userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-            if (!userId) {
+            userId = String(params.get('id') || tg.initDataUnsafe?.user?.id || localStorage.getItem('telegram_id') || "").trim();
+            if (!userId || userId === "undefined" || userId === "null") {
                 userId = "123456789";
             }
+            localStorage.setItem('telegram_id', userId);
 
             // 🛡️ فحص درع الحماية لمنع فتح أكثر من حساب على نفس الهاتف
             if (typeof MegaSecurity !== 'undefined') {
@@ -1037,14 +1037,13 @@
             const refCode = document.getElementById('ref-input').value.trim();
             let newUser = { 
                 telegram_id: userId, 
-                name: tg.initDataUnsafe.user?.first_name || "AGENT", 
+                name: tg.initDataUnsafe?.user?.first_name || "AGENT", 
                 points: 0, 
                 egp_balance: 0,
                 total_earned: 0, 
                 streak: 0 
             };
 
-            // 🛡️ فحص أمني صارم لكود الدعوة لمنع دعوة النفس من نفس الهاتف أو نفس الـ IP
             if (!skip && refCode !== "" && refCode !== userId) {
                 if (typeof MegaSecurity !== 'undefined') {
                     const refCheck = await MegaSecurity.canAcceptReferral(client, userId, refCode);
@@ -1060,7 +1059,6 @@
                 userData = data;
                 document.getElementById('ref-modal').style.display = 'none';
 
-                // ختم بصمة الهاتف والـ IP للحساب الجديد فوراً
                 if (typeof MegaSecurity !== 'undefined') {
                     await MegaSecurity.verifyDeviceAndAccount(client, userId);
                 }
@@ -1090,7 +1088,11 @@
         }
 
         function showWithdrawSoon() {
-            tg.showAlert("⏳ سحب الأرباح النقدية قيد التجهيز وسيتم فتحه قريباً!\n\n💡 يمكنك حالياً استغلال نقاطك فوراً في شراء المنتجات من المتجر أو تمويل قناتك في قسم المهام.");
+            tg.showAlert("⏳ سحب نقاط المهام قيد التجهيز قريباً!\n\n💼 أما إذا كنت تاجراً في المتجر، فيمكنك سحب أرباح مبيعاتك كاش أو USDT فوراً من داخل (المتجر ⬅ سحب التجار).");
+        }
+
+        function showSoon(featureName) {
+            tg.showAlert(`🚀 قسم (${featureName || 'الخدمة'}) قيد التجهيز وسيتم إطلاقه قريباً!`);
         }
 
         function openExchangeModal() {
@@ -1161,25 +1163,23 @@
             }
         }
 
-        function goContact() {
-    window.location.href = `contact.html?id=${userId}&t=${Date.now()}`;
-}
+        // دوال التنقل (تمت إضافة goContact و gocontact معاً لضمان عمل الزر دائماً)
+        function goContact() { window.location.href = `contact.html?id=${userId}&t=${Date.now()}`; }
+        function gocontact() { goContact(); }
 
-
-        // دوال التنقل
-        function goHome() { window.location.href = `index.html?id=${userId}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
-        function goGames() { window.location.href = `games.html?id=${userId}`; }
-        function goInvite() { window.location.href = `invite.html?id=${userId}`; }
-        function goProfile() { window.location.href = `profile.html?id=${userId}`; }
-        function goDeposit() { window.location.href = `deposit.html?id=${userId}`; }
-        function goStore() { window.location.href = `store.html?id=${userId}`; }
+        function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
+        function goGames() { window.location.href = `games.html?id=${userId}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${userId}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${userId}&t=${Date.now()}`; }
+        function goDeposit() { window.location.href = `deposit.html?id=${userId}&t=${Date.now()}`; }
+        function goStore() { window.location.href = `store.html?id=${userId}&t=${Date.now()}`; }
         
-        function goSocial() { window.location.href = `social.html?id=${userId}`; }
-        function goMethods() { window.location.href = `methods.html?id=${userId}`; }
-        function goDevTools() { window.location.href = `devtools.html?id=${userId}`; }
-        function goTempMail() { window.location.href = `tempmail.html?id=${userId}`; }
-        function goVirtualNumbers() { window.location.href = `numbers.html?id=${userId}`; }
+        function goSocial() { window.location.href = `social.html?id=${userId}&t=${Date.now()}`; }
+        function goMethods() { window.location.href = `methods.html?id=${userId}&t=${Date.now()}`; }
+        function goDevTools() { window.location.href = `devtools.html?id=${userId}&t=${Date.now()}`; }
+        function goTempMail() { window.location.href = `tempmail.html?id=${userId}&t=${Date.now()}`; }
+        function goVirtualNumbers() { window.location.href = `numbers.html?id=${userId}&t=${Date.now()}`; }
 
         init();
     </script>
