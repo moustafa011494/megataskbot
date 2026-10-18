@@ -3,17 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MegaTask - لوحة التحكم الإدارية المؤمنة</title>
+    <title>MegaTask - لوحة التحكم الإدارية والوساطة المالية</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --neon-purple: #bc13fe; --neon-blue: #00f2ff; --bg-dark: #0a0a0a; --card-bg: #161616; --main-green: #00d26a; --orange: #ff9800; --red: #ff4d4d; --gold: #ffaa00; }
-        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; margin: 0; padding-bottom: 50px; }
+        :root { 
+            --neon-purple: #bc13fe; 
+            --neon-blue: #00f2ff; 
+            --bg-dark: #0a0a0a; 
+            --card-bg: #161616; 
+            --main-green: #00d26a; 
+            --orange: #ff9800; 
+            --red: #ff4d4d; 
+            --gold: #ffaa00; 
+        }
+        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; margin: 0; padding-bottom: 60px; }
         h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 25px; text-align: center; font-size: 24px; }
         h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
         
-        .container { max-width: 960px; margin: auto; display: none; }
+        .container { max-width: 980px; margin: auto; display: none; }
         .card { background: var(--card-bg); border: 1px solid #333; padding: 22px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .search-hub-card { border-top: 4px solid var(--gold); background: linear-gradient(145deg, #1b1912, #141414); }
+        .dispute-card { border-top: 4px solid var(--red); background: linear-gradient(145deg, #211215, #141414); }
+        .merchant-w-card { border-top: 4px solid var(--gold); }
+        .tickets-card { border-top: 4px solid var(--neon-blue); }
         .task-card { border-top: 4px solid var(--neon-purple); }
         .pending-card { border-top: 4px solid var(--orange); }
         .withdraw-card { border-top: 4px solid var(--main-green); }
@@ -43,23 +55,23 @@
         .item-row { background: #222; padding: 15px; margin-bottom: 12px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; flex-wrap: wrap; gap: 10px; }
         .task-row { border-right-color: var(--neon-purple); }
         .pending-row { border-right-color: var(--orange); flex-direction: column; align-items: flex-start; }
-        .withdraw-row { border-right-color: var(--main-green); flex-direction: column; align-items: flex-start; }
+        .withdraw-row { border-right-color: var(--gold); flex-direction: column; align-items: flex-start; }
         .method-row { border-right-color: var(--neon-blue); }
         .deposit-row { border-right-color: var(--main-green); }
         .method-review-row { border-right-color: var(--neon-purple); flex-direction: column; align-items: flex-start; }
         
         .del-btn { background: var(--red); color: white; padding: 8px 15px; }
         .edit-btn { background: var(--orange); color: black; padding: 8px 15px; }
-        .approve-btn { background: var(--main-green); color: black; padding: 10px 20px; font-size: 14px; border-radius: 8px; flex: 1; }
-        .reject-btn { background: var(--red); color: white; padding: 10px 20px; font-size: 14px; border-radius: 8px; flex: 1; }
-        .actions-box { display: flex; gap: 10px; width: 100%; margin-top: 10px; }
+        .approve-btn { background: var(--main-green); color: black; padding: 10px 20px; font-size: 13.5px; border-radius: 8px; flex: 1; }
+        .reject-btn { background: var(--red); color: white; padding: 10px 20px; font-size: 13.5px; border-radius: 8px; flex: 1; }
+        .chat-btn { background: var(--neon-blue); color: black; padding: 10px 16px; font-size: 13px; border-radius: 8px; flex: 1; }
+        .actions-box { display: flex; gap: 8px; width: 100%; margin-top: 10px; flex-wrap: wrap; }
         
         .info-text { font-size: 13px; color: #aaa; margin-top: 4px; line-height: 1.6; }
         .currency-badge-egp { background: rgba(0, 242, 255, 0.15); color: var(--neon-blue); border: 1px solid var(--neon-blue); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
         .currency-badge-pts { background: rgba(0, 210, 106, 0.15); color: var(--main-green); border: 1px solid var(--main-green); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
         .code-pill { background: rgba(255, 170, 0, 0.15); color: var(--gold); border: 1px dashed var(--gold); padding: 2px 9px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: bold; cursor: pointer; }
 
-        /* كارت بيانات المورد والربح السري للأدمن */
         .supplier-secret-box {
             background: rgba(188, 19, 254, 0.08);
             border: 1px dashed var(--neon-purple);
@@ -90,9 +102,28 @@
             text-align: center; box-shadow: 0 0 40px rgba(0, 242, 255, 0.15);
         }
 
-        /* Modal Styles */
+        /* النوافذ المنبثقة */
         .admin-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
-        .admin-modal-content { background: var(--card-bg); border: 1px solid #333; padding: 25px; border-radius: 20px; width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; text-align: right; }
+        .admin-modal-content { background: var(--card-bg); border: 1px solid #333; padding: 22px; border-radius: 20px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; text-align: right; }
+
+        /* شات غرفة الوساطة للأدمن */
+        .admin-chat-log {
+            background: #080a0f;
+            border: 1px solid #2b3346;
+            border-radius: 12px;
+            padding: 12px;
+            height: 250px;
+            overflow-y: auto;
+            margin: 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .c-msg { padding: 8px 11px; border-radius: 10px; font-size: 12.5px; line-height: 1.5; }
+        .c-buyer { background: rgba(0, 242, 255, 0.12); border: 1px solid rgba(0, 242, 255, 0.35); color: #fff; }
+        .c-seller { background: rgba(255, 170, 0, 0.12); border: 1px solid rgba(255, 170, 0, 0.35); color: #fff; }
+        .c-admin { background: rgba(188, 19, 254, 0.18); border: 1px solid var(--neon-purple); color: #f3e8ff; }
+        .c-sys { background: #161922; border: 1px dashed #444; color: #cbd5e1; text-align: center; font-size: 11.5px; }
 
         #lightbox-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); z-index: 100000; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px; }
         .lightbox-toolbar { width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
@@ -118,28 +149,60 @@
 
 <div class="container" id="main-admin-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h1 style="margin: 0;">🛡️ إدارة MegaTask الاحترافية</h1>
+        <h1 style="margin: 0;">🛡️ إدارة MegaTask والوسيط المالي</h1>
         <button class="del-btn" style="font-size: 12px;" onclick="logoutAdmin()">🔒 قفل اللوحة</button>
     </div>
 
-    <!-- 🔍 00. رادار البحث الذكي بالأكواد (بحث عن كود أوردر أو كود منتج أو مورد أو ربح) -->
+    <!-- 🔍 00. رادار البحث الذكي بالأكواد -->
     <div class="card search-hub-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--gold);">🔍 رادار البحث بالأكواد (كود أوردر ORD / كود منتج PRD / المورد والربح) <span class="arrow-icon open">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--gold);">🔍 رادار البحث بالأكواد (ESC / ORD / PRD / WTH / TKT) <span class="arrow-icon open">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
             <p style="font-size: 12px; color: #ccc; margin-top: 0;">
-                ابحث بـ <b>كود الأوردر (مثلاً: ORD-123456)</b> أو <b>كود المنتج (مثلاً: PRD-4521)</b> أو <b>ID المشتري</b> أو <b>اسم المنتج/التاجر</b> لمعرفة مصدر المنتج وتكلفته وصافي ربحك فوراً:
+                ابحث بـ <b>كود الصفقة (ESC-...)</b> أو <b>كود المنتج (PRD-...)</b> أو <b>ID المشتري/التاجر</b> لعرض تفاصيل الصفقة والمورد والربح فوراً:
             </p>
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="global-code-search" placeholder="اكتب الكود هنا (ORD-... أو PRD-...) أو اسم المنتج..." style="margin: 0; border-color: var(--gold);" oninput="runSmartCodeSearch()">
+                <input type="text" id="global-code-search" placeholder="اكتب الكود هنا (ESC-... أو ORD-... أو PRD-...) أو اسم المنتج..." style="margin: 0; border-color: var(--gold);" oninput="runSmartCodeSearch()">
                 <button class="admin-method-btn" style="margin: 0; width: 150px; padding: 12px;" onclick="runSmartCodeSearch()">بحث فوري 🔍</button>
             </div>
             <div id="smart-search-results" class="list-container" style="max-height: 420px; display: none;"></div>
         </div>
     </div>
 
-    <!-- 0. إدارة أرصدة المستخدمين يدوياً (نقاط / جنيه) -->
+    <!-- 🚨 01. غرفة فض النزاعات العاجلة في الوساطة المالية (Escrow Disputes) -->
+    <div class="card dispute-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--red);">🚨 نزاعات الوساطة المالية المفتوحة (تحتاج لتدخل الإدارة) <span class="arrow-icon open">▼</span></h3>
+        <div class="collapsible-body" style="display: block;">
+            <div id="escrow-disputes-list" class="list-container">جاري فحص النزاعات...</div>
+        </div>
+    </div>
+
+    <!-- 💼 02. طلبات سحب أرباح التجار (كاش / انستاباي / Binance Pay USDT) -->
+    <div class="card merchant-w-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--gold);">💼 طلبات سحب أرباح التجار والوسطاء (كاش / USDT) <span class="arrow-icon open">▼</span></h3>
+        <div class="collapsible-body" style="display: block;">
+            <div id="withdraw-list" class="list-container">جاري فحص طلبات سحب التجار...</div>
+            <hr style="border-color:#333; margin:18px 0;">
+            <div style="font-size: 13px; color: var(--neon-blue); font-weight: bold; margin-bottom: 8px;">➕ إضافة وسيلة سحب جديدة للتجار (اختياري):</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <input type="text" id="method-name" placeholder="اسم الوسيلة (مثلاً: فودافون كاش / Binance Pay)">
+                <input type="text" id="method-desc" placeholder="تعليمات الحقل (مثلاً: أدخل رقم المحفظة)">
+            </div>
+            <button class="method-btn" style="padding: 10px;" onclick="addMethod()">إضافة وسيلة السحب للسيستم 🚀</button>
+            <div id="methods-list" class="list-container" style="max-height: 180px;"></div>
+        </div>
+    </div>
+
+    <!-- 🎧 03. تذاكر الدعم الفني وبلاغات الثغرات (Bug Bounty & Support) -->
+    <div class="card tickets-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🎧 تذاكر الدعم وبلاغات الثغرات والاقتراحات (Bug Bounty) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div id="support-tickets-list" class="list-container">جاري فحص التذاكر والبلاغات...</div>
+        </div>
+    </div>
+
+    <!-- 👤 0. إدارة أرصدة المستخدمين وفك الحظر يدوياً (نقاط / جنيه / أرباح التاجر) -->
     <div class="card user-wallet-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">👤 إدارة أرصدة المستخدمين يدوياً (نقاط & جنيه) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">👤 إدارة حسابات وأرصدة المستخدمين وفك الحظر <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div style="display: flex; gap: 10px;">
                 <input type="text" id="search-user-id" placeholder="أدخل Telegram ID للمستخدم..." style="margin: 0;">
@@ -149,13 +212,17 @@
                 <div id="user-wallet-info" style="font-size:14px; line-height:1.8; margin-bottom:12px;"></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <select id="wallet-adjust-currency">
-                        <option value="egp">💵 عملة الجنيه (EGP)</option>
-                        <option value="points">🪙 عملة النقاط (Points)</option>
+                        <option value="egp">💵 رصيد الشراء الأساسي (EGP)</option>
+                        <option value="merchant_egp">💼 رصيد أرباح التاجر القابل للسحب (EGP)</option>
+                        <option value="points">🪙 رصيد النقاط (Points)</option>
                     </select>
                     <input type="number" id="wallet-adjust-amount" placeholder="المبلغ (موجب للإضافة / سالب للخصم)" step="0.5">
                 </div>
                 <input type="text" id="wallet-adjust-reason" placeholder="سبب التعديل (يظهر للمستخدم في إشعار البوت - اختياري)">
-                <button class="deposit-btn" onclick="applyUserWalletAdjustment()">تنفيذ التعديل وإرسال إشعار ✅</button>
+                <div style="display: flex; gap: 10px; margin-top: 8px;">
+                    <button class="deposit-btn" style="flex: 2; margin-top: 0;" onclick="applyUserWalletAdjustment()">تنفيذ التعديل وإرسال إشعار ✅</button>
+                    <button id="btn-toggle-ban" class="del-btn" style="flex: 1;" onclick="toggleUserBanStatus()">حظر / فك حظر 🚫</button>
+                </div>
             </div>
         </div>
     </div>
@@ -184,7 +251,7 @@
         </div>
     </div>
 
-    <!-- 3. إضافة منتج جديد للمتجر الرسمي (مع بيانات التاجر/المورد والتكلفة وحساب الربح والكود) -->
+    <!-- 3. إضافة منتج جديد للمتجر الرسمي -->
     <div class="card store-card">
         <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي (مع بيانات المورد والربح السرية) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -192,13 +259,13 @@
                 <div>
                     <label style="font-size: 12px; color: #aaa;">القسم:</label>
                     <select id="store-cat">
-                        <option value="recharge">🔋 شحن وفكة</option>
+                        <option value="recharge">🔋 شحن وألعاب</option>
                         <option value="telegram">📢 تيليجرام</option>
                         <option value="facebook">📘 فيسبوك</option>
                         <option value="youtube">▶️ يوتيوب</option>
                         <option value="tiktok">🎵 تيك توك</option>
                         <option value="instagram">📸 انستجرام</option>
-                        <option value="subscriptions">👑 اشتراكات مدفوعة</option>
+                        <option value="subscriptions">👑 حسابات واشتراكات</option>
                     </select>
                 </div>
                 <div>
@@ -217,7 +284,6 @@
             <input type="text" id="store-title" placeholder="عنوان المنتج (يظهر للمشترين)">
             <textarea id="store-desc" rows="2" placeholder="وصف وتفاصيل المنتج للمشتري..."></textarea>
 
-            <!-- 🕵️‍♂️ قسم المورد والتكلفة والربح السري للأدمن فقط -->
             <div style="background: #10131a; border: 1px dashed var(--neon-purple); border-radius: 14px; padding: 14px; margin: 10px 0;">
                 <div style="color: var(--neon-purple); font-weight: bold; font-size: 13px; margin-bottom: 8px;">
                     🕵️‍♂️ بيانات المورد والتكلفة السرية (تظهر لك في لوحة الأدمن فقط لتتذكر المصدر والربح):
@@ -232,8 +298,8 @@
                         <input type="number" id="store-supplier-cost" placeholder="مثلاً: 35" step="0.5" value="0" oninput="calcAdminProductProfit()">
                     </div>
                 </div>
-                <input type="text" id="store-supplier-name" placeholder="اسم التاجر / السيرفر / الموقع اللي بتجيب منه المنتج (مثلاً: سيرفر الفهد / التاجر أحمد)">
-                <input type="text" id="store-supplier-notes" placeholder="رابط المنتج عند المورد أو رقم/يوزر التاجر أو ملاحظات الشراء السريعة...">
+                <input type="text" id="store-supplier-name" placeholder="اسم التاجر / السيرفر / الموقع اللي بتجيب منه المنتج">
+                <input type="text" id="store-supplier-notes" placeholder="رابط المنتج عند المورد أو رقم/يوزر التاجر أو ملاحظات الشراء...">
                 <div id="admin-profit-preview" style="background: rgba(0, 210, 106, 0.1); border: 1px solid var(--main-green); color: var(--main-green); padding: 8px 12px; border-radius: 8px; font-size: 12.5px; font-weight: bold; margin-top: 6px;">
                     💰 صافي ربحك المتوقع في كل عملية بيع: 0
                 </div>
@@ -258,7 +324,7 @@
 
     <!-- 4. قائمة وتعديل منتجات المتجر الرسمية -->
     <div class="card store-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">📦 إحصائيات وإدارة منتجات المتجر (بأكواد PRD والموردين) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">📦 إحصائيات وإدارة منتجات المتجر وصفقات الوساطة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div id="store-products-list" class="list-container">جاري التحميل...</div>
         </div>
@@ -266,17 +332,17 @@
 
     <!-- 5. منتجات الأعضاء المعلقة -->
     <div class="card pending-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ منتجات الأعضاء المعلقة (مع بيانات البائع ونسبة ربحك 25%) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ سلع التجار المعلقة للمراجعة (عمولة الوساطة 15%) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div id="pending-store-list" class="list-container">جاري الفحص...</div>
         </div>
     </div>
 
-    <!-- 6. طلبات الشراء الواردة للمتجر -->
+    <!-- 6. طلبات الشراء وصفقات الضمان الجارية -->
     <div class="card orders-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 طلبات الشراء الواردة للمتجر (بأكواد ORD + المورد والربح) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 الطلبات وصفقات الضمان الجارية (Escrow & Store Orders) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="store-orders-list" class="list-container">جاري فحص الطلبات...</div>
+            <div id="store-orders-list" class="list-container">جاري فحص الطلبات والصفقات...</div>
         </div>
     </div>
 
@@ -355,26 +421,30 @@
             <div id="tasks-list" class="list-container">جاري التحميل...</div>
         </div>
     </div>
+</div>
 
-    <!-- 14. أرشيف وسائل وطلبات السحب -->
-    <div class="card methods-card" style="opacity: 0.7;">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">💳 أرشيف وسائل وطلبات السحب (موقوف حالياً - قريباً) <span class="arrow-icon">▼</span></h3>
-        <div class="collapsible-body">
-            <input type="text" id="method-name" placeholder="اسم الوسيلة (مثلاً: Vodafone Cash)">
-            <input type="text" id="method-desc" placeholder="وصف أو إيموجي (مثلاً: مصر 🇪🇬)">
-            <input type="file" id="method-logo-file" accept="image/*" onchange="previewWithdrawLogo(this)">
-            <div id="withdraw-logo-preview" style="display:none; margin-top:5px; text-align:center;">
-                <img id="withdraw-logo-tag" style="max-width:50px; max-height:50px; border-radius:6px;">
-            </div>
-            <button class="method-btn" onclick="addMethod()">إضافة وسيلة السحب للسيستم 🚀</button>
-            <div id="methods-list" class="list-container" style="max-height: 200px;">جاري التحميل...</div>
-            <hr style="border-color:#333; margin:20px 0;">
-            <div id="withdraw-list" class="list-container">جاري فحص الطلبات...</div>
+<!-- 💬 نافذة مراقبة شات غرفة الوساطة والفصل في النزاعات (Admin Deal Chat Modal) -->
+<div id="admin-deal-chat-modal" class="admin-modal">
+    <div class="admin-modal-content" style="border-color: var(--gold);">
+        <h3 style="color: var(--gold); margin-top: 0;" id="adm-dr-title">⚖️ غرفة مراقبة الصفقة وفض النزاع</h3>
+        <div id="adm-dr-meta" style="font-size: 12.5px; color: #ddd; background: #111; padding: 10px; border-radius: 10px; line-height: 1.7;"></div>
+
+        <div class="admin-chat-log" id="adm-dr-chat-box"></div>
+
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <input type="text" id="adm-dr-msg-inp" placeholder="اكتب رسالة رسمية للطرفين باسم (👮‍♂️ الإدارة)..." style="margin: 0;">
+            <button class="method-btn" style="margin: 0; width: 130px; padding: 10px;" onclick="sendAdminMessageInDeal()">إرسال 💬</button>
         </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="approve-btn" onclick="adminSettleDealForSeller()">⚖️ حكم لصالح البائع (تحرير الأرباح) ✅</button>
+            <button class="reject-btn" onclick="adminSettleDealForBuyer()">↩️ حكم لصالح المشتري (استرداد كامل) ❌</button>
+        </div>
+        <button onclick="document.getElementById('admin-deal-chat-modal').style.display='none'" style="width: 100%; margin-top: 10px; padding: 10px; background: #282c37; color: #fff;">إغلاق النافذة</button>
     </div>
 </div>
 
-<!-- Modal تعديل منتج المتجر (شامل بيانات المورد والتكلفة) -->
+<!-- Modal تعديل منتج المتجر -->
 <div id="edit-store-modal" class="admin-modal">
     <div class="admin-modal-content">
         <h3 style="color: var(--neon-blue);">✏️ تعديل منتج المتجر وبيانات المورد</h3>
@@ -485,9 +555,6 @@
 </div>
 
 <script>
-    // =========================================================================
-    // 🔒 إعدادات حماية لوحة الأدمن بكلمة السر (تقدر تغير الباسورد من هنا)
-    // =========================================================================
     const ADMIN_SECRET_PASS = "Mostafa@2026";
 
     function checkAdminSession() {
@@ -517,9 +584,6 @@
         location.reload();
     }
 
-    // =========================================================================
-    // إعدادات Supabase والمتغيرات العامة
-    // =========================================================================
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
     
@@ -534,8 +598,8 @@
     let editMethodNewImage = "";
     let currentZoom = 1;
     let searchedUserObj = null;
+    let activeAdminDealObj = null;
 
-    // كاش للمنتجات والطلبات لتسريع البحث بالأكواد وحساب الأرباح
     let cachedStoreProductsMap = {};
     let cachedAllProducts = [];
     let cachedAllOrders = [];
@@ -546,7 +610,6 @@
         if (inp) inp.value = `PRD-${rnd}`;
     }
 
-    // حساب صافي الربح المباشر أثناء إضافة منتج جديد
     function calcAdminProductProfit() {
         const curr = document.getElementById('store-currency').value;
         const unit = curr === 'egp' ? 'ج.م' : 'نقطة';
@@ -567,7 +630,7 @@
     }
 
     // =========================================================================
-    // 🔍 رادار البحث الذكي بالأكواد (ORD-xxxx / PRD-xxxx / المورد / الربح)
+    // 🔍 رادار البحث الذكي بالأكواد
     // =========================================================================
     async function runSmartCodeSearch() {
         const q = (document.getElementById('global-code-search').value || "").trim().toLowerCase();
@@ -581,12 +644,12 @@
 
         resDiv.style.display = 'block';
 
-        // البحث في الطلبات (store_orders) وفي المنتجات (store_products)
         const matchedOrders = cachedAllOrders.filter(o => 
             (o.order_code && o.order_code.toLowerCase().includes(q)) ||
             (o.product_code && o.product_code.toLowerCase().includes(q)) ||
             String(o.id) === q ||
             String(o.user_id).toLowerCase().includes(q) ||
+            String(o.seller_id || '').toLowerCase().includes(q) ||
             (o.product_title && o.product_title.toLowerCase().includes(q)) ||
             (o.buyer_input && o.buyer_input.toLowerCase().includes(q))
         );
@@ -607,47 +670,45 @@
 
         let html = "";
 
-        // 1. عرض الطلبات المطابقة بالتفاصيل الكاملة للمورد والربح
         if (matchedOrders.length > 0) {
-            html += `<div style="color:var(--main-green); font-weight:bold; margin:8px 0;">🛒 الطلبات المطابقة (${matchedOrders.length}):</div>`;
+            html += `<div style="color:var(--main-green); font-weight:bold; margin:8px 0;">🛒 الصفقات والطلبات المطابقة (${matchedOrders.length}):</div>`;
             matchedOrders.forEach(o => {
                 const prod = cachedStoreProductsMap[o.product_id] || {};
                 const oCode = o.order_code || `ORD-${100000 + o.id}`;
                 const pCode = o.product_code || prod.product_code || `PRD-${o.product_id || 0}`;
                 const unit = o.currency === 'egp' ? 'ج.م' : 'نقطة';
-                const isUserProd = prod.creator_id && prod.creator_id !== 'ADMIN';
-                const costVal = isUserProd ? (Number(o.price_paid) * 0.75) : Number(prod.supplier_cost || 0);
+                const isUserProd = (o.seller_id && o.seller_id !== 'ADMIN') || (prod.creator_id && prod.creator_id !== 'ADMIN');
+                const sellerShare = Number(o.net_seller_amount) > 0 ? Number(o.net_seller_amount) : (Number(o.price_paid) * 0.85);
+                const costVal = isUserProd ? sellerShare : Number(prod.supplier_cost || 0);
                 const netProfit = Number(o.price_paid) - costVal;
 
                 html += `
                     <div class="item-row" style="border-right-color: var(--gold); flex-direction: column; align-items: flex-start;">
                         <div style="width:100%; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
-                            <span>🆔 كود الأوردر: <span class="code-pill">${oCode}</span> | 📦 كود المنتج: <span class="code-pill">${pCode}</span></span>
+                            <span>🆔 كود الصفقة: <span class="code-pill">${oCode}</span> | 📦 كود المنتج: <span class="code-pill">${pCode}</span></span>
                             <span style="font-size:12px; color:var(--neon-blue);">الحالة: <b>${o.status}</b></span>
                         </div>
                         <div style="margin-top:6px;">
-                            <b>🛒 المنتج:</b> ${escapeHtml(o.product_title)} | <b>👤 المشتري ID:</b> ${o.user_id}<br>
-                            <b>📱 بيانات تسليم المشتري:</b> <span style="color:var(--main-green); font-weight:bold;">${escapeHtml(o.buyer_input)}</span>
+                            <b>🛒 المنتج:</b> ${escapeHtml(o.product_title)} | <b>👤 المشتري:</b> ${o.user_id} | <b>🏷️ البائع:</b> ${o.seller_id || prod.creator_id || 'ADMIN'}<br>
+                            <b>📱 بيانات المشتري:</b> <span style="color:var(--main-green); font-weight:bold;">${escapeHtml(o.buyer_input)}</span>
                         </div>
                         <div class="supplier-secret-box">
-                            🕵️‍♂️ <b>المصدر / التاجر اللي بتجيب منه:</b> <span style="color:var(--gold); font-weight:bold;">${escapeHtml(prod.supplier_name || (isUserProd ? `منتج عضو (ID: ${prod.creator_id})` : 'غير مسجل'))}</span><br>
-                            🔗 <b>تفاصيل/رابط المورد:</b> <span style="color:#ddd;">${escapeHtml(prod.supplier_notes || prod.link || 'لا توجد ملاحظات')}</span><br>
-                            💵 <b>سعر البيع:</b> ${o.price_paid} ${unit} | <b>التكلفة عليك:</b> ${costVal} ${unit} | 
-                            <span class="profit-highlight">🔥 صافي مكسبك: +${netProfit.toFixed(2)} ${unit}</span>
+                            💵 <b>سعر الصفقة:</b> ${o.price_paid} ${unit} | <b>صافي البائع/التكلفة:</b> ${costVal.toFixed(2)} ${unit} | 
+                            <span class="profit-highlight">🔥 صافي عمولتك ومكسبك: +${netProfit.toFixed(2)} ${unit}</span>
                         </div>
+                        <button class="chat-btn" onclick="openAdminDealChatModal(${o.id})">💬 فتح شات الصفقة والتحكم الكامل</button>
                     </div>
                 `;
             });
         }
 
-        // 2. عرض المنتجات المطابقة بالتفاصيل الكاملة للمورد والربح
         if (matchedProducts.length > 0) {
             html += `<div style="color:var(--neon-blue); font-weight:bold; margin:12px 0 8px;">📦 المنتجات المطابقة (${matchedProducts.length}):</div>`;
             matchedProducts.forEach(p => {
                 const pCode = p.product_code || `PRD-${p.id}`;
                 const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
                 const isUserProd = p.creator_id && p.creator_id !== 'ADMIN';
-                const costVal = isUserProd ? (Number(p.price) * 0.75) : Number(p.supplier_cost || 0);
+                const costVal = isUserProd ? (Number(p.price) * 0.85) : Number(p.supplier_cost || 0);
                 const netProfit = Number(p.price) - costVal;
 
                 html += `
@@ -657,10 +718,9 @@
                             <span>الحالة: <b>${p.status}</b></span>
                         </div>
                         <div class="supplier-secret-box">
-                            🕵️‍♂️ <b>اسم المورد / التاجر:</b> <span style="color:var(--gold); font-weight:bold;">${escapeHtml(p.supplier_name || (isUserProd ? `بائع عضو (ID: ${p.creator_id})` : 'غير محدد'))}</span><br>
-                            🔗 <b>ملاحظات / رابط المورد:</b> ${escapeHtml(p.supplier_notes || p.link || '---')}<br>
-                            💰 <b>سعر البيع:</b> ${p.price} ${unit} | <b>التكلفة عليك:</b> ${costVal} ${unit} | 
-                            <span class="profit-highlight">🔥 صافي ربحك في القطعة: +${netProfit.toFixed(2)} ${unit}</span>
+                            🕵️‍♂️ <b>المورد / البائع:</b> <span style="color:var(--gold); font-weight:bold;">${escapeHtml(p.supplier_name || (isUserProd ? `تاجر عضو (ID: ${p.creator_id})` : 'غير محدد'))}</span><br>
+                            💰 <b>سعر البيع:</b> ${p.price} ${unit} | <b>التكلفة/حصة البائع:</b> ${costVal.toFixed(2)} ${unit} | 
+                            <span class="profit-highlight">🔥 صافي ربحك: +${netProfit.toFixed(2)} ${unit}</span>
                         </div>
                     </div>
                 `;
@@ -670,7 +730,9 @@
         resDiv.innerHTML = html;
     }
 
-    // ⭐ 0. إدارة أرصدة المستخدمين يدوياً (نقاط & جنيه)
+    // =========================================================================
+    // 👤 0. إدارة حسابات المستخدمين وفك الحظر (3 محافظ: شراء / تاجر / نقاط)
+    // =========================================================================
     async function searchUserWallet() {
         const uid = document.getElementById('search-user-id').value.trim();
         if (!uid) return alert("أدخل ID المستخدم أولاً!");
@@ -678,6 +740,7 @@
         const { data: user, error } = await client.from('users').select('*').eq('telegram_id', uid).maybeSingle();
         const box = document.getElementById('user-wallet-result');
         const info = document.getElementById('user-wallet-info');
+        const banBtn = document.getElementById('btn-toggle-ban');
 
         if (error || !user) {
             box.style.display = 'none';
@@ -686,11 +749,32 @@
 
         searchedUserObj = user;
         box.style.display = 'block';
+        const isBanned = user.is_banned === true;
+
+        banBtn.innerText = isBanned ? "🟢 فك الحظر عن الحساب" : "🚫 حظر هذا الحساب";
+        banBtn.style.background = isBanned ? "var(--main-green)" : "var(--red)";
+        banBtn.style.color = isBanned ? "#000" : "#fff";
+
         info.innerHTML = `
-            👤 <b>الاسم:</b> ${user.name || 'غير معروف'} | <b>ID:</b> <span style="color:var(--neon-blue)">${user.telegram_id}</span><br>
-            🪙 <b>رصيد النقاط الحالي:</b> <span style="color:var(--main-green); font-weight:bold;">${(user.points || 0).toLocaleString()} نقطة</span><br>
-            💵 <b>رصيد الجنيه الحالي:</b> <span style="color:var(--neon-blue); font-weight:bold;">${Number(user.egp_balance || 0).toFixed(2)} ج.م</span>
+            👤 <b>الاسم:</b> ${escapeHtml(user.name || 'غير معروف')} | <b>ID:</b> <span style="color:var(--neon-blue)">${user.telegram_id}</span> | 
+            <b>الحالة:</b> ${isBanned ? '<span style="color:var(--red); font-weight:bold;">🚫 محظور</span>' : '<span style="color:var(--main-green); font-weight:bold;">🟢 نشط</span>'}<br>
+            🪙 <b>رصيد النقاط:</b> <span style="color:var(--main-green); font-weight:bold;">${(user.points || 0).toLocaleString()} نقطة</span> | 
+            💵 <b>رصيد الجنيه الأساسي:</b> <span style="color:var(--neon-blue); font-weight:bold;">${Number(user.egp_balance || 0).toFixed(2)} ج.م</span><br>
+            💼 <b>رصيد أرباح التاجر القابل للسحب:</b> <span style="color:var(--gold); font-weight:bold;">${Number(user.merchant_balance_egp || 0).toFixed(2)} ج.م</span> (مبيعاته: ${user.total_sales_count || 0})<br>
+            📱 <b>بصمة الجهاز:</b> <code>${user.device_fp || 'غير مسجل'}</code> | <b>آخر IP:</b> <code>${user.last_ip || 'غير مسجل'}</code>
         `;
+    }
+
+    async function toggleUserBanStatus() {
+        if (!searchedUserObj) return;
+        const newBanState = !(searchedUserObj.is_banned === true);
+        if (!confirm(newBanState ? "🚫 هل تريد حظر هذا الحساب؟" : "🟢 هل تريد فك الحظر عن هذا الحساب؟")) return;
+
+        const { error } = await client.from('users').update({ is_banned: newBanState }).eq('telegram_id', searchedUserObj.telegram_id);
+        if (!error) {
+            alert(newBanState ? "🚫 تم حظر الحساب." : "✅ تم فك الحظر عن الحساب بنجاح!");
+            searchUserWallet();
+        }
     }
 
     async function applyUserWalletAdjustment() {
@@ -707,7 +791,11 @@
         if (currency === 'egp') {
             const newEgp = Math.max(0, Number((Number(searchedUserObj.egp_balance || 0) + amount).toFixed(2)));
             updatePayload.egp_balance = newEgp;
-            msgCurrencyText = `${Math.abs(amount)} ج.م`;
+            msgCurrencyText = `${Math.abs(amount)} ج.م (رصيد شراء)`;
+        } else if (currency === 'merchant_egp') {
+            const newMerch = Math.max(0, Number((Number(searchedUserObj.merchant_balance_egp || 0) + amount).toFixed(2)));
+            updatePayload.merchant_balance_egp = newMerch;
+            msgCurrencyText = `${Math.abs(amount)} ج.م (محفظة أرباح التاجر)`;
         } else {
             const ptsDelta = Math.round(amount);
             const newPts = Math.max(0, (searchedUserObj.points || 0) + ptsDelta);
@@ -722,7 +810,7 @@
         const actionWord = amount > 0 ? "إضافة" : "خصم";
         await client.from('bot_messages').insert([{
             telegram_id: String(searchedUserObj.telegram_id),
-            message: `🔔 *تحديث في رصيد حسابك*\n\nتم ${actionWord} *${msgCurrencyText}* ${amount > 0 ? 'إلى' : 'من'} رصيدك بواسطة الإدارة.${reason ? `\n💬 *ملاحظة:* ${reason}` : ''}`,
+            message: `🔔 *تحديث في رصيد حسابك*\n\nتم ${actionWord} *${msgCurrencyText}* ${amount > 0 ? 'إلى' : 'من'} حسابك بواسطة الإدارة.${reason ? `\n💬 *ملاحظة:* ${reason}` : ''}`,
             status: 'pending'
         }]);
 
@@ -732,7 +820,6 @@
         searchUserWallet();
     }
 
-    // ⭐ دالة الإرسال الجماعي الشاملة
     async function broadcastToAllUsers(title, messageText) {
         try {
             const { data: allUsers, error } = await client.from('users').select('telegram_id');
@@ -754,9 +841,7 @@
 
             await client.from('user_notifications').insert(notifications);
             await client.from('bot_messages').insert(botMessages);
-        } catch (e) {
-            console.error("Broadcast exception:", e);
-        }
+        } catch (e) {}
     }
 
     function toggleCard(headerEl) {
@@ -787,24 +872,6 @@
                 adminMethodBase64 = canvas.toDataURL('image/jpeg', 0.7);
                 document.getElementById('admin-preview-tag').src = adminMethodBase64;
                 document.getElementById('admin-img-preview').style.display = 'block';
-            }
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-
-    function previewWithdrawLogo(input) {
-        if (!input.files || !input.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 100; canvas.height = 100;
-                canvas.getContext('2d').drawImage(img, 0, 0, 100, 100);
-                withdrawLogoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                document.getElementById('withdraw-logo-tag').src = withdrawLogoBase64;
-                document.getElementById('withdraw-logo-preview').style.display = 'block';
             }
         }
         reader.readAsDataURL(input.files[0]);
@@ -875,7 +942,7 @@
     }
 
     // =========================================================================
-    // 🛍️ المتجر الرسمي للأدمن (بأكواد المنتجات وبيانات الموردين وحساب الربح)
+    // 🛍️ المتجر الرسمي وصفقات الوساطة
     // =========================================================================
     async function addStoreProduct() {
         const category = document.getElementById('store-cat').value;
@@ -913,7 +980,7 @@
         else { 
             const unitLabel = currency === 'egp' ? 'ج.م' : 'نقطة';
             await broadcastToAllUsers("🛍️ منتج جديد في المتجر", `تم توفير منتج جديد: ${title} بسعر ${price.toLocaleString()} ${unitLabel}`);
-            alert(`✅ تم نشر المنتج بنجاح بكود (${productCode}) وحفظ بيانات المورد!`); 
+            alert(`✅ تم نشر المنتج بنجاح بكود (${productCode})!`); 
             location.reload(); 
         }
     }
@@ -932,16 +999,16 @@
         div.innerHTML = approvedProducts.length === 0 ? "📭 لا توجد منتجات منشورة في المتجر." : "";
         
         for (let p of approvedProducts) {
-            let { data: orders } = await client.from('store_orders').select('order_code, user_id, buyer_input, created_at').eq('product_id', p.id);
+            let { data: orders } = await client.from('store_orders').select('id').eq('product_id', p.id);
             let soldCount = orders ? orders.length : 0;
 
             const isEgp = p.currency === 'egp';
             const unit = isEgp ? 'ج.م' : 'نقطة';
             const pCode = p.product_code || `PRD-${p.id}`;
             const isUserProd = p.creator_id && p.creator_id !== 'ADMIN';
-            const costVal = isUserProd ? (Number(p.price) * 0.75) : Number(p.supplier_cost || 0);
+            const commRate = p.category === 'escrow_private' ? 0.10 : 0.15;
+            const costVal = isUserProd ? (Number(p.price) * (1 - commRate)) : Number(p.supplier_cost || 0);
             const netProfit = Number(p.price) - costVal;
-            const totalProfitEarned = netProfit * soldCount;
 
             const currencyBadge = isEgp 
                 ? `<span class="currency-badge-egp">💵 ${p.price} ج.م</span>` 
@@ -952,20 +1019,18 @@
                     <div style="width:100%;">
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                             <b>📦 ${escapeHtml(p.title)} (${p.category}) ${currencyBadge}</b>
-                            <span class="code-pill" onclick="copyCodeText('${pCode}')">كود المنتج: ${pCode} 📋</span>
+                            <span class="code-pill" onclick="copyCodeText('${pCode}')">كود: ${pCode} 📋</span>
                         </div>
                         <div class="supplier-secret-box">
-                            🕵️‍♂️ <b>المورد / التاجر:</b> <span style="color:var(--gold); font-weight:bold;">${escapeHtml(p.supplier_name || (isUserProd ? `منتج عضو (ID: ${p.creator_id})` : 'غير محدد'))}</span><br>
-                            🔗 <b>ملاحظات/رابط المورد:</b> ${escapeHtml(p.supplier_notes || p.link || 'بدون ملاحظات')}<br>
-                            💰 <b>سعر البيع:</b> ${p.price} ${unit} | <b>التكلفة عليك:</b> ${costVal} ${unit} | 
-                            <span class="profit-highlight">🔥 ربح القطعة: +${netProfit.toFixed(2)} ${unit}</span> | 
-                            <b>إجمالي أرباحك منه (${soldCount} مبيعة):</b> <span style="color:var(--neon-blue); font-weight:bold;">+${totalProfitEarned.toFixed(2)} ${unit}</span>
+                            🕵️‍♂️ <b>المورد / البائع:</b> <span style="color:var(--gold); font-weight:bold;">${escapeHtml(p.supplier_name || (isUserProd ? `تاجر عضو (ID: ${p.creator_id})` : 'منتج رسمي'))}</span><br>
+                            💰 <b>سعر البيع:</b> ${p.price} ${unit} | <b>حصة البائع/التكلفة:</b> ${costVal.toFixed(2)} ${unit} | 
+                            <span class="profit-highlight">🔥 صافي ربحك: +${netProfit.toFixed(2)} ${unit}</span> | 
+                            <b>المبيعات:</b> ${soldCount}
                         </div>
-                        <div style="font-size:12px; color:#aaa;">العدد المتاح: ${p.target_count || 100} | تم بيعه: <b>${soldCount} مرة</b></div>
                     </div>
                     <div class="actions-box">
-                        <button class="edit-btn" onclick="openEditStoreModal(${p.id})">تعديل المنتج والمورد ✏️</button>
-                        <button class="del-btn" onclick="deleteStoreProductItem(${p.id})">حذف نهائي 🗑️</button>
+                        <button class="edit-btn" onclick="openEditStoreModal(${p.id})">تعديل ✏️</button>
+                        <button class="del-btn" onclick="deleteStoreProductItem(${p.id})">حذف 🗑️</button>
                     </div>
                 </div>`;
         }
@@ -1011,23 +1076,16 @@
         if (!title) return alert("يرجى إدخال عنوان المنتج!");
 
         const updateData = {
-            product_code: productCode,
-            title,
-            description,
-            currency,
-            price,
-            supplier_cost: supplierCost,
-            supplier_name: supplierName,
-            supplier_notes: supplierNotes,
-            target_count: target,
-            link
+            product_code: productCode, title, description, currency, price,
+            supplier_cost: supplierCost, supplier_name: supplierName, supplier_notes: supplierNotes,
+            target_count: target, link
         };
         if (editStoreNewFile) updateData.image_url = editStoreNewFile;
 
         const { error } = await client.from('store_products').update(updateData).eq('id', id);
         if (error) alert("فشل الحفظ: " + error.message);
         else {
-            alert("تم تحديث المنتج وبيانات المورد بنجاح! ✨");
+            alert("تم تحديث المنتج بنجاح! ✨");
             closeEditStoreModal();
             await loadStoreProductsList();
             await loadStoreOrders();
@@ -1040,19 +1098,19 @@
         loadStoreProductsList();
     }
 
-    // --- منتجات الأعضاء المعلقة (مع كود المنتج وبيانات البائع ونسبة ربح البوت 25%) ---
+    // --- سلع التجار المعلقة للمراجعة (عمولة البوت 15% وحصة البائع 85%) ---
     async function loadPendingStoreProducts() {
         const div = document.getElementById('pending-store-list');
         if (!div) return;
         let { data, error } = await client.from('store_products').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
         if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
 
-        div.innerHTML = data.length === 0 ? "✅ لا توجد منتجات جديدة تنتظر المراجعة." : "";
+        div.innerHTML = data.length === 0 ? "✅ لا توجد سلع تجار جديدة تنتظر المراجعة." : "";
         data.forEach(p => {
             const unitLabel = p.currency === 'egp' ? 'ج.م' : 'نقطة';
             const pCode = p.product_code || `PRD-${p.id}`;
-            const sellerPayout = (Number(p.price) * 0.75).toFixed(2);
-            const botCommission = (Number(p.price) * 0.25).toFixed(2);
+            const sellerPayout = (Number(p.price) * 0.85).toFixed(2);
+            const botCommission = (Number(p.price) * 0.15).toFixed(2);
 
             div.innerHTML += `
                 <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
@@ -1062,14 +1120,13 @@
                             <span class="code-pill">${pCode}</span>
                         </div>
                         <div class="supplier-secret-box">
-                            👤 <b>البائع (العضو ID):</b> <span style="color:var(--neon-blue); font-weight:bold;">${p.creator_id}</span><br>
-                            📱 <b>بيانات التواصل/التوريد الخاصة بالبائع:</b> <span style="color:var(--gold); font-weight:bold;">${escapeHtml(p.supplier_name || 'لم يحدد')}</span><br>
-                            📝 <b>طريقة التسليم / ملاحظات البائع للإدارة:</b> ${escapeHtml(p.supplier_notes || p.link || '---')}<br>
+                            👤 <b>التاجر العارض (ID):</b> <span style="color:var(--neon-blue); font-weight:bold;">${p.creator_id}</span><br>
+                            🔗 <b>رابط المعاينة / التواصل:</b> ${escapeHtml(p.link || '---')}<br>
                             💰 <b>سعر البيع:</b> ${Number(p.price).toLocaleString()} ${unitLabel} | 
-                            <b>حصة البائع (75%):</b> ${sellerPayout} ${unitLabel} | 
-                            <span class="profit-highlight">🔥 عمولة البوت الصافية (25%): +${botCommission} ${unitLabel}</span>
+                            <b>صافي التاجر (85%):</b> ${sellerPayout} ${unitLabel} | 
+                            <span class="profit-highlight">🔥 عمولة الوساطة للبوت (15%): +${botCommission} ${unitLabel}</span>
                         </div>
-                        <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0; font-size:12px;"><b>وصف المنتج للمشترين:</b> ${escapeHtml(p.description || 'بلا وصف')}</div>
+                        <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0; font-size:12px;"><b>وصف السلعة:</b> ${escapeHtml(p.description || 'بلا وصف')}</div>
                     </div>
                     <div class="actions-box">
                         <button class="approve-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', '${pCode}', true)">موافقة ونشر بالمتجر ✅</button>
@@ -1085,170 +1142,458 @@
             if (creatorId && creatorId !== 'ADMIN') {
                 await client.from('bot_messages').insert([{
                     telegram_id: creatorId,
-                    message: `🎉 *مبارك! تم قبول وعرض سلعتك في المتجر*\n\n📦 *المنتج:* ${title}\n🆔 *كود المنتج:* \`${pCode}\`\n💰 ستحصل تلقائياً على 75% من السعر عند كل عملية بيع!`,
+                    message: `🎉 *مبارك! تم قبول ونشر سلعتك في المتجر بنظام الضمان (Escrow)*\n\n📦 *السلعة:* ${title}\n🆔 *كود المنتج:* \`${pCode}\`\n💼 عند كل عملية شراء، يُحجز المبلغ في خزنة الضمان وتستلم صافي ربحك (85%) فور تسليم المشتري!`,
                     status: 'pending'
                 }]);
             }
-            alert(`تمت الموافقة على المنتج (${pCode}) ونشره! 🚀`);
+            alert(`تمت الموافقة على السلعة (${pCode}) ونشرها! 🚀`);
         } else {
-            const reason = prompt("سبب الرفض (ليظهر للبائع في البوت):", "المخالفة لشروط المتجر");
+            const reason = prompt("سبب الرفض (ليظهر للتاجر في البوت):", "المخالفة لشروط المتجر");
             if (reason === null) return;
             await client.from('store_products').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
             if (creatorId && creatorId !== 'ADMIN') {
                 await client.from('bot_messages').insert([{
                     telegram_id: creatorId,
-                    message: `❌ *عذراً، تم رفض منتجك المقترح*\n\n📦 *المنتج:* ${title}\n💬 *السبب:* ${reason}`,
+                    message: `❌ *عذراً، تم رفض سلعتك المقترحة*\n\n📦 *السلعة:* ${title}\n💬 *السبب:* ${reason}`,
                     status: 'pending'
                 }]);
             }
-            alert("تم رفض المنتج وإرسال السبب للبائع.");
         }
         await loadStoreProductsList();
         await loadPendingStoreProducts();
     }
 
     // =========================================================================
-    // 🛒 طلبات الشراء الواردة للمتجر (مع كود الأوردر، بيانات المورد، وحساب الربح الصافي)
+    // ⚖️🛒 إدارة صفقات الوساطة والطلبات الجارية + فض النزاعات والشات
     // =========================================================================
     async function loadStoreOrders() {
-        const div = document.getElementById('store-orders-list');
-        if (!div) return;
-        let { data: allOrd, error } = await client.from('store_orders').select('*').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+        const ordersDiv = document.getElementById('store-orders-list');
+        const disputesDiv = document.getElementById('escrow-disputes-list');
+        if (!ordersDiv) return;
+
+        let { data: allOrd, error } = await client.from('store_orders').select('*').order('id', { ascending: false });
+        if (error) { ordersDiv.innerHTML = "❌ خطأ في الجلب"; return; }
 
         cachedAllOrders = allOrd || [];
-        const pendingOrders = cachedAllOrders.filter(o => o.status === 'Pending');
 
-        div.innerHTML = pendingOrders.length === 0 ? "✅ لا توجد طلبات شراء جديدة تنتظر التنفيذ." : "";
-        pendingOrders.forEach(o => {
-            const prod = cachedStoreProductsMap[o.product_id] || {};
-            const isEgp = o.currency === 'egp';
-            const unit = isEgp ? 'ج.م' : 'نقطة';
-            const oCode = o.order_code || `ORD-${100000 + o.id}`;
-            const pCode = o.product_code || prod.product_code || `PRD-${o.product_id || 0}`;
+        // 1. فصل النزاعات المفتوحة (Disputed) في الكارت العلوي الخاص بها
+        const disputedOrders = cachedAllOrders.filter(o => o.status === 'Disputed');
+        if (disputesDiv) {
+            if (disputedOrders.length === 0) {
+                disputesDiv.innerHTML = "✅ لا توجد أي نزاعات مفتوحة بين البائعين والمشترين حالياً.";
+            } else {
+                disputesDiv.innerHTML = disputedOrders.map(o => renderOrderCardHTML(o, true)).join("");
+            }
+        }
 
-            const isUserSeller = prod.creator_id && prod.creator_id !== 'ADMIN';
-            const costOnAdmin = isUserSeller ? (Number(o.price_paid) * 0.75) : Number(prod.supplier_cost || 0);
-            const netAdminProfit = Number(o.price_paid) - costOnAdmin;
-
-            const paidBadge = isEgp 
-                ? `<span class="currency-badge-egp">💵 ${o.price_paid} ج.م</span>` 
-                : `<span class="currency-badge-pts">🪙 ${Number(o.price_paid).toLocaleString()} نقطة</span>`;
-
-            div.innerHTML += `
-                <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
-                    <div style="width:100%;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-                            <span>🆔 كود الطلب: <span class="code-pill" onclick="copyCodeText('${oCode}')">${oCode} 📋</span> | 📦 كود المنتج: <span class="code-pill" onclick="copyCodeText('${pCode}')">${pCode} 📋</span></span>
-                            <span class="info-text">⏰ ${new Date(o.created_at).toLocaleString('ar-EG')}</span>
-                        </div>
-                        <b>🛒 المنتج المطلوب:</b> ${escapeHtml(o.product_title)}<br>
-                        <b>👤 المشتري ID:</b> <span style="color:var(--neon-blue)">${o.user_id}</span> | <b>💰 المدفوع:</b> ${paidBadge}<br>
-                        <b>📱 بيانات الاستلام المدخلة من المشتري:</b> <span style="color:var(--main-green); font-weight:bold; font-size:14px;">${escapeHtml(o.buyer_input)}</span>
-
-                        <!-- 🕵️‍♂️ كارت التاجر/المورد والربح السري للأدمن -->
-                        <div class="supplier-secret-box">
-                            🕵️‍♂️ <b>من أين تحضر هذا المنتج (المورد / التاجر):</b> 
-                            <span style="color:var(--gold); font-weight:bold;">${escapeHtml(prod.supplier_name || (isUserSeller ? `منتج عضو بائع (ID: ${prod.creator_id})` : 'منتج إداري (غير مسجل اسم مورد)'))}</span><br>
-                            🔗 <b>رابط المورد / ملاحظات الشراء والتنفيذ:</b> 
-                            <span style="color:#e5e7eb;">${escapeHtml(prod.supplier_notes || prod.link || 'لا توجد ملاحظات')}</span><br>
-                            💵 <b>الحسبة المالية للأوردر:</b> 
-                            دفع المشتري: <b>${o.price_paid} ${unit}</b> | 
-                            ${isUserSeller ? `حصة البائع (75% تُحول له تلقائياً عند التأكيد): <b>${costOnAdmin.toFixed(2)} ${unit}</b>` : `التكلفة عليك لدى المورد: <b>${costOnAdmin} ${unit}</b>`} | 
-                            <span class="profit-highlight">🔥 صافي مكسبك: +${netAdminProfit.toFixed(2)} ${unit}</span>
-                        </div>
-                    </div>
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="completeStoreOrder(${o.id}, '${o.user_id}', '${escapeQuote(o.product_title)}', '${oCode}', ${o.product_id || 0}, ${o.price_paid}, '${o.currency || 'points'}')">تأكيد التسليم وإرسال الفاتورة ✅</button>
-                        <button class="reject-btn" onclick="rejectStoreOrder(${o.id}, '${o.user_id}', '${escapeQuote(o.product_title)}', '${oCode}', ${o.price_paid}, '${o.currency || 'points'}')">إلغاء واسترداد الرصيد ❌</button>
-                    </div>
-                </div>`;
-        });
+        // 2. عرض الطلبات وصفقات الضمان النشطة (Pending, Escrow_Held, Delivered, Disputed)
+        const activeOrders = cachedAllOrders.filter(o => ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'].includes(o.status));
+        if (activeOrders.length === 0) {
+            ordersDiv.innerHTML = "✅ لا توجد طلبات أو صفقات ضمان معلقة حالياً.";
+        } else {
+            ordersDiv.innerHTML = activeOrders.map(o => renderOrderCardHTML(o, false)).join("");
+        }
     }
 
-    async function completeStoreOrder(orderId, buyerId, productTitle, orderCode, productId, pricePaid, currency) {
-        const note = prompt(`أدخل رسالة التسليم أو الكود/الحساب للمشتري للطلب (${orderCode}):`, "تم تنفيذ طلبك بنجاح!");
+    function renderOrderCardHTML(o, isDisputeHighlight) {
+        const prod = cachedStoreProductsMap[o.product_id] || {};
+        const isEgp = o.currency === 'egp';
+        const unit = isEgp ? 'ج.م' : 'نقطة';
+        const oCode = o.order_code || `ESC-${100000 + o.id}`;
+        const pCode = o.product_code || prod.product_code || `PRD-${o.product_id || 0}`;
+
+        const sellerId = o.seller_id || prod.creator_id || 'ADMIN';
+        const isUserSeller = sellerId !== 'ADMIN';
+        const netSeller = Number(o.net_seller_amount) > 0 ? Number(o.net_seller_amount) : Number((Number(o.price_paid) * 0.85).toFixed(2));
+        const costOnAdmin = isUserSeller ? netSeller : Number(prod.supplier_cost || 0);
+        const netAdminProfit = Number(o.price_paid) - costOnAdmin;
+
+        const paidBadge = isEgp 
+            ? `<span class="currency-badge-egp">💵 ${o.price_paid} ج.م</span>` 
+            : `<span class="currency-badge-pts">🪙 ${Number(o.price_paid).toLocaleString()} نقطة</span>`;
+
+        let statusBadge = `<span style="color:var(--gold);">🔒 محجوز بالضمان (${o.status})</span>`;
+        if (o.status === 'Delivered') statusBadge = `<span style="color:var(--neon-blue);">📦 سلّمه البائع (بانتظار تأكيد المشتري)</span>`;
+        if (o.status === 'Disputed') statusBadge = `<span style="color:var(--red); font-weight:bold;">🚨 نزاع مفتوح!</span>`;
+
+        return `
+            <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start; border-right-color:${isDisputeHighlight ? 'var(--red)' : 'var(--main-green)'};">
+                <div style="width:100%;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                        <span>🆔 كود الصفقة: <span class="code-pill" onclick="copyCodeText('${oCode}')">${oCode} 📋</span> | 📦 المنتج: <span class="code-pill">${pCode}</span></span>${statusBadge}
+                    </div>
+                    <b>🛒 العنوان:</b> ${escapeHtml(o.product_title)} \vert{} <b>💰 المبلغ المحجوز:</b> ${paidBadge}<br>
+                    <b>👤 المشتري ID:</b> <span style="color:var(--neon-blue)">${o.user_id}</span> | 
+                    <b>🏷️ البائع ID:</b> <span style="color:var(--gold)">${sellerId}</span><br>
+                    <b>📱 بيانات المشتري:</b> <span style="color:var(--main-green); font-weight:bold;">${escapeHtml(o.buyer_input)}</span>
+
+                    <div class="supplier-secret-box">
+                        💵 <b>الحسبة المالية:</b> إجمالي الصفقة: <b>${o.price_paid} ${unit}</b> \vert{}${isUserSeller ? `صافي التاجر عند التحرير: <b>${netSeller} ${unit}</b>` : `التكلفة عليك: <b>${costOnAdmin} ${unit}</b>`} | 
+                        <span class="profit-highlight">🔥 صافي عمولتك/ربحك: +${netAdminProfit.toFixed(2)}${unit}</span>
+                    </div>
+                </div>
+                <div class="actions-box">
+                    <button class="chat-btn" onclick="openAdminDealChatModal(${o.id})">💬 فتح شات الصفقة (${Array.isArray(o.chat_messages) ? o.chat_messages.length : 0})</button>
+                    <button class="approve-btn" onclick="completeStoreOrder(${o.id})">⚖️ تحرير الأرباح للبائع ✅</button>
+                    <button class="reject-btn" onclick="rejectStoreOrder(${o.id})">↩️ إلغاء وإرجاع للمشتري ❌</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // نافذة قراءة شات الصفقة وإرسال رسالة رسمية من الإدارة
+    async function openAdminDealChatModal(orderId) {
+        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        if (!ord) return alert("تعذر العثور على الصفقة.");
+
+        activeAdminDealObj = ord;
+        const unit = ord.currency === 'egp' ? 'ج.م' : 'نقطة';
+        document.getElementById('adm-dr-title').innerText = `⚖️ غرفة الصفقة (${ord.order_code || ord.id})`;
+        document.getElementById('adm-dr-meta').innerHTML = `
+            📦 <b>السلعة:</b> ${escapeHtml(ord.product_title)} (${ord.price_paid}${unit})<br>
+            🛒 <b>المشتري:</b> <code>${ord.user_id}</code> | 🏷️ <b>البائع:</b> <code>${ord.seller_id \vert{}\vert{} 'ADMIN'}</code> \vert{} <b>الحالة:</b> ${ord.status}<br>
+            📱 <b>بيانات استلام المشتري:</b> <span style="color:var(--main-green);">${escapeHtml(ord.buyer_input || '')}</span>
+        `;
+
+        const chatBox = document.getElementById('adm-dr-chat-box');
+        const msgs = Array.isArray(ord.chat_messages) ? ord.chat_messages : [];
+        if (msgs.length === 0) {
+            chatBox.innerHTML = `<div class="c-msg c-sys">لا توجد رسائل في غرفة الصفقة بعد.</div>`;
+        } else {
+            chatBox.innerHTML = msgs.map(m => {
+                if (m.sender === 'SYSTEM') return `<div class="c-msg c-sys">${escapeHtml(m.text)}</div>`;
+                if (m.sender === 'ADMIN') return `<div class="c-msg c-admin"><b>👮‍♂️ الإدارة • ${escapeHtml(m.time \vert{}\vert{} '')}:</b><br>${escapeHtml(m.text)}</div>`;
+                const isB = String(m.sender_id) === String(ord.user_id);
+                return `
+                    <div class="c-msg ${isB ? 'c-buyer' : 'c-seller'}">
+                        <b>${escapeHtml(m.role_label \vert{}\vert{} (isB ? 'المشتري' : 'البائع'))} (${escapeHtml(m.sender_id || '')}) • ${escapeHtml(m.time \vert{}\vert{} '')}:</b><br>${escapeHtml(m.text)}
+                    </div>
+                `;
+            }).join("");
+        }
+        chatBox.scrollTop = chatBox.scrollHeight;
+        document.getElementById('admin-deal-chat-modal').style.display = 'flex';
+    }
+
+    async function sendAdminMessageInDeal() {
+        if (!activeAdminDealObj) return;
+        const inp = document.getElementById('adm-dr-msg-inp');
+        const txt = inp.value.trim();
+        if (!txt) return;
+
+        const ord = activeAdminDealObj;
+        const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
+        msgs.push({
+            sender: "ADMIN",
+            role_label: "👮‍♂️ الإدارة (الوسيط المالي)",
+            text: txt,
+            time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+        });
+
+        inp.value = "";
+        await client.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
+
+        // إشعار المشتري والبائع برسالة الإدارة
+        await client.from('bot_messages').insert([
+            { telegram_id: String(ord.user_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' },
+            ...(ord.seller_id && ord.seller_id !== 'ADMIN' ? [{ telegram_id: String(ord.seller_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' }] : [])
+        ]);
+
+        openAdminDealChatModal(ord.id);
+    }
+
+    function adminSettleDealForSeller() {
+        if (!activeAdminDealObj) return;
+        document.getElementById('admin-deal-chat-modal').style.display = 'none';
+        completeStoreOrder(activeAdminDealObj.id);
+    }
+
+    function adminSettleDealForBuyer() {
+        if (!activeAdminDealObj) return;
+        document.getElementById('admin-deal-chat-modal').style.display = 'none';
+        rejectStoreOrder(activeAdminDealObj.id);
+    }
+
+    async function completeStoreOrder(orderId) {
+        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        if (!ord || ord.status === 'Completed') return alert("هذا الطلب مكتمل بالفعل!");
+
+        const oCode = ord.order_code || `ESC-${ord.id}`;
+        const note = prompt(`تأكيد تسليم الطلب وتحرير الأرباح للبائع في الصفقة (${oCode}).\nأدخل ملاحظة أو كود التسليم للمشتري:`, "تم تأكيد التسليم وتحرير الصفقة بنجاح!");
         if (note === null) return;
 
-        const { error } = await client.from('store_orders').update({ status: 'Completed' }).eq('id', orderId);
-        if (error) { alert("خطأ: " + error.message); return; }
+        const isEgp = ord.currency === 'egp';
+        const unit = isEgp ? 'ج.م' : 'نقطة';
+        const pricePaid = Number(ord.price_paid || 0);
+        const prod = cachedStoreProductsMap[ord.product_id] || {};
+        const sellerId = String(ord.seller_id || prod.creator_id || 'ADMIN');
 
-        // إذا كان المنتج مملوكاً لعضو بائع (وليس ADMIN)، يتم تحويل صافي ربحه (75%) لمحفظته تلقائياً!
-        const prod = cachedStoreProductsMap[productId];
-        if (prod && prod.creator_id && prod.creator_id !== 'ADMIN') {
-            const sellerId = String(prod.creator_id);
-            const { data: sellerUser } = await client.from('users').select('points, egp_balance, total_earned').eq('telegram_id', sellerId).maybeSingle();
+        const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
+        msgs.push({
+            sender: "SYSTEM",
+            text: `✅ قامت الإدارة بتأكيد التسليم وتحرير أرباح الصفقة للبائع. ملاحظة: ${note}`,
+            time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+        });
+
+        const { error } = await client.from('store_orders').update({ status: 'Completed', chat_messages: msgs }).eq('id', orderId);
+        if (error) return alert("خطأ: " + error.message);
+
+        // إذا كان البائع تاجراً عضواً، نحول صافي ربحه إلى محفظة التاجر (merchant_balance_egp) أو النقاط
+        if (sellerId !== 'ADMIN') {
+            const netSeller = Number(ord.net_seller_amount) > 0 ? Number(ord.net_seller_amount) : Number((pricePaid * 0.85).toFixed(2));
+            const { data: sellerUser } = await client.from('users').select('points, merchant_balance_egp, total_earned, total_sales_count').eq('telegram_id', sellerId).maybeSingle();
             if (sellerUser) {
+                const newSales = Number(sellerUser.total_sales_count || 0) + 1;
                 let sellerMsgAmount = "";
-                if (currency === 'egp') {
-                    const sellerShareEgp = Number((Number(pricePaid) * 0.75).toFixed(2));
-                    const newEgp = Number((Number(sellerUser.egp_balance || 0) + sellerShareEgp).toFixed(2));
-                    await client.from('users').update({ egp_balance: newEgp }).eq('telegram_id', sellerId);
-                    sellerMsgAmount = `+${sellerShareEgp.toFixed(2)} ج.م`;
+                if (isEgp) {
+                    const newMerch = Number((Number(sellerUser.merchant_balance_egp || 0) + netSeller).toFixed(2));
+                    await client.from('users').update({ merchant_balance_egp: newMerch, total_sales_count: newSales }).eq('telegram_id', sellerId);
+                    sellerMsgAmount = `+${netSeller.toFixed(2)} ج.م`;
                 } else {
-                    const sellerSharePts = Math.floor(Number(pricePaid) * 0.75);
-                    const newPts = (sellerUser.points || 0) + sellerSharePts;
-                    const newTotal = (sellerUser.total_earned || 0) + sellerSharePts;
-                    await client.from('users').update({ points: newPts, total_earned: newTotal }).eq('telegram_id', sellerId);
-                    sellerMsgAmount = `+${sellerSharePts.toLocaleString()} نقطة`;
+                    const ptsAdd = Math.floor(netSeller);
+                    await client.from('users').update({
+                        points: Number(sellerUser.points || 0) + ptsAdd,
+                        total_earned: Number(sellerUser.total_earned || 0) + ptsAdd,
+                        total_sales_count: newSales
+                    }).eq('telegram_id', sellerId);
+                    sellerMsgAmount = `+${ptsAdd.toLocaleString()} نقطة`;
                 }
 
                 await client.from('transactions').insert([{
                     telegram_id: sellerId,
-                    type: currency === 'egp' ? 'egp' : 'points',
-                    title: `أرباح بيع منتج (${productTitle}) - طلب ${orderCode}`,
+                    type: isEgp ? 'egp' : 'points',
+                    title: `أرباح وساطة ومبيعات (${ord.product_title}) - ${oCode}`,
                     amount: sellerMsgAmount,
                     status: 'مكتمل'
                 }]);
 
                 await client.from('bot_messages').insert([{
                     telegram_id: sellerId,
-                    message: `🎉 *تم تسليم مبيعة جديدة لمنتجك بالمتجر!* 💰\n\n📦 *المنتج:* ${productTitle}\n🆔 *كود الطلب:* \`${orderCode}\`\n🎁 *صافي ربحك (75%):* تم إضافة *${sellerMsgAmount}* إلى محفظتك!`,
+                    message: `🎉 *تم تحرير أرباح صفقتك (${oCode}) بنجاح!* 💰\n\n📦 *السلعة:* ${ord.product_title}\n💎 *صافي ربحك المضاف لمحفظة التاجر:* *${sellerMsgAmount}*\nيمكنك سحبه كاش أو USDT في أي وقت من قسم (💼 سحب التجار)!`,
                     status: 'pending'
                 }]);
             }
         }
 
         await client.from('bot_messages').insert([{
-            telegram_id: buyerId,
-            message: `🎉 *تم تنفيذ وتوصيل طلبك بنجاح!* ✅\n\n🆔 *كود الطلب:* \`${orderCode}\`\n📦 *المنتج:* ${productTitle}\n📋 *تفاصيل التسليم:* ${note}\n\nشكراً لتسوقك عبر متجر MegaTask! 🛍️`,
+            telegram_id: String(ord.user_id),
+            message: `🎉 *تم إتمام وتأكيد صفقتك (${oCode}) بنجاح!* ✅\n\n📦 *الطلب:* ${ord.product_title}\n📋 *بيانات التسليم/الإدارة:* ${note}`,
             status: 'pending'
         }]);
 
-        alert(`تم تأكيد تسليم الطلب (${orderCode}) وإرسال الفاتورة بنجاح! 🚀`);
+        alert(`✅ تم إتمام الصفقة (${oCode}) وتحرير الأرباح بنجاح!`);
         loadStoreOrders();
         loadStoreProductsList();
     }
 
-    async function rejectStoreOrder(orderId, buyerId, productTitle, orderCode, pricePaid, currency) {
-        const reason = prompt(`أدخل سبب إلغاء الطلب (${orderCode}) واسترداد الرصيد للمشتري:`, "البيانات المدخلة غير صحيحة أو نفدت الكمية");
+    async function rejectStoreOrder(orderId) {
+        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        if (!ord || ord.status === 'Rejected' || ord.status === 'Refunded') return alert("هذا الطلب ملغي ومسترد بالفعل!");
+
+        const oCode = ord.order_code || `ESC-${ord.id}`;
+        const reason = prompt(`أدخل سبب إلغاء الصفقة (${oCode}) وإرجاع المبلغ كاملاً للمشتري:`, "عدم تسليم الطلب بالمواصفات المتفق عليها");
         if (reason === null) return;
 
-        const { error } = await client.from('store_orders').update({ status: 'Rejected' }).eq('id', orderId);
-        if (error) { alert("خطأ: " + error.message); return; }
+        const isEgp = ord.currency === 'egp';
+        const pricePaid = Number(ord.price_paid || 0);
 
-        const { data: uData } = await client.from('users').select('points, egp_balance').eq('telegram_id', String(buyerId)).maybeSingle();
+        const { error } = await client.from('store_orders').update({ status: 'Refunded' }).eq('id', orderId);
+        if (error) return alert("خطأ: " + error.message);
+
+        const { data: uData } = await client.from('users').select('points, egp_balance').eq('telegram_id', String(ord.user_id)).maybeSingle();
         let refundText = "";
         if (uData) {
-            if (currency === 'egp') {
-                const newEgp = Number((Number(uData.egp_balance || 0) + parseFloat(pricePaid)).toFixed(2));
-                await client.from('users').update({ egp_balance: newEgp }).eq('telegram_id', String(buyerId));
-                refundText = `${pricePaid} ج.م`;
+            if (isEgp) {
+                const newEgp = Number((Number(uData.egp_balance || 0) + pricePaid).toFixed(2));
+                await client.from('users').update({ egp_balance: newEgp }).eq('telegram_id', String(ord.user_id));
+                refundText = `${pricePaid.toFixed(2)} ج.م`;
             } else {
-                const newPts = (uData.points || 0) + parseInt(pricePaid);
-                await client.from('users').update({ points: newPts }).eq('telegram_id', String(buyerId));
-                refundText = `${parseInt(pricePaid).toLocaleString()} نقطة`;
+                const newPts = Number(uData.points || 0) + Math.round(pricePaid);
+                await client.from('users').update({ points: newPts }).eq('telegram_id', String(ord.user_id));
+                refundText = `${Math.round(pricePaid).toLocaleString()} نقطة`;
             }
         }
 
         await client.from('bot_messages').insert([{
-            telegram_id: String(buyerId),
-            message: `❌ *تم إلغاء طلب الشراء واسترداد رصيدك*\n\n🆔 *كود الطلب:* \`${orderCode}\`\n📦 *المنتج:* ${productTitle}\n💬 *السبب:* ${reason}\n💰 *المسترد:* تم إرجاع *${refundText}* إلى محفظتك في البوت.`,
+            telegram_id: String(ord.user_id),
+            message: `↩️ *تم إلغاء الصفقة (${oCode}) واسترداد أموالك بالكامل*\n\n📦 *الطلب:* ${ord.product_title}\n💬 *السبب:* ${reason}\n💰 *المبلغ المسترد:* تم إرجاع *${refundText}* من خزنة الضمان إلى محفظتك فوراً.`,
             status: 'pending'
         }]);
 
-        alert(`تم إلغاء الطلب (${orderCode}) وإرجاع ${refundText} لحساب المشتري.`);
+        alert(`✅ تم إلغاء الصفقة (${oCode}) وإرجاع ${refundText} لمحفظة المشتري.`);
         loadStoreOrders();
+    }
+
+    // =========================================================================
+    // 💼 طلبات سحب أرباح التجار (Merchant Withdrawals)
+    // =========================================================================
+    async function loadWithdrawals() {
+        const div = document.getElementById('withdraw-list');
+        if (!div) return;
+        let { data, error } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('id', { ascending: false });
+        if (error) { div.innerHTML = "❌ خطأ في جلب السحوبات"; return; }
+        
+        div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات سحب للتجار معلقة حالياً." : "";
+        data.forEach(w => {
+            const wCode = w.withdraw_code || w.tx_id || `WTH-${w.id}`;
+            const amt = Number(w.amount || 0);
+            const isBinance = (w.method || "").toLowerCase().includes("binance") || (w.method || "").toLowerCase().includes("usdt");
+            const usdtNote = isBinance ? ` <span style="color:var(--gold);">(يعادل ${(amt / 50).toFixed(2)} USDT)</span>` : "";
+
+            div.innerHTML += `
+                <div class="item-row withdraw-row" style="width:100%; box-sizing:border-box;">
+                    <div style="text-align:right; width:100%;">
+                        <b>🆔 كود السحب:</b> <span class="code-pill">${wCode}</span> | <b>👤 التاجر ID:</b> <span style="color:var(--neon-blue);">${w.telegram_id}</span><br>
+                        <b>💵 المبلغ المطلوب:</b> <span style="color:var(--main-green); font-weight:bold; font-size:15px;">${amt.toFixed(2)} ج.م</span>${usdtNote}<br>
+                        <b>💳 الوسيلة:</b> ${escapeHtml(w.method)} | <b>📥 الحساب المستلم:</b> <code style="color:var(--gold); font-size:14px;">${escapeHtml(w.wallet_info)}</code>
+                    </div>
+                    <div class="actions-box">
+                        <button class="approve-btn" onclick="approveWithdraw(${w.id}, '${w.telegram_id}', '${wCode}', ${amt}, '${escapeQuote(w.method)}', '${escapeQuote(w.wallet_info)}')">✅ تم التحويل وإرسال الإشعار</button>
+                        <button class="reject-btn" onclick="rejectWithdrawAndRefund(${w.id}, '${w.telegram_id}', '${wCode}', ${amt})">❌ رفض وإرجاع لمحفظة التاجر</button>
+                    </div>
+                </div>`;
+        });
+    }
+
+    async function approveWithdraw(id, telegramId, wCode, amount, method, wallet) {
+        const proofNote = prompt(`تأكيد إتمام تحويل (${amount} ج.م) للتاجر (${telegramId}) عبر (${method}).\nأدخل رقم العملية أو رسالة التأكيد (اختياري):`, "تم تحويل المبلغ بنجاح إلى حسابك!");
+        if (proofNote === null) return;
+
+        await client.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
+        await client.from('bot_messages').insert([{
+            telegram_id: String(telegramId),
+            message: `🎉 *تم تحويل أرباح مبيعاتك بنجاح!* ✅\n━━━━━━━━━━━━━━━\n🆔 *رقم الطلب:* \`${wCode}\`\n💵 *المبلغ المحول:* *${Number(amount).toFixed(2)} ج.م*\n💳 *الوسيلة:* ${method}\n📥 *الحساب:* \`${wallet}\`\n💬 *ملاحظة الإدارة:* ${proofNote}`,
+            status: 'pending'
+        }]);
+        alert(`✅ تم تأكيد سحب التاجر (${wCode}) وإرسال الفاتورة!`);
+        loadWithdrawals();
+    }
+
+    async function rejectWithdrawAndRefund(id, telegramId, wCode, amount) {
+        const reason = prompt(`أدخل سبب رفض طلب السحب (${wCode}) وإرجاع المبلغ (${amount} ج.م) لمحفظة التاجر:`, "يرجى التأكد من صحة رقم المحفظة أو الحساب المستلم");
+        if (reason === null) return;
+
+        await client.from('withdrawals').update({ status: 'Rejected' }).eq('id', id);
+
+        const { data: u } = await client.from('users').select('merchant_balance_egp').eq('telegram_id', String(telegramId)).maybeSingle();
+        if (u) {
+            const refundedMerch = Number((Number(u.merchant_balance_egp || 0) + Number(amount)).toFixed(2));
+            await client.from('users').update({ merchant_balance_egp: refundedMerch }).eq('telegram_id', String(telegramId));
+        }
+
+        await client.from('bot_messages').insert([{
+            telegram_id: String(telegramId),
+            message: `↩️ *تم إلغاء طلب السحب (${wCode}) وإرجاع الرصيد لمحفظة التاجر*\n\n💬 *السبب:* ${reason}\n💵 *المبلغ المسترد:* +${Number(amount).toFixed(2)} ج.م`,
+            status: 'pending'
+        }]);
+
+        alert(`تم رفض الطلب وإرجاع ${amount} ج.م لمحفظة التاجر.`);
+        loadWithdrawals();
+    }
+
+    // =========================================================================
+    // 🎧 تذاكر الدعم الفني وبلاغات الثغرات (Support & Bug Bounty Tickets)
+    // =========================================================================
+    async function loadSupportTickets() {
+        const div = document.getElementById('support-tickets-list');
+        if (!div) return;
+        try {
+            const { data, error } = await client.from('support_tickets').select('*').eq('status', 'Pending').order('id', { ascending: false });
+            if (error) {
+                div.innerHTML = "ℹ️ جدول support_tickets جاهز للعمل فور تشغيل كود SQL الخاص به.";
+                return;
+            }
+            if (!data || data.length === 0) {
+                div.innerHTML = "✅ لا توجد تذاكر دعم أو بلاغات ثغرات معلقة حالياً.";
+                return;
+            }
+
+            const catLabels = { bug: "🛡️ بلاغ ثغرة (Bug Bounty)", issue: "🛠️ مشكلة فنية/شخصية", suggestion: "💡 اقتراح ميزة", rating: "⭐ تقييم البوت" };
+
+            div.innerHTML = data.map(t => {
+                const imgHtml = t.screenshot_url ? `
+                    <div style="margin:8px 0; cursor:zoom-in;" onclick="openLightbox('${t.screenshot_url}')">
+                        <img src="${t.screenshot_url}" style="max-width:140px; max-height:140px; border-radius:8px; border:1px solid #444;">
+                        <div style="font-size:11px; color:var(--neon-blue);">🔍 تكبير المرفق</div>
+                    </div>
+                ` : '';
+
+                return `
+                    <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start; border-right-color:var(--neon-blue);">
+                        <div style="width:100%;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <b>${catLabels[t.category] || '📌 تذكرة'} • <span style="color:var(--gold);">${escapeHtml(t.sub_type || '')}</span></b>
+                                <span class="code-pill">${escapeHtml(t.ticket_code)}</span>
+                            </div>
+                            <b>👤 المرسل:</b> ${escapeHtml(t.user_name)} (ID: <span style="color:var(--neon-blue);">${t.telegram_id}</span>)<br>
+                            <b>📌 الموضوع:</b> ${escapeHtml(t.subject || '')}<br>
+                            <div style="background:#111; padding:10px; border-radius:8px; margin:6px 0; font-size:13px; white-space:pre-wrap;">${escapeHtml(t.message)}</div>
+                            ${imgHtml}
+                            <input type="text" id="tkt-reply-${t.id}" placeholder="اكتب رد الإدارة هنا (يُرسل للمستخدم في البوت ويظهر في صفحته)...">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                                <select id="tkt-reward-curr-${t.id}">
+                                    <option value="none">بدون مكافأة مالية (رد فقط)</option>
+                                    <option value="points">🎁 صرف مكافأة بالنقاط</option>
+                                    <option value="egp">💵 صرف مكافأة بالجنيه (EGP)</option>
+                                </select>
+                                <input type="number" id="tkt-reward-amt-${t.id}" placeholder="قيمة المكافأة (مثلاً: 500 ن أو 20 ج.م)" step="0.5">
+                            </div>
+                        </div>
+                        <div class="actions-box">
+                            <button class="approve-btn" onclick="resolveSupportTicket(${t.id}, '${t.telegram_id}', '${escapeQuote(t.ticket_code)}')">إرسال الرد وصرف المكافأة (إن وجدت) ✅</button>
+                            <button class="del-btn" onclick="deleteSupportTicket(${t.id})">إغلاق وحذف 🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        } catch (e) {}
+    }
+
+    async function resolveSupportTicket(id, userTid, ticketCode) {
+        const replyTxt = (document.getElementById(`tkt-reply-${id}`)?.value || "").trim() || "شكراً لتواصلك معنا، تم فحص رسالتك واتخاذ اللازم.";
+        const rewCurr = document.getElementById(`tkt-reward-curr-${id}`)?.value || "none";
+        const rewAmt = parseFloat(document.getElementById(`tkt-reward-amt-${id}`)?.value) || 0;
+
+        let newStatus = (rewCurr !== "none" && rewAmt > 0) ? "Rewarded" : "Resolved";
+        let rewardMsgLine = "";
+
+        if (rewCurr !== "none" && rewAmt > 0) {
+            const { data: u } = await client.from('users').select('points, egp_balance, total_earned').eq('telegram_id', String(userTid)).maybeSingle();
+            if (u) {
+                if (rewCurr === 'egp') {
+                    const nextEgp = Number((Number(u.egp_balance || 0) + rewAmt).toFixed(2));
+                    await client.from('users').update({ egp_balance: nextEgp }).eq('telegram_id', String(userTid));
+                    rewardMsgLine = `\n🎁 *المكافأة المضافة لرصيدك:* *+${rewAmt.toFixed(2)} ج.م*`;
+                } else {
+                    const pts = Math.round(rewAmt);
+                    await client.from('users').update({
+                        points: Number(u.points || 0) + pts,
+                        total_earned: Number(u.total_earned || 0) + pts
+                    }).eq('telegram_id', String(userTid));
+                    rewardMsgLine = `\n🎁 *المكافأة المضافة لرصيدك:* *+${pts.toLocaleString()} نقطة*`;
+                }
+            }
+        }
+
+        await client.from('support_tickets').update({
+            status: newStatus,
+            admin_reply: replyTxt
+        }).eq('id', id);
+
+        await client.from('bot_messages').insert([{
+            telegram_id: String(userTid),
+            message: `🎧 *رد الإدارة على تذكرتك (${ticketCode}):*\n━━━━━━━━━━━━━━━\n💬 *الرد:* ${replyTxt}${rewardMsgLine}`,
+            status: 'pending'
+        }]);
+
+        alert(`✅ تم إرسال الرد للتذكرة (${ticketCode}) بنجاح!`);
+        loadSupportTickets();
+    }
+
+    async function deleteSupportTicket(id) {
+        if (!confirm("حذف هذه التذكرة؟")) return;
+        await client.from('support_tickets').delete().eq('id', id);
+        loadSupportTickets();
     }
 
     // --- طلبات الإيداع ---
@@ -1330,7 +1675,7 @@
 
             await client.from('bot_messages').insert([{
                 telegram_id: telegramId,
-                message: `🎉 *تم قبول وإضافة شحن رصيدك بنجاح!* ✅\n\n💵 *المبلغ المضاف:* ${addEgp.toFixed(2)} ج.م\nيمكنك الآن الشراء من المتجر أو تحويل الجنيه إلى نقاط بونص (+20%)!\n\nشكراً لاستخدامك منصة MegaTask! 🚀`,
+                message: `🎉 *تم قبول وإضافة شحن رصيدك بنجاح!* ✅\n\n💵 *المبلغ المضاف:* ${addEgp.toFixed(2)} ج.م\nيمكنك الآن الشراء من المتجر أو تحويل الجنيه إلى نقاط بونص (+20%)!`,
                 status: 'pending'
             }]);
 
@@ -1345,47 +1690,34 @@
                 message: `❌ *عذراً، تم رفض طلب الشحن الخاص بك*\n\n💬 *السبب:* ${reason}`,
                 status: 'pending'
             }]);
-
-            alert("تم رفض طلب الإيداع وإرسال السبب للمستخدم.");
         }
         loadDepositsRequests();
     }
 
-    // --- 1. وسائل السحب ---
+    // --- وسائل السحب والإيداع ---
     async function loadMethods() {
         const div = document.getElementById('methods-list');
         let { data, error } = await client.from('withdraw_methods').select('*');
-        if (error) { div.innerHTML = "❌ خطأ في جلب الوسائل: " + error.message; return; }
+        if (error) { div.innerHTML = ""; return; }
 
-        div.innerHTML = data.length === 0 ? "📭 لا توجد وسائل سحب مضافة." : "";
+        div.innerHTML = data.length === 0 ? "" : "";
         data.forEach(m => {
-            const logoTag = m.logo ? `<img src="${m.logo}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-left:8px;">` : '';
             div.innerHTML += `
                 <div class="item-row method-row" style="width:100%; box-sizing:border-box;">
-                    <div style="display:flex; align-items:center;">
-                        ${logoTag}
-                        <div><b>${m.name}</b> <span class="info-text">${m.description || ''}</span></div>
-                    </div>
+                    <div><b>${escapeHtml(m.name)}</b> <span class="info-text">${escapeHtml(m.description || '')}</span></div>
                     <button class="del-btn" onclick="deleteMethod('${m.id}')">حذف 🗑️</button>
                 </div>`;
         });
     }
 
     async function addMethod() {
-        const name = document.getElementById('method-name').value;
-        const description = document.getElementById('method-desc').value;
+        const name = document.getElementById('method-name').value.trim();
+        const description = document.getElementById('method-desc').value.trim();
         if(!name) return alert("يرجى كتابة اسم الوسيلة!");
 
-        const { error } = await client.from('withdraw_methods').insert([{ 
-            name, 
-            description, 
-            logo: withdrawLogoBase64 || null 
-        }]);
+        const { error } = await client.from('withdraw_methods').insert([{ name, description }]);
         if (error) alert("خطأ: " + error.message);
-        else { 
-            alert("تمت إضافة وسيلة السحب بنجاح! 💳"); 
-            location.reload(); 
-        }
+        else { alert("تمت إضافة وسيلة السحب بنجاح! 💳"); loadMethods(); }
     }
 
     async function deleteMethod(id) {
@@ -1394,7 +1726,6 @@
         loadMethods();
     }
 
-    // --- 2. وسائل الإيداع ---
     async function loadDepositMethods() {
         const div = document.getElementById('deposit-methods-list');
         let { data, error } = await client.from('deposit_methods').select('*');
@@ -1420,14 +1751,12 @@
         if(!name) return alert("يرجى كتابة اسم وسيلة الإيداع!");
 
         const { error } = await client.from('deposit_methods').insert([{ 
-            name, 
-            description, 
-            logo: depositLogoBase64 || null 
+            name, description, logo: depositLogoBase64 || null 
         }]);
         if (error) alert("خطأ: " + error.message);
         else { 
             await broadcastToAllUsers("💰 وسيلة شحن جديدة", `تم إضافة وسيلة شحن رصيد جديدة: ${name}`);
-            alert("تمت إضافة وسيلة الإيداع بنجاح وإرسال الإشعارات! 💰"); 
+            alert("تمت إضافة وسيلة الإيداع بنجاح! 💰"); 
             location.reload(); 
         }
     }
@@ -1438,7 +1767,7 @@
         loadDepositMethods();
     }
 
-    // --- 3. إدارة وتعديل الميثودات المنشورة ---
+    // --- الميثودات والمهام ---
     async function loadPublishedMethods() {
         const div = document.getElementById('published-methods-list');
         let { data, error } = await client.from('methods').select('*').eq('status', 'Approved').order('id', { ascending: false });
@@ -1471,9 +1800,7 @@
         document.getElementById('edit-method-modal').style.display = 'flex';
     }
 
-    function closeEditMethodModal() {
-        document.getElementById('edit-method-modal').style.display = 'none';
-    }
+    function closeEditMethodModal() { document.getElementById('edit-method-modal').style.display = 'none'; }
 
     async function saveEditedMethod() {
         const id = document.getElementById('edit-m-id').value;
@@ -1510,26 +1837,19 @@
         });
     }
 
-    function escapeQuote(str) {
-        return String(str || "").replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    }
+    function escapeQuote(str) { return String(str || "").replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+    function escapeHtml(str) { return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-    function escapeHtml(str) {
-        return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-
-    // --- 4. مراجعة ميثودات الأعضاء ---
     async function loadPendingMethods() {
         const div = document.getElementById('pending-methods-list');
         let { data, error } = await client.from('methods').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب: " + error.message; return; }
+        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
 
         div.innerHTML = data.length === 0 ? "✅ لا توجد ميثودات جديدة تنتظر المراجعة." : "";
         data.forEach(m => {
             const imgTag = m.image_url ? `
                 <div style="margin: 10px 0; cursor: zoom-in;" onclick="openLightbox('${m.image_url}')">
-                    <img src="${m.image_url}" style="max-width:150px; max-height:150px; border-radius:8px; border:1px solid #444;" alt="Method Proof">
-                    <div style="font-size: 11px; color: var(--neon-blue); margin-top: 3px;">🔍 اضغط لتكبير الصورة</div>
+                    <img src="${m.image_url}" style="max-width:150px; max-height:150px; border-radius:8px; border:1px solid #444;">
                 </div>` : '';
             
             div.innerHTML += `
@@ -1537,7 +1857,7 @@
                     <div style="text-align:right; width:100%;">
                         <b>📌 عنوان الميثود:</b> ${m.title}<br>
                         <b>👤 صاحب الميثود ID:</b> <span style="color:var(--neon-blue)">${m.user_id}</span><br>
-                        <div style="background:#111; padding:10px; border-radius:8px; margin:8px 0; font-size:13px; line-height:1.6; white-space: pre-wrap;">${m.content}</div>
+                        <div style="background:#111; padding:10px; border-radius:8px; margin:8px 0; font-size:13px; white-space: pre-wrap;">${m.content}</div>
                         ${imgTag}
                         <div style="display: flex; gap: 10px; margin-top: 8px;">
                             <div style="flex:1;">
@@ -1545,7 +1865,7 @@
                                 <input type="number" id="method-points-${m.id}" value="50" style="margin-top:2px; font-size:13px;">
                             </div>
                             <div style="flex:1;">
-                                <label style="font-size:11px; color:#aaa;">سعر فك الحجب (${m.currency === 'egp' ? 'ج.م' : 'نقاط'}):</label>
+                                <label style="font-size:11px; color:#aaa;">سعر فك الحجب:</label>
                                 <input type="number" id="method-cost-${m.id}" value="${m.unlock_cost || 50}" style="margin-top:2px; font-size:13px;">
                             </div>
                         </div>
@@ -1560,55 +1880,37 @@
 
     async function reviewMethod(id, userId, title, isApproved) {
         if (isApproved) {
-            const pointsInput = document.getElementById(`method-points-${id}`).value;
-            const costInput = document.getElementById(`method-cost-${id}`).value;
-            const awardedPoints = parseInt(pointsInput) || 0;
-            const unlockCost = parseFloat(costInput) || 50;
+            const awardedPoints = parseInt(document.getElementById(`method-points-${id}`).value) || 0;
+            const unlockCost = parseFloat(document.getElementById(`method-cost-${id}`).value) || 50;
 
-            if (!confirm(`تأكيد قبول الميثود، منح المطوّر ${awardedPoints} نقطة، وتحديد سعر فك الحجب بـ ${unlockCost}؟`)) return;
+            if (!confirm(`تأكيد قبول الميثود ومنح المطوّر ${awardedPoints} نقطة؟`)) return;
 
-            const { error: err1 } = await client.from('methods').update({ 
-                status: 'Approved', 
-                points_awarded: awardedPoints,
-                unlock_cost: unlockCost 
-            }).eq('id', id);
-
-            if (err1) { alert("خطأ: " + err1.message); return; }
+            await client.from('methods').update({ status: 'Approved', points_awarded: awardedPoints, unlock_cost: unlockCost }).eq('id', id);
 
             if (awardedPoints > 0) {
                 const { data: userData } = await client.from('users').select('points, total_earned').eq('telegram_id', userId).maybeSingle();
                 if (userData) {
-                    const newPoints = (userData.points || 0) + awardedPoints;
-                    const newTotalEarned = (userData.total_earned || 0) + awardedPoints;
-                    await client.from('users').update({ points: newPoints, total_earned: newTotalEarned }).eq('telegram_id', userId);
+                    await client.from('users').update({
+                        points: (userData.points || 0) + awardedPoints,
+                        total_earned: (userData.total_earned || 0) + awardedPoints
+                    }).eq('telegram_id', userId);
                 }
             }
 
             await client.from('bot_messages').insert([{
                 telegram_id: userId,
-                message: `🎉 *مبارك! تم قبول ونشر الميثود الخاص بك*\n\n📌 *العنوان:* ${title}\n💰 ستحصل تلقائياً على 75% من السعر في كل مرة يشتريها أي عضو!`,
+                message: `🎉 *مبارك! تم قبول ونشر الميثود الخاص بك*\n📌 *العنوان:* ${title}`,
                 status: 'pending'
             }]);
-
-            alert("تمت الموافقة ونشر الميثود بنجاح! 🚀");
         } else {
             const reason = prompt("أدخل سبب رفض الميثود:", "المحتوى غير دقيق أو مكرر");
             if (reason === null) return;
-
             await client.from('methods').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
-            await client.from('bot_messages').insert([{
-                telegram_id: userId,
-                message: `❌ *عذراً، تم رفض الميثود المقترح*\n\n📌 *العنوان:* ${title}\n💬 *السبب:* ${reason}`,
-                status: 'pending'
-            }]);
-
-            alert("تم رفض الميثود وإرسال السبب للمستخدم.");
         }
         loadPendingMethods();
         loadPublishedMethods();
     }
 
-    // --- Lightbox Functions ---
     function openLightbox(imgSrc) {
         const img = document.getElementById('lightbox-img');
         img.src = imgSrc;
@@ -1624,24 +1926,14 @@
         currentZoom = 1;
         document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`;
     }
-    function closeLightbox() {
-        document.getElementById('lightbox-modal').style.display = 'none';
-    }
+    function closeLightbox() { document.getElementById('lightbox-modal').style.display = 'none'; }
 
-    // --- 5. مراجعة إثباتات مهام الأدمن ---
     async function loadAdminTaskSubmissions() {
         const div = document.getElementById('admin-task-submissions-list');
         if (!div) return;
         try {
-            let { data: subs, error } = await client
-                .from('task_submissions')
-                .select('*')
-                .eq('status', 'pending')
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-
-            if (!subs || subs.length === 0) {
+            let { data: subs, error } = await client.from('task_submissions').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+            if (error || !subs || subs.length === 0) {
                 div.innerHTML = "✅ لا توجد إثباتات مهام معلقة للمراجعة حالياً.";
                 return;
             }
@@ -1654,20 +1946,15 @@
                     if (tData) taskTitle = `${tData.title} (${tData.reward} نقطة)`;
                 } catch(e){}
 
-                const timeStr = new Date(s.created_at).toLocaleString('ar-EG');
                 div.innerHTML += `
                     <div id="admin-sub-${s.id}" class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
                         <div style="width:100%;">
-                            <b>📌 المهمة:</b> ${taskTitle}<br>
-                            <b>👤 المنفذ ID:</b> <span style="color:var(--neon-blue);">${s.user_id}</span> | <b>الوقت:</b> ${timeStr}<br>
+                            <b>📌 المهمة:</b> ${taskTitle} | <b>👤 المنفذ ID:</b> <span style="color:var(--neon-blue);">${s.user_id}</span><br>
                             <div style="margin: 10px 0; cursor: zoom-in;" onclick="openLightbox('${s.proof_image}')">
-                                <img src="${s.proof_image}" style="max-width:180px; max-height:180px; border-radius:8px; border:1px solid #444;" alt="Proof">
-                                <div style="font-size: 11px; color: var(--neon-blue); margin-top: 3px;">🔍 اضغط لتكبير لقطة الشاشة</div>
+                                <img src="${s.proof_image}" style="max-width:180px; max-height:180px; border-radius:8px; border:1px solid #444;">
                             </div>
                         </div>
-                        <div class="input-group" style="width:100%; margin: 8px 0;">
-                            <input type="text" id="admin-feedback-${s.id}" placeholder="اكتب سبب الرفض (إجباري عند الرفض) أو كلمة شكر...">
-                        </div>
+                        <input type="text" id="admin-feedback-${s.id}" placeholder="سبب الرفض أو ملاحظة...">
                         <div class="actions-box">
                             <button class="approve-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', true)">قبول وصرف النقاط ✅</button>
                             <button class="reject-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', false)">رفض الإثبات ❌</button>
@@ -1675,134 +1962,64 @@
                     </div>
                 `;
             }
-        } catch (e) {
-            console.error("Load admin submissions error:", e);
-            div.innerHTML = "❌ خطأ في تحميل الإثباتات.";
-        }
+        } catch (e) {}
     }
 
     async function reviewAdminSubmission(subId, taskId, userId, isApproved) {
         const feedbackVal = (document.getElementById(`admin-feedback-${subId}`)?.value || "").trim();
+        if (!isApproved && !feedbackVal) return alert("⚠️ اكتب سبب الرفض!");
 
-        if (!isApproved && !feedbackVal) {
-            alert("⚠️ يجب كتابة سبب الرفض في خانة الملاحظات لكي يفهم المستخدم سبب الرفض!");
-            return;
-        }
+        let { data: taskData } = await client.from('tasks').select('*').eq('id', taskId).single();
+        if (!taskData) return;
+        const reward = taskData.reward || 10;
 
-        if (!confirm(isApproved ? "تأكيد قبول الإثبات وصرف النقاط للمنفذ؟" : `تأكيد رفض الإثبات بالسبب: "${feedbackVal}"؟`)) return;
+        if (isApproved) {
+            await client.from('task_submissions').update({ status: 'approved', feedback: feedbackVal || null }).eq('id', subId);
+            try { await client.from('task_completions').insert([{ task_id: parseInt(taskId), user_id: String(userId) }]); } catch (e) {}
 
-        try {
-            let { data: taskData } = await client.from('tasks').select('*').eq('id', taskId).single();
-            if (!taskData) {
-                alert("❌ المهمة غير موجودة!");
-                return;
+            let { data: execUser } = await client.from('users').select('*').eq('telegram_id', String(userId)).maybeSingle();
+            if (execUser) {
+                await client.from('users').update({
+                    points: (execUser.points || 0) + reward,
+                    total_earned: (execUser.total_earned || 0) + reward,
+                    task_earnings: (execUser.task_earnings || 0) + reward,
+                    total_tasks: (execUser.total_tasks || 0) + 1
+                }).eq('telegram_id', String(userId));
             }
 
-            const reward = taskData.reward || 10;
-
-            if (isApproved) {
-                await client.from('task_submissions').update({
-                    status: 'approved',
-                    feedback: feedbackVal || null
-                }).eq('id', subId);
-
-                try {
-                    await client.from('task_completions').insert([{ 
-                        task_id: parseInt(taskId), 
-                        user_id: String(userId) 
-                    }]);
-                } catch (e) {}
-
-                let { data: execUser } = await client.from('users').select('*').eq('telegram_id', String(userId)).maybeSingle();
-                if (execUser) {
-                    const newPoints = (execUser.points || 0) + reward;
-                    const newTotalEarned = (execUser.total_earned || 0) + reward;
-                    const newTaskEarnings = (execUser.task_earnings || 0) + reward;
-                    const newTotalTasks = (execUser.total_tasks || 0) + 1;
-
-                    await client.from('users').update({
-                        points: newPoints,
-                        total_earned: newTotalEarned,
-                        task_earnings: newTaskEarnings,
-                        total_tasks: newTotalTasks
-                    }).eq('telegram_id', String(userId));
-
-                    await client.from('transactions').insert([{
-                        telegram_id: String(userId),
-                        type: 'points',
-                        title: 'مكافأة إتمام مهمة بنجاح',
-                        amount: `+${reward} نقطة`,
-                        status: 'مكتمل'
-                    }]);
-
-                    if (execUser.referred_by && String(execUser.referred_by) !== String(userId)) {
-                        const refBonus = Math.max(1, Math.floor(reward * 0.10));
-                        const { data: refUser } = await client.from('users').select('points, total_earned').eq('telegram_id', String(execUser.referred_by)).maybeSingle();
-                        if (refUser) {
-                            await client.from('users').update({
-                                points: (refUser.points || 0) + refBonus,
-                                total_earned: (refUser.total_earned || 0) + refBonus
-                            }).eq('telegram_id', String(execUser.referred_by));
-                        }
-                    }
-                }
-
-                const newCount = (taskData.completed_count || 0) + 1;
-                const isActive = newCount < taskData.target_count;
-                await client.from('tasks').update({ completed_count: newCount, is_active: isActive }).eq('id', taskId);
-
-                await client.from('bot_messages').insert([{
-                    telegram_id: String(userId),
-                    message: `🎉 *مبروك! تم قبول إثبات المهمة وصرف النقاط* ✅\n\n📌 *المهمة:* ${taskData.title}\n🎁 *النقاط المضافة:* +${reward} نقطة${feedbackVal ? `\n💌 *ملاحظة الأدمن:* ${feedbackVal}` : ''}`,
-                    status: 'pending'
-                }]);
-
-                alert("✅ تم قبول الإثبات وصرف النقاط للمنفذ بنجاح!");
-
-            } else {
-                await client.from('task_submissions').update({
-                    status: 'rejected',
-                    feedback: feedbackVal
-                }).eq('id', subId);
-
-                await client.from('bot_messages').insert([{
-                    telegram_id: String(userId),
-                    message: `❌ *عذراً، تم رفض إثبات المهمة الخاصة بك*\n\n📌 *المهمة:* ${taskData.title}\n💬 *السبب:* ${feedbackVal}\n\nيمكنك مراجعة التفاصيل وإعادة المحاولة.`,
-                    status: 'pending'
-                }]);
-
-                alert("تم رفض الإثبات وإرسال السبب للمستخدم.");
-            }
-
-            loadAdminTaskSubmissions();
-
-        } catch (err) {
-            console.error("Review submission error:", err);
-            alert("❌ حدث خطأ أثناء معالجة الإثبات.");
+            await client.from('bot_messages').insert([{
+                telegram_id: String(userId),
+                message: `🎉 *تم قبول إثبات المهمة (${taskData.title}) وإضافة +${reward} نقطة!* ✅`,
+                status: 'pending'
+            }]);
+        } else {
+            await client.from('task_submissions').update({ status: 'rejected', feedback: feedbackVal }).eq('id', subId);
+            await client.from('bot_messages').insert([{
+                telegram_id: String(userId),
+                message: `❌ *تم رفض إثبات المهمة (${taskData.title}):* ${feedbackVal}`,
+                status: 'pending'
+            }]);
         }
+        loadAdminTaskSubmissions();
     }
 
-    // --- 6. مهام المستخدمين المعلقة ---
     async function loadPendingTasks() {
         const div = document.getElementById('pending-tasks-list');
         if (!div) return;
         let { data, error } = await client.from('tasks').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+        if (error) return;
 
         div.innerHTML = data.length === 0 ? "✅ لا توجد مهام جديدة تنتظر المراجعة." : "";
         data.forEach(t => {
             div.innerHTML += `
                 <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
                     <div style="width:100%;">
-                        <b>📌 العنوان:</b> ${t.title} (${t.platform || 'telegram'})<br>
-                        <b>👤 صاحب المهمة ID:</b> <span style="color:var(--neon-blue);">${t.creator_id || t.user_id}</span><br>
-                        <b>💰 مكافأة العضو:</b> ${t.reward} نقطة | <b>العدد المطلوب:</b> ${t.target_count || 10}<br>
-                        <b>🔗 الرابط:</b> <a href="${t.url}" target="_blank" style="color:var(--neon-blue);">${t.url}</a><br>
-                        <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0;">${t.description || 'بلا وصف'}</div>
+                        <b>📌 العنوان:</b> ${t.title} | <b>👤 صاحب المهمة:</b> ${t.creator_id || t.user_id}<br>
+                        <b>💰 المكافأة:</b> ${t.reward} ن | <b>🔗 الرابط:</b> <a href="${t.url}" target="_blank" style="color:var(--neon-blue);">${t.url}</a>
                     </div>
                     <div class="actions-box">
                         <button class="approve-btn" onclick="reviewUserTask(${t.id}, '${t.creator_id || t.user_id}', '${escapeQuote(t.title)}', true)">موافقة ونشر ✅</button>
-                        <button class="reject-btn" onclick="reviewUserTask(${t.id}, '${t.creator_id || t.user_id}', '${escapeQuote(t.title)}', false)">رفض واسترداد النقاط ❌</button>
+                        <button class="reject-btn" onclick="reviewUserTask(${t.id}, '${t.creator_id || t.user_id}', '${escapeQuote(t.title)}', false)">رفض واسترداد ❌</button>
                     </div>
                 </div>`;
         });
@@ -1810,53 +2027,20 @@
 
     async function reviewUserTask(id, creatorId, title, isApproved) {
         if (isApproved) {
-            const { error } = await client.from('tasks').update({ status: 'Approved', is_active: true }).eq('id', id);
-            if (error) { alert("خطأ: " + error.message); return; }
-
-            if (creatorId && creatorId !== 'ADMIN') {
-                await client.from('bot_messages').insert([{
-                    telegram_id: creatorId,
-                    message: `🎉 *مبارك! تم قبول ونشر مهمتك بنجاح* ✅\n\n📌 *المهمة:* ${title}`,
-                    status: 'pending'
-                }]);
-            }
-            alert("تمت الموافقة على المهمة ونشرها بنجاح! 🚀");
+            await client.from('tasks').update({ status: 'Approved', is_active: true }).eq('id', id);
         } else {
-            const reason = prompt("أدخل سبب رفض المهمة (ليظهر للمستخدم في البوت):", "المخالفة لشروط وقواعد المنصة");
+            const reason = prompt("سبب رفض المهمة:", "مخالفة الشروط");
             if (reason === null) return;
-
-            let { data: taskData } = await client.from('tasks').select('*').eq('id', id).single();
-            if (taskData) {
-                const refundPoints = (taskData.cost_per_user || taskData.reward || 10) * (taskData.target_count || 10);
-                if (refundPoints > 0 && creatorId && creatorId !== 'ADMIN') {
-                    let { data: userDat } = await client.from('users').select('points').eq('telegram_id', creatorId).maybeSingle();
-                    if (userDat) {
-                        const refundedBal = (userDat.points || 0) + refundPoints;
-                        await client.from('users').update({ points: refundedBal }).eq('telegram_id', creatorId);
-                    }
-                }
-            }
-
             await client.from('tasks').update({ status: 'Rejected' }).eq('id', id);
-
-            if (creatorId && creatorId !== 'ADMIN') {
-                await client.from('bot_messages').insert([{
-                    telegram_id: creatorId,
-                    message: `❌ *عذراً، تم رفض مهمتك المقترحة*\n\n📌 *المهمة:* ${title}\n💬 *السبب:* ${reason}\n💰 تم استرداد نقاط التكلفة إلى رصيدك.`,
-                    status: 'pending'
-                }]);
-            }
-            alert("تم رفض المهمة واسترداد النقاط لصاحبها.");
         }
         loadPendingTasks();
         loadTasks();
     }
 
-    // --- 7. المهام النشطة ---
     async function loadTasks() {
         const div = document.getElementById('tasks-list');
         let { data, error } = await client.from('tasks').select('*').eq('status', 'Approved').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+        if (error) return;
         
         div.innerHTML = data.length === 0 ? "📭 لا توجد مهام نشطة." : "";
         data.forEach(t => {
@@ -1864,10 +2048,10 @@
                 <div class="item-row task-row" style="width:100%; box-sizing:border-box;">
                     <div>
                         <b>${t.title}</b> (${t.platform || 'telegram'})<br>
-                        <span class="info-text">💰 ${t.reward} نقطة | 🔗 <a href="${t.link || t.url}" target="_blank" style="color:var(--neon-blue)">رابط المهمة</a></span>
+                        <span class="info-text">💰 ${t.reward} نقطة</span>
                     </div>
                     <div style="display:flex; gap:8px;">
-                        <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link || t.url)}', ${t.reward}, ${t.target_count || 10})">تعديل بالكامل ✏️</button>
+                        <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link || t.url)}', ${t.reward}, ${t.target_count || 10})">تعديل ✏️</button>
                         <button class="del-btn" onclick="deleteTask(${t.id})">حذف 🗑️</button>
                     </div>
                 </div>`;
@@ -1883,9 +2067,7 @@
         document.getElementById('edit-task-modal').style.display = 'flex';
     }
 
-    function closeEditTaskModal() {
-        document.getElementById('edit-task-modal').style.display = 'none';
-    }
+    function closeEditTaskModal() { document.getElementById('edit-task-modal').style.display = 'none'; }
 
     async function saveEditedTask() {
         const id = document.getElementById('edit-t-id').value;
@@ -1894,18 +2076,9 @@
         const reward = parseInt(document.getElementById('edit-t-reward').value) || 10;
         const target = parseInt(document.getElementById('edit-t-target').value) || 10;
 
-        if (!title || !link) return alert("يرجى ملء العنوان والرابط!");
-
-        const { error } = await client.from('tasks').update({
-            title, link, url: link, reward, target_count: target
-        }).eq('id', id);
-
-        if (error) alert("فشل الحفظ: " + error.message);
-        else {
-            alert("تم تحديث المهمة بنجاح! ✨");
-            closeEditTaskModal();
-            loadTasks();
-        }
+        await client.from('tasks').update({ title, link, url: link, reward, target_count: target }).eq('id', id);
+        closeEditTaskModal();
+        loadTasks();
     }
 
     async function addTask() {
@@ -1913,27 +2086,14 @@
         const title = document.getElementById('task-title').value.trim();
         const link = document.getElementById('task-link').value.trim();
         const reward = parseInt(document.getElementById('task-reward').value);
-        if(!title || !link || isNaN(reward)) return alert("املأ كافة الخانات وبصورة صحيحة!");
+        if(!title || !link || isNaN(reward)) return alert("املأ كافة الخانات!");
 
-        const { error } = await client.from('tasks').insert([{ 
-            platform: platform,
-            title: title, 
-            url: link, 
-            link: link, 
-            channel_id: platform === 'telegram' ? link : null,
-            reward: reward, 
-            status: 'Approved', 
-            target_count: 100,
-            completed_count: 0,
-            is_active: true 
+        await client.from('tasks').insert([{ 
+            platform, title, url: link, link, channel_id: platform === 'telegram' ? link : null,
+            reward, status: 'Approved', target_count: 100, completed_count: 0, is_active: true 
         }]);
-
-        if (error) alert("خطأ: " + error.message);
-        else { 
-            await broadcastToAllUsers("📋 مهمة جديدة للربح!", `تم نشر مهمة جديدة: ${title} - اربح ${reward} نقطة فوراً!`);
-            alert("تم نشر المهمة فوراً وإرسال الإشعارات! 🚀"); 
-            location.reload(); 
-        }
+        alert("تم نشر المهمة فوراً! 🚀"); 
+        location.reload(); 
     }
 
     async function deleteTask(id) {
@@ -1942,43 +2102,14 @@
         loadTasks();
     }
 
-    // --- 8. طلبات السحب (الأرشيف) ---
-    async function loadWithdrawals() {
-        const div = document.getElementById('withdraw-list');
-        let { data, error } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
-        
-        if (error) { div.innerHTML = "❌ خطأ"; return; }
-        
-        div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات سحب معلقة." : "";
-        data.forEach(w => {
-            div.innerHTML += `
-                <div class="item-row withdraw-row" style="width:100%; box-sizing:border-box;">
-                    <div style="text-align:right; width:100%;">
-                        <b>🆔 المعاملة:</b> <span style="color:var(--neon-blue)">${w.tx_id || 'N/A'}</span> | <b>ID:</b> ${w.telegram_id}<br>
-                        <b>💰 المبلغ:</b> ${w.amount.toLocaleString()} نقطة | <b>وسيلة:</b> ${w.method}<br>
-                        <b>📱 الحساب:</b> <span style="color:var(--main-green)">${w.wallet_info}</span>
-                    </div>
-                    <button class="approve-btn" style="width:100%; margin-top:10px;" onclick="approveWithdraw('${w.id}', '${w.telegram_id}', '${w.tx_id || ""}', '${w.amount}', '${w.method}', '${w.wallet_info}')">تم التحويل وإرسال الفاتورة ✅</button>
-                </div>`;
-        });
-    }
-
-    async function approveWithdraw(id, telegramId, txId, amount, method, wallet) {
-        if(!confirm("تأكيد التحويل؟")) return;
-        await client.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
-        await client.from('bot_messages').insert([{
-            telegram_id: telegramId,
-            message: `🎉 *تم تحويل أرباحك بنجاح!* ✅\n💰 المبلغ: ${parseInt(amount).toLocaleString()} نقطة`,
-            status: 'pending'
-        }]);
-        loadWithdrawals();
-    }
-
     async function initAdminData() {
         generateNewProductCode();
-        await loadStoreProductsList(); // يجب تحميل المنتجات أولاً لبناء خريطة الموردين والأكواد
+        await loadStoreProductsList();
         await loadStoreOrders();
         loadPendingStoreProducts();
+        loadWithdrawals();
+        loadMethods();
+        loadSupportTickets();
         loadDepositMethods();
         loadDepositsRequests();
         loadPublishedMethods();
@@ -1986,8 +2117,6 @@
         loadTasks();
         loadPendingTasks();
         loadAdminTaskSubmissions();
-        loadMethods();
-        loadWithdrawals();
     }
 
     window.onload = () => {
