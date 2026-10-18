@@ -3,8 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>MegaTask - لوحة التحكم الإدارية والوساطة المالية</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- تحميل مكتبة Supabase من مصدرين لضمان عدم توقفها على أي شبكة -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        if (typeof window.supabase === 'undefined') {
+            document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
+        }
+    </script>
+
     <style>
         :root { 
             --neon-purple: #bc13fe; 
@@ -101,6 +110,21 @@
             border-radius: 24px; padding: 30px 22px; width: 100%; max-width: 360px;
             text-align: center; box-shadow: 0 0 40px rgba(0, 242, 255, 0.15);
         }
+        .pass-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .btn-toggle-eye {
+            position: absolute;
+            left: 10px;
+            background: none;
+            border: none;
+            color: var(--neon-blue);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
 
         /* النوافذ المنبثقة */
         .admin-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
@@ -141,8 +165,11 @@
         <div style="font-size: 48px; margin-bottom: 10px;">🛡️</div>
         <h2 style="color: var(--neon-blue); margin: 0 0 8px 0;">منطقة محمية للإدارة</h2>
         <p style="font-size: 12px; color: #9ca3af; margin-bottom: 18px;">أدخل كلمة المرور الخاصة بالأدمن لفتح لوحة التحكم:</p>
-        <input type="password" id="admin-pin-input" placeholder="كلمة المرور السرية..." style="text-align: center; font-size: 16px;" onkeydown="if(event.key==='Enter') unlockAdminPanel()">
-        <button class="method-btn" onclick="unlockAdminPanel()">🔓 فتح لوحة التحكم</button>
+        <div class="pass-wrapper">
+            <input type="password" id="admin-pin-input" placeholder="كلمة المرور السرية..." style="text-align: center; font-size: 16px; padding-left: 40px;" onkeydown="if(event.key==='Enter') unlockAdminPanel()">
+            <button type="button" class="btn-toggle-eye" onclick="togglePassVisibility()" title="إظهار/إخفاء">👁️</button>
+        </div>
+        <button type="button" class="method-btn" onclick="unlockAdminPanel()">🔓 فتح لوحة التحكم</button>
         <div id="lock-error-msg" style="color: var(--red); font-size: 12px; margin-top: 10px; display: none;">❌ كلمة المرور غير صحيحة!</div>
     </div>
 </div>
@@ -423,7 +450,7 @@
     </div>
 </div>
 
-<!-- 💬 نافذة مراقبة شات غرفة الوساطة والفصل في النزاعات (Admin Deal Chat Modal) -->
+<!-- 💬 نافذة مراقبة شات غرفة الوساطة والفصل في النزاعات -->
 <div id="admin-deal-chat-modal" class="admin-modal">
     <div class="admin-modal-content" style="border-color: var(--gold);">
         <h3 style="color: var(--gold); margin-top: 0;" id="adm-dr-title">⚖️ غرفة مراقبة الصفقة وفض النزاع</h3>
@@ -555,43 +582,64 @@
 </div>
 
 <script>
+    // =========================================================================
+    // 🔒 نظام قفل وفتح اللوحة الآمن (يفتح اللوحة فوراً بدون أي تعطيل)
+    // =========================================================================
     const ADMIN_SECRET_PASS = "Mostafa@2026";
+    const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
+    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
+
+    let client = null;
+    function getDbClient() {
+        if (client) return client;
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+            client = window.supabase.createClient(S_URL, S_KEY);
+        }
+        return client;
+    }
+
+    function togglePassVisibility() {
+        const inp = document.getElementById('admin-pin-input');
+        inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    function showDashboardNow() {
+        document.getElementById('lock-error-msg').style.display = 'none';
+        document.getElementById('admin-lock-screen').style.display = 'none';
+        document.getElementById('main-admin-container').style.display = 'block';
+        initAdminData();
+    }
 
     function checkAdminSession() {
-        const savedPass = sessionStorage.getItem("megatask_admin_pass");
-        if (savedPass === ADMIN_SECRET_PASS) {
-            document.getElementById('admin-lock-screen').style.display = 'none';
-            document.getElementById('main-admin-container').style.display = 'block';
-            initAdminData();
-        }
+        try {
+            const savedPass = sessionStorage.getItem("megatask_admin_pass") || localStorage.getItem("megatask_admin_pass");
+            if (savedPass && savedPass.toLowerCase() === ADMIN_SECRET_PASS.toLowerCase()) {
+                showDashboardNow();
+            }
+        } catch (e) {}
     }
 
     function unlockAdminPanel() {
-        const val = document.getElementById('admin-pin-input').value.trim();
-        if (val === ADMIN_SECRET_PASS) {
-            sessionStorage.setItem("megatask_admin_pass", val);
-            document.getElementById('lock-error-msg').style.display = 'none';
-            document.getElementById('admin-lock-screen').style.display = 'none';
-            document.getElementById('main-admin-container').style.display = 'block';
-            initAdminData();
+        const inp = document.getElementById('admin-pin-input');
+        const val = (inp ? inp.value : "").trim();
+        // يقبل الباسورد سواء بحرف M كبير أو صغير لتجنب مشاكل كيبورد الموبايل
+        if (val.toLowerCase() === ADMIN_SECRET_PASS.toLowerCase()) {
+            try { sessionStorage.setItem("megatask_admin_pass", ADMIN_SECRET_PASS); } catch (e) {}
+            showDashboardNow();
         } else {
             document.getElementById('lock-error-msg').style.display = 'block';
         }
     }
 
     function logoutAdmin() {
-        sessionStorage.removeItem("megatask_admin_pass");
+        try {
+            sessionStorage.removeItem("megatask_admin_pass");
+            localStorage.removeItem("megatask_admin_pass");
+        } catch (e) {}
         location.reload();
     }
 
-    const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
-    
-    const { createClient } = supabase;
-    const client = createClient(S_URL, S_KEY);
-
     let adminMethodBase64 = "";
-    let withdrawLogoBase64 = "";
     let depositLogoBase64 = "";
     let storeFileBase64 = "";
     let editStoreNewFile = "";
@@ -632,7 +680,7 @@
     // =========================================================================
     // 🔍 رادار البحث الذكي بالأكواد
     // =========================================================================
-    async function runSmartCodeSearch() {
+    function runSmartCodeSearch() {
         const q = (document.getElementById('global-code-search').value || "").trim().toLowerCase();
         const resDiv = document.getElementById('smart-search-results');
 
@@ -734,10 +782,13 @@
     // 👤 0. إدارة حسابات المستخدمين وفك الحظر (3 محافظ: شراء / تاجر / نقاط)
     // =========================================================================
     async function searchUserWallet() {
+        const db = getDbClient();
+        if (!db) return alert("مكتبة قاعدة البيانات قيد التحميل، حاول بعد ثانية.");
+
         const uid = document.getElementById('search-user-id').value.trim();
         if (!uid) return alert("أدخل ID المستخدم أولاً!");
 
-        const { data: user, error } = await client.from('users').select('*').eq('telegram_id', uid).maybeSingle();
+        const { data: user, error } = await db.from('users').select('*').eq('telegram_id', uid).maybeSingle();
         const box = document.getElementById('user-wallet-result');
         const info = document.getElementById('user-wallet-info');
         const banBtn = document.getElementById('btn-toggle-ban');
@@ -766,11 +817,12 @@
     }
 
     async function toggleUserBanStatus() {
-        if (!searchedUserObj) return;
+        const db = getDbClient();
+        if (!searchedUserObj || !db) return;
         const newBanState = !(searchedUserObj.is_banned === true);
         if (!confirm(newBanState ? "🚫 هل تريد حظر هذا الحساب؟" : "🟢 هل تريد فك الحظر عن هذا الحساب؟")) return;
 
-        const { error } = await client.from('users').update({ is_banned: newBanState }).eq('telegram_id', searchedUserObj.telegram_id);
+        const { error } = await db.from('users').update({ is_banned: newBanState }).eq('telegram_id', searchedUserObj.telegram_id);
         if (!error) {
             alert(newBanState ? "🚫 تم حظر الحساب." : "✅ تم فك الحظر عن الحساب بنجاح!");
             searchUserWallet();
@@ -778,7 +830,8 @@
     }
 
     async function applyUserWalletAdjustment() {
-        if (!searchedUserObj) return;
+        const db = getDbClient();
+        if (!searchedUserObj || !db) return;
         const currency = document.getElementById('wallet-adjust-currency').value;
         const amount = parseFloat(document.getElementById('wallet-adjust-amount').value);
         const reason = document.getElementById('wallet-adjust-reason').value.trim();
@@ -804,11 +857,11 @@
             msgCurrencyText = `${Math.abs(ptsDelta).toLocaleString()} نقطة`;
         }
 
-        const { error } = await client.from('users').update(updatePayload).eq('telegram_id', searchedUserObj.telegram_id);
+        const { error } = await db.from('users').update(updatePayload).eq('telegram_id', searchedUserObj.telegram_id);
         if (error) return alert("خطأ أثناء التحديث: " + error.message);
 
         const actionWord = amount > 0 ? "إضافة" : "خصم";
-        await client.from('bot_messages').insert([{
+        await db.from('bot_messages').insert([{
             telegram_id: String(searchedUserObj.telegram_id),
             message: `🔔 *تحديث في رصيد حسابك*\n\nتم ${actionWord} *${msgCurrencyText}* ${amount > 0 ? 'إلى' : 'من'} حسابك بواسطة الإدارة.${reason ? `\n💬 *ملاحظة:* ${reason}` : ''}`,
             status: 'pending'
@@ -821,8 +874,10 @@
     }
 
     async function broadcastToAllUsers(title, messageText) {
+        const db = getDbClient();
+        if (!db) return;
         try {
-            const { data: allUsers, error } = await client.from('users').select('telegram_id');
+            const { data: allUsers, error } = await db.from('users').select('telegram_id');
             if (error || !allUsers || allUsers.length === 0) return;
 
             const notifications = allUsers.map(u => ({
@@ -839,8 +894,8 @@
                 status: 'pending'
             }));
 
-            await client.from('user_notifications').insert(notifications);
-            await client.from('bot_messages').insert(botMessages);
+            await db.from('user_notifications').insert(notifications);
+            await db.from('bot_messages').insert(botMessages);
         } catch (e) {}
     }
 
@@ -917,34 +972,31 @@
     }
 
     async function addAdminMethod() {
+        const db = getDbClient();
         const title = document.getElementById('admin-method-title').value.trim();
         const content = document.getElementById('admin-method-content').value.trim();
         const unlockCost = parseInt(document.getElementById('admin-method-cost').value) || 50;
 
         if (!title || !content) return alert("يرجى كتابة العنوان والشرح للميثود!");
 
-        const { error } = await client.from('methods').insert([{
-            user_id: 'ADMIN',
-            title: title,
-            content: content,
-            image_url: adminMethodBase64 || null,
-            status: 'Approved',
-            points_awarded: 0,
-            unlock_cost: unlockCost
+        const { error } = await db.from('methods').insert([{
+            user_id: 'ADMIN', title, content, image_url: adminMethodBase64 || null,
+            status: 'Approved', points_awarded: 0, unlock_cost: unlockCost
         }]);
 
         if (error) alert("خطأ أثناء النشر: " + error.message);
         else { 
             await broadcastToAllUsers("🔓 ميثود رسمية جديدة!", `تم نشر ميثود جديدة: ${title} - تفقد قسم الميثودات الآن!`);
-            alert("تم نشر الميثود الرسمية بنجاح وإرسال الإشعارات! 🚀"); 
-            location.reload(); 
+            alert("تم نشر الميثود الرسمية بنجاح! 🚀"); 
+            loadPublishedMethods();
         }
     }
 
     // =========================================================================
-    // 🛍️ المتجر الرسمي وصفقات الوساطة
+    // 🛍️ المتجر الرسمي وصفقات الوساطة (تحميل سريع بدون حلقات انتظار)
     // =========================================================================
     async function addStoreProduct() {
+        const db = getDbClient();
         const category = document.getElementById('store-cat').value;
         const currency = document.getElementById('store-currency').value;
         const productCode = (document.getElementById('store-code').value || "").trim() || ("PRD-" + Math.floor(1000 + Math.random() * 9000));
@@ -959,21 +1011,11 @@
 
         if (!title || isNaN(price) || price <= 0) return alert("يرجى ملء العنوان والسعر الأساسي للمنتج!");
 
-        const { error } = await client.from('store_products').insert([{
-            creator_id: 'ADMIN',
-            product_code: productCode,
-            category,
-            currency,
-            title,
-            description,
-            price,
-            supplier_cost: supplierCost,
-            supplier_name: supplierName || "مورد الأدمن",
-            supplier_notes: supplierNotes || null,
-            link,
-            target_count: target,
-            image_url: storeFileBase64 || null,
-            status: 'Approved'
+        const { error } = await db.from('store_products').insert([{
+            creator_id: 'ADMIN', product_code: productCode, category, currency, title, description,
+            price, supplier_cost: supplierCost, supplier_name: supplierName || "مورد الأدمن",
+            supplier_notes: supplierNotes || null, link, target_count: target,
+            image_url: storeFileBase64 || null, status: 'Approved'
         }]);
 
         if (error) alert("خطأ: " + error.message);
@@ -981,27 +1023,43 @@
             const unitLabel = currency === 'egp' ? 'ج.م' : 'نقطة';
             await broadcastToAllUsers("🛍️ منتج جديد في المتجر", `تم توفير منتج جديد: ${title} بسعر ${price.toLocaleString()} ${unitLabel}`);
             alert(`✅ تم نشر المنتج بنجاح بكود (${productCode})!`); 
-            location.reload(); 
+            loadStoreAndOrdersFast();
         }
     }
 
-    async function loadStoreProductsList() {
-        const div = document.getElementById('store-products-list');
-        if (!div) return;
-        let { data, error } = await client.from('store_products').select('*').order('id', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+    // تحميل المنتجات والطلبات معاً في طلب واحد سريع دون تجميد المتصفح
+    async function loadStoreAndOrdersFast() {
+        const db = getDbClient();
+        if (!db) return;
 
-        cachedAllProducts = data || [];
+        const [prodRes, ordRes] = await Promise.all([
+            db.from('store_products').select('*').order('id', { ascending: false }),
+            db.from('store_orders').select('*').order('id', { ascending: false })
+        ]);
+
+        cachedAllProducts = prodRes.data || [];
+        cachedAllOrders = ordRes.data || [];
         cachedStoreProductsMap = {};
         cachedAllProducts.forEach(p => { cachedStoreProductsMap[p.id] = p; });
 
-        const approvedProducts = cachedAllProducts.filter(p => p.status === 'Approved');
-        div.innerHTML = approvedProducts.length === 0 ? "📭 لا توجد منتجات منشورة في المتجر." : "";
-        
-        for (let p of approvedProducts) {
-            let { data: orders } = await client.from('store_orders').select('id').eq('product_id', p.id);
-            let soldCount = orders ? orders.length : 0;
+        renderStoreProductsListUI();
+        renderPendingStoreProductsUI();
+        renderStoreOrdersAndDisputesUI();
+    }
 
+    function renderStoreProductsListUI() {
+        const div = document.getElementById('store-products-list');
+        if (!div) return;
+
+        const approvedProducts = cachedAllProducts.filter(p => p.status === 'Approved');
+        if (approvedProducts.length === 0) {
+            div.innerHTML = "📭 لا توجد منتجات منشورة في المتجر.";
+            return;
+        }
+
+        let html = "";
+        approvedProducts.forEach(p => {
+            const soldCount = cachedAllOrders.filter(o => Number(o.product_id) === Number(p.id)).length;
             const isEgp = p.currency === 'egp';
             const unit = isEgp ? 'ج.م' : 'نقطة';
             const pCode = p.product_code || `PRD-${p.id}`;
@@ -1014,7 +1072,7 @@
                 ? `<span class="currency-badge-egp">💵 ${p.price} ج.م</span>` 
                 : `<span class="currency-badge-pts">🪙 ${Number(p.price).toLocaleString()} نقطة</span>`;
 
-            div.innerHTML += `
+            html += `
                 <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
                     <div style="width:100%;">
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
@@ -1033,7 +1091,8 @@
                         <button class="del-btn" onclick="deleteStoreProductItem(${p.id})">حذف 🗑️</button>
                     </div>
                 </div>`;
-        }
+        });
+        div.innerHTML = html;
     }
 
     function openEditStoreModal(id) {
@@ -1061,6 +1120,7 @@
     }
 
     async function saveEditedStoreProduct() {
+        const db = getDbClient();
         const id = document.getElementById('edit-s-id').value;
         const productCode = document.getElementById('edit-s-code').value.trim();
         const title = document.getElementById('edit-s-title').value.trim();
@@ -1082,37 +1142,40 @@
         };
         if (editStoreNewFile) updateData.image_url = editStoreNewFile;
 
-        const { error } = await client.from('store_products').update(updateData).eq('id', id);
+        const { error } = await db.from('store_products').update(updateData).eq('id', id);
         if (error) alert("فشل الحفظ: " + error.message);
         else {
             alert("تم تحديث المنتج بنجاح! ✨");
             closeEditStoreModal();
-            await loadStoreProductsList();
-            await loadStoreOrders();
+            loadStoreAndOrdersFast();
         }
     }
 
     async function deleteStoreProductItem(id) {
+        const db = getDbClient();
         if (!confirm("حذف هذا المنتج نهائياً من المتجر؟")) return;
-        await client.from('store_products').delete().eq('id', id);
-        loadStoreProductsList();
+        await db.from('store_products').delete().eq('id', id);
+        loadStoreAndOrdersFast();
     }
 
-    // --- سلع التجار المعلقة للمراجعة (عمولة البوت 15% وحصة البائع 85%) ---
-    async function loadPendingStoreProducts() {
+    function renderPendingStoreProductsUI() {
         const div = document.getElementById('pending-store-list');
         if (!div) return;
-        let { data, error } = await client.from('store_products').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+        const pendingList = cachedAllProducts.filter(p => p.status === 'Pending');
 
-        div.innerHTML = data.length === 0 ? "✅ لا توجد سلع تجار جديدة تنتظر المراجعة." : "";
-        data.forEach(p => {
+        if (pendingList.length === 0) {
+            div.innerHTML = "✅ لا توجد سلع تجار جديدة تنتظر المراجعة.";
+            return;
+        }
+
+        let html = "";
+        pendingList.forEach(p => {
             const unitLabel = p.currency === 'egp' ? 'ج.م' : 'نقطة';
             const pCode = p.product_code || `PRD-${p.id}`;
             const sellerPayout = (Number(p.price) * 0.85).toFixed(2);
             const botCommission = (Number(p.price) * 0.15).toFixed(2);
 
-            div.innerHTML += `
+            html += `
                 <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
                     <div style="width:100%;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -1134,13 +1197,15 @@
                     </div>
                 </div>`;
         });
+        div.innerHTML = html;
     }
 
     async function reviewStoreProduct(id, creatorId, title, pCode, isApproved) {
+        const db = getDbClient();
         if (isApproved) {
-            await client.from('store_products').update({ status: 'Approved', product_code: pCode }).eq('id', id);
+            await db.from('store_products').update({ status: 'Approved', product_code: pCode }).eq('id', id);
             if (creatorId && creatorId !== 'ADMIN') {
-                await client.from('bot_messages').insert([{
+                await db.from('bot_messages').insert([{
                     telegram_id: creatorId,
                     message: `🎉 *مبارك! تم قبول ونشر سلعتك في المتجر بنظام الضمان (Escrow)*\n\n📦 *السلعة:* ${title}\n🆔 *كود المنتج:* \`${pCode}\`\n💼 عند كل عملية شراء، يُحجز المبلغ في خزنة الضمان وتستلم صافي ربحك (85%) فور تسليم المشتري!`,
                     status: 'pending'
@@ -1150,48 +1215,37 @@
         } else {
             const reason = prompt("سبب الرفض (ليظهر للتاجر في البوت):", "المخالفة لشروط المتجر");
             if (reason === null) return;
-            await client.from('store_products').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
+            await db.from('store_products').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
             if (creatorId && creatorId !== 'ADMIN') {
-                await client.from('bot_messages').insert([{
+                await db.from('bot_messages').insert([{
                     telegram_id: creatorId,
                     message: `❌ *عذراً، تم رفض سلعتك المقترحة*\n\n📦 *السلعة:* ${title}\n💬 *السبب:* ${reason}`,
                     status: 'pending'
                 }]);
             }
         }
-        await loadStoreProductsList();
-        await loadPendingStoreProducts();
+        loadStoreAndOrdersFast();
     }
 
     // =========================================================================
-    // ⚖️🛒 إدارة صفقات الوساطة والطلبات الجارية + فض النزاعات والشات
+    // ⚖️🛒 عرض الطلبات وصفقات الضمان والنزاعات
     // =========================================================================
-    async function loadStoreOrders() {
+    function renderStoreOrdersAndDisputesUI() {
         const ordersDiv = document.getElementById('store-orders-list');
         const disputesDiv = document.getElementById('escrow-disputes-list');
-        if (!ordersDiv) return;
 
-        let { data: allOrd, error } = await client.from('store_orders').select('*').order('id', { ascending: false });
-        if (error) { ordersDiv.innerHTML = "❌ خطأ في الجلب"; return; }
-
-        cachedAllOrders = allOrd || [];
-
-        // 1. فصل النزاعات المفتوحة (Disputed) في الكارت العلوي الخاص بها
         const disputedOrders = cachedAllOrders.filter(o => o.status === 'Disputed');
         if (disputesDiv) {
-            if (disputedOrders.length === 0) {
-                disputesDiv.innerHTML = "✅ لا توجد أي نزاعات مفتوحة بين البائعين والمشترين حالياً.";
-            } else {
-                disputesDiv.innerHTML = disputedOrders.map(o => renderOrderCardHTML(o, true)).join("");
-            }
+            disputesDiv.innerHTML = disputedOrders.length === 0
+                ? "✅ لا توجد أي نزاعات مفتوحة بين البائعين والمشترين حالياً."
+                : disputedOrders.map(o => renderOrderCardHTML(o, true)).join("");
         }
 
-        // 2. عرض الطلبات وصفقات الضمان النشطة (Pending, Escrow_Held, Delivered, Disputed)
         const activeOrders = cachedAllOrders.filter(o => ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'].includes(o.status));
-        if (activeOrders.length === 0) {
-            ordersDiv.innerHTML = "✅ لا توجد طلبات أو صفقات ضمان معلقة حالياً.";
-        } else {
-            ordersDiv.innerHTML = activeOrders.map(o => renderOrderCardHTML(o, false)).join("");
+        if (ordersDiv) {
+            ordersDiv.innerHTML = activeOrders.length === 0
+                ? "✅ لا توجد طلبات أو صفقات ضمان معلقة حالياً."
+                : activeOrders.map(o => renderOrderCardHTML(o, false)).join("");
         }
     }
 
@@ -1220,15 +1274,17 @@
             <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start; border-right-color:${isDisputeHighlight ? 'var(--red)' : 'var(--main-green)'};">
                 <div style="width:100%;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-                        <span>🆔 كود الصفقة: <span class="code-pill" onclick="copyCodeText('${oCode}')">${oCode} 📋</span> | 📦 المنتج: <span class="code-pill">${pCode}</span></span>${statusBadge}
+                        <span>🆔 كود الصفقة: <span class="code-pill" onclick="copyCodeText('${oCode}')">${oCode} 📋</span> | 📦 المنتج: <span class="code-pill">${pCode}</span></span>
+                        ${statusBadge}
                     </div>
-                    <b>🛒 العنوان:</b> ${escapeHtml(o.product_title)} \vert{} <b>💰 المبلغ المحجوز:</b> ${paidBadge}<br>
+                    <b>🛒 العنوان:</b> ${escapeHtml(o.product_title)} | <b>💰 المبلغ المحجوز:</b> ${paidBadge}<br>
                     <b>👤 المشتري ID:</b> <span style="color:var(--neon-blue)">${o.user_id}</span> | 
                     <b>🏷️ البائع ID:</b> <span style="color:var(--gold)">${sellerId}</span><br>
                     <b>📱 بيانات المشتري:</b> <span style="color:var(--main-green); font-weight:bold;">${escapeHtml(o.buyer_input)}</span>
 
                     <div class="supplier-secret-box">
-                        💵 <b>الحسبة المالية:</b> إجمالي الصفقة: <b>${o.price_paid} ${unit}</b> \vert{}${isUserSeller ? `صافي التاجر عند التحرير: <b>${netSeller} ${unit}</b>` : `التكلفة عليك: <b>${costOnAdmin} ${unit}</b>`} | 
+                        💵 <b>الحسبة المالية:</b> إجمالي الصفقة: <b>${o.price_paid} ${unit}</b> | 
+                        ${isUserSeller ? `صافي التاجر عند التحرير: <b>${netSeller} ${unit}</b>` : `التكلفة عليك: <b>${costOnAdmin} ${unit}</b>`} | 
                         <span class="profit-highlight">🔥 صافي عمولتك/ربحك: +${netAdminProfit.toFixed(2)}${unit}</span>
                     </div>
                 </div>
@@ -1241,9 +1297,9 @@
         `;
     }
 
-    // نافذة قراءة شات الصفقة وإرسال رسالة رسمية من الإدارة
     async function openAdminDealChatModal(orderId) {
-        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        const db = getDbClient();
+        const { data: ord } = await db.from('store_orders').select('*').eq('id', orderId).maybeSingle();
         if (!ord) return alert("تعذر العثور على الصفقة.");
 
         activeAdminDealObj = ord;
@@ -1276,7 +1332,8 @@
     }
 
     async function sendAdminMessageInDeal() {
-        if (!activeAdminDealObj) return;
+        const db = getDbClient();
+        if (!activeAdminDealObj || !db) return;
         const inp = document.getElementById('adm-dr-msg-inp');
         const txt = inp.value.trim();
         if (!txt) return;
@@ -1291,13 +1348,13 @@
         });
 
         inp.value = "";
-        await client.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
+        await db.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
 
-        // إشعار المشتري والبائع برسالة الإدارة
-        await client.from('bot_messages').insert([
-            { telegram_id: String(ord.user_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' },
-            ...(ord.seller_id && ord.seller_id !== 'ADMIN' ? [{ telegram_id: String(ord.seller_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' }] : [])
-        ]);
+        const toNotify = [{ telegram_id: String(ord.user_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' }];
+        if (ord.seller_id && ord.seller_id !== 'ADMIN') {
+            toNotify.push({ telegram_id: String(ord.seller_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' });
+        }
+        await db.from('bot_messages').insert(toNotify);
 
         openAdminDealChatModal(ord.id);
     }
@@ -1315,7 +1372,8 @@
     }
 
     async function completeStoreOrder(orderId) {
-        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        const db = getDbClient();
+        const { data: ord } = await db.from('store_orders').select('*').eq('id', orderId).maybeSingle();
         if (!ord || ord.status === 'Completed') return alert("هذا الطلب مكتمل بالفعل!");
 
         const oCode = ord.order_code || `ESC-${ord.id}`;
@@ -1323,7 +1381,6 @@
         if (note === null) return;
 
         const isEgp = ord.currency === 'egp';
-        const unit = isEgp ? 'ج.م' : 'نقطة';
         const pricePaid = Number(ord.price_paid || 0);
         const prod = cachedStoreProductsMap[ord.product_id] || {};
         const sellerId = String(ord.seller_id || prod.creator_id || 'ADMIN');
@@ -1335,23 +1392,22 @@
             time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
         });
 
-        const { error } = await client.from('store_orders').update({ status: 'Completed', chat_messages: msgs }).eq('id', orderId);
+        const { error } = await db.from('store_orders').update({ status: 'Completed', chat_messages: msgs }).eq('id', orderId);
         if (error) return alert("خطأ: " + error.message);
 
-        // إذا كان البائع تاجراً عضواً، نحول صافي ربحه إلى محفظة التاجر (merchant_balance_egp) أو النقاط
         if (sellerId !== 'ADMIN') {
             const netSeller = Number(ord.net_seller_amount) > 0 ? Number(ord.net_seller_amount) : Number((pricePaid * 0.85).toFixed(2));
-            const { data: sellerUser } = await client.from('users').select('points, merchant_balance_egp, total_earned, total_sales_count').eq('telegram_id', sellerId).maybeSingle();
+            const { data: sellerUser } = await db.from('users').select('points, merchant_balance_egp, total_earned, total_sales_count').eq('telegram_id', sellerId).maybeSingle();
             if (sellerUser) {
                 const newSales = Number(sellerUser.total_sales_count || 0) + 1;
                 let sellerMsgAmount = "";
                 if (isEgp) {
                     const newMerch = Number((Number(sellerUser.merchant_balance_egp || 0) + netSeller).toFixed(2));
-                    await client.from('users').update({ merchant_balance_egp: newMerch, total_sales_count: newSales }).eq('telegram_id', sellerId);
+                    await db.from('users').update({ merchant_balance_egp: newMerch, total_sales_count: newSales }).eq('telegram_id', sellerId);
                     sellerMsgAmount = `+${netSeller.toFixed(2)} ج.م`;
                 } else {
                     const ptsAdd = Math.floor(netSeller);
-                    await client.from('users').update({
+                    await db.from('users').update({
                         points: Number(sellerUser.points || 0) + ptsAdd,
                         total_earned: Number(sellerUser.total_earned || 0) + ptsAdd,
                         total_sales_count: newSales
@@ -1359,7 +1415,7 @@
                     sellerMsgAmount = `+${ptsAdd.toLocaleString()} نقطة`;
                 }
 
-                await client.from('transactions').insert([{
+                await db.from('transactions').insert([{
                     telegram_id: sellerId,
                     type: isEgp ? 'egp' : 'points',
                     title: `أرباح وساطة ومبيعات (${ord.product_title}) - ${oCode}`,
@@ -1367,7 +1423,7 @@
                     status: 'مكتمل'
                 }]);
 
-                await client.from('bot_messages').insert([{
+                await db.from('bot_messages').insert([{
                     telegram_id: sellerId,
                     message: `🎉 *تم تحرير أرباح صفقتك (${oCode}) بنجاح!* 💰\n\n📦 *السلعة:* ${ord.product_title}\n💎 *صافي ربحك المضاف لمحفظة التاجر:* *${sellerMsgAmount}*\nيمكنك سحبه كاش أو USDT في أي وقت من قسم (💼 سحب التجار)!`,
                     status: 'pending'
@@ -1375,19 +1431,19 @@
             }
         }
 
-        await client.from('bot_messages').insert([{
+        await db.from('bot_messages').insert([{
             telegram_id: String(ord.user_id),
             message: `🎉 *تم إتمام وتأكيد صفقتك (${oCode}) بنجاح!* ✅\n\n📦 *الطلب:* ${ord.product_title}\n📋 *بيانات التسليم/الإدارة:* ${note}`,
             status: 'pending'
         }]);
 
         alert(`✅ تم إتمام الصفقة (${oCode}) وتحرير الأرباح بنجاح!`);
-        loadStoreOrders();
-        loadStoreProductsList();
+        loadStoreAndOrdersFast();
     }
 
     async function rejectStoreOrder(orderId) {
-        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        const db = getDbClient();
+        const { data: ord } = await db.from('store_orders').select('*').eq('id', orderId).maybeSingle();
         if (!ord || ord.status === 'Rejected' || ord.status === 'Refunded') return alert("هذا الطلب ملغي ومسترد بالفعل!");
 
         const oCode = ord.order_code || `ESC-${ord.id}`;
@@ -1397,40 +1453,41 @@
         const isEgp = ord.currency === 'egp';
         const pricePaid = Number(ord.price_paid || 0);
 
-        const { error } = await client.from('store_orders').update({ status: 'Refunded' }).eq('id', orderId);
+        const { error } = await db.from('store_orders').update({ status: 'Refunded' }).eq('id', orderId);
         if (error) return alert("خطأ: " + error.message);
 
-        const { data: uData } = await client.from('users').select('points, egp_balance').eq('telegram_id', String(ord.user_id)).maybeSingle();
+        const { data: uData } = await db.from('users').select('points, egp_balance').eq('telegram_id', String(ord.user_id)).maybeSingle();
         let refundText = "";
         if (uData) {
             if (isEgp) {
                 const newEgp = Number((Number(uData.egp_balance || 0) + pricePaid).toFixed(2));
-                await client.from('users').update({ egp_balance: newEgp }).eq('telegram_id', String(ord.user_id));
+                await db.from('users').update({ egp_balance: newEgp }).eq('telegram_id', String(ord.user_id));
                 refundText = `${pricePaid.toFixed(2)} ج.م`;
             } else {
                 const newPts = Number(uData.points || 0) + Math.round(pricePaid);
-                await client.from('users').update({ points: newPts }).eq('telegram_id', String(ord.user_id));
+                await db.from('users').update({ points: newPts }).eq('telegram_id', String(ord.user_id));
                 refundText = `${Math.round(pricePaid).toLocaleString()} نقطة`;
             }
         }
 
-        await client.from('bot_messages').insert([{
+        await db.from('bot_messages').insert([{
             telegram_id: String(ord.user_id),
             message: `↩️ *تم إلغاء الصفقة (${oCode}) واسترداد أموالك بالكامل*\n\n📦 *الطلب:* ${ord.product_title}\n💬 *السبب:* ${reason}\n💰 *المبلغ المسترد:* تم إرجاع *${refundText}* من خزنة الضمان إلى محفظتك فوراً.`,
             status: 'pending'
         }]);
 
         alert(`✅ تم إلغاء الصفقة (${oCode}) وإرجاع ${refundText} لمحفظة المشتري.`);
-        loadStoreOrders();
+        loadStoreAndOrdersFast();
     }
 
     // =========================================================================
     // 💼 طلبات سحب أرباح التجار (Merchant Withdrawals)
     // =========================================================================
     async function loadWithdrawals() {
+        const db = getDbClient();
         const div = document.getElementById('withdraw-list');
-        if (!div) return;
-        let { data, error } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('id', { ascending: false });
+        if (!div || !db) return;
+        let { data, error } = await db.from('withdrawals').select('*').eq('status', 'Pending').order('id', { ascending: false });
         if (error) { div.innerHTML = "❌ خطأ في جلب السحوبات"; return; }
         
         div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات سحب للتجار معلقة حالياً." : "";
@@ -1456,11 +1513,12 @@
     }
 
     async function approveWithdraw(id, telegramId, wCode, amount, method, wallet) {
+        const db = getDbClient();
         const proofNote = prompt(`تأكيد إتمام تحويل (${amount} ج.م) للتاجر (${telegramId}) عبر (${method}).\nأدخل رقم العملية أو رسالة التأكيد (اختياري):`, "تم تحويل المبلغ بنجاح إلى حسابك!");
         if (proofNote === null) return;
 
-        await client.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
-        await client.from('bot_messages').insert([{
+        await db.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
+        await db.from('bot_messages').insert([{
             telegram_id: String(telegramId),
             message: `🎉 *تم تحويل أرباح مبيعاتك بنجاح!* ✅\n━━━━━━━━━━━━━━━\n🆔 *رقم الطلب:* \`${wCode}\`\n💵 *المبلغ المحول:* *${Number(amount).toFixed(2)} ج.م*\n💳 *الوسيلة:* ${method}\n📥 *الحساب:* \`${wallet}\`\n💬 *ملاحظة الإدارة:* ${proofNote}`,
             status: 'pending'
@@ -1470,18 +1528,19 @@
     }
 
     async function rejectWithdrawAndRefund(id, telegramId, wCode, amount) {
+        const db = getDbClient();
         const reason = prompt(`أدخل سبب رفض طلب السحب (${wCode}) وإرجاع المبلغ (${amount} ج.م) لمحفظة التاجر:`, "يرجى التأكد من صحة رقم المحفظة أو الحساب المستلم");
         if (reason === null) return;
 
-        await client.from('withdrawals').update({ status: 'Rejected' }).eq('id', id);
+        await db.from('withdrawals').update({ status: 'Rejected' }).eq('id', id);
 
-        const { data: u } = await client.from('users').select('merchant_balance_egp').eq('telegram_id', String(telegramId)).maybeSingle();
+        const { data: u } = await db.from('users').select('merchant_balance_egp').eq('telegram_id', String(telegramId)).maybeSingle();
         if (u) {
             const refundedMerch = Number((Number(u.merchant_balance_egp || 0) + Number(amount)).toFixed(2));
-            await client.from('users').update({ merchant_balance_egp: refundedMerch }).eq('telegram_id', String(telegramId));
+            await db.from('users').update({ merchant_balance_egp: refundedMerch }).eq('telegram_id', String(telegramId));
         }
 
-        await client.from('bot_messages').insert([{
+        await db.from('bot_messages').insert([{
             telegram_id: String(telegramId),
             message: `↩️ *تم إلغاء طلب السحب (${wCode}) وإرجاع الرصيد لمحفظة التاجر*\n\n💬 *السبب:* ${reason}\n💵 *المبلغ المسترد:* +${Number(amount).toFixed(2)} ج.م`,
             status: 'pending'
@@ -1495,10 +1554,11 @@
     // 🎧 تذاكر الدعم الفني وبلاغات الثغرات (Support & Bug Bounty Tickets)
     // =========================================================================
     async function loadSupportTickets() {
+        const db = getDbClient();
         const div = document.getElementById('support-tickets-list');
-        if (!div) return;
+        if (!div || !db) return;
         try {
-            const { data, error } = await client.from('support_tickets').select('*').eq('status', 'Pending').order('id', { ascending: false });
+            const { data, error } = await db.from('support_tickets').select('*').eq('status', 'Pending').order('id', { ascending: false });
             if (error) {
                 div.innerHTML = "ℹ️ جدول support_tickets جاهز للعمل فور تشغيل كود SQL الخاص به.";
                 return;
@@ -1550,6 +1610,7 @@
     }
 
     async function resolveSupportTicket(id, userTid, ticketCode) {
+        const db = getDbClient();
         const replyTxt = (document.getElementById(`tkt-reply-${id}`)?.value || "").trim() || "شكراً لتواصلك معنا، تم فحص رسالتك واتخاذ اللازم.";
         const rewCurr = document.getElementById(`tkt-reward-curr-${id}`)?.value || "none";
         const rewAmt = parseFloat(document.getElementById(`tkt-reward-amt-${id}`)?.value) || 0;
@@ -1558,15 +1619,15 @@
         let rewardMsgLine = "";
 
         if (rewCurr !== "none" && rewAmt > 0) {
-            const { data: u } = await client.from('users').select('points, egp_balance, total_earned').eq('telegram_id', String(userTid)).maybeSingle();
+            const { data: u } = await db.from('users').select('points, egp_balance, total_earned').eq('telegram_id', String(userTid)).maybeSingle();
             if (u) {
                 if (rewCurr === 'egp') {
                     const nextEgp = Number((Number(u.egp_balance || 0) + rewAmt).toFixed(2));
-                    await client.from('users').update({ egp_balance: nextEgp }).eq('telegram_id', String(userTid));
+                    await db.from('users').update({ egp_balance: nextEgp }).eq('telegram_id', String(userTid));
                     rewardMsgLine = `\n🎁 *المكافأة المضافة لرصيدك:* *+${rewAmt.toFixed(2)} ج.م*`;
                 } else {
                     const pts = Math.round(rewAmt);
-                    await client.from('users').update({
+                    await db.from('users').update({
                         points: Number(u.points || 0) + pts,
                         total_earned: Number(u.total_earned || 0) + pts
                     }).eq('telegram_id', String(userTid));
@@ -1575,12 +1636,9 @@
             }
         }
 
-        await client.from('support_tickets').update({
-            status: newStatus,
-            admin_reply: replyTxt
-        }).eq('id', id);
+        await db.from('support_tickets').update({ status: newStatus, admin_reply: replyTxt }).eq('id', id);
 
-        await client.from('bot_messages').insert([{
+        await db.from('bot_messages').insert([{
             telegram_id: String(userTid),
             message: `🎧 *رد الإدارة على تذكرتك (${ticketCode}):*\n━━━━━━━━━━━━━━━\n💬 *الرد:* ${replyTxt}${rewardMsgLine}`,
             status: 'pending'
@@ -1591,16 +1649,18 @@
     }
 
     async function deleteSupportTicket(id) {
+        const db = getDbClient();
         if (!confirm("حذف هذه التذكرة؟")) return;
-        await client.from('support_tickets').delete().eq('id', id);
+        await db.from('support_tickets').delete().eq('id', id);
         loadSupportTickets();
     }
 
     // --- طلبات الإيداع ---
     async function loadDepositsRequests() {
+        const db = getDbClient();
         const div = document.getElementById('deposits-requests-list');
-        if (!div) return;
-        let { data, error } = await client.from('deposits').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
+        if (!div || !db) return;
+        let { data, error } = await db.from('deposits').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
         if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
 
         div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات إيداع معلقة." : "";
@@ -1627,35 +1687,33 @@
     }
 
     async function reviewDeposit(id, telegramId, method, isApproved) {
+        const db = getDbClient();
         if (isApproved) {
             const egpInput = document.getElementById(`dep-egp-val-${id}`);
             const addEgp = parseFloat(egpInput ? egpInput.value : 0);
 
-            if (isNaN(addEgp) || addEgp <= 0) {
-                return alert("⚠️ يرجى تحديد مبلغ صحيح بالجنيه لإضافته!");
-            }
-
+            if (isNaN(addEgp) || addEgp <= 0) return alert("⚠️ يرجى تحديد مبلغ صحيح بالجنيه لإضافته!");
             if (!confirm(`تأكيد قبول الإيداع وإضافة ${addEgp} ج.م إلى رصيد المستخدم (${telegramId})؟`)) return;
 
-            const { error: err1 } = await client.from('deposits').update({ status: 'Completed', amount: addEgp }).eq('id', id);
-            if (err1) { alert("خطأ: " + err1.message); return; }
+            const { error: err1 } = await db.from('deposits').update({ status: 'Completed', amount: addEgp }).eq('id', id);
+            if (err1) return alert("خطأ: " + err1.message);
 
-            const { data: userData } = await client.from('users').select('egp_balance, referred_by').eq('telegram_id', telegramId).maybeSingle();
+            const { data: userData } = await db.from('users').select('egp_balance, referred_by').eq('telegram_id', telegramId).maybeSingle();
             if (userData) {
                 const newEgp = Number((Number(userData.egp_balance || 0) + addEgp).toFixed(2));
-                await client.from('users').update({ egp_balance: newEgp }).eq('telegram_id', telegramId);
+                await db.from('users').update({ egp_balance: newEgp }).eq('telegram_id', telegramId);
 
                 if (userData.referred_by && String(userData.referred_by) !== String(telegramId)) {
                     const refBonusPoints = Math.floor(addEgp * 50);
                     if (refBonusPoints > 0) {
-                        const { data: refUser } = await client.from('users').select('points, total_earned').eq('telegram_id', String(userData.referred_by)).maybeSingle();
+                        const { data: refUser } = await db.from('users').select('points, total_earned').eq('telegram_id', String(userData.referred_by)).maybeSingle();
                         if (refUser) {
-                            await client.from('users').update({
+                            await db.from('users').update({
                                 points: (refUser.points || 0) + refBonusPoints,
                                 total_earned: (refUser.total_earned || 0) + refBonusPoints
                             }).eq('telegram_id', String(userData.referred_by));
 
-                            await client.from('bot_messages').insert([{
+                            await db.from('bot_messages').insert([{
                                 telegram_id: String(userData.referred_by),
                                 message: `🎁 *مكافأة إحالة شحن جديدة!* 🔥\n\nقام أحد أصدقائك المدعوين بشحن رصيده وحصلت على عمولة *+${refBonusPoints.toLocaleString()} نقطة* مجانية في رصيدك!`,
                                 status: 'pending'
@@ -1665,15 +1723,12 @@
                 }
             }
 
-            await client.from('transactions').insert([{
-                telegram_id: String(telegramId),
-                type: 'egp',
-                title: `شحن رصيد ناجح (${method})`,
-                amount: `+${addEgp.toFixed(2)} ج.م`,
-                status: 'مكتمل'
+            await db.from('transactions').insert([{
+                telegram_id: String(telegramId), type: 'egp',
+                title: `شحن رصيد ناجح (${method})`, amount: `+${addEgp.toFixed(2)} ج.م`, status: 'مكتمل'
             }]);
 
-            await client.from('bot_messages').insert([{
+            await db.from('bot_messages').insert([{
                 telegram_id: telegramId,
                 message: `🎉 *تم قبول وإضافة شحن رصيدك بنجاح!* ✅\n\n💵 *المبلغ المضاف:* ${addEgp.toFixed(2)} ج.م\nيمكنك الآن الشراء من المتجر أو تحويل الجنيه إلى نقاط بونص (+20%)!`,
                 status: 'pending'
@@ -1681,11 +1736,10 @@
 
             alert(`تم قبول الإيداع وإضافة ${addEgp} ج.م لحساب المستخدم بنجاح! 🚀`);
         } else {
-            const reason = prompt("أدخل سبب رفض الإيداع (ليظهر للمستخدم في البوت):", "لم يتم تأكيد وصول التحويل");
+            const reason = prompt("أدخل سبب رفض الإيداع:", "لم يتم تأكيد وصول التحويل");
             if (reason === null) return;
-
-            await client.from('deposits').update({ status: 'Rejected' }).eq('id', id);
-            await client.from('bot_messages').insert([{
+            await db.from('deposits').update({ status: 'Rejected' }).eq('id', id);
+            await db.from('bot_messages').insert([{
                 telegram_id: telegramId,
                 message: `❌ *عذراً، تم رفض طلب الشحن الخاص بك*\n\n💬 *السبب:* ${reason}`,
                 status: 'pending'
@@ -1696,98 +1750,98 @@
 
     // --- وسائل السحب والإيداع ---
     async function loadMethods() {
+        const db = getDbClient();
         const div = document.getElementById('methods-list');
-        let { data, error } = await client.from('withdraw_methods').select('*');
-        if (error) { div.innerHTML = ""; return; }
+        if (!div || !db) return;
+        let { data, error } = await db.from('withdraw_methods').select('*');
+        if (error || !data) { div.innerHTML = ""; return; }
 
-        div.innerHTML = data.length === 0 ? "" : "";
-        data.forEach(m => {
-            div.innerHTML += `
-                <div class="item-row method-row" style="width:100%; box-sizing:border-box;">
-                    <div><b>${escapeHtml(m.name)}</b> <span class="info-text">${escapeHtml(m.description || '')}</span></div>
-                    <button class="del-btn" onclick="deleteMethod('${m.id}')">حذف 🗑️</button>
-                </div>`;
-        });
+        div.innerHTML = data.map(m => `
+            <div class="item-row method-row" style="width:100%; box-sizing:border-box;">
+                <div><b>${escapeHtml(m.name)}</b> <span class="info-text">${escapeHtml(m.description || '')}</span></div>
+                <button class="del-btn" onclick="deleteMethod('${m.id}')">حذف 🗑️</button>
+            </div>`).join("");
     }
 
     async function addMethod() {
+        const db = getDbClient();
         const name = document.getElementById('method-name').value.trim();
         const description = document.getElementById('method-desc').value.trim();
         if(!name) return alert("يرجى كتابة اسم الوسيلة!");
 
-        const { error } = await client.from('withdraw_methods').insert([{ name, description }]);
+        const { error } = await db.from('withdraw_methods').insert([{ name, description }]);
         if (error) alert("خطأ: " + error.message);
         else { alert("تمت إضافة وسيلة السحب بنجاح! 💳"); loadMethods(); }
     }
 
     async function deleteMethod(id) {
+        const db = getDbClient();
         if (!confirm("حذف وسيلة السحب؟")) return;
-        await client.from('withdraw_methods').delete().eq('id', id);
+        await db.from('withdraw_methods').delete().eq('id', id);
         loadMethods();
     }
 
     async function loadDepositMethods() {
+        const db = getDbClient();
         const div = document.getElementById('deposit-methods-list');
-        let { data, error } = await client.from('deposit_methods').select('*');
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+        if (!div || !db) return;
+        let { data, error } = await db.from('deposit_methods').select('*');
+        if (error || !data) { div.innerHTML = "❌ خطأ في الجلب"; return; }
 
-        div.innerHTML = data.length === 0 ? "📭 لا توجد وسائل إيداع مضافة." : "";
-        data.forEach(d => {
+        div.innerHTML = data.length === 0 ? "📭 لا توجد وسائل إيداع مضافة." : data.map(d => {
             const logoTag = d.logo ? `<img src="${d.logo}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-left:8px;">` : '';
-            div.innerHTML += `
+            return `
                 <div class="item-row deposit-row" style="width:100%; box-sizing:border-box;">
                     <div style="display:flex; align-items:center;">
                         ${logoTag}
-                        <div><b>${d.name}</b> <span class="info-text">${d.description || ''}</span></div>
+                        <div><b>${escapeHtml(d.name)}</b> <span class="info-text">${escapeHtml(d.description || '')}</span></div>
                     </div>
                     <button class="del-btn" onclick="deleteDepositMethod('${d.id}')">حذف 🗑️</button>
                 </div>`;
-        });
+        }).join("");
     }
 
     async function addDepositMethod() {
-        const name = document.getElementById('deposit-name').value;
-        const description = document.getElementById('deposit-desc').value;
+        const db = getDbClient();
+        const name = document.getElementById('deposit-name').value.trim();
+        const description = document.getElementById('deposit-desc').value.trim();
         if(!name) return alert("يرجى كتابة اسم وسيلة الإيداع!");
 
-        const { error } = await client.from('deposit_methods').insert([{ 
-            name, description, logo: depositLogoBase64 || null 
-        }]);
+        const { error } = await db.from('deposit_methods').insert([{ name, description, logo: depositLogoBase64 || null }]);
         if (error) alert("خطأ: " + error.message);
         else { 
-            await broadcastToAllUsers("💰 وسيلة شحن جديدة", `تم إضافة وسيلة شحن رصيد جديدة: ${name}`);
             alert("تمت إضافة وسيلة الإيداع بنجاح! 💰"); 
-            location.reload(); 
+            loadDepositMethods();
         }
     }
 
     async function deleteDepositMethod(id) {
+        const db = getDbClient();
         if (!confirm("حذف وسيلة الإيداع؟")) return;
-        await client.from('deposit_methods').delete().eq('id', id);
+        await db.from('deposit_methods').delete().eq('id', id);
         loadDepositMethods();
     }
 
     // --- الميثودات والمهام ---
     async function loadPublishedMethods() {
+        const db = getDbClient();
         const div = document.getElementById('published-methods-list');
-        let { data, error } = await client.from('methods').select('*').eq('status', 'Approved').order('id', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+        if (!div || !db) return;
+        let { data, error } = await db.from('methods').select('*').eq('status', 'Approved').order('id', { ascending: false });
+        if (error || !data) { div.innerHTML = "❌ خطأ في الجلب"; return; }
 
-        div.innerHTML = data.length === 0 ? "📭 لا توجد ميثودات منشورة." : "";
-        data.forEach(m => {
-            div.innerHTML += `
-                <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
-                    <div style="width:100%;">
-                        <b>📌 العنوان:</b> ${m.title}<br>
-                        <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0; font-size:12px; max-height:80px; overflow:hidden;">${m.content}</div>
-                        <span class="info-text">💰 سعر الفك: ${m.unlock_cost || 50} (${m.currency === 'egp' ? 'ج.م' : 'نقطة'})</span>
-                    </div>
-                    <div class="actions-box">
-                        <button class="edit-btn" onclick="openEditMethodModal(${m.id}, '${escapeQuote(m.title)}', '${escapeQuote(m.content)}', ${m.unlock_cost || 50})">تعديل بالكامل ✏️</button>
-                        <button class="del-btn" onclick="deleteMethodItem(${m.id})">حذف نهائي 🗑️</button>
-                    </div>
-                </div>`;
-        });
+        div.innerHTML = data.length === 0 ? "📭 لا توجد ميثودات منشورة." : data.map(m => `
+            <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
+                <div style="width:100%;">
+                    <b>📌 العنوان:</b> ${escapeHtml(m.title)}<br>
+                    <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0; font-size:12px; max-height:80px; overflow:hidden;">${escapeHtml(m.content)}</div>
+                    <span class="info-text">💰 سعر الفك: ${m.unlock_cost || 50} (${m.currency === 'egp' ? 'ج.م' : 'نقطة'})</span>
+                </div>
+                <div class="actions-box">
+                    <button class="edit-btn" onclick="openEditMethodModal(${m.id}, '${escapeQuote(m.title)}', '${escapeQuote(m.content)}', ${m.unlock_cost || 50})">تعديل بالكامل ✏️</button>
+                    <button class="del-btn" onclick="deleteMethodItem(${m.id})">حذف نهائي 🗑️</button>
+                </div>
+            </div>`).join("");
     }
 
     function openEditMethodModal(id, title, content, cost) {
@@ -1803,6 +1857,7 @@
     function closeEditMethodModal() { document.getElementById('edit-method-modal').style.display = 'none'; }
 
     async function saveEditedMethod() {
+        const db = getDbClient();
         const id = document.getElementById('edit-m-id').value;
         const title = document.getElementById('edit-m-title').value.trim();
         const content = document.getElementById('edit-m-content').value.trim();
@@ -1813,7 +1868,7 @@
         const updateData = { title, content, unlock_cost: cost };
         if (editMethodNewImage) updateData.image_url = editMethodNewImage;
 
-        const { error } = await client.from('methods').update(updateData).eq('id', id);
+        const { error } = await db.from('methods').update(updateData).eq('id', id);
         if (error) alert("فشل الحفظ: " + error.message);
         else {
             alert("تم تحديث الميثود بنجاح! ✨");
@@ -1823,8 +1878,9 @@
     }
 
     async function deleteMethodItem(id) {
+        const db = getDbClient();
         if (!confirm("حذف هذه الميثود نهائياً؟")) return;
-        await client.from('methods').delete().eq('id', id);
+        await db.from('methods').delete().eq('id', id);
         loadPublishedMethods();
         loadPendingMethods();
     }
@@ -1841,23 +1897,24 @@
     function escapeHtml(str) { return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
     async function loadPendingMethods() {
+        const db = getDbClient();
         const div = document.getElementById('pending-methods-list');
-        let { data, error } = await client.from('methods').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+        if (!div || !db) return;
+        let { data, error } = await db.from('methods').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
+        if (error || !data) { div.innerHTML = "❌ خطأ في الجلب"; return; }
 
-        div.innerHTML = data.length === 0 ? "✅ لا توجد ميثودات جديدة تنتظر المراجعة." : "";
-        data.forEach(m => {
+        div.innerHTML = data.length === 0 ? "✅ لا توجد ميثودات جديدة تنتظر المراجعة." : data.map(m => {
             const imgTag = m.image_url ? `
                 <div style="margin: 10px 0; cursor: zoom-in;" onclick="openLightbox('${m.image_url}')">
                     <img src="${m.image_url}" style="max-width:150px; max-height:150px; border-radius:8px; border:1px solid #444;">
                 </div>` : '';
             
-            div.innerHTML += `
+            return `
                 <div class="item-row method-review-row" style="width:100%; box-sizing:border-box;">
                     <div style="text-align:right; width:100%;">
-                        <b>📌 عنوان الميثود:</b> ${m.title}<br>
+                        <b>📌 عنوان الميثود:</b> ${escapeHtml(m.title)}<br>
                         <b>👤 صاحب الميثود ID:</b> <span style="color:var(--neon-blue)">${m.user_id}</span><br>
-                        <div style="background:#111; padding:10px; border-radius:8px; margin:8px 0; font-size:13px; white-space: pre-wrap;">${m.content}</div>
+                        <div style="background:#111; padding:10px; border-radius:8px; margin:8px 0; font-size:13px; white-space: pre-wrap;">${escapeHtml(m.content)}</div>
                         ${imgTag}
                         <div style="display: flex; gap: 10px; margin-top: 8px;">
                             <div style="flex:1;">
@@ -1875,29 +1932,30 @@
                         <button class="reject-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${escapeQuote(m.title)}', false)">رفض ❌</button>
                     </div>
                 </div>`;
-        });
+        }).join("");
     }
 
     async function reviewMethod(id, userId, title, isApproved) {
+        const db = getDbClient();
         if (isApproved) {
             const awardedPoints = parseInt(document.getElementById(`method-points-${id}`).value) || 0;
             const unlockCost = parseFloat(document.getElementById(`method-cost-${id}`).value) || 50;
 
             if (!confirm(`تأكيد قبول الميثود ومنح المطوّر ${awardedPoints} نقطة؟`)) return;
 
-            await client.from('methods').update({ status: 'Approved', points_awarded: awardedPoints, unlock_cost: unlockCost }).eq('id', id);
+            await db.from('methods').update({ status: 'Approved', points_awarded: awardedPoints, unlock_cost: unlockCost }).eq('id', id);
 
             if (awardedPoints > 0) {
-                const { data: userData } = await client.from('users').select('points, total_earned').eq('telegram_id', userId).maybeSingle();
+                const { data: userData } = await db.from('users').select('points, total_earned').eq('telegram_id', userId).maybeSingle();
                 if (userData) {
-                    await client.from('users').update({
+                    await db.from('users').update({
                         points: (userData.points || 0) + awardedPoints,
                         total_earned: (userData.total_earned || 0) + awardedPoints
                     }).eq('telegram_id', userId);
                 }
             }
 
-            await client.from('bot_messages').insert([{
+            await db.from('bot_messages').insert([{
                 telegram_id: userId,
                 message: `🎉 *مبارك! تم قبول ونشر الميثود الخاص بك*\n📌 *العنوان:* ${title}`,
                 status: 'pending'
@@ -1905,7 +1963,7 @@
         } else {
             const reason = prompt("أدخل سبب رفض الميثود:", "المحتوى غير دقيق أو مكرر");
             if (reason === null) return;
-            await client.from('methods').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
+            await db.from('methods').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
         }
         loadPendingMethods();
         loadPublishedMethods();
@@ -1929,10 +1987,11 @@
     function closeLightbox() { document.getElementById('lightbox-modal').style.display = 'none'; }
 
     async function loadAdminTaskSubmissions() {
+        const db = getDbClient();
         const div = document.getElementById('admin-task-submissions-list');
-        if (!div) return;
+        if (!div || !db) return;
         try {
-            let { data: subs, error } = await client.from('task_submissions').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+            let { data: subs, error } = await db.from('task_submissions').select('*').eq('status', 'pending').order('created_at', { ascending: false });
             if (error || !subs || subs.length === 0) {
                 div.innerHTML = "✅ لا توجد إثباتات مهام معلقة للمراجعة حالياً.";
                 return;
@@ -1942,14 +2001,14 @@
             for (let s of subs) {
                 let taskTitle = "مهمة إدارية";
                 try {
-                    let { data: tData } = await client.from('tasks').select('title, reward').eq('id', s.task_id).maybeSingle();
+                    let { data: tData } = await db.from('tasks').select('title, reward').eq('id', s.task_id).maybeSingle();
                     if (tData) taskTitle = `${tData.title} (${tData.reward} نقطة)`;
                 } catch(e){}
 
                 div.innerHTML += `
                     <div id="admin-sub-${s.id}" class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
                         <div style="width:100%;">
-                            <b>📌 المهمة:</b> ${taskTitle} | <b>👤 المنفذ ID:</b> <span style="color:var(--neon-blue);">${s.user_id}</span><br>
+                            <b>📌 المهمة:</b> ${escapeHtml(taskTitle)} | <b>👤 المنفذ ID:</b> <span style="color:var(--neon-blue);">${s.user_id}</span><br>
                             <div style="margin: 10px 0; cursor: zoom-in;" onclick="openLightbox('${s.proof_image}')">
                                 <img src="${s.proof_image}" style="max-width:180px; max-height:180px; border-radius:8px; border:1px solid #444;">
                             </div>
@@ -1966,20 +2025,21 @@
     }
 
     async function reviewAdminSubmission(subId, taskId, userId, isApproved) {
+        const db = getDbClient();
         const feedbackVal = (document.getElementById(`admin-feedback-${subId}`)?.value || "").trim();
         if (!isApproved && !feedbackVal) return alert("⚠️ اكتب سبب الرفض!");
 
-        let { data: taskData } = await client.from('tasks').select('*').eq('id', taskId).single();
+        let { data: taskData } = await db.from('tasks').select('*').eq('id', taskId).single();
         if (!taskData) return;
         const reward = taskData.reward || 10;
 
         if (isApproved) {
-            await client.from('task_submissions').update({ status: 'approved', feedback: feedbackVal || null }).eq('id', subId);
-            try { await client.from('task_completions').insert([{ task_id: parseInt(taskId), user_id: String(userId) }]); } catch (e) {}
+            await db.from('task_submissions').update({ status: 'approved', feedback: feedbackVal || null }).eq('id', subId);
+            try { await db.from('task_completions').insert([{ task_id: parseInt(taskId), user_id: String(userId) }]); } catch (e) {}
 
-            let { data: execUser } = await client.from('users').select('*').eq('telegram_id', String(userId)).maybeSingle();
+            let { data: execUser } = await db.from('users').select('*').eq('telegram_id', String(userId)).maybeSingle();
             if (execUser) {
-                await client.from('users').update({
+                await db.from('users').update({
                     points: (execUser.points || 0) + reward,
                     total_earned: (execUser.total_earned || 0) + reward,
                     task_earnings: (execUser.task_earnings || 0) + reward,
@@ -1987,14 +2047,14 @@
                 }).eq('telegram_id', String(userId));
             }
 
-            await client.from('bot_messages').insert([{
+            await db.from('bot_messages').insert([{
                 telegram_id: String(userId),
                 message: `🎉 *تم قبول إثبات المهمة (${taskData.title}) وإضافة +${reward} نقطة!* ✅`,
                 status: 'pending'
             }]);
         } else {
-            await client.from('task_submissions').update({ status: 'rejected', feedback: feedbackVal }).eq('id', subId);
-            await client.from('bot_messages').insert([{
+            await db.from('task_submissions').update({ status: 'rejected', feedback: feedbackVal }).eq('id', subId);
+            await db.from('bot_messages').insert([{
                 telegram_id: String(userId),
                 message: `❌ *تم رفض إثبات المهمة (${taskData.title}):* ${feedbackVal}`,
                 status: 'pending'
@@ -2004,58 +2064,56 @@
     }
 
     async function loadPendingTasks() {
+        const db = getDbClient();
         const div = document.getElementById('pending-tasks-list');
-        if (!div) return;
-        let { data, error } = await client.from('tasks').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
-        if (error) return;
+        if (!div || !db) return;
+        let { data, error } = await db.from('tasks').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
+        if (error || !data) return;
 
-        div.innerHTML = data.length === 0 ? "✅ لا توجد مهام جديدة تنتظر المراجعة." : "";
-        data.forEach(t => {
-            div.innerHTML += `
-                <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
-                    <div style="width:100%;">
-                        <b>📌 العنوان:</b> ${t.title} | <b>👤 صاحب المهمة:</b> ${t.creator_id || t.user_id}<br>
-                        <b>💰 المكافأة:</b> ${t.reward} ن | <b>🔗 الرابط:</b> <a href="${t.url}" target="_blank" style="color:var(--neon-blue);">${t.url}</a>
-                    </div>
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewUserTask(${t.id}, '${t.creator_id || t.user_id}', '${escapeQuote(t.title)}', true)">موافقة ونشر ✅</button>
-                        <button class="reject-btn" onclick="reviewUserTask(${t.id}, '${t.creator_id || t.user_id}', '${escapeQuote(t.title)}', false)">رفض واسترداد ❌</button>
-                    </div>
-                </div>`;
-        });
+        div.innerHTML = data.length === 0 ? "✅ لا توجد مهام جديدة تنتظر المراجعة." : data.map(t => `
+            <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
+                <div style="width:100%;">
+                    <b>📌 العنوان:</b> ${escapeHtml(t.title)} | <b>👤 صاحب المهمة:</b> ${t.creator_id || t.user_id}<br>
+                    <b>💰 المكافأة:</b> ${t.reward} ن | <b>🔗 الرابط:</b> <a href="${t.url}" target="_blank" style="color:var(--neon-blue);">${escapeHtml(t.url)}</a>
+                </div>
+                <div class="actions-box">
+                    <button class="approve-btn" onclick="reviewUserTask(${t.id}, '${t.creator_id || t.user_id}', '${escapeQuote(t.title)}', true)">موافقة ونشر ✅</button>
+                    <button class="reject-btn" onclick="reviewUserTask(${t.id}, '${t.creator_id || t.user_id}', '${escapeQuote(t.title)}', false)">رفض واسترداد ❌</button>
+                </div>
+            </div>`).join("");
     }
 
     async function reviewUserTask(id, creatorId, title, isApproved) {
+        const db = getDbClient();
         if (isApproved) {
-            await client.from('tasks').update({ status: 'Approved', is_active: true }).eq('id', id);
+            await db.from('tasks').update({ status: 'Approved', is_active: true }).eq('id', id);
         } else {
             const reason = prompt("سبب رفض المهمة:", "مخالفة الشروط");
             if (reason === null) return;
-            await client.from('tasks').update({ status: 'Rejected' }).eq('id', id);
+            await db.from('tasks').update({ status: 'Rejected' }).eq('id', id);
         }
         loadPendingTasks();
         loadTasks();
     }
 
     async function loadTasks() {
+        const db = getDbClient();
         const div = document.getElementById('tasks-list');
-        let { data, error } = await client.from('tasks').select('*').eq('status', 'Approved').order('created_at', { ascending: false });
-        if (error) return;
+        if (!div || !db) return;
+        let { data, error } = await db.from('tasks').select('*').eq('status', 'Approved').order('created_at', { ascending: false });
+        if (error || !data) return;
         
-        div.innerHTML = data.length === 0 ? "📭 لا توجد مهام نشطة." : "";
-        data.forEach(t => {
-            div.innerHTML += `
-                <div class="item-row task-row" style="width:100%; box-sizing:border-box;">
-                    <div>
-                        <b>${t.title}</b> (${t.platform || 'telegram'})<br>
-                        <span class="info-text">💰 ${t.reward} نقطة</span>
-                    </div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link || t.url)}', ${t.reward}, ${t.target_count || 10})">تعديل ✏️</button>
-                        <button class="del-btn" onclick="deleteTask(${t.id})">حذف 🗑️</button>
-                    </div>
-                </div>`;
-        });
+        div.innerHTML = data.length === 0 ? "📭 لا توجد مهام نشطة." : data.map(t => `
+            <div class="item-row task-row" style="width:100%; box-sizing:border-box;">
+                <div>
+                    <b>${escapeHtml(t.title)}</b> (${t.platform || 'telegram'})<br>
+                    <span class="info-text">💰 ${t.reward} نقطة</span>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link || t.url)}', ${t.reward}, ${t.target_count || 10})">تعديل ✏️</button>
+                    <button class="del-btn" onclick="deleteTask(${t.id})">حذف 🗑️</button>
+                </div>
+            </div>`).join("");
     }
 
     function openEditTaskModal(id, title, link, reward, target) {
@@ -2070,58 +2128,58 @@
     function closeEditTaskModal() { document.getElementById('edit-task-modal').style.display = 'none'; }
 
     async function saveEditedTask() {
+        const db = getDbClient();
         const id = document.getElementById('edit-t-id').value;
         const title = document.getElementById('edit-t-title').value.trim();
         const link = document.getElementById('edit-t-link').value.trim();
         const reward = parseInt(document.getElementById('edit-t-reward').value) || 10;
         const target = parseInt(document.getElementById('edit-t-target').value) || 10;
 
-        await client.from('tasks').update({ title, link, url: link, reward, target_count: target }).eq('id', id);
+        await db.from('tasks').update({ title, link, url: link, reward, target_count: target }).eq('id', id);
         closeEditTaskModal();
         loadTasks();
     }
 
     async function addTask() {
+        const db = getDbClient();
         const platform = document.getElementById('task-platform').value;
         const title = document.getElementById('task-title').value.trim();
         const link = document.getElementById('task-link').value.trim();
         const reward = parseInt(document.getElementById('task-reward').value);
         if(!title || !link || isNaN(reward)) return alert("املأ كافة الخانات!");
 
-        await client.from('tasks').insert([{ 
+        await db.from('tasks').insert([{ 
             platform, title, url: link, link, channel_id: platform === 'telegram' ? link : null,
             reward, status: 'Approved', target_count: 100, completed_count: 0, is_active: true 
         }]);
         alert("تم نشر المهمة فوراً! 🚀"); 
-        location.reload(); 
+        loadTasks();
     }
 
     async function deleteTask(id) {
+        const db = getDbClient();
         if (!confirm("حذف المهمة نهائياً؟")) return;
-        await client.from('tasks').delete().eq('id', id);
+        await db.from('tasks').delete().eq('id', id);
         loadTasks();
     }
 
-    async function initAdminData() {
+    // تحميل كل أقسام لوحة التحكم بالتوازي دون تعطيل واجهة المستخدم
+    function initAdminData() {
         generateNewProductCode();
-        await loadStoreProductsList();
-        await loadStoreOrders();
-        loadPendingStoreProducts();
-        loadWithdrawals();
-        loadMethods();
-        loadSupportTickets();
-        loadDepositMethods();
-        loadDepositsRequests();
-        loadPublishedMethods();
-        loadPendingMethods();
-        loadTasks();
-        loadPendingTasks();
-        loadAdminTaskSubmissions();
+        loadStoreAndOrdersFast().catch(console.error);
+        loadWithdrawals().catch(console.error);
+        loadMethods().catch(console.error);
+        loadSupportTickets().catch(console.error);
+        loadDepositMethods().catch(console.error);
+        loadDepositsRequests().catch(console.error);
+        loadPublishedMethods().catch(console.error);
+        loadPendingMethods().catch(console.error);
+        loadTasks().catch(console.error);
+        loadPendingTasks().catch(console.error);
+        loadAdminTaskSubmissions().catch(console.error);
     }
 
-    window.onload = () => {
-        checkAdminSession();
-    };
+    window.addEventListener('DOMContentLoaded', checkAdminSession);
 </script>
 
 </body>
