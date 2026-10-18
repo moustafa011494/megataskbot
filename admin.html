@@ -4,16 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>MegaTask - لوحة التحكم الإدارية والوساطة المالية</title>
-
-    <!-- تحميل مكتبة Supabase من مصدرين لضمان عدم توقفها على أي شبكة -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script>
-        if (typeof window.supabase === 'undefined') {
-            document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
-        }
-    </script>
-
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>MegaTask - لوحة التحكم الإدارية v3.5</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
             --neon-purple: #bc13fe; 
@@ -25,20 +19,18 @@
             --red: #ff4d4d; 
             --gold: #ffaa00; 
         }
-        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; margin: 0; padding-bottom: 60px; }
-        h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 25px; text-align: center; font-size: 24px; }
-        h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; margin: 0; padding-bottom: 60px; }
+        h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 25px; text-align: center; font-size: 22px; }
+        h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; font-size: 15px; }
         
         .container { max-width: 980px; margin: auto; display: none; }
-        .card { background: var(--card-bg); border: 1px solid #333; padding: 22px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card { background: var(--card-bg); border: 1px solid #333; padding: 20px; border-radius: 20px; margin-bottom: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .search-hub-card { border-top: 4px solid var(--gold); background: linear-gradient(145deg, #1b1912, #141414); }
         .dispute-card { border-top: 4px solid var(--red); background: linear-gradient(145deg, #211215, #141414); }
         .merchant-w-card { border-top: 4px solid var(--gold); }
         .tickets-card { border-top: 4px solid var(--neon-blue); }
         .task-card { border-top: 4px solid var(--neon-purple); }
         .pending-card { border-top: 4px solid var(--orange); }
-        .withdraw-card { border-top: 4px solid var(--main-green); }
-        .methods-card { border-top: 4px solid var(--neon-blue); }
         .deposit-card { border-top: 4px solid var(--main-green); }
         .store-card { border-top: 4px solid var(--neon-blue); }
         .orders-card { border-top: 4px solid var(--main-green); }
@@ -47,14 +39,14 @@
         .user-wallet-card { border-top: 4px solid var(--neon-blue); }
 
         input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; outline: none; font-family: inherit; }
-        input:focus, textarea:focus, select:focus { border-color: var(--neon-blue); box-shadow: 0 0 8px rgba(0, 242, 255, 0.3); }
+        input:focus, textarea:focus, select:focus { border-color: var(--neon-blue); }
         
-        button { cursor: pointer; font-weight: bold; transition: 0.25s; border: none; border-radius: 10px; font-family: inherit; }
+        button { cursor: pointer; font-weight: bold; transition: 0.2s; border: none; border-radius: 10px; font-family: inherit; }
         button:active { transform: scale(0.98); }
-        .main-btn { background: var(--neon-purple); color: white; padding: 14px 25px; width: 100%; font-size: 15px; margin-top: 10px; }
-        .method-btn { background: var(--neon-blue); color: black; padding: 14px 25px; width: 100%; font-size: 15px; margin-top: 10px; }
-        .deposit-btn { background: var(--main-green); color: black; padding: 14px 25px; width: 100%; font-size: 15px; margin-top: 10px; }
-        .admin-method-btn { background: #ffaa00; color: black; padding: 14px 25px; width: 100%; font-size: 15px; margin-top: 10px; }
+        .main-btn { background: var(--neon-purple); color: white; padding: 14px 20px; width: 100%; font-size: 15px; margin-top: 10px; }
+        .method-btn { background: var(--neon-blue); color: black; padding: 14px 20px; width: 100%; font-size: 15px; margin-top: 10px; }
+        .deposit-btn { background: var(--main-green); color: black; padding: 14px 20px; width: 100%; font-size: 15px; margin-top: 10px; }
+        .admin-method-btn { background: #ffaa00; color: black; padding: 14px 20px; width: 100%; font-size: 15px; margin-top: 10px; }
         
         .list-container { margin-top: 15px; max-height: 550px; overflow-y: auto; }
         .collapsible-body { display: none; margin-top: 15px; }
@@ -63,7 +55,6 @@
 
         .item-row { background: #222; padding: 15px; margin-bottom: 12px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; flex-wrap: wrap; gap: 10px; }
         .task-row { border-right-color: var(--neon-purple); }
-        .pending-row { border-right-color: var(--orange); flex-direction: column; align-items: flex-start; }
         .withdraw-row { border-right-color: var(--gold); flex-direction: column; align-items: flex-start; }
         .method-row { border-right-color: var(--neon-blue); }
         .deposit-row { border-right-color: var(--main-green); }
@@ -71,12 +62,12 @@
         
         .del-btn { background: var(--red); color: white; padding: 8px 15px; }
         .edit-btn { background: var(--orange); color: black; padding: 8px 15px; }
-        .approve-btn { background: var(--main-green); color: black; padding: 10px 20px; font-size: 13.5px; border-radius: 8px; flex: 1; }
-        .reject-btn { background: var(--red); color: white; padding: 10px 20px; font-size: 13.5px; border-radius: 8px; flex: 1; }
+        .approve-btn { background: var(--main-green); color: black; padding: 10px 16px; font-size: 13px; border-radius: 8px; flex: 1; }
+        .reject-btn { background: var(--red); color: white; padding: 10px 16px; font-size: 13px; border-radius: 8px; flex: 1; }
         .chat-btn { background: var(--neon-blue); color: black; padding: 10px 16px; font-size: 13px; border-radius: 8px; flex: 1; }
         .actions-box { display: flex; gap: 8px; width: 100%; margin-top: 10px; flex-wrap: wrap; }
         
-        .info-text { font-size: 13px; color: #aaa; margin-top: 4px; line-height: 1.6; }
+        .info-text { font-size: 12.5px; color: #aaa; margin-top: 4px; line-height: 1.6; }
         .currency-badge-egp { background: rgba(0, 242, 255, 0.15); color: var(--neon-blue); border: 1px solid var(--neon-blue); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
         .currency-badge-pts { background: rgba(0, 210, 106, 0.15); color: var(--main-green); border: 1px solid var(--main-green); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
         .code-pill { background: rgba(255, 170, 0, 0.15); color: var(--gold); border: 1px dashed var(--gold); padding: 2px 9px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: bold; cursor: pointer; }
@@ -92,56 +83,25 @@
             width: 100%;
             box-sizing: border-box;
         }
-        .profit-highlight {
-            background: rgba(0, 210, 106, 0.15);
-            color: var(--main-green);
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-weight: bold;
-        }
+        .profit-highlight { background: rgba(0, 210, 106, 0.15); color: var(--main-green); padding: 2px 8px; border-radius: 6px; font-weight: bold; }
 
-        /* شاشة قفل الباسورد للوحة الأدمن */
         #admin-lock-screen {
             position: fixed; inset: 0; background: #07080a; z-index: 999999;
             display: flex; align-items: center; justify-content: center; padding: 20px;
         }
         .lock-box {
             background: #14171f; border: 1.5px solid var(--neon-blue);
-            border-radius: 24px; padding: 30px 22px; width: 100%; max-width: 360px;
+            border-radius: 24px; padding: 28px 22px; width: 100%; max-width: 360px;
             text-align: center; box-shadow: 0 0 40px rgba(0, 242, 255, 0.15);
         }
-        .pass-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        .btn-toggle-eye {
-            position: absolute;
-            left: 10px;
-            background: none;
-            border: none;
-            color: var(--neon-blue);
-            font-size: 16px;
-            cursor: pointer;
-            padding: 4px 8px;
-        }
 
-        /* النوافذ المنبثقة */
         .admin-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
         .admin-modal-content { background: var(--card-bg); border: 1px solid #333; padding: 22px; border-radius: 20px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; text-align: right; }
 
-        /* شات غرفة الوساطة للأدمن */
         .admin-chat-log {
-            background: #080a0f;
-            border: 1px solid #2b3346;
-            border-radius: 12px;
-            padding: 12px;
-            height: 250px;
-            overflow-y: auto;
-            margin: 10px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
+            background: #080a0f; border: 1px solid #2b3346; border-radius: 12px;
+            padding: 12px; height: 240px; overflow-y: auto; margin: 10px 0;
+            display: flex; flex-direction: column; gap: 8px;
         }
         .c-msg { padding: 8px 11px; border-radius: 10px; font-size: 12.5px; line-height: 1.5; }
         .c-buyer { background: rgba(0, 242, 255, 0.12); border: 1px solid rgba(0, 242, 255, 0.35); color: #fff; }
@@ -154,7 +114,7 @@
         .lightbox-controls { display: flex; gap: 10px; }
         .lightbox-btn { background: #22262f; border: 1px solid #444; color: white; font-size: 14px; font-weight: bold; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
         .lightbox-viewport { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; overflow: auto; position: relative; margin: 10px 0; }
-        #lightbox-img { max-width: 95vw; max-height: 75vh; object-fit: contain; transition: transform 0.2s ease; transform-origin: center center; }
+        #lightbox-img { max-width: 95vw; max-height: 75vh; object-fit: contain; transition: transform 0.2s ease; }
     </style>
 </head>
 <body>
@@ -162,17 +122,60 @@
 <!-- 🔒 شاشة قفل لوحة التحكم بكلمة المرور -->
 <div id="admin-lock-screen">
     <div class="lock-box">
-        <div style="font-size: 48px; margin-bottom: 10px;">🛡️</div>
-        <h2 style="color: var(--neon-blue); margin: 0 0 8px 0;">منطقة محمية للإدارة</h2>
-        <p style="font-size: 12px; color: #9ca3af; margin-bottom: 18px;">أدخل كلمة المرور الخاصة بالأدمن لفتح لوحة التحكم:</p>
-        <div class="pass-wrapper">
-            <input type="password" id="admin-pin-input" placeholder="كلمة المرور السرية..." style="text-align: center; font-size: 16px; padding-left: 40px;" onkeydown="if(event.key==='Enter') unlockAdminPanel()">
-            <button type="button" class="btn-toggle-eye" onclick="togglePassVisibility()" title="إظهار/إخفاء">👁️</button>
+        <div style="display:inline-block; background:rgba(0,210,106,0.15); color:#00d26a; border:1px solid #00d26a; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:bold; margin-bottom:10px;">
+            الإصدار المحدث v3.5 🟢
         </div>
-        <button type="button" class="method-btn" onclick="unlockAdminPanel()">🔓 فتح لوحة التحكم</button>
-        <div id="lock-error-msg" style="color: var(--red); font-size: 12px; margin-top: 10px; display: none;">❌ كلمة المرور غير صحيحة!</div>
+        <div style="font-size: 44px; margin-bottom: 8px;">🛡️</div>
+        <h2 style="color: var(--neon-blue); margin: 0 0 8px 0;">منطقة محمية للإدارة</h2>
+        <p style="font-size: 12px; color: #9ca3af; margin-bottom: 14px;">أدخل كلمة المرور (أو الـ ID الخاص بك) لفتح اللوحة:</p>
+        <input type="text" id="admin-pin-input" placeholder="اكتب الباسورد هنا..." style="text-align: center; font-size: 16px; direction: ltr;" onkeydown="if(event.key==='Enter') unlockAdminPanelNow()">
+        <button type="button" class="method-btn" onclick="unlockAdminPanelNow()">🔓 فتح لوحة التحكم الآن</button>
+        <div id="lock-error-msg" style="color: var(--red); font-size: 12px; margin-top: 10px; display: none;"></div>
     </div>
 </div>
+
+<!-- ⚡ سكريبت فتح القفل الفوري المعزول (يعمل فوراً في السطر الأول قبل أي كود آخر) -->
+<script>
+    window._adminUnlocked = false;
+
+    function unlockAdminPanelNow() {
+        var inp = document.getElementById('admin-pin-input');
+        var rawVal = (inp ? inp.value : "").trim();
+        var cleanVal = rawVal.toLowerCase();
+
+        if (cleanVal === "mostafa@2026" || cleanVal === "875021647") {
+            window._adminUnlocked = true;
+            try { sessionStorage.setItem("mt_admin_ok", "1"); } catch (e) {}
+            document.getElementById('admin-lock-screen').style.setProperty('display', 'none', 'important');
+            var mainBox = document.getElementById('main-admin-container');
+            if (mainBox) mainBox.style.setProperty('display', 'block', 'important');
+            if (typeof window.initAdminData === 'function') {
+                window.initAdminData();
+            }
+        } else {
+            var errEl = document.getElementById('lock-error-msg');
+            if (errEl) {
+                errEl.style.display = 'block';
+                errEl.innerText = "❌ كلمة المرور غير صحيحة!";
+            }
+        }
+    }
+
+    function logoutAdmin() {
+        try { sessionStorage.removeItem("mt_admin_ok"); } catch (e) {}
+        location.reload();
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+        try {
+            if (sessionStorage.getItem("mt_admin_ok") === "1") {
+                window._adminUnlocked = true;
+                document.getElementById('admin-lock-screen').style.setProperty('display', 'none', 'important');
+                document.getElementById('main-admin-container').style.setProperty('display', 'block', 'important');
+            }
+        } catch (e) {}
+    });
+</script>
 
 <div class="container" id="main-admin-container">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -184,70 +187,66 @@
     <div class="card search-hub-card">
         <h3 onclick="toggleCard(this)" style="color: var(--gold);">🔍 رادار البحث بالأكواد (ESC / ORD / PRD / WTH / TKT) <span class="arrow-icon open">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
-            <p style="font-size: 12px; color: #ccc; margin-top: 0;">
-                ابحث بـ <b>كود الصفقة (ESC-...)</b> أو <b>كود المنتج (PRD-...)</b> أو <b>ID المشتري/التاجر</b> لعرض تفاصيل الصفقة والمورد والربح فوراً:
-            </p>
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="global-code-search" placeholder="اكتب الكود هنا (ESC-... أو ORD-... أو PRD-...) أو اسم المنتج..." style="margin: 0; border-color: var(--gold);" oninput="runSmartCodeSearch()">
-                <button class="admin-method-btn" style="margin: 0; width: 150px; padding: 12px;" onclick="runSmartCodeSearch()">بحث فوري 🔍</button>
+                <input type="text" id="global-code-search" placeholder="اكتب الكود هنا (ESC-... أو ORD-... أو PRD-...) أو ID..." style="margin: 0; border-color: var(--gold);" oninput="runSmartCodeSearch()">
+                <button class="admin-method-btn" style="margin: 0; width: 140px; padding: 12px;" onclick="runSmartCodeSearch()">بحث 🔍</button>
             </div>
             <div id="smart-search-results" class="list-container" style="max-height: 420px; display: none;"></div>
         </div>
     </div>
 
-    <!-- 🚨 01. غرفة فض النزاعات العاجلة في الوساطة المالية (Escrow Disputes) -->
+    <!-- 🚨 01. غرفة فض النزاعات العاجلة في الوساطة المالية -->
     <div class="card dispute-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--red);">🚨 نزاعات الوساطة المالية المفتوحة (تحتاج لتدخل الإدارة) <span class="arrow-icon open">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--red);">🚨 نزاعات الوساطة المالية المفتوحة (Disputes) <span class="arrow-icon open">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
             <div id="escrow-disputes-list" class="list-container">جاري فحص النزاعات...</div>
         </div>
     </div>
 
-    <!-- 💼 02. طلبات سحب أرباح التجار (كاش / انستاباي / Binance Pay USDT) -->
+    <!-- 💼 02. طلبات سحب أرباح التجار -->
     <div class="card merchant-w-card">
         <h3 onclick="toggleCard(this)" style="color: var(--gold);">💼 طلبات سحب أرباح التجار والوسطاء (كاش / USDT) <span class="arrow-icon open">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
             <div id="withdraw-list" class="list-container">جاري فحص طلبات سحب التجار...</div>
-            <hr style="border-color:#333; margin:18px 0;">
-            <div style="font-size: 13px; color: var(--neon-blue); font-weight: bold; margin-bottom: 8px;">➕ إضافة وسيلة سحب جديدة للتجار (اختياري):</div>
+            <hr style="border-color:#333; margin:16px 0;">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <input type="text" id="method-name" placeholder="اسم الوسيلة (مثلاً: فودافون كاش / Binance Pay)">
-                <input type="text" id="method-desc" placeholder="تعليمات الحقل (مثلاً: أدخل رقم المحفظة)">
+                <input type="text" id="method-name" placeholder="اسم وسيلة سحب جديدة">
+                <input type="text" id="method-desc" placeholder="وصف أو تعليمات الوسيلة">
             </div>
-            <button class="method-btn" style="padding: 10px;" onclick="addMethod()">إضافة وسيلة السحب للسيستم 🚀</button>
-            <div id="methods-list" class="list-container" style="max-height: 180px;"></div>
+            <button class="method-btn" style="padding: 10px;" onclick="addMethod()">إضافة وسيلة السحب 🚀</button>
+            <div id="methods-list" class="list-container" style="max-height: 160px;"></div>
         </div>
     </div>
 
-    <!-- 🎧 03. تذاكر الدعم الفني وبلاغات الثغرات (Bug Bounty & Support) -->
+    <!-- 🎧 03. تذاكر الدعم الفني وبلاغات الثغرات -->
     <div class="card tickets-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🎧 تذاكر الدعم وبلاغات الثغرات والاقتراحات (Bug Bounty) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🎧 تذاكر الدعم وبلاغات الثغرات (Bug Bounty) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="support-tickets-list" class="list-container">جاري فحص التذاكر والبلاغات...</div>
+            <div id="support-tickets-list" class="list-container">جاري فحص التذاكر...</div>
         </div>
     </div>
 
-    <!-- 👤 0. إدارة أرصدة المستخدمين وفك الحظر يدوياً (نقاط / جنيه / أرباح التاجر) -->
+    <!-- 👤 0. إدارة أرصدة المستخدمين وفك الحظر يدوياً -->
     <div class="card user-wallet-card">
         <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">👤 إدارة حسابات وأرصدة المستخدمين وفك الحظر <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div style="display: flex; gap: 10px;">
                 <input type="text" id="search-user-id" placeholder="أدخل Telegram ID للمستخدم..." style="margin: 0;">
-                <button class="method-btn" style="margin: 0; width: 180px; padding: 12px;" onclick="searchUserWallet()">بحث 🔍</button>
+                <button class="method-btn" style="margin: 0; width: 160px; padding: 12px;" onclick="searchUserWallet()">بحث 🔍</button>
             </div>
             <div id="user-wallet-result" style="display:none; background:#111; padding:15px; border-radius:12px; margin-top:15px; border:1px solid #333;">
-                <div id="user-wallet-info" style="font-size:14px; line-height:1.8; margin-bottom:12px;"></div>
+                <div id="user-wallet-info" style="font-size:13.5px; line-height:1.8; margin-bottom:12px;"></div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <select id="wallet-adjust-currency">
                         <option value="egp">💵 رصيد الشراء الأساسي (EGP)</option>
-                        <option value="merchant_egp">💼 رصيد أرباح التاجر القابل للسحب (EGP)</option>
+                        <option value="merchant_egp">💼 رصيد أرباح التاجر (EGP)</option>
                         <option value="points">🪙 رصيد النقاط (Points)</option>
                     </select>
-                    <input type="number" id="wallet-adjust-amount" placeholder="المبلغ (موجب للإضافة / سالب للخصم)" step="0.5">
+                    <input type="number" id="wallet-adjust-amount" placeholder="المبلغ (+ للإضافة / - للخصم)" step="0.5">
                 </div>
-                <input type="text" id="wallet-adjust-reason" placeholder="سبب التعديل (يظهر للمستخدم في إشعار البوت - اختياري)">
+                <input type="text" id="wallet-adjust-reason" placeholder="سبب التعديل (اختياري)">
                 <div style="display: flex; gap: 10px; margin-top: 8px;">
-                    <button class="deposit-btn" style="flex: 2; margin-top: 0;" onclick="applyUserWalletAdjustment()">تنفيذ التعديل وإرسال إشعار ✅</button>
+                    <button class="deposit-btn" style="flex: 2; margin-top: 0;" onclick="applyUserWalletAdjustment()">تنفيذ التعديل ✅</button>
                     <button id="btn-toggle-ban" class="del-btn" style="flex: 1;" onclick="toggleUserBanStatus()">حظر / فك حظر 🚫</button>
                 </div>
             </div>
@@ -256,23 +255,19 @@
 
     <!-- 1. إدارة وسائل الإيداع -->
     <div class="card deposit-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">💰 إدارة وسائل الشحن والإيداع (لشحن الجنيه) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">💰 إدارة وسائل الشحن والإيداع <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <input type="text" id="deposit-name" placeholder="اسم وسيلة الإيداع (مثلاً: فودافون كاش / InstaPay / USDT)">
+            <input type="text" id="deposit-name" placeholder="اسم وسيلة الإيداع (مثلاً: فودافون كاش / InstaPay)">
             <input type="text" id="deposit-desc" placeholder="تفاصيل التحويل أو الرقم">
-            <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">شعار/لوجو وسيلة الإيداع (صورة):</label>
             <input type="file" id="deposit-logo-file" accept="image/*" onchange="previewDepositLogo(this)">
-            <div id="deposit-logo-preview" style="display:none; margin-top:5px; text-align:center;">
-                <img id="deposit-logo-tag" style="max-width:50px; max-height:50px; border-radius:6px;">
-            </div>
             <button class="deposit-btn" onclick="addDepositMethod()">إضافة وسيلة إيداع جديدة 🚀</button>
-            <div id="deposit-methods-list" class="list-container" style="max-height: 250px;">جاري التحميل...</div>
+            <div id="deposit-methods-list" class="list-container" style="max-height: 220px;">جاري التحميل...</div>
         </div>
     </div>
 
     <!-- 2. طلبات الإيداع الواردة -->
     <div class="card deposit-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">📥 طلبات شحن الجنيه الواردة (قيد الانتظار) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">📥 طلبات شحن الجنيه الواردة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div id="deposits-requests-list" class="list-container">جاري فحص طلبات الإيداع...</div>
         </div>
@@ -280,78 +275,49 @@
 
     <!-- 3. إضافة منتج جديد للمتجر الرسمي -->
     <div class="card store-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي (مع بيانات المورد والربح السرية) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                <div>
-                    <label style="font-size: 12px; color: #aaa;">القسم:</label>
-                    <select id="store-cat">
-                        <option value="recharge">🔋 شحن وألعاب</option>
-                        <option value="telegram">📢 تيليجرام</option>
-                        <option value="facebook">📘 فيسبوك</option>
-                        <option value="youtube">▶️ يوتيوب</option>
-                        <option value="tiktok">🎵 تيك توك</option>
-                        <option value="instagram">📸 انستجرام</option>
-                        <option value="subscriptions">👑 حسابات واشتراكات</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="font-size: 12px; color: #aaa;">عملة البيع للمشتري:</label>
-                    <select id="store-currency" onchange="calcAdminProductProfit()">
-                        <option value="points">🪙 بالنقاط</option>
-                        <option value="egp">💵 بالجنيه (EGP)</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="font-size: 12px; color: var(--gold);">كود المنتج (يتولد تلقائياً):</label>
-                    <input type="text" id="store-code" placeholder="PRD-XXXX" style="border-color: var(--gold); color: var(--gold); font-weight: bold; text-align: center;">
-                </div>
+                <select id="store-cat">
+                    <option value="recharge">🔋 شحن وألعاب</option>
+                    <option value="telegram">📢 تيليجرام</option>
+                    <option value="facebook">📘 فيسبوك</option>
+                    <option value="youtube">▶️ يوتيوب</option>
+                    <option value="tiktok">🎵 تيك توك</option>
+                    <option value="instagram">📸 انستجرام</option>
+                    <option value="subscriptions">👑 حسابات واشتراكات</option>
+                </select>
+                <select id="store-currency" onchange="calcAdminProductProfit()">
+                    <option value="points">🪙 بالنقاط</option>
+                    <option value="egp">💵 بالجنيه (EGP)</option>
+                </select>
+                <input type="text" id="store-code" placeholder="PRD-XXXX" style="border-color: var(--gold); color: var(--gold); font-weight: bold; text-align: center;">
             </div>
+            <input type="text" id="store-title" placeholder="عنوان المنتج">
+            <textarea id="store-desc" rows="2" placeholder="وصف وتفاصيل المنتج..."></textarea>
 
-            <input type="text" id="store-title" placeholder="عنوان المنتج (يظهر للمشترين)">
-            <textarea id="store-desc" rows="2" placeholder="وصف وتفاصيل المنتج للمشتري..."></textarea>
-
-            <div style="background: #10131a; border: 1px dashed var(--neon-purple); border-radius: 14px; padding: 14px; margin: 10px 0;">
-                <div style="color: var(--neon-purple); font-weight: bold; font-size: 13px; margin-bottom: 8px;">
-                    🕵️‍♂️ بيانات المورد والتكلفة السرية (تظهر لك في لوحة الأدمن فقط لتتذكر المصدر والربح):
-                </div>
+            <div style="background: #10131a; border: 1px dashed var(--neon-purple); border-radius: 14px; padding: 12px; margin: 8px 0;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div>
-                        <label style="font-size: 11px; color: #aaa;">سعر البيع للمشتري:</label>
-                        <input type="number" id="store-price" placeholder="مثلاً: 50 جنيه أو 5000 نقطة" step="0.5" oninput="calcAdminProductProfit()">
-                    </div>
-                    <div>
-                        <label style="font-size: 11px; color: #aaa;">التكلفة عليك (واقف عليك بكام بنفس العملة؟):</label>
-                        <input type="number" id="store-supplier-cost" placeholder="مثلاً: 35" step="0.5" value="0" oninput="calcAdminProductProfit()">
-                    </div>
+                    <input type="number" id="store-price" placeholder="سعر البيع للمشتري" step="0.5" oninput="calcAdminProductProfit()">
+                    <input type="number" id="store-supplier-cost" placeholder="التكلفة عليك" step="0.5" value="0" oninput="calcAdminProductProfit()">
                 </div>
-                <input type="text" id="store-supplier-name" placeholder="اسم التاجر / السيرفر / الموقع اللي بتجيب منه المنتج">
-                <input type="text" id="store-supplier-notes" placeholder="رابط المنتج عند المورد أو رقم/يوزر التاجر أو ملاحظات الشراء...">
-                <div id="admin-profit-preview" style="background: rgba(0, 210, 106, 0.1); border: 1px solid var(--main-green); color: var(--main-green); padding: 8px 12px; border-radius: 8px; font-size: 12.5px; font-weight: bold; margin-top: 6px;">
-                    💰 صافي ربحك المتوقع في كل عملية بيع: 0
-                </div>
+                <input type="text" id="store-supplier-name" placeholder="اسم المورد / السيرفر">
+                <input type="text" id="store-supplier-notes" placeholder="رابط المورد أو ملاحظات الشراء السرية...">
+                <div id="admin-profit-preview" style="color: var(--main-green); font-size: 12px; font-weight: bold; margin-top: 4px;">💰 صافي ربحك: 0</div>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div>
-                    <label style="font-size: 12px; color: #aaa;">العدد المتاح (Target Count):</label>
-                    <input type="number" id="store-target" value="100">
-                </div>
-                <div>
-                    <label style="font-size: 12px; color: #aaa;">رابط عام للمنتج (اختياري):</label>
-                    <input type="text" id="store-link" placeholder="https://...">
-                </div>
+                <input type="number" id="store-target" value="100" placeholder="الكمية">
+                <input type="text" id="store-link" placeholder="رابط عام (اختياري)">
             </div>
-
-            <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">صورة أو ملف المنتج (اختياري):</label>
-            <input type="file" id="store-file" accept="image/*,.zip,.pdf" onchange="previewStoreFile(this)">
-            <button class="main-btn" style="background: var(--neon-blue); color:black;" onclick="addStoreProduct()">نشر المنتج وحفظ بيانات المورد 🚀</button>
+            <input type="file" id="store-file" accept="image/*" onchange="previewStoreFile(this)">
+            <button class="main-btn" style="background: var(--neon-blue); color:black;" onclick="addStoreProduct()">نشر المنتج 🚀</button>
         </div>
     </div>
 
     <!-- 4. قائمة وتعديل منتجات المتجر الرسمية -->
     <div class="card store-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">📦 إحصائيات وإدارة منتجات المتجر وصفقات الوساطة <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">📦 إحصائيات وإدارة منتجات المتجر <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div id="store-products-list" class="list-container">جاري التحميل...</div>
         </div>
@@ -359,7 +325,7 @@
 
     <!-- 5. منتجات الأعضاء المعلقة -->
     <div class="card pending-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ سلع التجار المعلقة للمراجعة (عمولة الوساطة 15%) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ سلع التجار المعلقة للمراجعة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div id="pending-store-list" class="list-container">جاري الفحص...</div>
         </div>
@@ -367,25 +333,21 @@
 
     <!-- 6. طلبات الشراء وصفقات الضمان الجارية -->
     <div class="card orders-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 الطلبات وصفقات الضمان الجارية (Escrow & Store Orders) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 الطلبات وصفقات الضمان الجارية (Escrow Orders) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="store-orders-list" class="list-container">جاري فحص الطلبات والصفقات...</div>
+            <div id="store-orders-list" class="list-container">جاري فحص الطلبات...</div>
         </div>
     </div>
 
     <!-- 7. إضافة ميثود رسمية جديدة -->
     <div class="card admin-method-card">
-        <h3 onclick="toggleCard(this)" style="color: #ffaa00;">💡 إضافة ميثود رسمية جديدة (بواسطة الأدمن) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: #ffaa00;">💡 إضافة ميثود رسمية جديدة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <input type="text" id="admin-method-title" placeholder="عنوان الميثود">
-            <textarea id="admin-method-content" rows="4" placeholder="اكتب الشرح، التفاصيل، والروابط هنا..."></textarea>
+            <textarea id="admin-method-content" rows="3" placeholder="الشرح والتفاصيل..."></textarea>
             <input type="number" id="admin-method-cost" placeholder="سعر فك الحجب (نقاط)" value="50">
-            <label style="font-size: 12px; color: #aaa; display: block; margin-top: 5px;">صورة توضيحية (اختياري):</label>
             <input type="file" id="admin-method-img" accept="image/*" onchange="previewAdminImage(this)">
-            <div id="admin-img-preview" style="display:none; margin-top:10px; text-align:center;">
-                <img id="admin-preview-tag" style="max-width:150px; max-height:150px; border-radius:8px;">
-            </div>
-            <button class="admin-method-btn" onclick="addAdminMethod()">نشر الميثود مباشرة للعامة 🚀</button>
+            <button class="admin-method-btn" onclick="addAdminMethod()">نشر الميثود 🚀</button>
         </div>
     </div>
 
@@ -399,9 +361,9 @@
 
     <!-- 9. مراجعة ميثودات الأعضاء الجديدة -->
     <div class="card methods-review-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-purple);">💡 ميثودات الأعضاء (قيد المراجعة وصرف النقاط) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-purple);">💡 ميثودات الأعضاء (قيد المراجعة) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="pending-methods-list" class="list-container">جاري فحص الميثودات...</div>
+            <div id="pending-methods-list" class="list-container">جاري الفحص...</div>
         </div>
     </div>
 
@@ -409,14 +371,13 @@
     <div class="card task-card">
         <h3 onclick="toggleCard(this)">➕ إضافة مهمة جديدة مباشرة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <label style="font-size: 12px; color: var(--text-gray);">اختر المنصة:</label>
             <select id="task-platform">
                 <option value="telegram">📢 تيليجرام</option>
                 <option value="facebook">📘 فيسبوك</option>
                 <option value="youtube">▶️ يوتيوب</option>
                 <option value="tiktok">🎵 تيك توك</option>
                 <option value="instagram">📸 انستجرام</option>
-                <option value="website">🌐 موقع خارجي / إعلان</option>
+                <option value="website">🌐 موقع خارجي</option>
             </select>
             <input type="text" id="task-title" placeholder="عنوان المهمة">
             <input type="text" id="task-link" placeholder="رابط المهمة (URL)">
@@ -427,23 +388,23 @@
 
     <!-- 11. مراجعة إثباتات مهام الأدمن -->
     <div class="card pending-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--orange);">🔍 مراجعة إثباتات وتنفيذات مهام الأدمن (+10% إحالة تلقائي) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--orange);">🔍 مراجعة إثباتات وتنفيذات المهام <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="admin-task-submissions-list" class="list-container">جاري فحص إثباتات المهام...</div>
+            <div id="admin-task-submissions-list" class="list-container">جاري فحص الإثباتات...</div>
         </div>
     </div>
 
     <!-- 12. مهام المستخدمين (قيد المراجعة) -->
     <div class="card pending-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة والموافقة) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="pending-tasks-list" class="list-container">جاري فحص المهام...</div>
+            <div id="pending-tasks-list" class="list-container">جاري الفحص...</div>
         </div>
     </div>
 
     <!-- 13. المهام النشطة الحالية -->
     <div class="card">
-        <h3 onclick="toggleCard(this)">📋 المهام النشطة الحالية (تعديل كامل أو حذف) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)">📋 المهام النشطة الحالية <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div id="tasks-list" class="list-container">جاري التحميل...</div>
         </div>
@@ -455,17 +416,14 @@
     <div class="admin-modal-content" style="border-color: var(--gold);">
         <h3 style="color: var(--gold); margin-top: 0;" id="adm-dr-title">⚖️ غرفة مراقبة الصفقة وفض النزاع</h3>
         <div id="adm-dr-meta" style="font-size: 12.5px; color: #ddd; background: #111; padding: 10px; border-radius: 10px; line-height: 1.7;"></div>
-
         <div class="admin-chat-log" id="adm-dr-chat-box"></div>
-
         <div style="display: flex; gap: 8px; margin-bottom: 12px;">
             <input type="text" id="adm-dr-msg-inp" placeholder="اكتب رسالة رسمية للطرفين باسم (👮‍♂️ الإدارة)..." style="margin: 0;">
-            <button class="method-btn" style="margin: 0; width: 130px; padding: 10px;" onclick="sendAdminMessageInDeal()">إرسال 💬</button>
+            <button class="method-btn" style="margin: 0; width: 120px; padding: 10px;" onclick="sendAdminMessageInDeal()">إرسال 💬</button>
         </div>
-
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="approve-btn" onclick="adminSettleDealForSeller()">⚖️ حكم لصالح البائع (تحرير الأرباح) ✅</button>
-            <button class="reject-btn" onclick="adminSettleDealForBuyer()">↩️ حكم لصالح المشتري (استرداد كامل) ❌</button>
+            <button class="approve-btn" onclick="adminSettleDealForSeller()">⚖️ حكم للبائع (تحرير الأرباح) ✅</button>
+            <button class="reject-btn" onclick="adminSettleDealForBuyer()">↩️ حكم للمشتري (استرداد كامل) ❌</button>
         </div>
         <button onclick="document.getElementById('admin-deal-chat-modal').style.display='none'" style="width: 100%; margin-top: 10px; padding: 10px; background: #282c37; color: #fff;">إغلاق النافذة</button>
     </div>
@@ -474,94 +432,61 @@
 <!-- Modal تعديل منتج المتجر -->
 <div id="edit-store-modal" class="admin-modal">
     <div class="admin-modal-content">
-        <h3 style="color: var(--neon-blue);">✏️ تعديل منتج المتجر وبيانات المورد</h3>
+        <h3 style="color: var(--neon-blue);">✏️ تعديل منتج المتجر</h3>
         <input type="hidden" id="edit-s-id">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div>
-                <label style="font-size:12px; color:#aaa;">كود المنتج:</label>
-                <input type="text" id="edit-s-code" style="color: var(--gold); font-weight: bold;">
-            </div>
-            <div>
-                <label style="font-size:12px; color:#aaa;">عملة الشراء:</label>
-                <select id="edit-s-currency">
-                    <option value="points">🪙 بالنقاط</option>
-                    <option value="egp">💵 بالجنيه (EGP)</option>
-                </select>
-            </div>
+            <input type="text" id="edit-s-code" style="color: var(--gold); font-weight: bold;">
+            <select id="edit-s-currency">
+                <option value="points">🪙 بالنقاط</option>
+                <option value="egp">💵 بالجنيه (EGP)</option>
+            </select>
         </div>
-        <label style="font-size:12px; color:#aaa;">العنوان:</label>
-        <input type="text" id="edit-s-title">
-        <label style="font-size:12px; color:#aaa;">الوصف:</label>
-        <textarea id="edit-s-desc" rows="2"></textarea>
+        <input type="text" id="edit-s-title" placeholder="العنوان">
+        <textarea id="edit-s-desc" rows="2" placeholder="الوصف"></textarea>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div>
-                <label style="font-size:12px; color:#aaa;">سعر البيع للمشتري:</label>
-                <input type="number" id="edit-s-price" step="0.5">
-            </div>
-            <div>
-                <label style="font-size:12px; color:var(--neon-purple);">التكلفة عليك (واقف بكام؟):</label>
-                <input type="number" id="edit-s-supplier-cost" step="0.5">
-            </div>
+            <input type="number" id="edit-s-price" step="0.5" placeholder="سعر البيع">
+            <input type="number" id="edit-s-supplier-cost" step="0.5" placeholder="التكلفة">
         </div>
-        <label style="font-size:12px; color:var(--neon-purple);">اسم المورد / التاجر / السيرفر:</label>
-        <input type="text" id="edit-s-supplier-name">
-        <label style="font-size:12px; color:var(--neon-purple);">رابط المورد أو ملاحظات الشراء السرية:</label>
-        <input type="text" id="edit-s-supplier-notes">
+        <input type="text" id="edit-s-supplier-name" placeholder="اسم المورد">
+        <input type="text" id="edit-s-supplier-notes" placeholder="ملاحظات المورد">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <div>
-                <label style="font-size:12px; color:#aaa;">العدد المتاح (Target):</label>
-                <input type="number" id="edit-s-target">
-            </div>
-            <div>
-                <label style="font-size:12px; color:#aaa;">الرابط العام (اختياري):</label>
-                <input type="text" id="edit-s-link">
-            </div>
+            <input type="number" id="edit-s-target" placeholder="الكمية">
+            <input type="text" id="edit-s-link" placeholder="الرابط">
         </div>
-        <label style="font-size:12px; color:#aaa;">تحديث الصورة/الملف (اختياري):</label>
-        <input type="file" id="edit-s-file" accept="image/*,.zip,.pdf" onchange="previewEditStoreFile(this)">
         <div style="display: flex; gap: 10px; margin-top: 15px;">
             <button class="approve-btn" onclick="saveEditedStoreProduct()">حفظ التعديلات ✅</button>
-            <button class="del-btn" onclick="closeEditStoreModal()">إلغاء</button>
+            <button class="del-btn" onclick="document.getElementById('edit-store-modal').style.display='none'">إلغاء</button>
         </div>
     </div>
 </div>
 
-<!-- Modal تعديل الميثود بالكامل -->
+<!-- Modal تعديل الميثود -->
 <div id="edit-method-modal" class="admin-modal">
     <div class="admin-modal-content">
-        <h3 style="color: var(--neon-purple);">✏️ تعديل تفاصيل الميثود</h3>
+        <h3 style="color: var(--neon-purple);">✏️ تعديل الميثود</h3>
         <input type="hidden" id="edit-m-id">
-        <label style="font-size:12px; color:#aaa;">العنوان:</label>
         <input type="text" id="edit-m-title">
-        <label style="font-size:12px; color:#aaa;">الشرح والمحتوى:</label>
-        <textarea id="edit-m-content" rows="5"></textarea>
-        <label style="font-size:12px; color:#aaa;">سعر فك الحجب (نقاط):</label>
+        <textarea id="edit-m-content" rows="4"></textarea>
         <input type="number" id="edit-m-cost">
-        <label style="font-size:12px; color:#aaa;">تحديث الصورة (اختياري):</label>
-        <input type="file" id="edit-m-img-file" accept="image/*" onchange="previewEditMethodImage(this)">
         <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button class="approve-btn" onclick="saveEditedMethod()">حفظ التعديلات ✅</button>
-            <button class="del-btn" onclick="closeEditMethodModal()">إلغاء</button>
+            <button class="approve-btn" onclick="saveEditedMethod()">حفظ ✅</button>
+            <button class="del-btn" onclick="document.getElementById('edit-method-modal').style.display='none'">إلغاء</button>
         </div>
     </div>
 </div>
 
-<!-- Modal تعديل المهمة بالكامل -->
+<!-- Modal تعديل المهمة -->
 <div id="edit-task-modal" class="admin-modal">
     <div class="admin-modal-content">
-        <h3 style="color: var(--neon-purple);">✏️ تعديل تفاصيل المهمة</h3>
+        <h3 style="color: var(--neon-purple);">✏️ تعديل المهمة</h3>
         <input type="hidden" id="edit-t-id">
-        <label style="font-size:12px; color:#aaa;">عنوان المهمة:</label>
         <input type="text" id="edit-t-title">
-        <label style="font-size:12px; color:#aaa;">رابط المهمة (URL):</label>
         <input type="text" id="edit-t-link">
-        <label style="font-size:12px; color:#aaa;">مكافأة العضو (نقاط):</label>
         <input type="number" id="edit-t-reward">
-        <label style="font-size:12px; color:#aaa;">العدد المطلوب (Target):</label>
         <input type="number" id="edit-t-target">
         <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button class="approve-btn" onclick="saveEditedTask()">حفظ التعديلات ✅</button>
-            <button class="del-btn" onclick="closeEditTaskModal()">إلغاء</button>
+            <button class="approve-btn" onclick="saveEditedTask()">حفظ ✅</button>
+            <button class="del-btn" onclick="document.getElementById('edit-task-modal').style.display='none'">إلغاء</button>
         </div>
     </div>
 </div>
@@ -570,80 +495,26 @@
 <div id="lightbox-modal">
     <div class="lightbox-toolbar">
         <div class="lightbox-controls">
-            <button class="lightbox-btn" onclick="zoomImage(0.25)">🔍+ تكبير</button>
-            <button class="lightbox-btn" onclick="zoomImage(-0.25)">🔍- تصغير</button>
-            <button class="lightbox-btn" onclick="resetZoom()">🔄 إعادة ضبط</button>
+            <button class="lightbox-btn" onclick="zoomImage(0.25)">🔍+</button>
+            <button class="lightbox-btn" onclick="zoomImage(-0.25)">🔍-</button>
+            <button class="lightbox-btn" onclick="resetZoom()">🔄</button>
         </div>
-        <button class="lightbox-btn" style="background: #ff3b30;" onclick="closeLightbox()">✖ إغلاق</button>
+        <button class="lightbox-btn" style="background: #ff3b30;" onclick="document.getElementById('lightbox-modal').style.display='none'">✖ إغلاق</button>
     </div>
     <div class="lightbox-viewport">
         <img id="lightbox-img" src="" alt="Fullscreen">
     </div>
 </div>
 
+<!-- 📡 سكريبت العمليات والربط بقاعدة البيانات -->
 <script>
-    // =========================================================================
-    // 🔒 نظام قفل وفتح اللوحة الآمن (يفتح اللوحة فوراً بدون أي تعطيل)
-    // =========================================================================
-    const ADMIN_SECRET_PASS = "Mostafa@2026";
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
-
-    let client = null;
-    function getDbClient() {
-        if (client) return client;
-        if (window.supabase && typeof window.supabase.createClient === 'function') {
-            client = window.supabase.createClient(S_URL, S_KEY);
-        }
-        return client;
-    }
-
-    function togglePassVisibility() {
-        const inp = document.getElementById('admin-pin-input');
-        inp.type = inp.type === 'password' ? 'text' : 'password';
-    }
-
-    function showDashboardNow() {
-        document.getElementById('lock-error-msg').style.display = 'none';
-        document.getElementById('admin-lock-screen').style.display = 'none';
-        document.getElementById('main-admin-container').style.display = 'block';
-        initAdminData();
-    }
-
-    function checkAdminSession() {
-        try {
-            const savedPass = sessionStorage.getItem("megatask_admin_pass") || localStorage.getItem("megatask_admin_pass");
-            if (savedPass && savedPass.toLowerCase() === ADMIN_SECRET_PASS.toLowerCase()) {
-                showDashboardNow();
-            }
-        } catch (e) {}
-    }
-
-    function unlockAdminPanel() {
-        const inp = document.getElementById('admin-pin-input');
-        const val = (inp ? inp.value : "").trim();
-        // يقبل الباسورد سواء بحرف M كبير أو صغير لتجنب مشاكل كيبورد الموبايل
-        if (val.toLowerCase() === ADMIN_SECRET_PASS.toLowerCase()) {
-            try { sessionStorage.setItem("megatask_admin_pass", ADMIN_SECRET_PASS); } catch (e) {}
-            showDashboardNow();
-        } else {
-            document.getElementById('lock-error-msg').style.display = 'block';
-        }
-    }
-
-    function logoutAdmin() {
-        try {
-            sessionStorage.removeItem("megatask_admin_pass");
-            localStorage.removeItem("megatask_admin_pass");
-        } catch (e) {}
-        location.reload();
-    }
+    const client = window.supabase ? window.supabase.createClient(S_URL, S_KEY) : null;
 
     let adminMethodBase64 = "";
     let depositLogoBase64 = "";
     let storeFileBase64 = "";
-    let editStoreNewFile = "";
-    let editMethodNewImage = "";
     let currentZoom = 1;
     let searchedUserObj = null;
     let activeAdminDealObj = null;
@@ -652,10 +523,24 @@
     let cachedAllProducts = [];
     let cachedAllOrders = [];
 
+    function escapeQuote(str) { return String(str || "").replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+    function escapeHtml(str) { return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+    function toggleCard(headerEl) {
+        const body = headerEl.nextElementSibling;
+        const arrow = headerEl.querySelector('.arrow-icon');
+        if (body.style.display === 'block') {
+            body.style.display = 'none';
+            if (arrow) arrow.classList.remove('open');
+        } else {
+            body.style.display = 'block';
+            if (arrow) arrow.classList.add('open');
+        }
+    }
+
     function generateNewProductCode() {
-        const rnd = Math.floor(1000 + Math.random() * 9000);
         const inp = document.getElementById('store-code');
-        if (inp) inp.value = `PRD-${rnd}`;
+        if (inp) inp.value = "PRD-" + Math.floor(1000 + Math.random() * 9000);
     }
 
     function calcAdminProductProfit() {
@@ -664,377 +549,120 @@
         const price = parseFloat(document.getElementById('store-price').value) || 0;
         const cost = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
         const net = price - cost;
-        const preview = document.getElementById('admin-profit-preview');
-
-        if (net >= 0) {
-            preview.style.borderColor = "var(--main-green)";
-            preview.style.color = "var(--main-green)";
-            preview.innerHTML = `💰 صافي ربحك في كل بيعة: +${net.toLocaleString()} ${unit} (سعر البيع: ${price} - التكلفة: ${cost})`;
-        } else {
-            preview.style.borderColor = "var(--red)";
-            preview.style.color = "var(--red)";
-            preview.innerHTML = `⚠️ انتبه! التكلفة أعلى من سعر البيع (خسارة ${net} ${unit})`;
-        }
+        document.getElementById('admin-profit-preview').innerText = `💰 صافي ربحك في كل بيعة: ${net.toFixed(2)} ${unit}`;
     }
 
-    // =========================================================================
-    // 🔍 رادار البحث الذكي بالأكواد
-    // =========================================================================
+    function copyCodeText(txt) {
+        navigator.clipboard.writeText(txt).then(() => {
+            document.getElementById('global-code-search').value = txt;
+            runSmartCodeSearch();
+        });
+    }
+
+    // رادار البحث الذكي بالأكواد
     function runSmartCodeSearch() {
         const q = (document.getElementById('global-code-search').value || "").trim().toLowerCase();
         const resDiv = document.getElementById('smart-search-results');
-
-        if (!q) {
-            resDiv.style.display = 'none';
-            resDiv.innerHTML = "";
-            return;
-        }
-
+        if (!q) { resDiv.style.display = 'none'; return; }
         resDiv.style.display = 'block';
 
         const matchedOrders = cachedAllOrders.filter(o => 
             (o.order_code && o.order_code.toLowerCase().includes(q)) ||
-            (o.product_code && o.product_code.toLowerCase().includes(q)) ||
             String(o.id) === q ||
             String(o.user_id).toLowerCase().includes(q) ||
             String(o.seller_id || '').toLowerCase().includes(q) ||
-            (o.product_title && o.product_title.toLowerCase().includes(q)) ||
-            (o.buyer_input && o.buyer_input.toLowerCase().includes(q))
+            (o.product_title && o.product_title.toLowerCase().includes(q))
         );
 
         const matchedProducts = cachedAllProducts.filter(p => 
             (p.product_code && p.product_code.toLowerCase().includes(q)) ||
             String(p.id) === q ||
-            (p.title && p.title.toLowerCase().includes(q)) ||
-            (p.supplier_name && p.supplier_name.toLowerCase().includes(q)) ||
-            (p.supplier_notes && p.supplier_notes.toLowerCase().includes(q)) ||
-            String(p.creator_id).toLowerCase().includes(q)
+            (p.title && p.title.toLowerCase().includes(q))
         );
 
         if (matchedOrders.length === 0 && matchedProducts.length === 0) {
-            resDiv.innerHTML = `<div style="padding:15px; text-align:center; color:#999;">📭 لا توجد طلبات أو منتجات تطابق الكود: <b>${escapeHtml(q)}</b></div>`;
+            resDiv.innerHTML = `<div style="padding:12px; text-align:center; color:#999;">لا توجد نتائج مطابقة للكود: ${escapeHtml(q)}</div>`;
             return;
         }
 
         let html = "";
-
-        if (matchedOrders.length > 0) {
-            html += `<div style="color:var(--main-green); font-weight:bold; margin:8px 0;">🛒 الصفقات والطلبات المطابقة (${matchedOrders.length}):</div>`;
-            matchedOrders.forEach(o => {
-                const prod = cachedStoreProductsMap[o.product_id] || {};
-                const oCode = o.order_code || `ORD-${100000 + o.id}`;
-                const pCode = o.product_code || prod.product_code || `PRD-${o.product_id || 0}`;
-                const unit = o.currency === 'egp' ? 'ج.م' : 'نقطة';
-                const isUserProd = (o.seller_id && o.seller_id !== 'ADMIN') || (prod.creator_id && prod.creator_id !== 'ADMIN');
-                const sellerShare = Number(o.net_seller_amount) > 0 ? Number(o.net_seller_amount) : (Number(o.price_paid) * 0.85);
-                const costVal = isUserProd ? sellerShare : Number(prod.supplier_cost || 0);
-                const netProfit = Number(o.price_paid) - costVal;
-
-                html += `
-                    <div class="item-row" style="border-right-color: var(--gold); flex-direction: column; align-items: flex-start;">
-                        <div style="width:100%; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
-                            <span>🆔 كود الصفقة: <span class="code-pill">${oCode}</span> | 📦 كود المنتج: <span class="code-pill">${pCode}</span></span>
-                            <span style="font-size:12px; color:var(--neon-blue);">الحالة: <b>${o.status}</b></span>
-                        </div>
-                        <div style="margin-top:6px;">
-                            <b>🛒 المنتج:</b> ${escapeHtml(o.product_title)} | <b>👤 المشتري:</b> ${o.user_id} | <b>🏷️ البائع:</b> ${o.seller_id || prod.creator_id || 'ADMIN'}<br>
-                            <b>📱 بيانات المشتري:</b> <span style="color:var(--main-green); font-weight:bold;">${escapeHtml(o.buyer_input)}</span>
-                        </div>
-                        <div class="supplier-secret-box">
-                            💵 <b>سعر الصفقة:</b> ${o.price_paid} ${unit} | <b>صافي البائع/التكلفة:</b> ${costVal.toFixed(2)} ${unit} | 
-                            <span class="profit-highlight">🔥 صافي عمولتك ومكسبك: +${netProfit.toFixed(2)} ${unit}</span>
-                        </div>
-                        <button class="chat-btn" onclick="openAdminDealChatModal(${o.id})">💬 فتح شات الصفقة والتحكم الكامل</button>
-                    </div>
-                `;
-            });
-        }
-
-        if (matchedProducts.length > 0) {
-            html += `<div style="color:var(--neon-blue); font-weight:bold; margin:12px 0 8px;">📦 المنتجات المطابقة (${matchedProducts.length}):</div>`;
-            matchedProducts.forEach(p => {
-                const pCode = p.product_code || `PRD-${p.id}`;
-                const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
-                const isUserProd = p.creator_id && p.creator_id !== 'ADMIN';
-                const costVal = isUserProd ? (Number(p.price) * 0.85) : Number(p.supplier_cost || 0);
-                const netProfit = Number(p.price) - costVal;
-
-                html += `
-                    <div class="item-row" style="border-right-color: var(--neon-blue); flex-direction: column; align-items: flex-start;">
-                        <div style="width:100%; display:flex; justify-content:space-between;">
-                            <b>📦 ${escapeHtml(p.title)} <span class="code-pill">${pCode}</span></b>
-                            <span>الحالة: <b>${p.status}</b></span>
-                        </div>
-                        <div class="supplier-secret-box">
-                            🕵️‍♂️ <b>المورد / البائع:</b> <span style="color:var(--gold); font-weight:bold;">${escapeHtml(p.supplier_name || (isUserProd ? `تاجر عضو (ID: ${p.creator_id})` : 'غير محدد'))}</span><br>
-                            💰 <b>سعر البيع:</b> ${p.price} ${unit} | <b>التكلفة/حصة البائع:</b> ${costVal.toFixed(2)} ${unit} | 
-                            <span class="profit-highlight">🔥 صافي ربحك: +${netProfit.toFixed(2)} ${unit}</span>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
+        matchedOrders.forEach(o => { html += renderOrderCardHTML(o, false); });
+        matchedProducts.forEach(p => {
+            const pCode = p.product_code || `PRD-${p.id}`;
+            html += `<div class="item-row"><b>📦 ${escapeHtml(p.title)} (${pCode})</b> <span>السعر: ${p.price} ${p.currency}</span></div>`;
+        });
         resDiv.innerHTML = html;
     }
 
-    // =========================================================================
-    // 👤 0. إدارة حسابات المستخدمين وفك الحظر (3 محافظ: شراء / تاجر / نقاط)
-    // =========================================================================
+    // إدارة حساب المستخدم وفك الحظر
     async function searchUserWallet() {
-        const db = getDbClient();
-        if (!db) return alert("مكتبة قاعدة البيانات قيد التحميل، حاول بعد ثانية.");
-
         const uid = document.getElementById('search-user-id').value.trim();
         if (!uid) return alert("أدخل ID المستخدم أولاً!");
 
-        const { data: user, error } = await db.from('users').select('*').eq('telegram_id', uid).maybeSingle();
+        const { data: user, error } = await client.from('users').select('*').eq('telegram_id', uid).maybeSingle();
         const box = document.getElementById('user-wallet-result');
-        const info = document.getElementById('user-wallet-info');
-        const banBtn = document.getElementById('btn-toggle-ban');
-
-        if (error || !user) {
-            box.style.display = 'none';
-            return alert("❌ لم يتم العثور على مستخدم بهذا الـ ID!");
-        }
+        if (error || !user) { box.style.display = 'none'; return alert("❌ لم يتم العثور على المستخدم!"); }
 
         searchedUserObj = user;
         box.style.display = 'block';
         const isBanned = user.is_banned === true;
-
-        banBtn.innerText = isBanned ? "🟢 فك الحظر عن الحساب" : "🚫 حظر هذا الحساب";
+        const banBtn = document.getElementById('btn-toggle-ban');
+        banBtn.innerText = isBanned ? "🟢 فك الحظر" : "🚫 حظر الحساب";
         banBtn.style.background = isBanned ? "var(--main-green)" : "var(--red)";
-        banBtn.style.color = isBanned ? "#000" : "#fff";
 
-        info.innerHTML = `
-            👤 <b>الاسم:</b> ${escapeHtml(user.name || 'غير معروف')} | <b>ID:</b> <span style="color:var(--neon-blue)">${user.telegram_id}</span> | 
-            <b>الحالة:</b> ${isBanned ? '<span style="color:var(--red); font-weight:bold;">🚫 محظور</span>' : '<span style="color:var(--main-green); font-weight:bold;">🟢 نشط</span>'}<br>
-            🪙 <b>رصيد النقاط:</b> <span style="color:var(--main-green); font-weight:bold;">${(user.points || 0).toLocaleString()} نقطة</span> | 
-            💵 <b>رصيد الجنيه الأساسي:</b> <span style="color:var(--neon-blue); font-weight:bold;">${Number(user.egp_balance || 0).toFixed(2)} ج.م</span><br>
-            💼 <b>رصيد أرباح التاجر القابل للسحب:</b> <span style="color:var(--gold); font-weight:bold;">${Number(user.merchant_balance_egp || 0).toFixed(2)} ج.م</span> (مبيعاته: ${user.total_sales_count || 0})<br>
-            📱 <b>بصمة الجهاز:</b> <code>${user.device_fp || 'غير مسجل'}</code> | <b>آخر IP:</b> <code>${user.last_ip || 'غير مسجل'}</code>
+        document.getElementById('user-wallet-info').innerHTML = `
+            👤 <b>الاسم:</b> ${escapeHtml(user.name || '')} | <b>ID:</b> ${user.telegram_id} | 
+            <b>الحالة:</b> ${isBanned ? '<b style="color:var(--red);">محظور 🚫</b>' : '<b style="color:var(--main-green);">نشط 🟢</b>'}<br>
+            🪙 <b>النقاط:</b> ${(user.points || 0).toLocaleString()} ن | 
+            💵 <b>رصيد الشراء:</b> ${Number(user.egp_balance || 0).toFixed(2)} ج.م | 
+            💼 <b>أرباح التاجر:</b> <b style="color:var(--gold);">${Number(user.merchant_balance_egp || 0).toFixed(2)} ج.م</b>
         `;
     }
 
     async function toggleUserBanStatus() {
-        const db = getDbClient();
-        if (!searchedUserObj || !db) return;
-        const newBanState = !(searchedUserObj.is_banned === true);
-        if (!confirm(newBanState ? "🚫 هل تريد حظر هذا الحساب؟" : "🟢 هل تريد فك الحظر عن هذا الحساب؟")) return;
-
-        const { error } = await db.from('users').update({ is_banned: newBanState }).eq('telegram_id', searchedUserObj.telegram_id);
-        if (!error) {
-            alert(newBanState ? "🚫 تم حظر الحساب." : "✅ تم فك الحظر عن الحساب بنجاح!");
-            searchUserWallet();
-        }
-    }
-
-    async function applyUserWalletAdjustment() {
-        const db = getDbClient();
-        if (!searchedUserObj || !db) return;
-        const currency = document.getElementById('wallet-adjust-currency').value;
-        const amount = parseFloat(document.getElementById('wallet-adjust-amount').value);
-        const reason = document.getElementById('wallet-adjust-reason').value.trim();
-
-        if (isNaN(amount) || amount === 0) return alert("يرجى إدخال مبلغ صحيح غير الصفر!");
-
-        let updatePayload = {};
-        let msgCurrencyText = "";
-
-        if (currency === 'egp') {
-            const newEgp = Math.max(0, Number((Number(searchedUserObj.egp_balance || 0) + amount).toFixed(2)));
-            updatePayload.egp_balance = newEgp;
-            msgCurrencyText = `${Math.abs(amount)} ج.م (رصيد شراء)`;
-        } else if (currency === 'merchant_egp') {
-            const newMerch = Math.max(0, Number((Number(searchedUserObj.merchant_balance_egp || 0) + amount).toFixed(2)));
-            updatePayload.merchant_balance_egp = newMerch;
-            msgCurrencyText = `${Math.abs(amount)} ج.م (محفظة أرباح التاجر)`;
-        } else {
-            const ptsDelta = Math.round(amount);
-            const newPts = Math.max(0, (searchedUserObj.points || 0) + ptsDelta);
-            updatePayload.points = newPts;
-            if (ptsDelta > 0) updatePayload.total_earned = (searchedUserObj.total_earned || 0) + ptsDelta;
-            msgCurrencyText = `${Math.abs(ptsDelta).toLocaleString()} نقطة`;
-        }
-
-        const { error } = await db.from('users').update(updatePayload).eq('telegram_id', searchedUserObj.telegram_id);
-        if (error) return alert("خطأ أثناء التحديث: " + error.message);
-
-        const actionWord = amount > 0 ? "إضافة" : "خصم";
-        await db.from('bot_messages').insert([{
-            telegram_id: String(searchedUserObj.telegram_id),
-            message: `🔔 *تحديث في رصيد حسابك*\n\nتم ${actionWord} *${msgCurrencyText}* ${amount > 0 ? 'إلى' : 'من'} حسابك بواسطة الإدارة.${reason ? `\n💬 *ملاحظة:* ${reason}` : ''}`,
-            status: 'pending'
-        }]);
-
-        alert(`✅ تم ${actionWord} ${msgCurrencyText} بنجاح!`);
-        document.getElementById('wallet-adjust-amount').value = "";
-        document.getElementById('wallet-adjust-reason').value = "";
+        if (!searchedUserObj) return;
+        const nextState = !(searchedUserObj.is_banned === true);
+        await client.from('users').update({ is_banned: nextState }).eq('telegram_id', searchedUserObj.telegram_id);
+        alert(nextState ? "🚫 تم حظر الحساب" : "🟢 تم فك الحظر بنجاح");
         searchUserWallet();
     }
 
-    async function broadcastToAllUsers(title, messageText) {
-        const db = getDbClient();
-        if (!db) return;
-        try {
-            const { data: allUsers, error } = await db.from('users').select('telegram_id');
-            if (error || !allUsers || allUsers.length === 0) return;
+    async function applyUserWalletAdjustment() {
+        if (!searchedUserObj) return;
+        const currency = document.getElementById('wallet-adjust-currency').value;
+        const amount = parseFloat(document.getElementById('wallet-adjust-amount').value);
+        const reason = document.getElementById('wallet-adjust-reason').value.trim();
+        if (isNaN(amount) || amount === 0) return alert("أدخل مبلغاً صحيحاً!");
 
-            const notifications = allUsers.map(u => ({
-                user_id: String(u.telegram_id),
-                title: title,
-                message: messageText,
-                is_read: false
-            }));
-
-            const formattedBotMessage = `🔔 *${title}* \n\n${messageText}`;
-            const botMessages = allUsers.map(u => ({
-                telegram_id: String(u.telegram_id),
-                message: formattedBotMessage,
-                status: 'pending'
-            }));
-
-            await db.from('user_notifications').insert(notifications);
-            await db.from('bot_messages').insert(botMessages);
-        } catch (e) {}
-    }
-
-    function toggleCard(headerEl) {
-        const body = headerEl.nextElementSibling;
-        const arrow = headerEl.querySelector('.arrow-icon');
-        if (body.style.display === 'block') {
-            body.style.display = 'none';
-            arrow.classList.remove('open');
+        let payload = {};
+        let label = "";
+        if (currency === 'egp') {
+            payload.egp_balance = Math.max(0, Number((Number(searchedUserObj.egp_balance || 0) + amount).toFixed(2)));
+            label = `${Math.abs(amount)} ج.م`;
+        } else if (currency === 'merchant_egp') {
+            payload.merchant_balance_egp = Math.max(0, Number((Number(searchedUserObj.merchant_balance_egp || 0) + amount).toFixed(2)));
+            label = `${Math.abs(amount)} ج.م (محفظة التاجر)`;
         } else {
-            body.style.display = 'block';
-            arrow.classList.add('open');
+            const delta = Math.round(amount);
+            payload.points = Math.max(0, (searchedUserObj.points || 0) + delta);
+            label = `${Math.abs(delta).toLocaleString()} نقطة`;
         }
-    }
 
-    function previewAdminImage(input) {
-        if (!input.files || !input.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const maxW = 600;
-                let w = img.width, h = img.height;
-                if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
-                canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                adminMethodBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                document.getElementById('admin-preview-tag').src = adminMethodBase64;
-                document.getElementById('admin-img-preview').style.display = 'block';
-            }
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-
-    function previewDepositLogo(input) {
-        if (!input.files || !input.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 100; canvas.height = 100;
-                canvas.getContext('2d').drawImage(img, 0, 0, 100, 100);
-                depositLogoBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                document.getElementById('deposit-logo-tag').src = depositLogoBase64;
-                document.getElementById('deposit-logo-preview').style.display = 'block';
-            }
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-
-    function previewStoreFile(input) {
-        if (!input.files || !input.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = function(e) { storeFileBase64 = e.target.result; }
-        reader.readAsDataURL(input.files[0]);
-    }
-
-    function previewEditStoreFile(input) {
-        if (!input.files || !input.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = function(e) { editStoreNewFile = e.target.result; }
-        reader.readAsDataURL(input.files[0]);
-    }
-
-    function previewEditMethodImage(input) {
-        if (!input.files || !input.files[0]) return;
-        const reader = new FileReader();
-        reader.onload = function(e) { editMethodNewImage = e.target.result; }
-        reader.readAsDataURL(input.files[0]);
-    }
-
-    async function addAdminMethod() {
-        const db = getDbClient();
-        const title = document.getElementById('admin-method-title').value.trim();
-        const content = document.getElementById('admin-method-content').value.trim();
-        const unlockCost = parseInt(document.getElementById('admin-method-cost').value) || 50;
-
-        if (!title || !content) return alert("يرجى كتابة العنوان والشرح للميثود!");
-
-        const { error } = await db.from('methods').insert([{
-            user_id: 'ADMIN', title, content, image_url: adminMethodBase64 || null,
-            status: 'Approved', points_awarded: 0, unlock_cost: unlockCost
+        await client.from('users').update(payload).eq('telegram_id', searchedUserObj.telegram_id);
+        await client.from('bot_messages').insert([{
+            telegram_id: String(searchedUserObj.telegram_id),
+            message: `🔔 *تحديث في رصيد حسابك*\nتم ${amount > 0 ? 'إضافة' : 'خصم'} *${label}* بواسطة الإدارة.${reason ? `\n💬 *ملاحظة:* ${reason}` : ''}`,
+            status: 'pending'
         }]);
-
-        if (error) alert("خطأ أثناء النشر: " + error.message);
-        else { 
-            await broadcastToAllUsers("🔓 ميثود رسمية جديدة!", `تم نشر ميثود جديدة: ${title} - تفقد قسم الميثودات الآن!`);
-            alert("تم نشر الميثود الرسمية بنجاح! 🚀"); 
-            loadPublishedMethods();
-        }
+        alert("✅ تم تحديث الرصيد بنجاح!");
+        searchUserWallet();
     }
 
-    // =========================================================================
-    // 🛍️ المتجر الرسمي وصفقات الوساطة (تحميل سريع بدون حلقات انتظار)
-    // =========================================================================
-    async function addStoreProduct() {
-        const db = getDbClient();
-        const category = document.getElementById('store-cat').value;
-        const currency = document.getElementById('store-currency').value;
-        const productCode = (document.getElementById('store-code').value || "").trim() || ("PRD-" + Math.floor(1000 + Math.random() * 9000));
-        const title = document.getElementById('store-title').value.trim();
-        const description = document.getElementById('store-desc').value.trim();
-        const price = parseFloat(document.getElementById('store-price').value);
-        const supplierCost = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
-        const supplierName = document.getElementById('store-supplier-name').value.trim();
-        const supplierNotes = document.getElementById('store-supplier-notes').value.trim();
-        const target = parseInt(document.getElementById('store-target').value) || 100;
-        const link = document.getElementById('store-link').value.trim() || "#";
-
-        if (!title || isNaN(price) || price <= 0) return alert("يرجى ملء العنوان والسعر الأساسي للمنتج!");
-
-        const { error } = await db.from('store_products').insert([{
-            creator_id: 'ADMIN', product_code: productCode, category, currency, title, description,
-            price, supplier_cost: supplierCost, supplier_name: supplierName || "مورد الأدمن",
-            supplier_notes: supplierNotes || null, link, target_count: target,
-            image_url: storeFileBase64 || null, status: 'Approved'
-        }]);
-
-        if (error) alert("خطأ: " + error.message);
-        else { 
-            const unitLabel = currency === 'egp' ? 'ج.م' : 'نقطة';
-            await broadcastToAllUsers("🛍️ منتج جديد في المتجر", `تم توفير منتج جديد: ${title} بسعر ${price.toLocaleString()} ${unitLabel}`);
-            alert(`✅ تم نشر المنتج بنجاح بكود (${productCode})!`); 
-            loadStoreAndOrdersFast();
-        }
-    }
-
-    // تحميل المنتجات والطلبات معاً في طلب واحد سريع دون تجميد المتصفح
+    // المتجر والطلبات وصفقات الوساطة
     async function loadStoreAndOrdersFast() {
-        const db = getDbClient();
-        if (!db) return;
-
         const [prodRes, ordRes] = await Promise.all([
-            db.from('store_products').select('*').order('id', { ascending: false }),
-            db.from('store_orders').select('*').order('id', { ascending: false })
+            client.from('store_products').select('*').order('id', { ascending: false }),
+            client.from('store_orders').select('*').order('id', { ascending: false })
         ]);
 
         cachedAllProducts = prodRes.data || [];
@@ -1042,320 +670,109 @@
         cachedStoreProductsMap = {};
         cachedAllProducts.forEach(p => { cachedStoreProductsMap[p.id] = p; });
 
-        renderStoreProductsListUI();
-        renderPendingStoreProductsUI();
-        renderStoreOrdersAndDisputesUI();
-    }
-
-    function renderStoreProductsListUI() {
-        const div = document.getElementById('store-products-list');
-        if (!div) return;
-
-        const approvedProducts = cachedAllProducts.filter(p => p.status === 'Approved');
-        if (approvedProducts.length === 0) {
-            div.innerHTML = "📭 لا توجد منتجات منشورة في المتجر.";
-            return;
-        }
-
-        let html = "";
-        approvedProducts.forEach(p => {
-            const soldCount = cachedAllOrders.filter(o => Number(o.product_id) === Number(p.id)).length;
-            const isEgp = p.currency === 'egp';
-            const unit = isEgp ? 'ج.م' : 'نقطة';
+        // 1. المنتجات المعتمدة
+        const prodDiv = document.getElementById('store-products-list');
+        const approved = cachedAllProducts.filter(p => p.status === 'Approved');
+        prodDiv.innerHTML = approved.length === 0 ? "📭 لا توجد منتجات منشورة." : approved.map(p => {
+            const sold = cachedAllOrders.filter(o => Number(o.product_id) === Number(p.id)).length;
+            const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
             const pCode = p.product_code || `PRD-${p.id}`;
-            const isUserProd = p.creator_id && p.creator_id !== 'ADMIN';
-            const commRate = p.category === 'escrow_private' ? 0.10 : 0.15;
-            const costVal = isUserProd ? (Number(p.price) * (1 - commRate)) : Number(p.supplier_cost || 0);
-            const netProfit = Number(p.price) - costVal;
-
-            const currencyBadge = isEgp 
-                ? `<span class="currency-badge-egp">💵 ${p.price} ج.م</span>` 
-                : `<span class="currency-badge-pts">🪙 ${Number(p.price).toLocaleString()} نقطة</span>`;
-
-            html += `
-                <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
-                    <div style="width:100%;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-                            <b>📦 ${escapeHtml(p.title)} (${p.category}) ${currencyBadge}</b>
-                            <span class="code-pill" onclick="copyCodeText('${pCode}')">كود: ${pCode} 📋</span>
-                        </div>
-                        <div class="supplier-secret-box">
-                            🕵️‍♂️ <b>المورد / البائع:</b> <span style="color:var(--gold); font-weight:bold;">${escapeHtml(p.supplier_name || (isUserProd ? `تاجر عضو (ID: ${p.creator_id})` : 'منتج رسمي'))}</span><br>
-                            💰 <b>سعر البيع:</b> ${p.price} ${unit} | <b>حصة البائع/التكلفة:</b> ${costVal.toFixed(2)} ${unit} | 
-                            <span class="profit-highlight">🔥 صافي ربحك: +${netProfit.toFixed(2)} ${unit}</span> | 
-                            <b>المبيعات:</b> ${soldCount}
-                        </div>
+            return `
+                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                    <div style="width:100%; display:flex; justify-content:space-between;">
+                        <b>📦 ${escapeHtml(p.title)} (${p.price} ${unit})</b>
+                        <span class="code-pill" onclick="copyCodeText('${pCode}')">${pCode}</span>
                     </div>
+                    <div style="font-size:12px; color:#aaa;">المورد/البائع: ${escapeHtml(p.supplier_name || p.creator_id || 'ADMIN')} | المبيعات: ${sold}</div>
                     <div class="actions-box">
                         <button class="edit-btn" onclick="openEditStoreModal(${p.id})">تعديل ✏️</button>
                         <button class="del-btn" onclick="deleteStoreProductItem(${p.id})">حذف 🗑️</button>
                     </div>
                 </div>`;
-        });
-        div.innerHTML = html;
-    }
+        }).join("");
 
-    function openEditStoreModal(id) {
-        const p = cachedStoreProductsMap[id];
-        if (!p) return;
-
-        document.getElementById('edit-s-id').value = p.id;
-        document.getElementById('edit-s-code').value = p.product_code || `PRD-${p.id}`;
-        document.getElementById('edit-s-title').value = p.title || "";
-        document.getElementById('edit-s-desc').value = p.description || "";
-        document.getElementById('edit-s-price').value = p.price || 0;
-        document.getElementById('edit-s-supplier-cost').value = p.supplier_cost || 0;
-        document.getElementById('edit-s-supplier-name').value = p.supplier_name || "";
-        document.getElementById('edit-s-supplier-notes').value = p.supplier_notes || "";
-        document.getElementById('edit-s-target').value = p.target_count || 100;
-        document.getElementById('edit-s-link').value = p.link || "";
-        document.getElementById('edit-s-currency').value = p.currency || 'points';
-        editStoreNewFile = "";
-        document.getElementById('edit-s-file').value = "";
-        document.getElementById('edit-store-modal').style.display = 'flex';
-    }
-
-    function closeEditStoreModal() {
-        document.getElementById('edit-store-modal').style.display = 'none';
-    }
-
-    async function saveEditedStoreProduct() {
-        const db = getDbClient();
-        const id = document.getElementById('edit-s-id').value;
-        const productCode = document.getElementById('edit-s-code').value.trim();
-        const title = document.getElementById('edit-s-title').value.trim();
-        const description = document.getElementById('edit-s-desc').value.trim();
-        const currency = document.getElementById('edit-s-currency').value;
-        const price = parseFloat(document.getElementById('edit-s-price').value) || 10;
-        const supplierCost = parseFloat(document.getElementById('edit-s-supplier-cost').value) || 0;
-        const supplierName = document.getElementById('edit-s-supplier-name').value.trim();
-        const supplierNotes = document.getElementById('edit-s-supplier-notes').value.trim();
-        const target = parseInt(document.getElementById('edit-s-target').value) || 100;
-        const link = document.getElementById('edit-s-link').value.trim() || "#";
-
-        if (!title) return alert("يرجى إدخال عنوان المنتج!");
-
-        const updateData = {
-            product_code: productCode, title, description, currency, price,
-            supplier_cost: supplierCost, supplier_name: supplierName, supplier_notes: supplierNotes,
-            target_count: target, link
-        };
-        if (editStoreNewFile) updateData.image_url = editStoreNewFile;
-
-        const { error } = await db.from('store_products').update(updateData).eq('id', id);
-        if (error) alert("فشل الحفظ: " + error.message);
-        else {
-            alert("تم تحديث المنتج بنجاح! ✨");
-            closeEditStoreModal();
-            loadStoreAndOrdersFast();
-        }
-    }
-
-    async function deleteStoreProductItem(id) {
-        const db = getDbClient();
-        if (!confirm("حذف هذا المنتج نهائياً من المتجر؟")) return;
-        await db.from('store_products').delete().eq('id', id);
-        loadStoreAndOrdersFast();
-    }
-
-    function renderPendingStoreProductsUI() {
-        const div = document.getElementById('pending-store-list');
-        if (!div) return;
-        const pendingList = cachedAllProducts.filter(p => p.status === 'Pending');
-
-        if (pendingList.length === 0) {
-            div.innerHTML = "✅ لا توجد سلع تجار جديدة تنتظر المراجعة.";
-            return;
-        }
-
-        let html = "";
-        pendingList.forEach(p => {
-            const unitLabel = p.currency === 'egp' ? 'ج.م' : 'نقطة';
+        // 2. سلع التجار المعلقة
+        const pendStoreDiv = document.getElementById('pending-store-list');
+        const pendProds = cachedAllProducts.filter(p => p.status === 'Pending');
+        pendStoreDiv.innerHTML = pendProds.length === 0 ? "✅ لا توجد سلع تجار معلقة." : pendProds.map(p => {
             const pCode = p.product_code || `PRD-${p.id}`;
-            const sellerPayout = (Number(p.price) * 0.85).toFixed(2);
-            const botCommission = (Number(p.price) * 0.15).toFixed(2);
-
-            html += `
-                <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
-                    <div style="width:100%;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <b>📦 العنوان: ${escapeHtml(p.title)} (${p.category})</b>
-                            <span class="code-pill">${pCode}</span>
-                        </div>
-                        <div class="supplier-secret-box">
-                            👤 <b>التاجر العارض (ID):</b> <span style="color:var(--neon-blue); font-weight:bold;">${p.creator_id}</span><br>
-                            🔗 <b>رابط المعاينة / التواصل:</b> ${escapeHtml(p.link || '---')}<br>
-                            💰 <b>سعر البيع:</b> ${Number(p.price).toLocaleString()} ${unitLabel} | 
-                            <b>صافي التاجر (85%):</b> ${sellerPayout} ${unitLabel} | 
-                            <span class="profit-highlight">🔥 عمولة الوساطة للبوت (15%): +${botCommission} ${unitLabel}</span>
-                        </div>
-                        <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0; font-size:12px;"><b>وصف السلعة:</b> ${escapeHtml(p.description || 'بلا وصف')}</div>
-                    </div>
+            const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
+            return `
+                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                    <div><b>📦 ${escapeHtml(p.title)}</b> (${p.price} ${unit}) | التاجر: <code>${p.creator_id}</code></div>
+                    <div style="font-size:12px; color:#ccc;">${escapeHtml(p.description || '')}</div>
                     <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', '${pCode}', true)">موافقة ونشر بالمتجر ✅</button>
+                        <button class="approve-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', '${pCode}', true)">قبول ونشر ✅</button>
                         <button class="reject-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', '${pCode}', false)">رفض ❌</button>
                     </div>
                 </div>`;
-        });
-        div.innerHTML = html;
+        }).join("");
+
+        // 3. النزاعات والطلبات النشطة
+        const disputes = cachedAllOrders.filter(o => o.status === 'Disputed');
+        document.getElementById('escrow-disputes-list').innerHTML = disputes.length === 0
+            ? "✅ لا توجد نزاعات وساطة مفتوحة حالياً."
+            : disputes.map(o => renderOrderCardHTML(o, true)).join("");
+
+        const activeOrds = cachedAllOrders.filter(o => ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'].includes(o.status));
+        document.getElementById('store-orders-list').innerHTML = activeOrds.length === 0
+            ? "✅ لا توجد طلبات أو صفقات ضمان جارية."
+            : activeOrds.map(o => renderOrderCardHTML(o, false)).join("");
     }
 
-    async function reviewStoreProduct(id, creatorId, title, pCode, isApproved) {
-        const db = getDbClient();
-        if (isApproved) {
-            await db.from('store_products').update({ status: 'Approved', product_code: pCode }).eq('id', id);
-            if (creatorId && creatorId !== 'ADMIN') {
-                await db.from('bot_messages').insert([{
-                    telegram_id: creatorId,
-                    message: `🎉 *مبارك! تم قبول ونشر سلعتك في المتجر بنظام الضمان (Escrow)*\n\n📦 *السلعة:* ${title}\n🆔 *كود المنتج:* \`${pCode}\`\n💼 عند كل عملية شراء، يُحجز المبلغ في خزنة الضمان وتستلم صافي ربحك (85%) فور تسليم المشتري!`,
-                    status: 'pending'
-                }]);
-            }
-            alert(`تمت الموافقة على السلعة (${pCode}) ونشرها! 🚀`);
-        } else {
-            const reason = prompt("سبب الرفض (ليظهر للتاجر في البوت):", "المخالفة لشروط المتجر");
-            if (reason === null) return;
-            await db.from('store_products').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
-            if (creatorId && creatorId !== 'ADMIN') {
-                await db.from('bot_messages').insert([{
-                    telegram_id: creatorId,
-                    message: `❌ *عذراً، تم رفض سلعتك المقترحة*\n\n📦 *السلعة:* ${title}\n💬 *السبب:* ${reason}`,
-                    status: 'pending'
-                }]);
-            }
-        }
-        loadStoreAndOrdersFast();
-    }
-
-    // =========================================================================
-    // ⚖️🛒 عرض الطلبات وصفقات الضمان والنزاعات
-    // =========================================================================
-    function renderStoreOrdersAndDisputesUI() {
-        const ordersDiv = document.getElementById('store-orders-list');
-        const disputesDiv = document.getElementById('escrow-disputes-list');
-
-        const disputedOrders = cachedAllOrders.filter(o => o.status === 'Disputed');
-        if (disputesDiv) {
-            disputesDiv.innerHTML = disputedOrders.length === 0
-                ? "✅ لا توجد أي نزاعات مفتوحة بين البائعين والمشترين حالياً."
-                : disputedOrders.map(o => renderOrderCardHTML(o, true)).join("");
-        }
-
-        const activeOrders = cachedAllOrders.filter(o => ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'].includes(o.status));
-        if (ordersDiv) {
-            ordersDiv.innerHTML = activeOrders.length === 0
-                ? "✅ لا توجد طلبات أو صفقات ضمان معلقة حالياً."
-                : activeOrders.map(o => renderOrderCardHTML(o, false)).join("");
-        }
-    }
-
-    function renderOrderCardHTML(o, isDisputeHighlight) {
+    function renderOrderCardHTML(o, isDispute) {
         const prod = cachedStoreProductsMap[o.product_id] || {};
-        const isEgp = o.currency === 'egp';
-        const unit = isEgp ? 'ج.م' : 'نقطة';
+        const unit = o.currency === 'egp' ? 'ج.م' : 'نقطة';
         const oCode = o.order_code || `ESC-${100000 + o.id}`;
-        const pCode = o.product_code || prod.product_code || `PRD-${o.product_id || 0}`;
-
         const sellerId = o.seller_id || prod.creator_id || 'ADMIN';
-        const isUserSeller = sellerId !== 'ADMIN';
-        const netSeller = Number(o.net_seller_amount) > 0 ? Number(o.net_seller_amount) : Number((Number(o.price_paid) * 0.85).toFixed(2));
-        const costOnAdmin = isUserSeller ? netSeller : Number(prod.supplier_cost || 0);
-        const netAdminProfit = Number(o.price_paid) - costOnAdmin;
-
-        const paidBadge = isEgp 
-            ? `<span class="currency-badge-egp">💵 ${o.price_paid} ج.م</span>` 
-            : `<span class="currency-badge-pts">🪙 ${Number(o.price_paid).toLocaleString()} نقطة</span>`;
-
-        let statusBadge = `<span style="color:var(--gold);">🔒 محجوز بالضمان (${o.status})</span>`;
-        if (o.status === 'Delivered') statusBadge = `<span style="color:var(--neon-blue);">📦 سلّمه البائع (بانتظار تأكيد المشتري)</span>`;
-        if (o.status === 'Disputed') statusBadge = `<span style="color:var(--red); font-weight:bold;">🚨 نزاع مفتوح!</span>`;
+        const msgCount = Array.isArray(o.chat_messages) ? o.chat_messages.length : 0;
 
         return `
-            <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start; border-right-color:${isDisputeHighlight ? 'var(--red)' : 'var(--main-green)'};">
-                <div style="width:100%;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-                        <span>🆔 كود الصفقة: <span class="code-pill" onclick="copyCodeText('${oCode}')">${oCode} 📋</span> | 📦 المنتج: <span class="code-pill">${pCode}</span></span>
-                        ${statusBadge}
-                    </div>
-                    <b>🛒 العنوان:</b> ${escapeHtml(o.product_title)} | <b>💰 المبلغ المحجوز:</b> ${paidBadge}<br>
-                    <b>👤 المشتري ID:</b> <span style="color:var(--neon-blue)">${o.user_id}</span> | 
-                    <b>🏷️ البائع ID:</b> <span style="color:var(--gold)">${sellerId}</span><br>
-                    <b>📱 بيانات المشتري:</b> <span style="color:var(--main-green); font-weight:bold;">${escapeHtml(o.buyer_input)}</span>
-
-                    <div class="supplier-secret-box">
-                        💵 <b>الحسبة المالية:</b> إجمالي الصفقة: <b>${o.price_paid} ${unit}</b> | 
-                        ${isUserSeller ? `صافي التاجر عند التحرير: <b>${netSeller} ${unit}</b>` : `التكلفة عليك: <b>${costOnAdmin} ${unit}</b>`} | 
-                        <span class="profit-highlight">🔥 صافي عمولتك/ربحك: +${netAdminProfit.toFixed(2)}${unit}</span>
-                    </div>
+            <div class="item-row" style="flex-direction:column; align-items:flex-start; border-right-color:${isDispute ? 'var(--red)' : 'var(--main-green)'};">
+                <div style="width:100%; display:flex; justify-content:space-between;">
+                    <span class="code-pill" onclick="copyCodeText('${oCode}')">${oCode} 📋</span>
+                    <b style="color:var(--gold);">الحالة: ${o.status}</b>
+                </div>
+                <div>
+                    <b>📦 الطلب:</b> ${escapeHtml(o.product_title)} (${o.price_paid} ${unit})<br>
+                    <b>🛒 المشتري:</b> <code>${o.user_id}</code> | <b>🏷️ البائع:</b> <code>${sellerId}</code><br>
+                    <b>📱 بيانات المشتري:</b> <span style="color:var(--main-green);">${escapeHtml(o.buyer_input || '')}</span>
                 </div>
                 <div class="actions-box">
-                    <button class="chat-btn" onclick="openAdminDealChatModal(${o.id})">💬 فتح شات الصفقة (${Array.isArray(o.chat_messages) ? o.chat_messages.length : 0})</button>
-                    <button class="approve-btn" onclick="completeStoreOrder(${o.id})">⚖️ تحرير الأرباح للبائع ✅</button>
-                    <button class="reject-btn" onclick="rejectStoreOrder(${o.id})">↩️ إلغاء وإرجاع للمشتري ❌</button>
+                    <button class="chat-btn" onclick="openAdminDealChatModal(${o.id})">💬 شات الصفقة (${msgCount})</button>
+                    <button class="approve-btn" onclick="completeStoreOrder(${o.id})">⚖️ تحرير للبائع ✅</button>
+                    <button class="reject-btn" onclick="rejectStoreOrder(${o.id})">↩️ إرجاع للمشتري ❌</button>
                 </div>
-            </div>
-        `;
+            </div>`;
     }
 
     async function openAdminDealChatModal(orderId) {
-        const db = getDbClient();
-        const { data: ord } = await db.from('store_orders').select('*').eq('id', orderId).maybeSingle();
-        if (!ord) return alert("تعذر العثور على الصفقة.");
-
+        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        if (!ord) return;
         activeAdminDealObj = ord;
-        const unit = ord.currency === 'egp' ? 'ج.م' : 'نقطة';
         document.getElementById('adm-dr-title').innerText = `⚖️ غرفة الصفقة (${ord.order_code || ord.id})`;
-        document.getElementById('adm-dr-meta').innerHTML = `
-            📦 <b>السلعة:</b> ${escapeHtml(ord.product_title)} (${ord.price_paid}${unit})<br>
-            🛒 <b>المشتري:</b> <code>${ord.user_id}</code> | 🏷️ <b>البائع:</b> <code>${ord.seller_id \vert{}\vert{} 'ADMIN'}</code> \vert{} <b>الحالة:</b> ${ord.status}<br>
-            📱 <b>بيانات استلام المشتري:</b> <span style="color:var(--main-green);">${escapeHtml(ord.buyer_input || '')}</span>
-        `;
+        document.getElementById('adm-dr-meta').innerHTML = `📦 <b>${escapeHtml(ord.product_title)}</b> | المشتري: <code>${ord.user_id}</code> | البائع: <code>${ord.seller_id || 'ADMIN'}</code>`;
 
         const chatBox = document.getElementById('adm-dr-chat-box');
         const msgs = Array.isArray(ord.chat_messages) ? ord.chat_messages : [];
-        if (msgs.length === 0) {
-            chatBox.innerHTML = `<div class="c-msg c-sys">لا توجد رسائل في غرفة الصفقة بعد.</div>`;
-        } else {
-            chatBox.innerHTML = msgs.map(m => {
-                if (m.sender === 'SYSTEM') return `<div class="c-msg c-sys">${escapeHtml(m.text)}</div>`;
-                if (m.sender === 'ADMIN') return `<div class="c-msg c-admin"><b>👮‍♂️ الإدارة • ${escapeHtml(m.time \vert{}\vert{} '')}:</b><br>${escapeHtml(m.text)}</div>`;
-                const isB = String(m.sender_id) === String(ord.user_id);
-                return `
-                    <div class="c-msg ${isB ? 'c-buyer' : 'c-seller'}">
-                        <b>${escapeHtml(m.role_label \vert{}\vert{} (isB ? 'المشتري' : 'البائع'))} (${escapeHtml(m.sender_id || '')}) • ${escapeHtml(m.time \vert{}\vert{} '')}:</b><br>${escapeHtml(m.text)}
-                    </div>
-                `;
-            }).join("");
-        }
-        chatBox.scrollTop = chatBox.scrollHeight;
+        chatBox.innerHTML = msgs.length === 0 ? `<div class="c-msg c-sys">لا توجد رسائل بعد.</div>` : msgs.map(m => {
+            if (m.sender === 'SYSTEM') return `<div class="c-msg c-sys">${escapeHtml(m.text)}</div>`;
+            if (m.sender === 'ADMIN') return `<div class="c-msg c-admin"><b>👮‍♂️ الإدارة:</b> ${escapeHtml(m.text)}</div>`;
+            const isB = String(m.sender_id) === String(ord.user_id);
+            return `<div class="c-msg ${isB ? 'c-buyer' : 'c-seller'}"><b>${escapeHtml(m.role_label || '')}:</b> ${escapeHtml(m.text)}</div>`;
+        }).join("");
         document.getElementById('admin-deal-chat-modal').style.display = 'flex';
     }
 
     async function sendAdminMessageInDeal() {
-        const db = getDbClient();
-        if (!activeAdminDealObj || !db) return;
-        const inp = document.getElementById('adm-dr-msg-inp');
-        const txt = inp.value.trim();
+        if (!activeAdminDealObj) return;
+        const txt = document.getElementById('adm-dr-msg-inp').value.trim();
         if (!txt) return;
-
         const ord = activeAdminDealObj;
         const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
-        msgs.push({
-            sender: "ADMIN",
-            role_label: "👮‍♂️ الإدارة (الوسيط المالي)",
-            text: txt,
-            time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-        });
-
-        inp.value = "";
-        await db.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
-
-        const toNotify = [{ telegram_id: String(ord.user_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' }];
-        if (ord.seller_id && ord.seller_id !== 'ADMIN') {
-            toNotify.push({ telegram_id: String(ord.seller_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' });
-        }
-        await db.from('bot_messages').insert(toNotify);
-
+        msgs.push({ sender: "ADMIN", role_label: "👮‍♂️ الإدارة", text: txt, time: new Date().toLocaleTimeString('ar-EG') });
+        document.getElementById('adm-dr-msg-inp').value = "";
+        await client.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
         openAdminDealChatModal(ord.id);
     }
 
@@ -1372,750 +789,423 @@
     }
 
     async function completeStoreOrder(orderId) {
-        const db = getDbClient();
-        const { data: ord } = await db.from('store_orders').select('*').eq('id', orderId).maybeSingle();
-        if (!ord || ord.status === 'Completed') return alert("هذا الطلب مكتمل بالفعل!");
-
-        const oCode = ord.order_code || `ESC-${ord.id}`;
-        const note = prompt(`تأكيد تسليم الطلب وتحرير الأرباح للبائع في الصفقة (${oCode}).\nأدخل ملاحظة أو كود التسليم للمشتري:`, "تم تأكيد التسليم وتحرير الصفقة بنجاح!");
+        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        if (!ord || ord.status === 'Completed') return;
+        const note = prompt("ملاحظة التسليم للمشتري:", "تم تأكيد التسليم وتحرير الصفقة بنجاح!");
         if (note === null) return;
 
-        const isEgp = ord.currency === 'egp';
-        const pricePaid = Number(ord.price_paid || 0);
+        await client.from('store_orders').update({ status: 'Completed' }).eq('id', orderId);
         const prod = cachedStoreProductsMap[ord.product_id] || {};
         const sellerId = String(ord.seller_id || prod.creator_id || 'ADMIN');
-
-        const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
-        msgs.push({
-            sender: "SYSTEM",
-            text: `✅ قامت الإدارة بتأكيد التسليم وتحرير أرباح الصفقة للبائع. ملاحظة: ${note}`,
-            time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-        });
-
-        const { error } = await db.from('store_orders').update({ status: 'Completed', chat_messages: msgs }).eq('id', orderId);
-        if (error) return alert("خطأ: " + error.message);
+        const isEgp = ord.currency === 'egp';
+        const pricePaid = Number(ord.price_paid || 0);
 
         if (sellerId !== 'ADMIN') {
             const netSeller = Number(ord.net_seller_amount) > 0 ? Number(ord.net_seller_amount) : Number((pricePaid * 0.85).toFixed(2));
-            const { data: sellerUser } = await db.from('users').select('points, merchant_balance_egp, total_earned, total_sales_count').eq('telegram_id', sellerId).maybeSingle();
-            if (sellerUser) {
-                const newSales = Number(sellerUser.total_sales_count || 0) + 1;
-                let sellerMsgAmount = "";
+            const { data: sUser } = await client.from('users').select('points, merchant_balance_egp, total_sales_count').eq('telegram_id', sellerId).maybeSingle();
+            if (sUser) {
                 if (isEgp) {
-                    const newMerch = Number((Number(sellerUser.merchant_balance_egp || 0) + netSeller).toFixed(2));
-                    await db.from('users').update({ merchant_balance_egp: newMerch, total_sales_count: newSales }).eq('telegram_id', sellerId);
-                    sellerMsgAmount = `+${netSeller.toFixed(2)} ج.م`;
-                } else {
-                    const ptsAdd = Math.floor(netSeller);
-                    await db.from('users').update({
-                        points: Number(sellerUser.points || 0) + ptsAdd,
-                        total_earned: Number(sellerUser.total_earned || 0) + ptsAdd,
-                        total_sales_count: newSales
+                    await client.from('users').update({
+                        merchant_balance_egp: Number((Number(sUser.merchant_balance_egp || 0) + netSeller).toFixed(2)),
+                        total_sales_count: Number(sUser.total_sales_count || 0) + 1
                     }).eq('telegram_id', sellerId);
-                    sellerMsgAmount = `+${ptsAdd.toLocaleString()} نقطة`;
+                } else {
+                    await client.from('users').update({
+                        points: Number(sUser.points || 0) + Math.floor(netSeller),
+                        total_sales_count: Number(sUser.total_sales_count || 0) + 1
+                    }).eq('telegram_id', sellerId);
                 }
-
-                await db.from('transactions').insert([{
+                await client.from('bot_messages').insert([{
                     telegram_id: sellerId,
-                    type: isEgp ? 'egp' : 'points',
-                    title: `أرباح وساطة ومبيعات (${ord.product_title}) - ${oCode}`,
-                    amount: sellerMsgAmount,
-                    status: 'مكتمل'
-                }]);
-
-                await db.from('bot_messages').insert([{
-                    telegram_id: sellerId,
-                    message: `🎉 *تم تحرير أرباح صفقتك (${oCode}) بنجاح!* 💰\n\n📦 *السلعة:* ${ord.product_title}\n💎 *صافي ربحك المضاف لمحفظة التاجر:* *${sellerMsgAmount}*\nيمكنك سحبه كاش أو USDT في أي وقت من قسم (💼 سحب التجار)!`,
+                    message: `🎉 *تم تحرير أرباح صفقتك (${ord.order_code || ord.id})!* 💰\nتم إضافة صافي ربحك (*+${netSeller} ${isEgp ? 'ج.م' : 'نقطة'}*) إلى محفظة التاجر!`,
                     status: 'pending'
                 }]);
             }
         }
 
-        await db.from('bot_messages').insert([{
+        await client.from('bot_messages').insert([{
             telegram_id: String(ord.user_id),
-            message: `🎉 *تم إتمام وتأكيد صفقتك (${oCode}) بنجاح!* ✅\n\n📦 *الطلب:* ${ord.product_title}\n📋 *بيانات التسليم/الإدارة:* ${note}`,
+            message: `🎉 *تم إتمام صفقتك (${ord.product_title}) بنجاح!* ✅\n📋 *التفاصيل:* ${note}`,
             status: 'pending'
         }]);
-
-        alert(`✅ تم إتمام الصفقة (${oCode}) وتحرير الأرباح بنجاح!`);
+        alert("✅ تم تحرير الصفقة بنجاح!");
         loadStoreAndOrdersFast();
     }
 
     async function rejectStoreOrder(orderId) {
-        const db = getDbClient();
-        const { data: ord } = await db.from('store_orders').select('*').eq('id', orderId).maybeSingle();
-        if (!ord || ord.status === 'Rejected' || ord.status === 'Refunded') return alert("هذا الطلب ملغي ومسترد بالفعل!");
-
-        const oCode = ord.order_code || `ESC-${ord.id}`;
-        const reason = prompt(`أدخل سبب إلغاء الصفقة (${oCode}) وإرجاع المبلغ كاملاً للمشتري:`, "عدم تسليم الطلب بالمواصفات المتفق عليها");
+        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        if (!ord || ord.status === 'Refunded') return;
+        const reason = prompt("سبب إلغاء الصفقة وإرجاع الرصيد للمشتري:", "تم إلغاء الصفقة واسترداد الرصيد");
         if (reason === null) return;
 
+        await client.from('store_orders').update({ status: 'Refunded' }).eq('id', orderId);
         const isEgp = ord.currency === 'egp';
-        const pricePaid = Number(ord.price_paid || 0);
-
-        const { error } = await db.from('store_orders').update({ status: 'Refunded' }).eq('id', orderId);
-        if (error) return alert("خطأ: " + error.message);
-
-        const { data: uData } = await db.from('users').select('points, egp_balance').eq('telegram_id', String(ord.user_id)).maybeSingle();
-        let refundText = "";
-        if (uData) {
+        const price = Number(ord.price_paid || 0);
+        const { data: bUser } = await client.from('users').select('points, egp_balance').eq('telegram_id', String(ord.user_id)).maybeSingle();
+        if (bUser) {
             if (isEgp) {
-                const newEgp = Number((Number(uData.egp_balance || 0) + pricePaid).toFixed(2));
-                await db.from('users').update({ egp_balance: newEgp }).eq('telegram_id', String(ord.user_id));
-                refundText = `${pricePaid.toFixed(2)} ج.م`;
+                await client.from('users').update({ egp_balance: Number((Number(bUser.egp_balance || 0) + price).toFixed(2)) }).eq('telegram_id', String(ord.user_id));
             } else {
-                const newPts = Number(uData.points || 0) + Math.round(pricePaid);
-                await db.from('users').update({ points: newPts }).eq('telegram_id', String(ord.user_id));
-                refundText = `${Math.round(pricePaid).toLocaleString()} نقطة`;
+                await client.from('users').update({ points: Number(bUser.points || 0) + Math.round(price) }).eq('telegram_id', String(ord.user_id));
             }
         }
-
-        await db.from('bot_messages').insert([{
+        await client.from('bot_messages').insert([{
             telegram_id: String(ord.user_id),
-            message: `↩️ *تم إلغاء الصفقة (${oCode}) واسترداد أموالك بالكامل*\n\n📦 *الطلب:* ${ord.product_title}\n💬 *السبب:* ${reason}\n💰 *المبلغ المسترد:* تم إرجاع *${refundText}* من خزنة الضمان إلى محفظتك فوراً.`,
+            message: `↩️ *تم إلغاء الصفقة (${ord.product_title}) وإرجاع (+${price} ${isEgp ? 'ج.م' : 'نقطة'}) لمحفظتك.*\n💬 السبب: ${reason}`,
             status: 'pending'
         }]);
-
-        alert(`✅ تم إلغاء الصفقة (${oCode}) وإرجاع ${refundText} لمحفظة المشتري.`);
+        alert("✅ تم إرجاع الرصيد للمشتري!");
         loadStoreAndOrdersFast();
     }
 
-    // =========================================================================
-    // 💼 طلبات سحب أرباح التجار (Merchant Withdrawals)
-    // =========================================================================
-    async function loadWithdrawals() {
-        const db = getDbClient();
-        const div = document.getElementById('withdraw-list');
-        if (!div || !db) return;
-        let { data, error } = await db.from('withdrawals').select('*').eq('status', 'Pending').order('id', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في جلب السحوبات"; return; }
-        
-        div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات سحب للتجار معلقة حالياً." : "";
-        data.forEach(w => {
-            const wCode = w.withdraw_code || w.tx_id || `WTH-${w.id}`;
-            const amt = Number(w.amount || 0);
-            const isBinance = (w.method || "").toLowerCase().includes("binance") || (w.method || "").toLowerCase().includes("usdt");
-            const usdtNote = isBinance ? ` <span style="color:var(--gold);">(يعادل ${(amt / 50).toFixed(2)} USDT)</span>` : "";
+    async function addStoreProduct() {
+        const category = document.getElementById('store-cat').value;
+        const currency = document.getElementById('store-currency').value;
+        const productCode = document.getElementById('store-code').value.trim() || ("PRD-" + Math.floor(1000 + Math.random() * 9000));
+        const title = document.getElementById('store-title').value.trim();
+        const description = document.getElementById('store-desc').value.trim();
+        const price = parseFloat(document.getElementById('store-price').value);
+        const supplierCost = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
+        const supplierName = document.getElementById('store-supplier-name').value.trim();
+        const supplierNotes = document.getElementById('store-supplier-notes').value.trim();
+        const target = parseInt(document.getElementById('store-target').value) || 100;
+        const link = document.getElementById('store-link').value.trim() || "#";
 
-            div.innerHTML += `
-                <div class="item-row withdraw-row" style="width:100%; box-sizing:border-box;">
-                    <div style="text-align:right; width:100%;">
-                        <b>🆔 كود السحب:</b> <span class="code-pill">${wCode}</span> | <b>👤 التاجر ID:</b> <span style="color:var(--neon-blue);">${w.telegram_id}</span><br>
-                        <b>💵 المبلغ المطلوب:</b> <span style="color:var(--main-green); font-weight:bold; font-size:15px;">${amt.toFixed(2)} ج.م</span>${usdtNote}<br>
-                        <b>💳 الوسيلة:</b> ${escapeHtml(w.method)} | <b>📥 الحساب المستلم:</b> <code style="color:var(--gold); font-size:14px;">${escapeHtml(w.wallet_info)}</code>
-                    </div>
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="approveWithdraw(${w.id}, '${w.telegram_id}', '${wCode}', ${amt}, '${escapeQuote(w.method)}', '${escapeQuote(w.wallet_info)}')">✅ تم التحويل وإرسال الإشعار</button>
-                        <button class="reject-btn" onclick="rejectWithdrawAndRefund(${w.id}, '${w.telegram_id}', '${wCode}', ${amt})">❌ رفض وإرجاع لمحفظة التاجر</button>
-                    </div>
-                </div>`;
-        });
-    }
-
-    async function approveWithdraw(id, telegramId, wCode, amount, method, wallet) {
-        const db = getDbClient();
-        const proofNote = prompt(`تأكيد إتمام تحويل (${amount} ج.م) للتاجر (${telegramId}) عبر (${method}).\nأدخل رقم العملية أو رسالة التأكيد (اختياري):`, "تم تحويل المبلغ بنجاح إلى حسابك!");
-        if (proofNote === null) return;
-
-        await db.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
-        await db.from('bot_messages').insert([{
-            telegram_id: String(telegramId),
-            message: `🎉 *تم تحويل أرباح مبيعاتك بنجاح!* ✅\n━━━━━━━━━━━━━━━\n🆔 *رقم الطلب:* \`${wCode}\`\n💵 *المبلغ المحول:* *${Number(amount).toFixed(2)} ج.م*\n💳 *الوسيلة:* ${method}\n📥 *الحساب:* \`${wallet}\`\n💬 *ملاحظة الإدارة:* ${proofNote}`,
-            status: 'pending'
+        if (!title || isNaN(price) || price <= 0) return alert("أدخل العنوان والسعر!");
+        await client.from('store_products').insert([{
+            creator_id: 'ADMIN', product_code: productCode, category, currency, title, description,
+            price, supplier_cost: supplierCost, supplier_name: supplierName, supplier_notes: supplierNotes,
+            link, target_count: target, image_url: storeFileBase64 || null, status: 'Approved'
         }]);
-        alert(`✅ تم تأكيد سحب التاجر (${wCode}) وإرسال الفاتورة!`);
-        loadWithdrawals();
+        alert("✅ تم نشر المنتج!");
+        loadStoreAndOrdersFast();
     }
 
-    async function rejectWithdrawAndRefund(id, telegramId, wCode, amount) {
-        const db = getDbClient();
-        const reason = prompt(`أدخل سبب رفض طلب السحب (${wCode}) وإرجاع المبلغ (${amount} ج.م) لمحفظة التاجر:`, "يرجى التأكد من صحة رقم المحفظة أو الحساب المستلم");
-        if (reason === null) return;
-
-        await db.from('withdrawals').update({ status: 'Rejected' }).eq('id', id);
-
-        const { data: u } = await db.from('users').select('merchant_balance_egp').eq('telegram_id', String(telegramId)).maybeSingle();
-        if (u) {
-            const refundedMerch = Number((Number(u.merchant_balance_egp || 0) + Number(amount)).toFixed(2));
-            await db.from('users').update({ merchant_balance_egp: refundedMerch }).eq('telegram_id', String(telegramId));
-        }
-
-        await db.from('bot_messages').insert([{
-            telegram_id: String(telegramId),
-            message: `↩️ *تم إلغاء طلب السحب (${wCode}) وإرجاع الرصيد لمحفظة التاجر*\n\n💬 *السبب:* ${reason}\n💵 *المبلغ المسترد:* +${Number(amount).toFixed(2)} ج.م`,
-            status: 'pending'
-        }]);
-
-        alert(`تم رفض الطلب وإرجاع ${amount} ج.م لمحفظة التاجر.`);
-        loadWithdrawals();
+    function openEditStoreModal(id) {
+        const p = cachedStoreProductsMap[id];
+        if (!p) return;
+        document.getElementById('edit-s-id').value = p.id;
+        document.getElementById('edit-s-code').value = p.product_code || `PRD-${p.id}`;
+        document.getElementById('edit-s-title').value = p.title || "";
+        document.getElementById('edit-s-desc').value = p.description || "";
+        document.getElementById('edit-s-price').value = p.price || 0;
+        document.getElementById('edit-s-supplier-cost').value = p.supplier_cost || 0;
+        document.getElementById('edit-s-supplier-name').value = p.supplier_name || "";
+        document.getElementById('edit-s-supplier-notes').value = p.supplier_notes || "";
+        document.getElementById('edit-s-target').value = p.target_count || 100;
+        document.getElementById('edit-s-link').value = p.link || "";
+        document.getElementById('edit-s-currency').value = p.currency || 'points';
+        document.getElementById('edit-store-modal').style.display = 'flex';
     }
 
-    // =========================================================================
-    // 🎧 تذاكر الدعم الفني وبلاغات الثغرات (Support & Bug Bounty Tickets)
-    // =========================================================================
-    async function loadSupportTickets() {
-        const db = getDbClient();
-        const div = document.getElementById('support-tickets-list');
-        if (!div || !db) return;
-        try {
-            const { data, error } = await db.from('support_tickets').select('*').eq('status', 'Pending').order('id', { ascending: false });
-            if (error) {
-                div.innerHTML = "ℹ️ جدول support_tickets جاهز للعمل فور تشغيل كود SQL الخاص به.";
-                return;
-            }
-            if (!data || data.length === 0) {
-                div.innerHTML = "✅ لا توجد تذاكر دعم أو بلاغات ثغرات معلقة حالياً.";
-                return;
-            }
-
-            const catLabels = { bug: "🛡️ بلاغ ثغرة (Bug Bounty)", issue: "🛠️ مشكلة فنية/شخصية", suggestion: "💡 اقتراح ميزة", rating: "⭐ تقييم البوت" };
-
-            div.innerHTML = data.map(t => {
-                const imgHtml = t.screenshot_url ? `
-                    <div style="margin:8px 0; cursor:zoom-in;" onclick="openLightbox('${t.screenshot_url}')">
-                        <img src="${t.screenshot_url}" style="max-width:140px; max-height:140px; border-radius:8px; border:1px solid #444;">
-                        <div style="font-size:11px; color:var(--neon-blue);">🔍 تكبير المرفق</div>
-                    </div>
-                ` : '';
-
-                return `
-                    <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start; border-right-color:var(--neon-blue);">
-                        <div style="width:100%;">
-                            <div style="display:flex; justify-content:space-between;">
-                                <b>${catLabels[t.category] || '📌 تذكرة'} • <span style="color:var(--gold);">${escapeHtml(t.sub_type || '')}</span></b>
-                                <span class="code-pill">${escapeHtml(t.ticket_code)}</span>
-                            </div>
-                            <b>👤 المرسل:</b> ${escapeHtml(t.user_name)} (ID: <span style="color:var(--neon-blue);">${t.telegram_id}</span>)<br>
-                            <b>📌 الموضوع:</b> ${escapeHtml(t.subject || '')}<br>
-                            <div style="background:#111; padding:10px; border-radius:8px; margin:6px 0; font-size:13px; white-space:pre-wrap;">${escapeHtml(t.message)}</div>
-                            ${imgHtml}
-                            <input type="text" id="tkt-reply-${t.id}" placeholder="اكتب رد الإدارة هنا (يُرسل للمستخدم في البوت ويظهر في صفحته)...">
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                                <select id="tkt-reward-curr-${t.id}">
-                                    <option value="none">بدون مكافأة مالية (رد فقط)</option>
-                                    <option value="points">🎁 صرف مكافأة بالنقاط</option>
-                                    <option value="egp">💵 صرف مكافأة بالجنيه (EGP)</option>
-                                </select>
-                                <input type="number" id="tkt-reward-amt-${t.id}" placeholder="قيمة المكافأة (مثلاً: 500 ن أو 20 ج.م)" step="0.5">
-                            </div>
-                        </div>
-                        <div class="actions-box">
-                            <button class="approve-btn" onclick="resolveSupportTicket(${t.id}, '${t.telegram_id}', '${escapeQuote(t.ticket_code)}')">إرسال الرد وصرف المكافأة (إن وجدت) ✅</button>
-                            <button class="del-btn" onclick="deleteSupportTicket(${t.id})">إغلاق وحذف 🗑️</button>
-                        </div>
-                    </div>
-                `;
-            }).join("");
-        } catch (e) {}
+    async function saveEditedStoreProduct() {
+        const id = document.getElementById('edit-s-id').value;
+        await client.from('store_products').update({
+            product_code: document.getElementById('edit-s-code').value.trim(),
+            title: document.getElementById('edit-s-title').value.trim(),
+            description: document.getElementById('edit-s-desc').value.trim(),
+            currency: document.getElementById('edit-s-currency').value,
+            price: parseFloat(document.getElementById('edit-s-price').value) || 10,
+            supplier_cost: parseFloat(document.getElementById('edit-s-supplier-cost').value) || 0,
+            supplier_name: document.getElementById('edit-s-supplier-name').value.trim(),
+            supplier_notes: document.getElementById('edit-s-supplier-notes').value.trim(),
+            target_count: parseInt(document.getElementById('edit-s-target').value) || 100,
+            link: document.getElementById('edit-s-link').value.trim()
+        }).eq('id', id);
+        document.getElementById('edit-store-modal').style.display = 'none';
+        loadStoreAndOrdersFast();
     }
 
-    async function resolveSupportTicket(id, userTid, ticketCode) {
-        const db = getDbClient();
-        const replyTxt = (document.getElementById(`tkt-reply-${id}`)?.value || "").trim() || "شكراً لتواصلك معنا، تم فحص رسالتك واتخاذ اللازم.";
-        const rewCurr = document.getElementById(`tkt-reward-curr-${id}`)?.value || "none";
-        const rewAmt = parseFloat(document.getElementById(`tkt-reward-amt-${id}`)?.value) || 0;
-
-        let newStatus = (rewCurr !== "none" && rewAmt > 0) ? "Rewarded" : "Resolved";
-        let rewardMsgLine = "";
-
-        if (rewCurr !== "none" && rewAmt > 0) {
-            const { data: u } = await db.from('users').select('points, egp_balance, total_earned').eq('telegram_id', String(userTid)).maybeSingle();
-            if (u) {
-                if (rewCurr === 'egp') {
-                    const nextEgp = Number((Number(u.egp_balance || 0) + rewAmt).toFixed(2));
-                    await db.from('users').update({ egp_balance: nextEgp }).eq('telegram_id', String(userTid));
-                    rewardMsgLine = `\n🎁 *المكافأة المضافة لرصيدك:* *+${rewAmt.toFixed(2)} ج.م*`;
-                } else {
-                    const pts = Math.round(rewAmt);
-                    await db.from('users').update({
-                        points: Number(u.points || 0) + pts,
-                        total_earned: Number(u.total_earned || 0) + pts
-                    }).eq('telegram_id', String(userTid));
-                    rewardMsgLine = `\n🎁 *المكافأة المضافة لرصيدك:* *+${pts.toLocaleString()} نقطة*`;
-                }
-            }
-        }
-
-        await db.from('support_tickets').update({ status: newStatus, admin_reply: replyTxt }).eq('id', id);
-
-        await db.from('bot_messages').insert([{
-            telegram_id: String(userTid),
-            message: `🎧 *رد الإدارة على تذكرتك (${ticketCode}):*\n━━━━━━━━━━━━━━━\n💬 *الرد:* ${replyTxt}${rewardMsgLine}`,
-            status: 'pending'
-        }]);
-
-        alert(`✅ تم إرسال الرد للتذكرة (${ticketCode}) بنجاح!`);
-        loadSupportTickets();
+    async function deleteStoreProductItem(id) {
+        if (!confirm("حذف المنتج؟")) return;
+        await client.from('store_products').delete().eq('id', id);
+        loadStoreAndOrdersFast();
     }
 
-    async function deleteSupportTicket(id) {
-        const db = getDbClient();
-        if (!confirm("حذف هذه التذكرة؟")) return;
-        await db.from('support_tickets').delete().eq('id', id);
-        loadSupportTickets();
-    }
-
-    // --- طلبات الإيداع ---
-    async function loadDepositsRequests() {
-        const db = getDbClient();
-        const div = document.getElementById('deposits-requests-list');
-        if (!div || !db) return;
-        let { data, error } = await db.from('deposits').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
-        if (error) { div.innerHTML = "❌ خطأ في الجلب"; return; }
-
-        div.innerHTML = data.length === 0 ? "✅ لا توجد طلبات إيداع معلقة." : "";
-        data.forEach(d => {
-            div.innerHTML += `
-                <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
-                    <div style="width:100%;">
-                        <b>🆔 المعاملة:</b> <span style="color:var(--neon-blue);">${d.tx_id || d.id}</span> | <b>ID:</b> ${d.telegram_id}<br>
-                        <b>💰 المبلغ المطلوب:</b> <span style="color:var(--neon-blue); font-weight:bold;">${d.amount} ج.م</span> | <b>وسيلة الإيداع:</b> ${d.method}<br>
-                        <b>📱 رقم/حساب التحويل:</b> <span style="color:var(--main-green); font-weight:bold;">${d.wallet_info}</span><br>
-                        ${d.email ? `<b>📧 ملاحظات/بريد:</b> ${d.email}<br>` : ''}
-                        <span class="info-text">⏰ الوقت: ${new Date(d.created_at).toLocaleString('ar-EG')}</span>
-                        <div style="margin-top: 8px;">
-                            <label style="font-size:11px; color:#aaa;">تأكيد المبلغ بالجنيه (EGP) المراد إضافته لحساب المستخدم:</label>
-                            <input type="number" id="dep-egp-val-${d.id}" value="${d.amount}" step="0.5" style="margin-top:4px;">
-                        </div>
-                    </div>
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', '${escapeQuote(d.method)}', true)">قبول وإضافة الرصيد بالجنيه ✅</button>
-                        <button class="reject-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', '${escapeQuote(d.method)}', false)">رفض ❌</button>
-                    </div>
-                </div>`;
-        });
-    }
-
-    async function reviewDeposit(id, telegramId, method, isApproved) {
-        const db = getDbClient();
+    async function reviewStoreProduct(id, creatorId, title, pCode, isApproved) {
         if (isApproved) {
-            const egpInput = document.getElementById(`dep-egp-val-${id}`);
-            const addEgp = parseFloat(egpInput ? egpInput.value : 0);
-
-            if (isNaN(addEgp) || addEgp <= 0) return alert("⚠️ يرجى تحديد مبلغ صحيح بالجنيه لإضافته!");
-            if (!confirm(`تأكيد قبول الإيداع وإضافة ${addEgp} ج.م إلى رصيد المستخدم (${telegramId})؟`)) return;
-
-            const { error: err1 } = await db.from('deposits').update({ status: 'Completed', amount: addEgp }).eq('id', id);
-            if (err1) return alert("خطأ: " + err1.message);
-
-            const { data: userData } = await db.from('users').select('egp_balance, referred_by').eq('telegram_id', telegramId).maybeSingle();
-            if (userData) {
-                const newEgp = Number((Number(userData.egp_balance || 0) + addEgp).toFixed(2));
-                await db.from('users').update({ egp_balance: newEgp }).eq('telegram_id', telegramId);
-
-                if (userData.referred_by && String(userData.referred_by) !== String(telegramId)) {
-                    const refBonusPoints = Math.floor(addEgp * 50);
-                    if (refBonusPoints > 0) {
-                        const { data: refUser } = await db.from('users').select('points, total_earned').eq('telegram_id', String(userData.referred_by)).maybeSingle();
-                        if (refUser) {
-                            await db.from('users').update({
-                                points: (refUser.points || 0) + refBonusPoints,
-                                total_earned: (refUser.total_earned || 0) + refBonusPoints
-                            }).eq('telegram_id', String(userData.referred_by));
-
-                            await db.from('bot_messages').insert([{
-                                telegram_id: String(userData.referred_by),
-                                message: `🎁 *مكافأة إحالة شحن جديدة!* 🔥\n\nقام أحد أصدقائك المدعوين بشحن رصيده وحصلت على عمولة *+${refBonusPoints.toLocaleString()} نقطة* مجانية في رصيدك!`,
-                                status: 'pending'
-                            }]);
-                        }
-                    }
-                }
-            }
-
-            await db.from('transactions').insert([{
-                telegram_id: String(telegramId), type: 'egp',
-                title: `شحن رصيد ناجح (${method})`, amount: `+${addEgp.toFixed(2)} ج.م`, status: 'مكتمل'
-            }]);
-
-            await db.from('bot_messages').insert([{
-                telegram_id: telegramId,
-                message: `🎉 *تم قبول وإضافة شحن رصيدك بنجاح!* ✅\n\n💵 *المبلغ المضاف:* ${addEgp.toFixed(2)} ج.م\nيمكنك الآن الشراء من المتجر أو تحويل الجنيه إلى نقاط بونص (+20%)!`,
-                status: 'pending'
-            }]);
-
-            alert(`تم قبول الإيداع وإضافة ${addEgp} ج.م لحساب المستخدم بنجاح! 🚀`);
+            await client.from('store_products').update({ status: 'Approved', product_code: pCode }).eq('id', id);
+            await client.from('bot_messages').insert([{ telegram_id: creatorId, message: `🎉 *تم قبول ونشر سلعتك (${title}) في المتجر!*`, status: 'pending' }]);
         } else {
-            const reason = prompt("أدخل سبب رفض الإيداع:", "لم يتم تأكيد وصول التحويل");
-            if (reason === null) return;
-            await db.from('deposits').update({ status: 'Rejected' }).eq('id', id);
-            await db.from('bot_messages').insert([{
-                telegram_id: telegramId,
-                message: `❌ *عذراً، تم رفض طلب الشحن الخاص بك*\n\n💬 *السبب:* ${reason}`,
-                status: 'pending'
-            }]);
+            const r = prompt("سبب الرفض:", "مخالفة الشروط");
+            if (r === null) return;
+            await client.from('store_products').update({ status: 'Rejected' }).eq('id', id);
         }
-        loadDepositsRequests();
+        loadStoreAndOrdersFast();
     }
 
-    // --- وسائل السحب والإيداع ---
-    async function loadMethods() {
-        const db = getDbClient();
-        const div = document.getElementById('methods-list');
-        if (!div || !db) return;
-        let { data, error } = await db.from('withdraw_methods').select('*');
-        if (error || !data) { div.innerHTML = ""; return; }
-
-        div.innerHTML = data.map(m => `
-            <div class="item-row method-row" style="width:100%; box-sizing:border-box;">
-                <div><b>${escapeHtml(m.name)}</b> <span class="info-text">${escapeHtml(m.description || '')}</span></div>
-                <button class="del-btn" onclick="deleteMethod('${m.id}')">حذف 🗑️</button>
-            </div>`).join("");
-    }
-
-    async function addMethod() {
-        const db = getDbClient();
-        const name = document.getElementById('method-name').value.trim();
-        const description = document.getElementById('method-desc').value.trim();
-        if(!name) return alert("يرجى كتابة اسم الوسيلة!");
-
-        const { error } = await db.from('withdraw_methods').insert([{ name, description }]);
-        if (error) alert("خطأ: " + error.message);
-        else { alert("تمت إضافة وسيلة السحب بنجاح! 💳"); loadMethods(); }
-    }
-
-    async function deleteMethod(id) {
-        const db = getDbClient();
-        if (!confirm("حذف وسيلة السحب؟")) return;
-        await db.from('withdraw_methods').delete().eq('id', id);
-        loadMethods();
-    }
-
-    async function loadDepositMethods() {
-        const db = getDbClient();
-        const div = document.getElementById('deposit-methods-list');
-        if (!div || !db) return;
-        let { data, error } = await db.from('deposit_methods').select('*');
-        if (error || !data) { div.innerHTML = "❌ خطأ في الجلب"; return; }
-
-        div.innerHTML = data.length === 0 ? "📭 لا توجد وسائل إيداع مضافة." : data.map(d => {
-            const logoTag = d.logo ? `<img src="${d.logo}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; vertical-align:middle; margin-left:8px;">` : '';
+    // طلبات سحب التجار
+    async function loadWithdrawals() {
+        const div = document.getElementById('withdraw-list');
+        const { data } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('id', { ascending: false });
+        if (!data || data.length === 0) { div.innerHTML = "✅ لا توجد طلبات سحب معلقة."; return; }
+        div.innerHTML = data.map(w => {
+            const wCode = w.withdraw_code || `WTH-${w.id}`;
+            const amt = Number(w.amount || 0);
             return `
-                <div class="item-row deposit-row" style="width:100%; box-sizing:border-box;">
-                    <div style="display:flex; align-items:center;">
-                        ${logoTag}
-                        <div><b>${escapeHtml(d.name)}</b> <span class="info-text">${escapeHtml(d.description || '')}</span></div>
+                <div class="item-row withdraw-row">
+                    <div>
+                        <b>🆔 ${wCode}</b> | التاجر: <code>${w.telegram_id}</code> | المبلغ: <b style="color:var(--main-green);">${amt.toFixed(2)} ج.م</b><br>
+                        الوسيلة: ${escapeHtml(w.method)} | المستلم: <code style="color:var(--gold);">${escapeHtml(w.wallet_info)}</code>
                     </div>
-                    <button class="del-btn" onclick="deleteDepositMethod('${d.id}')">حذف 🗑️</button>
+                    <div class="actions-box">
+                        <button class="approve-btn" onclick="approveWithdraw(${w.id}, '${w.telegram_id}', '${wCode}', ${amt})">✅ تم التحويل</button>
+                        <button class="reject-btn" onclick="rejectWithdrawAndRefund(${w.id}, '${w.telegram_id}', '${wCode}', ${amt})">❌ رفض وإرجاع</button>
+                    </div>
                 </div>`;
         }).join("");
     }
 
-    async function addDepositMethod() {
-        const db = getDbClient();
-        const name = document.getElementById('deposit-name').value.trim();
-        const description = document.getElementById('deposit-desc').value.trim();
-        if(!name) return alert("يرجى كتابة اسم وسيلة الإيداع!");
+    async function approveWithdraw(id, tid, wCode, amt) {
+        if (!confirm(`تأكيد تحويل ${amt} ج.م؟`)) return;
+        await client.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
+        await client.from('bot_messages').insert([{ telegram_id: String(tid), message: `🎉 *تم تحويل أرباحك (${amt.toFixed(2)} ج.م) بنجاح!* (${wCode}) ✅`, status: 'pending' }]);
+        loadWithdrawals();
+    }
 
-        const { error } = await db.from('deposit_methods').insert([{ name, description, logo: depositLogoBase64 || null }]);
-        if (error) alert("خطأ: " + error.message);
-        else { 
-            alert("تمت إضافة وسيلة الإيداع بنجاح! 💰"); 
-            loadDepositMethods();
+    async function rejectWithdrawAndRefund(id, tid, wCode, amt) {
+        const r = prompt("سبب رفض السحب وإرجاع الرصيد للتاجر:", "بيانات المحفظة غير صحيحة");
+        if (r === null) return;
+        await client.from('withdrawals').update({ status: 'Rejected' }).eq('id', id);
+        const { data: u } = await client.from('users').select('merchant_balance_egp').eq('telegram_id', String(tid)).maybeSingle();
+        if (u) {
+            await client.from('users').update({ merchant_balance_egp: Number((Number(u.merchant_balance_egp || 0) + Number(amt)).toFixed(2)) }).eq('telegram_id', String(tid));
         }
+        await client.from('bot_messages').insert([{ telegram_id: String(tid), message: `↩️ *تم إلغاء طلب السحب (${wCode}) وإرجاع (+${amt} ج.م) لمحفظة التاجر.*\nالسبب: ${r}`, status: 'pending' }]);
+        loadWithdrawals();
     }
 
-    async function deleteDepositMethod(id) {
-        const db = getDbClient();
-        if (!confirm("حذف وسيلة الإيداع؟")) return;
-        await db.from('deposit_methods').delete().eq('id', id);
-        loadDepositMethods();
+    // تذاكر الدعم والثغرات
+    async function loadSupportTickets() {
+        const div = document.getElementById('support-tickets-list');
+        try {
+            const { data, error } = await client.from('support_tickets').select('*').eq('status', 'Pending').order('id', { ascending: false });
+            if (error || !data || data.length === 0) { div.innerHTML = "✅ لا توجد تذاكر أو بلاغات معلقة."; return; }
+            div.innerHTML = data.map(t => `
+                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                    <div><b>📌 ${escapeHtml(t.subject || t.category)}</b> (${t.ticket_code}) | المرسل: <code>${t.telegram_id}</code></div>
+                    <div style="background:#111; padding:8px; border-radius:8px; width:100%; font-size:12.5px;">${escapeHtml(t.message)}</div>
+                    <input type="text" id="tkt-reply-${t.id}" placeholder="رد الإدارة...">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%;">
+                        <select id="tkt-curr-${t.id}">
+                            <option value="none">بدون مكافأة</option>
+                            <option value="points">🎁 مكافأة نقاط</option>
+                            <option value="egp">💵 مكافأة جنيه</option>
+                        </select>
+                        <input type="number" id="tkt-amt-${t.id}" placeholder="قيمة المكافأة">
+                    </div>
+                    <div class="actions-box">
+                        <button class="approve-btn" onclick="resolveSupportTicket(${t.id}, '${t.telegram_id}', '${escapeQuote(t.ticket_code)}')">إرسال الرد والمكافأة ✅</button>
+                    </div>
+                </div>`).join("");
+        } catch (e) {}
     }
 
-    // --- الميثودات والمهام ---
-    async function loadPublishedMethods() {
-        const db = getDbClient();
-        const div = document.getElementById('published-methods-list');
-        if (!div || !db) return;
-        let { data, error } = await db.from('methods').select('*').eq('status', 'Approved').order('id', { ascending: false });
-        if (error || !data) { div.innerHTML = "❌ خطأ في الجلب"; return; }
+    async function resolveSupportTicket(id, userTid, code) {
+        const reply = document.getElementById(`tkt-reply-${id}`).value.trim() || "تمت المراجعة واتخاذ اللازم، شكراً لك!";
+        const curr = document.getElementById(`tkt-curr-${id}`).value;
+        const amt = parseFloat(document.getElementById(`tkt-amt-${id}`).value) || 0;
+        let bonusTxt = "";
 
-        div.innerHTML = data.length === 0 ? "📭 لا توجد ميثودات منشورة." : data.map(m => `
-            <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
-                <div style="width:100%;">
-                    <b>📌 العنوان:</b> ${escapeHtml(m.title)}<br>
-                    <div style="background:#111; padding:8px; border-radius:6px; margin:5px 0; font-size:12px; max-height:80px; overflow:hidden;">${escapeHtml(m.content)}</div>
-                    <span class="info-text">💰 سعر الفك: ${m.unlock_cost || 50} (${m.currency === 'egp' ? 'ج.م' : 'نقطة'})</span>
-                </div>
+        if (curr !== "none" && amt > 0) {
+            const { data: u } = await client.from('users').select('points, egp_balance').eq('telegram_id', String(userTid)).maybeSingle();
+            if (u) {
+                if (curr === 'egp') {
+                    await client.from('users').update({ egp_balance: Number((Number(u.egp_balance || 0) + amt).toFixed(2)) }).eq('telegram_id', String(userTid));
+                    bonusTxt = `\n🎁 *المكافأة المضافة:* +${amt} ج.م`;
+                } else {
+                    await client.from('users').update({ points: Number(u.points || 0) + Math.round(amt) }).eq('telegram_id', String(userTid));
+                    bonusTxt = `\n🎁 *المكافأة المضافة:* +${Math.round(amt)} نقطة`;
+                }
+            }
+        }
+        await client.from('support_tickets').update({ status: 'Resolved', admin_reply: reply }).eq('id', id);
+        await client.from('bot_messages').insert([{ telegram_id: String(userTid), message: `🎧 *رد الإدارة على تذكرتك (${code}):*\n${reply}${bonusTxt}`, status: 'pending' }]);
+        alert("✅ تم إرسال الرد!");
+        loadSupportTickets();
+    }
+
+    // وسائل وطلبات الإيداع
+    async function loadDepositsRequests() {
+        const div = document.getElementById('deposits-requests-list');
+        const { data } = await client.from('deposits').select('*').eq('status', 'Pending').order('id', { ascending: false });
+        if (!data || data.length === 0) { div.innerHTML = "✅ لا توجد طلبات إيداع معلقة."; return; }
+        div.innerHTML = data.map(d => `
+            <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                <div><b>🆔 ${d.tx_id || d.id}</b> | المستخدم: <code>${d.telegram_id}</code> | المبلغ: <b>${d.amount} ج.م</b> (${escapeHtml(d.method)})<br>المحول منه: <code>${escapeHtml(d.wallet_info)}</code></div>
+                <input type="number" id="dep-egp-val-${d.id}" value="${d.amount}" step="0.5">
                 <div class="actions-box">
-                    <button class="edit-btn" onclick="openEditMethodModal(${m.id}, '${escapeQuote(m.title)}', '${escapeQuote(m.content)}', ${m.unlock_cost || 50})">تعديل بالكامل ✏️</button>
-                    <button class="del-btn" onclick="deleteMethodItem(${m.id})">حذف نهائي 🗑️</button>
+                    <button class="approve-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', '${escapeQuote(d.method)}', true)">قبول وإضافة الرصيد ✅</button>
+                    <button class="reject-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', '${escapeQuote(d.method)}', false)">رفض ❌</button>
                 </div>
             </div>`).join("");
     }
 
+    async function reviewDeposit(id, tid, method, isOk) {
+        if (isOk) {
+            const addEgp = parseFloat(document.getElementById(`dep-egp-val-${id}`).value) || 0;
+            await client.from('deposits').update({ status: 'Completed', amount: addEgp }).eq('id', id);
+            const { data: u } = await client.from('users').select('egp_balance').eq('telegram_id', tid).maybeSingle();
+            if (u) await client.from('users').update({ egp_balance: Number((Number(u.egp_balance || 0) + addEgp).toFixed(2)) }).eq('telegram_id', tid);
+            await client.from('bot_messages').insert([{ telegram_id: tid, message: `🎉 *تم قبول شحن رصيدك (+${addEgp.toFixed(2)} ج.م) بنجاح!* ✅`, status: 'pending' }]);
+        } else {
+            await client.from('deposits').update({ status: 'Rejected' }).eq('id', id);
+        }
+        loadDepositsRequests();
+    }
+
+    async function loadMethods() {
+        const div = document.getElementById('methods-list');
+        const { data } = await client.from('withdraw_methods').select('*');
+        div.innerHTML = (data || []).map(m => `<div class="item-row"><b>${escapeHtml(m.name)}</b> <button class="del-btn" onclick="deleteMethod(${m.id})">حذف</button></div>`).join("");
+    }
+    async function addMethod() {
+        const name = document.getElementById('method-name').value.trim();
+        const description = document.getElementById('method-desc').value.trim();
+        if (!name) return;
+        await client.from('withdraw_methods').insert([{ name, description }]);
+        loadMethods();
+    }
+    async function deleteMethod(id) { await client.from('withdraw_methods').delete().eq('id', id); loadMethods(); }
+
+    async function loadDepositMethods() {
+        const div = document.getElementById('deposit-methods-list');
+        const { data } = await client.from('deposit_methods').select('*');
+        div.innerHTML = (data || []).map(d => `<div class="item-row"><b>${escapeHtml(d.name)} (${escapeHtml(d.description || '')})</b> <button class="del-btn" onclick="deleteDepositMethod(${d.id})">حذف</button></div>`).join("");
+    }
+    async function addDepositMethod() {
+        const name = document.getElementById('deposit-name').value.trim();
+        const description = document.getElementById('deposit-desc').value.trim();
+        if (!name) return;
+        await client.from('deposit_methods').insert([{ name, description, logo: depositLogoBase64 || null }]);
+        loadDepositMethods();
+    }
+    async function deleteDepositMethod(id) { await client.from('deposit_methods').delete().eq('id', id); loadDepositMethods(); }
+
+    // الميثودات والمهام
+    async function loadPublishedMethods() {
+        const div = document.getElementById('published-methods-list');
+        const { data } = await client.from('methods').select('*').eq('status', 'Approved').order('id', { ascending: false });
+        div.innerHTML = (data || []).map(m => `
+            <div class="item-row">
+                <b>📌 ${escapeHtml(m.title)} (${m.unlock_cost || 50} ن)</b>
+                <div>
+                    <button class="edit-btn" onclick="openEditMethodModal(${m.id}, '${escapeQuote(m.title)}', '${escapeQuote(m.content)}', ${m.unlock_cost || 50})">✏️</button>
+                    <button class="del-btn" onclick="deleteMethodItem(${m.id})">🗑️</button>
+                </div>
+            </div>`).join("");
+    }
     function openEditMethodModal(id, title, content, cost) {
         document.getElementById('edit-m-id').value = id;
         document.getElementById('edit-m-title').value = title;
         document.getElementById('edit-m-content').value = content;
         document.getElementById('edit-m-cost').value = cost;
-        editMethodNewImage = "";
-        document.getElementById('edit-m-img-file').value = "";
         document.getElementById('edit-method-modal').style.display = 'flex';
     }
-
-    function closeEditMethodModal() { document.getElementById('edit-method-modal').style.display = 'none'; }
-
     async function saveEditedMethod() {
-        const db = getDbClient();
         const id = document.getElementById('edit-m-id').value;
-        const title = document.getElementById('edit-m-title').value.trim();
-        const content = document.getElementById('edit-m-content').value.trim();
-        const cost = parseFloat(document.getElementById('edit-m-cost').value) || 50;
-
-        if (!title || !content) return alert("يرجى ملء العنوان والمحتوى!");
-
-        const updateData = { title, content, unlock_cost: cost };
-        if (editMethodNewImage) updateData.image_url = editMethodNewImage;
-
-        const { error } = await db.from('methods').update(updateData).eq('id', id);
-        if (error) alert("فشل الحفظ: " + error.message);
-        else {
-            alert("تم تحديث الميثود بنجاح! ✨");
-            closeEditMethodModal();
-            loadPublishedMethods();
-        }
-    }
-
-    async function deleteMethodItem(id) {
-        const db = getDbClient();
-        if (!confirm("حذف هذه الميثود نهائياً؟")) return;
-        await db.from('methods').delete().eq('id', id);
+        await client.from('methods').update({
+            title: document.getElementById('edit-m-title').value.trim(),
+            content: document.getElementById('edit-m-content').value.trim(),
+            unlock_cost: parseFloat(document.getElementById('edit-m-cost').value) || 50
+        }).eq('id', id);
+        document.getElementById('edit-method-modal').style.display = 'none';
         loadPublishedMethods();
-        loadPendingMethods();
     }
-
-    function copyCodeText(txt) {
-        navigator.clipboard.writeText(txt).then(() => {
-            document.getElementById('global-code-search').value = txt;
-            runSmartCodeSearch();
-            alert(`✅ تم نسخ الكود (${txt}) وعرض تفاصيله في رادار البحث أعلى اللوحة!`);
-        });
+    async function deleteMethodItem(id) { if (!confirm("حذف؟")) return; await client.from('methods').delete().eq('id', id); loadPublishedMethods(); }
+    async function addAdminMethod() {
+        const title = document.getElementById('admin-method-title').value.trim();
+        const content = document.getElementById('admin-method-content').value.trim();
+        const unlock_cost = parseInt(document.getElementById('admin-method-cost').value) || 50;
+        if (!title || !content) return;
+        await client.from('methods').insert([{ user_id: 'ADMIN', title, content, image_url: adminMethodBase64 || null, status: 'Approved', unlock_cost }]);
+        alert("✅ تم نشر الميثود!");
+        loadPublishedMethods();
     }
-
-    function escapeQuote(str) { return String(str || "").replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
-    function escapeHtml(str) { return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
     async function loadPendingMethods() {
-        const db = getDbClient();
         const div = document.getElementById('pending-methods-list');
-        if (!div || !db) return;
-        let { data, error } = await db.from('methods').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
-        if (error || !data) { div.innerHTML = "❌ خطأ في الجلب"; return; }
-
-        div.innerHTML = data.length === 0 ? "✅ لا توجد ميثودات جديدة تنتظر المراجعة." : data.map(m => {
-            const imgTag = m.image_url ? `
-                <div style="margin: 10px 0; cursor: zoom-in;" onclick="openLightbox('${m.image_url}')">
-                    <img src="${m.image_url}" style="max-width:150px; max-height:150px; border-radius:8px; border:1px solid #444;">
-                </div>` : '';
-            
-            return `
-                <div class="item-row method-review-row" style="width:100%; box-sizing:border-box;">
-                    <div style="text-align:right; width:100%;">
-                        <b>📌 عنوان الميثود:</b> ${escapeHtml(m.title)}<br>
-                        <b>👤 صاحب الميثود ID:</b> <span style="color:var(--neon-blue)">${m.user_id}</span><br>
-                        <div style="background:#111; padding:10px; border-radius:8px; margin:8px 0; font-size:13px; white-space: pre-wrap;">${escapeHtml(m.content)}</div>
-                        ${imgTag}
-                        <div style="display: flex; gap: 10px; margin-top: 8px;">
-                            <div style="flex:1;">
-                                <label style="font-size:11px; color:#aaa;">مكافأة المطوّر الفورية (نقاط):</label>
-                                <input type="number" id="method-points-${m.id}" value="50" style="margin-top:2px; font-size:13px;">
-                            </div>
-                            <div style="flex:1;">
-                                <label style="font-size:11px; color:#aaa;">سعر فك الحجب:</label>
-                                <input type="number" id="method-cost-${m.id}" value="${m.unlock_cost || 50}" style="margin-top:2px; font-size:13px;">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${escapeQuote(m.title)}', true)">موافقة ونشر ✅</button>
-                        <button class="reject-btn" onclick="reviewMethod(${m.id}, '${m.user_id}', '${escapeQuote(m.title)}', false)">رفض ❌</button>
-                    </div>
-                </div>`;
-        }).join("");
+        const { data } = await client.from('methods').select('*').eq('status', 'Pending');
+        div.innerHTML = (!data || data.length === 0) ? "✅ لا توجد ميثودات معلقة." : data.map(m => `
+            <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                <b>📌 ${escapeHtml(m.title)} (الكاتب: ${m.user_id})</b>
+                <div style="font-size:12px;">${escapeHtml(m.content)}</div>
+                <div class="actions-box">
+                    <button class="approve-btn" onclick="reviewMethod(${m.id}, true)">قبول ونشر ✅</button>
+                    <button class="reject-btn" onclick="reviewMethod(${m.id}, false)">رفض ❌</button>
+                </div>
+            </div>`).join("");
     }
-
-    async function reviewMethod(id, userId, title, isApproved) {
-        const db = getDbClient();
-        if (isApproved) {
-            const awardedPoints = parseInt(document.getElementById(`method-points-${id}`).value) || 0;
-            const unlockCost = parseFloat(document.getElementById(`method-cost-${id}`).value) || 50;
-
-            if (!confirm(`تأكيد قبول الميثود ومنح المطوّر ${awardedPoints} نقطة؟`)) return;
-
-            await db.from('methods').update({ status: 'Approved', points_awarded: awardedPoints, unlock_cost: unlockCost }).eq('id', id);
-
-            if (awardedPoints > 0) {
-                const { data: userData } = await db.from('users').select('points, total_earned').eq('telegram_id', userId).maybeSingle();
-                if (userData) {
-                    await db.from('users').update({
-                        points: (userData.points || 0) + awardedPoints,
-                        total_earned: (userData.total_earned || 0) + awardedPoints
-                    }).eq('telegram_id', userId);
-                }
-            }
-
-            await db.from('bot_messages').insert([{
-                telegram_id: userId,
-                message: `🎉 *مبارك! تم قبول ونشر الميثود الخاص بك*\n📌 *العنوان:* ${title}`,
-                status: 'pending'
-            }]);
-        } else {
-            const reason = prompt("أدخل سبب رفض الميثود:", "المحتوى غير دقيق أو مكرر");
-            if (reason === null) return;
-            await db.from('methods').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
-        }
-        loadPendingMethods();
-        loadPublishedMethods();
+    async function reviewMethod(id, ok) {
+        await client.from('methods').update({ status: ok ? 'Approved' : 'Rejected' }).eq('id', id);
+        loadPendingMethods(); loadPublishedMethods();
     }
-
-    function openLightbox(imgSrc) {
-        const img = document.getElementById('lightbox-img');
-        img.src = imgSrc;
-        currentZoom = 1;
-        img.style.transform = `scale(${currentZoom})`;
-        document.getElementById('lightbox-modal').style.display = 'flex';
-    }
-    function zoomImage(delta) {
-        currentZoom = Math.max(0.5, Math.min(3.5, currentZoom + delta));
-        document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`;
-    }
-    function resetZoom() {
-        currentZoom = 1;
-        document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`;
-    }
-    function closeLightbox() { document.getElementById('lightbox-modal').style.display = 'none'; }
 
     async function loadAdminTaskSubmissions() {
-        const db = getDbClient();
         const div = document.getElementById('admin-task-submissions-list');
-        if (!div || !db) return;
-        try {
-            let { data: subs, error } = await db.from('task_submissions').select('*').eq('status', 'pending').order('created_at', { ascending: false });
-            if (error || !subs || subs.length === 0) {
-                div.innerHTML = "✅ لا توجد إثباتات مهام معلقة للمراجعة حالياً.";
-                return;
-            }
-
-            div.innerHTML = "";
-            for (let s of subs) {
-                let taskTitle = "مهمة إدارية";
-                try {
-                    let { data: tData } = await db.from('tasks').select('title, reward').eq('id', s.task_id).maybeSingle();
-                    if (tData) taskTitle = `${tData.title} (${tData.reward} نقطة)`;
-                } catch(e){}
-
-                div.innerHTML += `
-                    <div id="admin-sub-${s.id}" class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
-                        <div style="width:100%;">
-                            <b>📌 المهمة:</b> ${escapeHtml(taskTitle)} | <b>👤 المنفذ ID:</b> <span style="color:var(--neon-blue);">${s.user_id}</span><br>
-                            <div style="margin: 10px 0; cursor: zoom-in;" onclick="openLightbox('${s.proof_image}')">
-                                <img src="${s.proof_image}" style="max-width:180px; max-height:180px; border-radius:8px; border:1px solid #444;">
-                            </div>
-                        </div>
-                        <input type="text" id="admin-feedback-${s.id}" placeholder="سبب الرفض أو ملاحظة...">
-                        <div class="actions-box">
-                            <button class="approve-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', true)">قبول وصرف النقاط ✅</button>
-                            <button class="reject-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', false)">رفض الإثبات ❌</button>
-                        </div>
-                    </div>
-                `;
-            }
-        } catch (e) {}
+        const { data: subs } = await client.from('task_submissions').select('*').eq('status', 'pending').order('id', { ascending: false });
+        if (!subs || subs.length === 0) { div.innerHTML = "✅ لا توجد إثباتات مهام معلقة."; return; }
+        div.innerHTML = subs.map(s => `
+            <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                <div><b>مهمة #${s.task_id}</b> | المنفذ: <code>${s.user_id}</code></div>
+                <img src="${s.proof_image}" style="max-width:150px; border-radius:8px; cursor:pointer;" onclick="openLightbox('${s.proof_image}')">
+                <input type="text" id="admin-feedback-${s.id}" placeholder="ملاحظة أو سبب الرفض...">
+                <div class="actions-box">
+                    <button class="approve-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', true)">قبول وصرف ✅</button>
+                    <button class="reject-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', false)">رفض ❌</button>
+                </div>
+            </div>`).join("");
     }
 
-    async function reviewAdminSubmission(subId, taskId, userId, isApproved) {
-        const db = getDbClient();
-        const feedbackVal = (document.getElementById(`admin-feedback-${subId}`)?.value || "").trim();
-        if (!isApproved && !feedbackVal) return alert("⚠️ اكتب سبب الرفض!");
-
-        let { data: taskData } = await db.from('tasks').select('*').eq('id', taskId).single();
-        if (!taskData) return;
-        const reward = taskData.reward || 10;
-
-        if (isApproved) {
-            await db.from('task_submissions').update({ status: 'approved', feedback: feedbackVal || null }).eq('id', subId);
-            try { await db.from('task_completions').insert([{ task_id: parseInt(taskId), user_id: String(userId) }]); } catch (e) {}
-
-            let { data: execUser } = await db.from('users').select('*').eq('telegram_id', String(userId)).maybeSingle();
-            if (execUser) {
-                await db.from('users').update({
-                    points: (execUser.points || 0) + reward,
-                    total_earned: (execUser.total_earned || 0) + reward,
-                    task_earnings: (execUser.task_earnings || 0) + reward,
-                    total_tasks: (execUser.total_tasks || 0) + 1
+    async function reviewAdminSubmission(subId, taskId, userId, isOk) {
+        const fb = document.getElementById(`admin-feedback-${subId}`).value.trim();
+        const { data: t } = await client.from('tasks').select('*').eq('id', taskId).maybeSingle();
+        const reward = t ? (t.reward || 10) : 10;
+        if (isOk) {
+            await client.from('task_submissions').update({ status: 'approved', feedback: fb }).eq('id', subId);
+            const { data: u } = await client.from('users').select('points, total_earned, total_tasks').eq('telegram_id', String(userId)).maybeSingle();
+            if (u) {
+                await client.from('users').update({
+                    points: (u.points || 0) + reward,
+                    total_earned: (u.total_earned || 0) + reward,
+                    total_tasks: (u.total_tasks || 0) + 1
                 }).eq('telegram_id', String(userId));
             }
-
-            await db.from('bot_messages').insert([{
-                telegram_id: String(userId),
-                message: `🎉 *تم قبول إثبات المهمة (${taskData.title}) وإضافة +${reward} نقطة!* ✅`,
-                status: 'pending'
-            }]);
         } else {
-            await db.from('task_submissions').update({ status: 'rejected', feedback: feedbackVal }).eq('id', subId);
-            await db.from('bot_messages').insert([{
-                telegram_id: String(userId),
-                message: `❌ *تم رفض إثبات المهمة (${taskData.title}):* ${feedbackVal}`,
-                status: 'pending'
-            }]);
+            await client.from('task_submissions').update({ status: 'rejected', feedback: fb }).eq('id', subId);
         }
         loadAdminTaskSubmissions();
     }
 
     async function loadPendingTasks() {
-        const db = getDbClient();
         const div = document.getElementById('pending-tasks-list');
-        if (!div || !db) return;
-        let { data, error } = await db.from('tasks').select('*').eq('status', 'Pending').order('created_at', { ascending: false });
-        if (error || !data) return;
-
-        div.innerHTML = data.length === 0 ? "✅ لا توجد مهام جديدة تنتظر المراجعة." : data.map(t => `
-            <div class="item-row" style="width:100%; box-sizing:border-box; flex-direction:column; align-items:flex-start;">
-                <div style="width:100%;">
-                    <b>📌 العنوان:</b> ${escapeHtml(t.title)} | <b>👤 صاحب المهمة:</b> ${t.creator_id || t.user_id}<br>
-                    <b>💰 المكافأة:</b> ${t.reward} ن | <b>🔗 الرابط:</b> <a href="${t.url}" target="_blank" style="color:var(--neon-blue);">${escapeHtml(t.url)}</a>
-                </div>
+        const { data } = await client.from('tasks').select('*').eq('status', 'Pending');
+        div.innerHTML = (!data || data.length === 0) ? "✅ لا توجد مهام معلقة." : data.map(t => `
+            <div class="item-row">
+                <b>📌 ${escapeHtml(t.title)} (${t.reward} ن)</b>
                 <div class="actions-box">
-                    <button class="approve-btn" onclick="reviewUserTask(${t.id}, '${t.creator_id || t.user_id}', '${escapeQuote(t.title)}', true)">موافقة ونشر ✅</button>
-                    <button class="reject-btn" onclick="reviewUserTask(${t.id}, '${t.creator_id || t.user_id}', '${escapeQuote(t.title)}', false)">رفض واسترداد ❌</button>
+                    <button class="approve-btn" onclick="reviewUserTask(${t.id}, true)">قبول ✅</button>
+                    <button class="reject-btn" onclick="reviewUserTask(${t.id}, false)">رفض ❌</button>
                 </div>
             </div>`).join("");
     }
-
-    async function reviewUserTask(id, creatorId, title, isApproved) {
-        const db = getDbClient();
-        if (isApproved) {
-            await db.from('tasks').update({ status: 'Approved', is_active: true }).eq('id', id);
-        } else {
-            const reason = prompt("سبب رفض المهمة:", "مخالفة الشروط");
-            if (reason === null) return;
-            await db.from('tasks').update({ status: 'Rejected' }).eq('id', id);
-        }
-        loadPendingTasks();
-        loadTasks();
+    async function reviewUserTask(id, ok) {
+        await client.from('tasks').update({ status: ok ? 'Approved' : 'Rejected', is_active: ok }).eq('id', id);
+        loadPendingTasks(); loadTasks();
     }
 
     async function loadTasks() {
-        const db = getDbClient();
         const div = document.getElementById('tasks-list');
-        if (!div || !db) return;
-        let { data, error } = await db.from('tasks').select('*').eq('status', 'Approved').order('created_at', { ascending: false });
-        if (error || !data) return;
-        
-        div.innerHTML = data.length === 0 ? "📭 لا توجد مهام نشطة." : data.map(t => `
-            <div class="item-row task-row" style="width:100%; box-sizing:border-box;">
+        const { data } = await client.from('tasks').select('*').eq('status', 'Approved').order('id', { ascending: false });
+        div.innerHTML = (data || []).map(t => `
+            <div class="item-row">
+                <b>${escapeHtml(t.title)} (${t.reward} ن)</b>
                 <div>
-                    <b>${escapeHtml(t.title)}</b> (${t.platform || 'telegram'})<br>
-                    <span class="info-text">💰 ${t.reward} نقطة</span>
-                </div>
-                <div style="display:flex; gap:8px;">
-                    <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link || t.url)}', ${t.reward}, ${t.target_count || 10})">تعديل ✏️</button>
-                    <button class="del-btn" onclick="deleteTask(${t.id})">حذف 🗑️</button>
+                    <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link || t.url)}', ${t.reward}, ${t.target_count || 100})">✏️</button>
+                    <button class="del-btn" onclick="deleteTask(${t.id})">🗑️</button>
                 </div>
             </div>`).join("");
     }
-
     function openEditTaskModal(id, title, link, reward, target) {
         document.getElementById('edit-t-id').value = id;
         document.getElementById('edit-t-title').value = title;
@@ -2124,63 +1214,70 @@
         document.getElementById('edit-t-target').value = target;
         document.getElementById('edit-task-modal').style.display = 'flex';
     }
-
-    function closeEditTaskModal() { document.getElementById('edit-task-modal').style.display = 'none'; }
-
     async function saveEditedTask() {
-        const db = getDbClient();
         const id = document.getElementById('edit-t-id').value;
-        const title = document.getElementById('edit-t-title').value.trim();
         const link = document.getElementById('edit-t-link').value.trim();
-        const reward = parseInt(document.getElementById('edit-t-reward').value) || 10;
-        const target = parseInt(document.getElementById('edit-t-target').value) || 10;
-
-        await db.from('tasks').update({ title, link, url: link, reward, target_count: target }).eq('id', id);
-        closeEditTaskModal();
+        await client.from('tasks').update({
+            title: document.getElementById('edit-t-title').value.trim(),
+            link, url: link,
+            reward: parseInt(document.getElementById('edit-t-reward').value) || 10,
+            target_count: parseInt(document.getElementById('edit-t-target').value) || 100
+        }).eq('id', id);
+        document.getElementById('edit-task-modal').style.display = 'none';
         loadTasks();
     }
-
     async function addTask() {
-        const db = getDbClient();
         const platform = document.getElementById('task-platform').value;
         const title = document.getElementById('task-title').value.trim();
         const link = document.getElementById('task-link').value.trim();
-        const reward = parseInt(document.getElementById('task-reward').value);
-        if(!title || !link || isNaN(reward)) return alert("املأ كافة الخانات!");
-
-        await db.from('tasks').insert([{ 
-            platform, title, url: link, link, channel_id: platform === 'telegram' ? link : null,
-            reward, status: 'Approved', target_count: 100, completed_count: 0, is_active: true 
-        }]);
-        alert("تم نشر المهمة فوراً! 🚀"); 
+        const reward = parseInt(document.getElementById('task-reward').value) || 10;
+        if (!title || !link) return;
+        await client.from('tasks').insert([{ platform, title, url: link, link, reward, status: 'Approved', target_count: 100, is_active: true }]);
+        alert("✅ تم نشر المهمة!");
         loadTasks();
     }
+    async function deleteTask(id) { if (!confirm("حذف المهمة؟")) return; await client.from('tasks').delete().eq('id', id); loadTasks(); }
 
-    async function deleteTask(id) {
-        const db = getDbClient();
-        if (!confirm("حذف المهمة نهائياً؟")) return;
-        await db.from('tasks').delete().eq('id', id);
-        loadTasks();
+    function previewAdminImage(input) {
+        if (!input.files || !input.files[0]) return;
+        const r = new FileReader(); r.onload = e => { adminMethodBase64 = e.target.result; }; r.readAsDataURL(input.files[0]);
+    }
+    function previewDepositLogo(input) {
+        if (!input.files || !input.files[0]) return;
+        const r = new FileReader(); r.onload = e => { depositLogoBase64 = e.target.result; }; r.readAsDataURL(input.files[0]);
+    }
+    function previewStoreFile(input) {
+        if (!input.files || !input.files[0]) return;
+        const r = new FileReader(); r.onload = e => { storeFileBase64 = e.target.result; }; r.readAsDataURL(input.files[0]);
     }
 
-    // تحميل كل أقسام لوحة التحكم بالتوازي دون تعطيل واجهة المستخدم
-    function initAdminData() {
+    function openLightbox(src) {
+        const img = document.getElementById('lightbox-img');
+        img.src = src; currentZoom = 1; img.style.transform = "scale(1)";
+        document.getElementById('lightbox-modal').style.display = 'flex';
+    }
+    function zoomImage(d) { currentZoom = Math.max(0.5, Math.min(3.5, currentZoom + d)); document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`; }
+    function resetZoom() { currentZoom = 1; document.getElementById('lightbox-img').style.transform = "scale(1)"; }
+
+    window.initAdminData = function() {
+        if (!client) return;
         generateNewProductCode();
-        loadStoreAndOrdersFast().catch(console.error);
-        loadWithdrawals().catch(console.error);
-        loadMethods().catch(console.error);
-        loadSupportTickets().catch(console.error);
-        loadDepositMethods().catch(console.error);
-        loadDepositsRequests().catch(console.error);
-        loadPublishedMethods().catch(console.error);
-        loadPendingMethods().catch(console.error);
-        loadTasks().catch(console.error);
-        loadPendingTasks().catch(console.error);
-        loadAdminTaskSubmissions().catch(console.error);
+        loadStoreAndOrdersFast().catch(() => {});
+        loadWithdrawals().catch(() => {});
+        loadMethods().catch(() => {});
+        loadSupportTickets().catch(() => {});
+        loadDepositMethods().catch(() => {});
+        loadDepositsRequests().catch(() => {});
+        loadPublishedMethods().catch(() => {});
+        loadPendingMethods().catch(() => {});
+        loadTasks().catch(() => {});
+        loadPendingTasks().catch(() => {});
+        loadAdminTaskSubmissions().catch(() => {});
+    };
+
+    if (window._adminUnlocked) {
+        window.initAdminData();
     }
-
-    window.addEventListener('DOMContentLoaded', checkAdminSession);
 </script>
-
 </body>
 </html>
