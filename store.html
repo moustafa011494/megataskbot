@@ -206,6 +206,45 @@
         .btn-confirm { background: var(--main-green); color: black; }
         .btn-cancel { background: #252932; color: white; }
 
+        /* صندوق عرض ونسخ كود الصفقة المولد */
+        .generated-code-box {
+            background: #06080c;
+            border: 2px dashed var(--main-green);
+            border-radius: 16px;
+            padding: 16px 12px;
+            margin: 14px 0;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .generated-code-box:active { transform: scale(0.98); background: rgba(0, 210, 106, 0.08); }
+        .generated-code-val {
+            font-family: 'Courier New', monospace;
+            font-size: 24px;
+            font-weight: 900;
+            color: var(--main-green);
+            letter-spacing: 2px;
+            user-select: all;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .copy-code-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(0, 242, 255, 0.14);
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 11.5px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: all;
+        }
+        .copy-code-badge:active { transform: scale(0.94); }
+
         /* غرفة الصفقة والوساطة المباشرة (Deal Room) */
         .deal-status-banner {
             background: #0b0e14;
@@ -355,6 +394,33 @@
     </div>
 
     <!-- =========================================================================
+         ⭐ نافذة عرض ونسخ كود الصفقة بعد توليده مباشرة
+    ========================================================================== -->
+    <div id="escrow-created-modal" class="modal-overlay">
+        <div class="modal-body" style="border-color: var(--main-green); text-align: center;">
+            <div style="font-size: 46px; margin-bottom: 6px;">🎉</div>
+            <h3 style="color: var(--main-green); margin: 0 0 6px;">تم توليد كود الصفقة بنجاح!</h3>
+            <p style="font-size: 12px; color: #cbd5e1; margin: 0; line-height: 1.6;">
+                انسخ الكود التالي وأرسله للمشتري ليضعه في زر <b>(🔍 كود صفقة)</b> ويدفع المبلغ في خزنة الضمان:
+            </p>
+
+            <div class="generated-code-box" onclick="copyCodeText(document.getElementById('created-deal-code-txt').innerText)">
+                <span class="generated-code-val" id="created-deal-code-txt">ESC-000000</span>
+                <span style="font-size: 11.5px; color: var(--gold); font-weight: bold;">👆 اضغط هنا لنسخ الكود للحافظة فوراً</span>
+            </div>
+
+            <div style="font-size: 11px; color: var(--text-gray); margin-bottom: 14px;">
+                ✅ تم أيضاً إرسال نسخة من الكود إلى محادثتك في البوت للاحتفاظ به.
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-confirm" onclick="copyCodeText(document.getElementById('created-deal-code-txt').innerText)">📋 نسخ كود الصفقة</button>
+                <button class="btn-cancel" onclick="closeModal('escrow-created-modal')">تم ✖</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================================
          2. نافذة البحث عن كود صفقة وساطة والدفع فيها (Join Escrow by Code)
     ========================================================================== -->
     <div id="join-escrow-modal" class="modal-overlay">
@@ -377,7 +443,7 @@
     <div id="deal-room-modal" class="modal-overlay">
         <div class="modal-body" style="border-color: var(--gold);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <h3 style="color: var(--gold); margin: 0; font-size: 15.5px;" id="dr-title">🤝 غرفة الوساطة المالية</h3>
+                <h3 style="color: var(--gold); margin: 0; font-size: 15px; display: flex; align-items: center; gap: 6px;" id="dr-title">🤝 غرفة الوساطة</h3>
                 <button onclick="refreshCurrentDealRoom()" style="background: none; border: 1px solid var(--neon-blue); color: var(--neon-blue); border-radius: 8px; padding: 4px 9px; font-size: 11px; font-weight: bold; cursor: pointer;">🔄 تحديث</button>
             </div>
 
@@ -565,6 +631,36 @@
             subscriptions: "👑",
             escrow_private: "🤝"
         };
+
+        // ⭐ دالة نسخ مضمونة 100% لجميع هواتف الأندرويد والآيفون داخل Telegram WebView
+        function copyCodeText(codeVal) {
+            const clean = String(codeVal || "").trim();
+            if (!clean) return;
+
+            const fallbackCopy = () => {
+                const ta = document.createElement("textarea");
+                ta.value = clean;
+                ta.style.position = "fixed";
+                ta.style.top = "-9999px";
+                ta.style.opacity = "0";
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                try { document.execCommand("copy"); } catch (e) {}
+                document.body.removeChild(ta);
+                tg.showAlert(`✅ تم نسخ الكود بنجاح:\n${clean}`);
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(clean).then(() => {
+                    tg.showAlert(`✅ تم نسخ الكود بنجاح:\n${clean}`);
+                }).catch(() => {
+                    fallbackCopy();
+                });
+            } else {
+                fallbackCopy();
+            }
+        }
 
         async function init() {
             if (tid) {
@@ -777,9 +873,17 @@
             btn.innerText = "توليد كود الصفقة الآن 🔐";
 
             if (!error && data) {
+                const unit = selectedEscrowCurrency === 'egp' ? 'ج.م' : 'نقطة';
+                // إرسال الكود لمحادثة البائع في البوت أيضاً للاحتفاظ به ونسخه بسهولة
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(tid),
+                    message: `🤝 *تم إنشاء كود صفقة الوساطة الخاصة بك بنجاح!*\n━━━━━━━━━━━━━━━\n🔐 *كود الصفقة (اضغط للنسخ):* \`${dealCode}\`\n📦 *العنوان:* ${title}\n💰 *المبلغ:* ${price} ${unit}\n\nأرسل هذا الكود للمشتري ليضعه في زر *(🔍 كود صفقة)* داخل المتجر ويدفع المبلغ في خزنة الضمان!`,
+                    status: 'pending'
+                }]);
+
                 closeModal('private-escrow-modal');
-                navigator.clipboard.writeText(dealCode).catch(() => {});
-                tg.showAlert(`🎉 تم إنشاء صفقة الوساطة بنجاح ونسخ الكود!\n\n🔐 كود الصفقة: ${dealCode}\n\nأرسل هذا الكود للمشتري ليضعه في زر (🔍 كود صفقة) ويدفع المبلغ في خزنة الضمان!`);
+                document.getElementById('created-deal-code-txt').innerText = dealCode;
+                document.getElementById('escrow-created-modal').style.display = 'flex';
             } else {
                 tg.showAlert("❌ خطأ أثناء إنشاء الصفقة: " + (error?.message || ""));
             }
@@ -932,7 +1036,7 @@
             if (!error) {
                 closeModal('sell-modal');
                 const unitTxt = selectedSellCurrency === 'egp' ? 'ج.م' : 'نقطة';
-                tg.showAlert(`✅ تم إرسال سلعتك (${title}) بسعر ${price} ${unitTxt} بنجاح!\n\nستظهر في المتجر فور اعتمادها من الإدارة.`);
+                tg.showAlert(`✅ تم إرسال سلعتك (${title}) بسعر ${price} ${unitTxt} بنجاح!\n🆔 كود السلعة: ${prodCode}\n\nستظهر في المتجر فور اعتمادها من الإدارة.`);
             } else {
                 tg.showAlert("❌ خطأ أثناء الإرسال: " + error.message);
             }
@@ -1018,7 +1122,7 @@
                 const commRate = sellerId === 'ADMIN' ? 0 : (isPrivateEscrow ? PRIVATE_ESCROW_RATE : STORE_COMMISSION_RATE);
                 const botFee = Number((price * commRate).toFixed(2));
                 const netSeller = Number((price - botFee).toFixed(2));
-                const orderCode = "ESC-" + Math.floor(100000 + Math.random() * 900000);
+                const orderCode = (isPrivateEscrow && p.product_code) ? p.product_code : ("ESC-" + Math.floor(100000 + Math.random() * 900000));
 
                 const initialChat = [{
                     sender: "SYSTEM",
@@ -1106,7 +1210,10 @@
             const unit = ord.currency === 'egp' ? 'ج.م' : 'نقطة';
             const code = ord.order_code || `ORD-${ord.id}`;
 
-            document.getElementById('dr-title').innerText = `🤝 صفقة: ${code}`;
+            document.getElementById('dr-title').innerHTML = `
+                <span>🤝 صفقة:</span>
+                <span class="copy-code-badge" onclick="copyCodeText('${code}')">${code} 📋</span>
+            `;
 
             let statusTxt = "";
             if (ord.status === 'Escrow_Held' || ord.status === 'Pending') {
@@ -1399,7 +1506,7 @@
         }
 
         // =========================================================================
-        // 📦 5. نافذة صفقاتي وطلباتي وسلعي
+        // 📦 5. نافذة صفقاتي وطلباتي وسلعي (مع أزرار نسخ الكود المباشرة)
         // =========================================================================
         async function openMyActivityModal() {
             document.getElementById('activity-modal').style.display = 'flex';
@@ -1430,6 +1537,7 @@
                         : `<span style="color:var(--gold); font-size:10.5px;">[أنت البائع 🏷️]</span>`;
 
                     const unit = o.currency === 'egp' ? 'ج.م' : 'نقطة';
+                    const oCode = o.order_code || `ESC-${o.id}`;
                     let stBadge = `<span style="color:var(--gold);">🔒 محجوز بالضمان</span>`;
                     if (o.status === 'Delivered') stBadge = `<span style="color:var(--neon-blue);">📦 تم التسليم (بانتظار التأكيد)</span>`;
                     if (o.status === 'Completed') stBadge = `<span style="color:var(--main-green);">✅ مكتمل</span>`;
@@ -1438,12 +1546,12 @@
 
                     html += `
                         <div style="background:#11141a; padding:12px; border-radius:12px; margin-bottom:9px; border:1px solid #262c38; font-size:12px;">
-                            <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:4px;">
+                            <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:6px;">
                                 <span>${roleBadge} ${escapeHtml(o.product_title)}</span>
                                 ${stBadge}
                             </div>
                             <div style="display:flex; justify-content:space-between; align-items:center; color:var(--text-gray); font-size:11px; margin-top:6px;">
-                                <span>المبلغ: <b style="color:#fff;">${o.price_paid} ${unit}</b> | الكود: <code>${o.order_code || o.id}</code></span>
+                                <span>المبلغ: <b style="color:#fff;">${o.price_paid} ${unit}</b> | الكود: <span class="copy-code-badge" onclick="copyCodeText('${oCode}')">${oCode} 📋</span></span>
                                 <button onclick="openDealRoom(${o.id})" style="background:var(--main-green); color:#000; border:none; padding:5px 11px; border-radius:8px; font-weight:bold; font-size:11px; cursor:pointer;">💬 غرفة الوساطة</button>
                             </div>
                         </div>`;
@@ -1451,23 +1559,27 @@
             }
 
             html += `<hr style="border-color:#262c38; margin: 15px 0;">`;
-            html += `<h4 style="color: var(--main-green); margin: 5px 0 8px;">🏷️ سلعي وصفقاتي المعروضة (${myItems ? myItems.length : 0}):</h4>`;
+            html += `<h4 style="color: var(--main-green); margin: 5px 0 8px;">🏷️ سلعي وأكواد صفقاتي المنشأة (${myItems ? myItems.length : 0}):</h4>`;
             if (!myItems || myItems.length === 0) {
-                html += `<p style="font-size:12px; color:gray;">لم تعرض أي سلعة للبيع بعد.</p>`;
+                html += `<p style="font-size:12px; color:gray;">لم تعرض أي سلعة أو صفقة بعد.</p>`;
             } else {
                 myItems.forEach(item => {
                     const unit = item.currency === 'egp' ? 'ج.م' : 'نقطة';
+                    const pCode = item.product_code || `PRD-${item.id}`;
                     let stTxt = `<span style="color:var(--gold);">⏳ قيد المراجعة</span>`;
-                    if (item.status === 'Approved') stTxt = `<span style="color:var(--main-green);">✅ نشط (الكود: ${item.product_code || item.id})</span>`;
+                    if (item.status === 'Approved') stTxt = `<span style="color:var(--main-green);">✅ نشط</span>`;
                     if (item.status === 'Rejected') stTxt = `<span style="color:#ff4d4d;">❌ مرفوض</span>`;
 
                     html += `
-                        <div style="background:#11141a; padding:10px; border-radius:10px; margin-bottom:8px; border:1px solid #262c38; font-size:12px;">
-                            <div style="display:flex; justify-content:space-between; font-weight:bold;">
+                        <div style="background:#11141a; padding:10px 12px; border-radius:10px; margin-bottom:8px; border:1px solid #262c38; font-size:12px;">
+                            <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
                                 <span>${escapeHtml(item.title)}</span>
-                                <span>${item.price} ${unit}</span>
+                                <span style="color:var(--neon-blue);">${item.price} ${unit}</span>
                             </div>
-                            <div style="font-size:11px; margin-top:4px;">الحالة: ${stTxt}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px;">
+                                <span>الحالة: ${stTxt}</span>
+                                <span class="copy-code-badge" onclick="copyCodeText('${pCode}')">نسخ الكود: ${pCode} 📋</span>
+                            </div>
                         </div>`;
                 });
             }
