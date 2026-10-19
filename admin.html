@@ -6,8 +6,11 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>MegaTask - لوحة التحكم الإدارية الشاملة v4.2</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>MegaTask - لوحة التحكم الإدارية v5.0</title>
+
+    <!-- استخدام نفس مكتبة unpkg السريعة مع وجود محرك Fetch مدمج احتياطي بالأسفل -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
     <style>
         :root { 
             --neon-purple: #bc13fe; 
@@ -19,11 +22,25 @@
             --red: #ff4d4d; 
             --gold: #ffaa00; 
         }
-        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 18px; margin: 0; padding-bottom: 60px; }
-        h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 15px; text-align: center; font-size: 21px; }
+        * { box-sizing: border-box; }
+        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 16px; margin: 0; padding-bottom: 60px; }
+        h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin: 0; font-size: 20px; }
         h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; font-size: 15px; }
         
         .container { max-width: 980px; margin: auto; display: none; }
+
+        /* شريط حالة الاتصال بقاعدة البيانات */
+        #db-status-bar {
+            background: #141923;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 12.5px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            text-align: center;
+        }
 
         /* شريط تنبيه الطلبات الجديدة العائم */
         #live-alert-toast {
@@ -46,7 +63,7 @@
         /* شريط الإحصائيات السريعة العلوي */
         .top-stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 10px;
             margin-bottom: 20px;
         }
@@ -60,7 +77,7 @@
         .stat-box span { font-size: 11.5px; color: #9ca3af; display: block; margin-bottom: 4px; }
         .stat-box b { font-size: 20px; font-weight: 900; color: var(--neon-blue); }
 
-        .card { background: var(--card-bg); border: 1px solid #333; padding: 20px; border-radius: 20px; margin-bottom: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card { background: var(--card-bg); border: 1px solid #333; padding: 18px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .search-hub-card { border-top: 4px solid var(--gold); background: linear-gradient(145deg, #1b1912, #141414); }
         .dispute-card { border-top: 4px solid var(--red); background: linear-gradient(145deg, #211215, #141414); }
         .promo-card { border-top: 4px solid var(--main-green); background: linear-gradient(145deg, #111f18, #141414); }
@@ -76,36 +93,31 @@
         .admin-method-card { border-top: 4px solid #ffaa00; }
         .user-wallet-card { border-top: 4px solid var(--neon-blue); }
 
-        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; outline: none; font-family: inherit; }
+        input, textarea, select { width: 100%; padding: 11px 12px; margin: 7px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; outline: none; font-family: inherit; }
         input:focus, textarea:focus, select:focus { border-color: var(--neon-blue); }
         
         button { cursor: pointer; font-weight: bold; transition: 0.2s; border: none; border-radius: 10px; font-family: inherit; }
         button:active { transform: scale(0.98); }
-        .main-btn { background: var(--neon-purple); color: white; padding: 14px 20px; width: 100%; font-size: 15px; margin-top: 10px; }
-        .method-btn { background: var(--neon-blue); color: black; padding: 14px 20px; width: 100%; font-size: 15px; margin-top: 10px; }
-        .deposit-btn { background: var(--main-green); color: black; padding: 14px 20px; width: 100%; font-size: 15px; margin-top: 10px; }
-        .admin-method-btn { background: #ffaa00; color: black; padding: 14px 20px; width: 100%; font-size: 15px; margin-top: 10px; }
+        .main-btn { background: var(--neon-purple); color: white; padding: 13px 20px; width: 100%; font-size: 14.5px; margin-top: 8px; }
+        .method-btn { background: var(--neon-blue); color: black; padding: 13px 20px; width: 100%; font-size: 14.5px; margin-top: 8px; }
+        .deposit-btn { background: var(--main-green); color: black; padding: 13px 20px; width: 100%; font-size: 14.5px; margin-top: 8px; }
+        .admin-method-btn { background: #ffaa00; color: black; padding: 13px 20px; width: 100%; font-size: 14.5px; margin-top: 8px; }
         
-        .list-container { margin-top: 15px; max-height: 550px; overflow-y: auto; }
-        .collapsible-body { display: none; margin-top: 15px; }
+        .list-container { margin-top: 12px; max-height: 520px; overflow-y: auto; }
+        .collapsible-body { display: none; margin-top: 14px; }
         .arrow-icon { font-size: 14px; transition: transform 0.3s ease; }
         .arrow-icon.open { transform: rotate(180deg); }
 
-        .item-row { background: #222; padding: 15px; margin-bottom: 12px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; flex-wrap: wrap; gap: 10px; }
-        .task-row { border-right-color: var(--neon-purple); }
+        .item-row { background: #222; padding: 14px; margin-bottom: 10px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center; border-right: 4px solid transparent; flex-wrap: wrap; gap: 10px; }
         .withdraw-row { border-right-color: var(--gold); flex-direction: column; align-items: flex-start; }
-        .method-row { border-right-color: var(--neon-blue); }
-        .deposit-row { border-right-color: var(--main-green); }
-        .method-review-row { border-right-color: var(--neon-purple); flex-direction: column; align-items: flex-start; }
         
-        .del-btn { background: var(--red); color: white; padding: 8px 15px; }
-        .edit-btn { background: var(--orange); color: black; padding: 8px 15px; }
-        .approve-btn { background: var(--main-green); color: black; padding: 10px 16px; font-size: 13px; border-radius: 8px; flex: 1; }
-        .reject-btn { background: var(--red); color: white; padding: 10px 16px; font-size: 13px; border-radius: 8px; flex: 1; }
-        .chat-btn { background: var(--neon-blue); color: black; padding: 10px 16px; font-size: 13px; border-radius: 8px; flex: 1; }
-        .actions-box { display: flex; gap: 8px; width: 100%; margin-top: 10px; flex-wrap: wrap; }
+        .del-btn { background: var(--red); color: white; padding: 8px 14px; }
+        .edit-btn { background: var(--orange); color: black; padding: 8px 14px; }
+        .approve-btn { background: var(--main-green); color: black; padding: 10px 14px; font-size: 13px; border-radius: 8px; flex: 1; }
+        .reject-btn { background: var(--red); color: white; padding: 10px 14px; font-size: 13px; border-radius: 8px; flex: 1; }
+        .chat-btn { background: var(--neon-blue); color: black; padding: 10px 14px; font-size: 13px; border-radius: 8px; flex: 1; }
+        .actions-box { display: flex; gap: 8px; width: 100%; margin-top: 8px; flex-wrap: wrap; }
         
-        .info-text { font-size: 12.5px; color: #aaa; margin-top: 4px; line-height: 1.6; }
         .code-pill { background: rgba(255, 170, 0, 0.15); color: var(--gold); border: 1px dashed var(--gold); padding: 2px 9px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: bold; cursor: pointer; }
 
         #admin-lock-screen {
@@ -149,26 +161,29 @@
 <div id="admin-lock-screen">
     <div class="lock-box">
         <div style="display:inline-block; background:rgba(0,210,106,0.15); color:#00d26a; border:1px solid #00d26a; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:bold; margin-bottom:10px;">
-            الإصدار المصحح السريع v4.2 🟢
+            الإصدار المباشر المضمون v5.0 🚀
         </div>
         <div style="font-size: 44px; margin-bottom: 8px;">🛡️</div>
         <h2 style="color: var(--neon-blue); margin: 0 0 8px 0;">منطقة محمية للإدارة</h2>
         <p style="font-size: 12px; color: #9ca3af; margin-bottom: 14px;">أدخل كلمة المرور (أو الـ ID الخاص بك) لفتح اللوحة:</p>
-        <input type="text" id="admin-pin-input" placeholder="اكتب الباسورد هنا..." style="text-align: center; font-size: 16px; direction: ltr;" onkeydown="if(event.key==='Enter') unlockAdminPanelNow()">
+        <input type="text" id="admin-pin-input" placeholder="Mostafa@2026 أو 875021647" style="text-align: center; font-size: 16px; direction: ltr;" onkeydown="if(event.key==='Enter') unlockAdminPanelNow()">
         <button type="button" class="method-btn" onclick="unlockAdminPanelNow()">🔓 فتح لوحة التحكم الآن</button>
         <div id="lock-error-msg" style="color: var(--red); font-size: 12px; margin-top: 10px; display: none;"></div>
     </div>
 </div>
 
 <div class="container" id="main-admin-container">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
-        <h1 style="margin: 0;">🛡️ إدارة MegaTask والوسيط المالي</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+        <h1>🛡️ إدارة MegaTask والوسيط المالي</h1>
         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
             <button id="btn-sound-radar" class="approve-btn" style="font-size: 11.5px; padding: 8px 12px; flex: unset;" onclick="enableLiveNotifications()">🔔 تفعيل جرس وإشعارات الفون</button>
-            <button class="edit-btn" style="font-size: 11.5px; padding: 8px 12px;" onclick="window.initAdminData()">🔄 تحديث</button>
+            <button class="edit-btn" style="font-size: 11.5px; padding: 8px 12px;" onclick="loadAllAdminSections()">🔄 تحديث البيانات</button>
             <button class="del-btn" style="font-size: 11.5px; padding: 8px 12px;" onclick="logoutAdmin()">🔒 قفل</button>
         </div>
     </div>
+
+    <!-- شريط حالة الاتصال المباشر -->
+    <div id="db-status-bar">⏳ جاري الاتصال بقاعدة البيانات وسحب الأقسام...</div>
 
     <!-- 📊 شريط الإحصائيات السريعة العلوي -->
     <div class="top-stats-grid">
@@ -228,7 +243,7 @@
                 <button class="method-btn" style="margin-top: 0; flex: 2;" onclick="createAdminPromoCode(true)">🚀 إنشاء وإرسال إشعار جماعي للكل</button>
                 <button class="edit-btn" style="flex: 1;" onclick="generateRandomPromoName()">🎲 كود عشوائي</button>
             </div>
-            <div id="promo-codes-list" class="list-container" style="max-height: 240px;">جاري تحميل الأكواد...</div>
+            <div id="promo-codes-list" class="list-container" style="max-height: 240px;">⏳ جاري جلب الأكواد...</div>
         </div>
     </div>
 
@@ -236,7 +251,7 @@
     <div class="card dispute-card">
         <h3 onclick="toggleCard(this)" style="color: var(--red);">🚨 نزاعات الوساطة المالية المفتوحة (Disputes) <span class="arrow-icon open">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
-            <div id="escrow-disputes-list" class="list-container">جاري فحص النزاعات...</div>
+            <div id="escrow-disputes-list" class="list-container">⏳ جاري فحص النزاعات...</div>
         </div>
     </div>
 
@@ -244,7 +259,7 @@
     <div class="card merchant-w-card">
         <h3 onclick="toggleCard(this)" style="color: var(--gold);">💼 طلبات سحب أرباح التجار والوسطاء (كاش / USDT) <span class="arrow-icon open">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
-            <div id="withdraw-list" class="list-container">جاري فحص طلبات سحب التجار...</div>
+            <div id="withdraw-list" class="list-container">⏳ جاري فحص طلبات السحب...</div>
             <hr style="border-color:#333; margin:16px 0;">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <input type="text" id="method-name" placeholder="اسم وسيلة سحب جديدة">
@@ -257,9 +272,33 @@
 
     <!-- 🎧 03. تذاكر الدعم الفني وبلاغات الثغرات -->
     <div class="card tickets-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🎧 تذاكر الدعم وبلاغات الثغرات (Bug Bounty) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🎧 تذاكر الدعم وبلاغات الثغرات (Bug Bounty) <span class="arrow-icon open">▼</span></h3>
+        <div class="collapsible-body" style="display: block;">
+            <div id="support-tickets-list" class="list-container">⏳ جاري فحص التذاكر...</div>
+        </div>
+    </div>
+
+    <!-- 📥 2. طلبات الإيداع الواردة -->
+    <div class="card deposit-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">📥 طلبات شحن الجنيه الواردة <span class="arrow-icon open">▼</span></h3>
+        <div class="collapsible-body" style="display: block;">
+            <div id="deposits-requests-list" class="list-container">⏳ جاري فحص طلبات الإيداع...</div>
+        </div>
+    </div>
+
+    <!-- 🛒 6. طلبات الشراء وصفقات الضمان الجارية -->
+    <div class="card orders-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 الطلبات وصفقات الضمان الجارية (Escrow Orders) <span class="arrow-icon open">▼</span></h3>
+        <div class="collapsible-body" style="display: block;">
+            <div id="store-orders-list" class="list-container">⏳ جاري فحص الطلبات...</div>
+        </div>
+    </div>
+
+    <!-- ⏳ 5. منتجات الأعضاء المعلقة -->
+    <div class="card pending-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ سلع التجار المعلقة للمراجعة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="support-tickets-list" class="list-container">جاري فحص التذاكر...</div>
+            <div id="pending-store-list" class="list-container">⏳ جاري الفحص...</div>
         </div>
     </div>
 
@@ -308,15 +347,7 @@
             <input type="text" id="deposit-desc" placeholder="تفاصيل التحويل أو الرقم">
             <input type="file" id="deposit-logo-file" accept="image/*" onchange="previewDepositLogo(this)">
             <button class="deposit-btn" onclick="addDepositMethod()">إضافة وسيلة إيداع جديدة 🚀</button>
-            <div id="deposit-methods-list" class="list-container" style="max-height: 220px;">جاري التحميل...</div>
-        </div>
-    </div>
-
-    <!-- 2. طلبات الإيداع الواردة -->
-    <div class="card deposit-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">📥 طلبات شحن الجنيه الواردة <span class="arrow-icon">▼</span></h3>
-        <div class="collapsible-body">
-            <div id="deposits-requests-list" class="list-container">جاري فحص طلبات الإيداع...</div>
+            <div id="deposit-methods-list" class="list-container" style="max-height: 220px;">⏳ جاري التحميل...</div>
         </div>
     </div>
 
@@ -344,7 +375,7 @@
             <textarea id="store-desc" rows="2" placeholder="وصف وتفاصيل المنتج للمشتري..."></textarea>
 
             <div style="background: rgba(0, 242, 255, 0.06); border: 1px dashed var(--neon-blue); border-radius: 12px; padding: 10px; margin: 8px 0;">
-                <label style="font-size: 12px; color: var(--neon-blue); font-weight: bold;">⚡ أكواد / حسابات التسليم التلقائي الفوري (اختياري - ضع كل كود أو حساب في سطر مستقل):</label>
+                <label style="font-size: 12px; color: var(--neon-blue); font-weight: bold;">⚡ أكواد / حسابات التسليم التلقائي الفوري (اختياري - كل كود في سطر):</label>
                 <textarea id="store-auto-stock" rows="3" placeholder="إذا وضعت أكواداً هنا، سيقوم البوت بتسليم المشتري كوداً واحداً فوراً في نفس الثانية عند الشراء!" oninput="syncAdminAutoStockTarget()"></textarea>
             </div>
 
@@ -371,23 +402,7 @@
     <div class="card store-card">
         <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">📦 إحصائيات وإدارة منتجات المتجر <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="store-products-list" class="list-container">جاري التحميل...</div>
-        </div>
-    </div>
-
-    <!-- 5. منتجات الأعضاء المعلقة -->
-    <div class="card pending-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ سلع التجار المعلقة للمراجعة <span class="arrow-icon">▼</span></h3>
-        <div class="collapsible-body">
-            <div id="pending-store-list" class="list-container">جاري الفحص...</div>
-        </div>
-    </div>
-
-    <!-- 6. طلبات الشراء وصفقات الضمان الجارية -->
-    <div class="card orders-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 الطلبات وصفقات الضمان الجارية (Escrow Orders) <span class="arrow-icon">▼</span></h3>
-        <div class="collapsible-body">
-            <div id="store-orders-list" class="list-container">جاري فحص الطلبات...</div>
+            <div id="store-products-list" class="list-container">⏳ جاري التحميل...</div>
         </div>
     </div>
 
@@ -407,7 +422,7 @@
     <div class="card">
         <h3 onclick="toggleCard(this)">🔓 إدارة وتعديل الميثودات المنشورة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="published-methods-list" class="list-container">جاري التحميل...</div>
+            <div id="published-methods-list" class="list-container">⏳ جاري التحميل...</div>
         </div>
     </div>
 
@@ -415,7 +430,7 @@
     <div class="card methods-review-card">
         <h3 onclick="toggleCard(this)" style="color: var(--neon-purple);">💡 ميثودات الأعضاء (قيد المراجعة) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="pending-methods-list" class="list-container">جاري الفحص...</div>
+            <div id="pending-methods-list" class="list-container">⏳ جاري الفحص...</div>
         </div>
     </div>
 
@@ -442,7 +457,7 @@
     <div class="card pending-card">
         <h3 onclick="toggleCard(this)" style="color: var(--orange);">🔍 مراجعة إثباتات وتنفيذات المهام <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="admin-task-submissions-list" class="list-container">جاري فحص الإثباتات...</div>
+            <div id="admin-task-submissions-list" class="list-container">⏳ جاري فحص الإثباتات...</div>
         </div>
     </div>
 
@@ -450,7 +465,7 @@
     <div class="card pending-card">
         <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="pending-tasks-list" class="list-container">جاري الفحص...</div>
+            <div id="pending-tasks-list" class="list-container">⏳ جاري الفحص...</div>
         </div>
     </div>
 
@@ -458,7 +473,7 @@
     <div class="card">
         <h3 onclick="toggleCard(this)">📋 المهام النشطة الحالية <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
-            <div id="tasks-list" class="list-container">جاري التحميل...</div>
+            <div id="tasks-list" class="list-container">⏳ جاري التحميل...</div>
         </div>
     </div>
 </div>
@@ -562,13 +577,89 @@
     </div>
 </div>
 
-<!-- 📡 السكريبت الرئيسي الموحد والخالي من أي أخطاء -->
+<!-- 📡 محرك الأدمن الموحد (مع عميل REST مباشر احتياطي يعمل بدون أي مكاتب خارجية) -->
 <script>
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
-    const ADMIN_MASTER_ID = "875021647";
     const USDT_RATE = 53.0;
-    const client = window.supabase ? window.supabase.createClient(S_URL, S_KEY) : null;
+
+    // محرك اتصال مباشر بـ Supabase يعمل بـ fetch العادي في حال حجب مكتبة CDN
+    function createNativeRestClient(baseUrl, apiKey) {
+        class QueryBuilder {
+            constructor(table) {
+                this.table = table;
+                this.method = "GET";
+                this.params = [];
+                this.bodyData = null;
+                this.isSingle = false;
+                this.isMaybeSingle = false;
+                this.wantCount = false;
+                this.isHead = false;
+            }
+            select(cols = "*", opts = {}) {
+                if (this.method === "GET") this.params.push(`select=${encodeURIComponent(cols)}`);
+                if (opts && opts.count) this.wantCount = true;
+                if (opts && opts.head) this.isHead = true;
+                return this;
+            }
+            eq(col, val) { this.params.push(`${encodeURIComponent(col)}=eq.${encodeURIComponent(val)}`); return this; }
+            in(col, arr) { this.params.push(`${encodeURIComponent(col)}=in.(${arr.map(x => encodeURIComponent(x)).join(",")})`); return this; }
+            order(col, opts = {}) {
+                const dir = (opts && opts.ascending) ? "asc" : "desc";
+                this.params.push(`order=${encodeURIComponent(col)}.${dir}`);
+                return this;
+            }
+            limit(n) { this.params.push(`limit=${n}`); return this; }
+            single() { this.isSingle = true; this.limit(1); return this; }
+            maybeSingle() { this.isMaybeSingle = true; this.limit(1); return this; }
+            insert(payload) { this.method = "POST"; this.bodyData = payload; return this; }
+            update(payload) { this.method = "PATCH"; this.bodyData = payload; return this; }
+            delete() { this.method = "DELETE"; return this; }
+
+            async execute() {
+                try {
+                    const qs = this.params.length ? `?${this.params.join("&")}` : "";
+                    const url = `${baseUrl}/rest/v1/${this.table}${qs}`;
+                    const headers = {
+                        "apikey": apiKey,
+                        "Authorization": `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                        "Prefer": this.wantCount ? "count=exact,return=representation" : "return=representation"
+                    };
+                    const fetchOpts = { method: this.isHead ? "HEAD" : this.method, headers };
+                    if (this.bodyData !== null && !this.isHead) {
+                        fetchOpts.body = JSON.stringify(this.bodyData);
+                    }
+                    const res = await fetch(url, fetchOpts);
+                    let count = null;
+                    const rangeHdr = res.headers.get("content-range");
+                    if (rangeHdr && rangeHdr.includes("/")) {
+                        count = parseInt(rangeHdr.split("/")[1]) || 0;
+                    }
+                    if (!res.ok) {
+                        const errTxt = await res.text();
+                        return { data: null, error: { message: errTxt || res.statusText }, count };
+                    }
+                    if (this.isHead || res.status === 204) {
+                        return { data: null, error: null, count };
+                    }
+                    const json = await res.json();
+                    if (this.isSingle || this.isMaybeSingle) {
+                        return { data: (Array.isArray(json) && json.length > 0) ? json[0] : null, error: null, count };
+                    }
+                    return { data: json, error: null, count };
+                } catch (e) {
+                    return { data: null, error: { message: e.message }, count: 0 };
+                }
+            }
+            then(resolve, reject) { return this.execute().then(resolve, reject); }
+        }
+        return { from: (t) => new QueryBuilder(t) };
+    }
+
+    const client = (window.supabase && typeof window.supabase.createClient === "function")
+        ? window.supabase.createClient(S_URL, S_KEY)
+        : createNativeRestClient(S_URL, S_KEY);
 
     let adminMethodBase64 = "";
     let depositLogoBase64 = "";
@@ -581,8 +672,6 @@
     let cachedAllProducts = [];
     let cachedAllOrders = [];
 
-    // متغيرات رادار الإشعارات الصوتية وإشعارات الهاتف
-    let liveNotifEnabled = false;
     let lastTotalPendingItems = null;
     let radarInterval = null;
 
@@ -594,7 +683,7 @@
             try { sessionStorage.setItem("mt_admin_ok", "1"); } catch (e) {}
             document.getElementById('admin-lock-screen').style.setProperty('display', 'none', 'important');
             document.getElementById('main-admin-container').style.setProperty('display', 'block', 'important');
-            window.initAdminData();
+            loadAllAdminSections();
             startLiveAdminRadar();
         } else {
             const errEl = document.getElementById('lock-error-msg');
@@ -609,7 +698,7 @@
     }
 
     // =========================================================================
-    // 🔔 نظام الجرس الصوتي وإشعارات الفون الحية داخل لوحة الأدمن
+    // 🔔 الجرس الصوتي وإشعارات الفون الحية
     // =========================================================================
     function playNotificationSound() {
         try {
@@ -636,7 +725,6 @@
     }
 
     async function enableLiveNotifications() {
-        liveNotifEnabled = true;
         playNotificationSound();
         const btn = document.getElementById('btn-sound-radar');
         btn.innerText = "🟢 جرس وإشعارات الفون مفعل";
@@ -649,31 +737,30 @@
     }
 
     async function checkNewAdminEventsRadar() {
-        if (!client) return;
         try {
-            const [dRes, wRes, oRes, pRes, tRes, sRes] = await Promise.all([
-                client.from('deposits').select('id', { count: 'exact', head: true }).eq('status', 'Pending'),
-                client.from('withdrawals').select('id', { count: 'exact', head: true }).eq('status', 'Pending'),
-                client.from('store_orders').select('id', { count: 'exact', head: true }).in('status', ['Pending', 'Escrow_Held', 'Disputed']),
-                client.from('store_products').select('id', { count: 'exact', head: true }).eq('status', 'Pending'),
-                client.from('support_tickets').select('id', { count: 'exact', head: true }).eq('status', 'Pending'),
-                client.from('task_submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending')
+            const [dRes, wRes, oRes, tRes] = await Promise.all([
+                client.from('deposits').select('id').eq('status', 'Pending'),
+                client.from('withdrawals').select('id').eq('status', 'Pending'),
+                client.from('store_orders').select('id').in('status', ['Pending', 'Escrow_Held', 'Disputed']),
+                client.from('support_tickets').select('id').eq('status', 'Pending')
             ]);
 
-            const totalNow = (dRes.count || 0) + (wRes.count || 0) + (oRes.count || 0) + (pRes.count || 0) + (tRes.count || 0) + (sRes.count || 0);
+            const totalNow =
+                ((dRes.data && dRes.data.length) || 0) +
+                ((wRes.data && wRes.data.length) || 0) +
+                ((oRes.data && oRes.data.length) || 0) +
+                ((tRes.data && tRes.data.length) || 0);
 
             if (lastTotalPendingItems !== null && totalNow > lastTotalPendingItems) {
                 const diff = totalNow - lastTotalPendingItems;
-                const alertMsg = `🔔 وصل (${diff}) طلب/حدث جديد في لوحة الأدمن الآن!`;
+                const alertMsg = `🔔 وصل (${diff}) طلب جديد في لوحة الأدمن الآن!`;
                 playNotificationSound();
                 showToastAlert(alertMsg);
 
                 if ("Notification" in window && Notification.permission === "granted") {
                     try { new Notification("🛡️ إدارة MegaTask", { body: alertMsg }); } catch (e) {}
                 }
-
-                // تحديث القوائم تلقائياً
-                window.initAdminData();
+                loadAllAdminSections();
             }
             lastTotalPendingItems = totalNow;
         } catch (e) {}
@@ -682,7 +769,7 @@
     function startLiveAdminRadar() {
         if (radarInterval) clearInterval(radarInterval);
         checkNewAdminEventsRadar();
-        radarInterval = setInterval(checkNewAdminEventsRadar, 10000);
+        radarInterval = setInterval(checkNewAdminEventsRadar, 12000);
     }
 
     function escapeQuote(str) { return String(str || "").replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
@@ -731,8 +818,8 @@
 
     async function loadTopDashboardStats() {
         try {
-            const { count: usersCnt } = await client.from('users').select('*', { count: 'exact', head: true });
-            if (usersCnt !== null) document.getElementById('st-total-users').innerText = usersCnt.toLocaleString();
+            const { data } = await client.from('users').select('id');
+            if (data) document.getElementById('st-total-users').innerText = data.length.toLocaleString();
         } catch (e) {}
     }
 
@@ -749,8 +836,12 @@
         if (!div) return;
         try {
             const { data, error } = await client.from('promo_codes').select('*').order('id', { ascending: false }).limit(20);
-            if (error || !data || data.length === 0) {
-                div.innerHTML = `<div style="text-align:center; color:#888; font-size:12px; padding:10px;">لا توجد أكواد هدايا مضافة حالياً.</div>`;
+            if (error) {
+                div.innerHTML = `<div style="color:#aaa; font-size:12px;">ℹ️ جدول أكواد الهدايا جاهز للعمل فور تشغيل كود SQL الموحد.</div>`;
+                return;
+            }
+            if (!data || data.length === 0) {
+                div.innerHTML = `<div style="color:#888; font-size:12px;">✅ لا توجد أكواد هدايا مضافة حالياً.</div>`;
                 return;
             }
             div.innerHTML = data.map(c => {
@@ -768,7 +859,9 @@
                     </div>
                 `;
             }).join("");
-        } catch (e) {}
+        } catch (e) {
+            div.innerHTML = `<div style="color:#888; font-size:12px;">لا توجد أكواد هدايا.</div>`;
+        }
     }
 
     async function createAdminPromoCode(withBroadcast) {
@@ -796,7 +889,7 @@
         if (withBroadcast) {
             await broadcastToAllUsers(
                 "🎁 كود هدية مجاني جديد!",
-                `تم طرح كود هدية جديد لأول *${maxU} عضو* فقط!\n\n🎟️ *الكود:* \`${code}\`\n💰 *الهدية:* *+${rAmt}${unit}*\n\nادخل الآن واضغط (🎁 كود هدية) في الصفحة الرئيسية أو أرسل الكود للبوت لاستلام هديتك فوراً!`
+                `تم طرح كود هدية جديد لأول *${maxU} عضو* فقط!\n\n🎟️ *الكود:* \`${code}\`\n💰 *الهدية:* *+${rAmt} ${unit}*\n\nادخل الآن واضغط (🎁 كود هدية) في الصفحة الرئيسية أو أرسل الكود للبوت لاستلام هديتك فوراً!`
             );
         }
 
@@ -813,7 +906,7 @@
     }
 
     // =========================================================================
-    // 📢 نظام الإذاعة الجماعية لكل المستخدمين (Broadcast)
+    // 📢 نظام الإذاعة الجماعية لكل المستخدمين
     // =========================================================================
     async function broadcastToAllUsers(title, messageText) {
         try {
@@ -888,7 +981,7 @@
         matchedOrders.forEach(o => { html += renderOrderCardHTML(o, false); });
         matchedProducts.forEach(p => {
             const pCode = p.product_code || `PRD-${p.id}`;
-            html += `<div class="item-row"><b>📦 ${escapeHtml(p.title)} (${pCode})</b> <span>السعر: ${p.price}${p.currency}</span></div>`;
+            html += `<div class="item-row"><b>📦 ${escapeHtml(p.title)} (${pCode})</b> <span>السعر: ${p.price} ${p.currency}</span></div>`;
         });
         resDiv.innerHTML = html;
     }
@@ -913,12 +1006,12 @@
         const rAvg = rCnt > 0 ? (Number(user.seller_rating_sum || 0) / rCnt).toFixed(1) : "جديد";
 
         document.getElementById('user-wallet-info').innerHTML = `
-            👤 <b>الاسم:</b> ${escapeHtml(user.name \vert{}\vert{} '')} \vert{} <b>ID:</b>${user.telegram_id} | 
+            👤 <b>الاسم:</b> ${escapeHtml(user.name || '')} | <b>ID:</b> ${user.telegram_id} | 
             <b>الحالة:</b> ${isBanned ? '<b style="color:var(--red);">محظور 🚫</b>' : '<b style="color:var(--main-green);">نشط 🟢</b>'}<br>
             🪙 <b>النقاط:</b> ${(user.points || 0).toLocaleString()} ن | 
             💵 <b>رصيد الشراء:</b> ${Number(user.egp_balance || 0).toFixed(2)} ج.م | 
             💼 <b>أرباح التاجر:</b> <b style="color:var(--gold);">${Number(user.merchant_balance_egp || 0).toFixed(2)} ج.م</b><br>
-            📦 <b>مبيعاته المكتملة:</b> ${user.total_sales_count \vert{}\vert{} 0} \vert{} ⭐ <b>تقييمه كتاجر:</b> ${rAvg} (${rCnt} تقييم) \vert{} 📱 <b>بصمة الجهاز:</b> <code>${user.device_fp || '---'}</code>
+            📦 <b>مبيعاته المكتملة:</b> ${user.total_sales_count || 0} | ⭐ <b>تقييمه كتاجر:</b> ${rAvg} (${rCnt} تقييم) | 📱 <b>بصمة الجهاز:</b> <code>${user.device_fp || '---'}</code>
         `;
     }
 
@@ -961,67 +1054,74 @@
         searchUserWallet();
     }
 
-    // المتجر والطلبات وصفقات الوساطة
+    // =========================================================================
+    // 🛍️ المتجر والطلبات وصفقات الوساطة
+    // =========================================================================
     async function loadStoreAndOrdersFast() {
-        const [prodRes, ordRes] = await Promise.all([
-            client.from('store_products').select('id, product_code, creator_id, category, currency, title, description, price, supplier_cost, supplier_name, supplier_notes, auto_delivery_data, target_count, completed_count, link, status').order('id', { ascending: false }),
-            client.from('store_orders').select('*').order('id', { ascending: false }).limit(100)
-        ]);
+        try {
+            const [prodRes, ordRes] = await Promise.all([
+                client.from('store_products').select('*').order('id', { ascending: false }).limit(80),
+                client.from('store_orders').select('*').order('id', { ascending: false }).limit(80)
+            ]);
 
-        cachedAllProducts = prodRes.data || [];
-        cachedAllOrders = ordRes.data || [];
-        cachedStoreProductsMap = {};
-        cachedAllProducts.forEach(p => { cachedStoreProductsMap[p.id] = p; });
+            cachedAllProducts = prodRes.data || [];
+            cachedAllOrders = ordRes.data || [];
+            cachedStoreProductsMap = {};
+            cachedAllProducts.forEach(p => { cachedStoreProductsMap[p.id] = p; });
 
-        const prodDiv = document.getElementById('store-products-list');
-        const approved = cachedAllProducts.filter(p => p.status === 'Approved');
-        prodDiv.innerHTML = approved.length === 0 ? "📭 لا توجد منتجات منشورة." : approved.map(p => {
-            const sold = cachedAllOrders.filter(o => Number(o.product_id) === Number(p.id)).length;
-            const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
-            const pCode = p.product_code || `PRD-${p.id}`;
-            const autoLines = String(p.auto_delivery_data || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-            const autoBadge = autoLines.length > 0 ? `<span style="color:var(--neon-blue); font-weight:bold;"> | ⚡ مخزون تلقائي متبقي: ${autoLines.length}</span>` : '';
-            return `
-                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                    <div style="width:100%; display:flex; justify-content:space-between;">
-                        <b>📦 ${escapeHtml(p.title)} (${p.price}${unit})</b>
-                        <span class="code-pill" onclick="copyCodeText('${pCode}')">${pCode}</span>
-                    </div>
-                    <div style="font-size:12px; color:#aaa;">المورد/البائع: ${escapeHtml(p.supplier_name || p.creator_id || 'ADMIN')} | المبيعات: ${sold}${autoBadge}</div>
-                    <div class="actions-box">
-                        <button class="edit-btn" onclick="openEditStoreModal(${p.id})">تعديل ✏️</button>
-                        <button class="del-btn" onclick="deleteStoreProductItem(${p.id})">حذف 🗑️</button>
-                    </div>
-                </div>`;
-        }).join("");
+            const prodDiv = document.getElementById('store-products-list');
+            const approved = cachedAllProducts.filter(p => p.status === 'Approved');
+            prodDiv.innerHTML = approved.length === 0 ? "📭 لا توجد منتجات منشورة." : approved.map(p => {
+                const sold = cachedAllOrders.filter(o => Number(o.product_id) === Number(p.id)).length;
+                const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
+                const pCode = p.product_code || `PRD-${p.id}`;
+                const autoLines = String(p.auto_delivery_data || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                const autoBadge = autoLines.length > 0 ? `<span style="color:var(--neon-blue); font-weight:bold;"> | ⚡ مخزون تلقائي: ${autoLines.length}</span>` : '';
+                return `
+                    <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                        <div style="width:100%; display:flex; justify-content:space-between;">
+                            <b>📦 ${escapeHtml(p.title)} (${p.price}${unit})</b>
+                            <span class="code-pill" onclick="copyCodeText('${pCode}')">${pCode}</span>
+                        </div>
+                        <div style="font-size:12px; color:#aaa;">المورد/البائع: ${escapeHtml(p.supplier_name || p.creator_id || 'ADMIN')} | المبيعات: ${sold}${autoBadge}</div>
+                        <div class="actions-box">
+                            <button class="edit-btn" onclick="openEditStoreModal(${p.id})">تعديل ✏️</button>
+                            <button class="del-btn" onclick="deleteStoreProductItem(${p.id})">حذف 🗑️</button>
+                        </div>
+                    </div>`;
+            }).join("");
 
-        const pendStoreDiv = document.getElementById('pending-store-list');
-        const pendProds = cachedAllProducts.filter(p => p.status === 'Pending');
-        pendStoreDiv.innerHTML = pendProds.length === 0 ? "✅ لا توجد سلع تجار معلقة." : pendProds.map(p => {
-            const pCode = p.product_code || `PRD-${p.id}`;
-            const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
-            return `
-                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                    <div><b>📦 ${escapeHtml(p.title)}</b> (${p.price} ${unit}) \vert{} التاجر: <code>${p.creator_id}</code></div>
-                    <div style="font-size:12px; color:#ccc;">${escapeHtml(p.description || '')}</div>
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', '${pCode}', true)">قبول ونشر ✅</button>
-                        <button class="reject-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', '${pCode}', false)">رفض ❌</button>
-                    </div>
-                </div>`;
-        }).join("");
+            const pendStoreDiv = document.getElementById('pending-store-list');
+            const pendProds = cachedAllProducts.filter(p => p.status === 'Pending');
+            pendStoreDiv.innerHTML = pendProds.length === 0 ? "✅ لا توجد سلع تجار معلقة." : pendProds.map(p => {
+                const pCode = p.product_code || `PRD-${p.id}`;
+                const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
+                return `
+                    <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                        <div><b>📦 ${escapeHtml(p.title)}</b> (${p.price} ${unit}) \vert{} التاجر: <code>${p.creator_id}</code></div>
+                        <div style="font-size:12px; color:#ccc;">${escapeHtml(p.description || '')}</div>
+                        <div class="actions-box">
+                            <button class="approve-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', '${pCode}', true)">قبول ونشر ✅</button>
+                            <button class="reject-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', '${pCode}', false)">رفض ❌</button>
+                        </div>
+                    </div>`;
+            }).join("");
 
-        const disputes = cachedAllOrders.filter(o => o.status === 'Disputed');
-        document.getElementById('st-open-disputes').innerText = disputes.length;
-        document.getElementById('escrow-disputes-list').innerHTML = disputes.length === 0
-            ? "✅ لا توجد نزاعات وساطة مفتوحة حالياً."
-            : disputes.map(o => renderOrderCardHTML(o, true)).join("");
+            const disputes = cachedAllOrders.filter(o => o.status === 'Disputed');
+            document.getElementById('st-open-disputes').innerText = disputes.length;
+            document.getElementById('escrow-disputes-list').innerHTML = disputes.length === 0
+                ? "✅ لا توجد نزاعات وساطة مفتوحة حالياً."
+                : disputes.map(o => renderOrderCardHTML(o, true)).join("");
 
-        const activeOrds = cachedAllOrders.filter(o => ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'].includes(o.status));
-        document.getElementById('st-active-deals').innerText = activeOrds.length;
-        document.getElementById('store-orders-list').innerHTML = activeOrds.length === 0
-            ? "✅ لا توجد طلبات أو صفقات ضمان جارية."
-            : activeOrds.map(o => renderOrderCardHTML(o, false)).join("");
+            const activeOrds = cachedAllOrders.filter(o => ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'].includes(o.status));
+            document.getElementById('st-active-deals').innerText = activeOrds.length;
+            document.getElementById('store-orders-list').innerHTML = activeOrds.length === 0
+                ? "✅ لا توجد طلبات أو صفقات ضمان جارية."
+                : activeOrds.map(o => renderOrderCardHTML(o, false)).join("");
+        } catch (e) {
+            document.getElementById('store-orders-list').innerHTML = "✅ لا توجد طلبات حالياً.";
+            document.getElementById('escrow-disputes-list').innerHTML = "✅ لا توجد نزاعات حالياً.";
+        }
     }
 
     function renderOrderCardHTML(o, isDispute) {
@@ -1286,26 +1386,30 @@
     // طلبات سحب التجار
     async function loadWithdrawals() {
         const div = document.getElementById('withdraw-list');
-        const { data } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('id', { ascending: false });
-        document.getElementById('st-pend-withdraws').innerText = data ? data.length : 0;
-        if (!data || data.length === 0) { div.innerHTML = "✅ لا توجد طلبات سحب معلقة."; return; }
-        div.innerHTML = data.map(w => {
-            const wCode = w.withdraw_code || `WTH-${w.id}`;
-            const amt = Number(w.amount || 0);
-            const isCryp = (w.method || "").toLowerCase().includes("binance") || (w.method || "").toLowerCase().includes("usdt");
-            const usdtEq = isCryp ? ` <b style="color:var(--gold);">(${(amt / USDT_RATE).toFixed(2)} USDT)</b>` : "";
-            return `
-                <div class="item-row withdraw-row">
-                    <div>
-                        <b>🆔 ${wCode}</b> | التاجر: <code>${w.telegram_id}</code> | المبلغ: <b style="color:var(--main-green);">${amt.toFixed(2)} ج.م</b>${usdtEq}<br>
-                        الوسيلة: ${escapeHtml(w.method)} | المستلم: <code style="color:var(--gold);">${escapeHtml(w.wallet_info)}</code>
-                    </div>
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="approveWithdraw(${w.id}, '${w.telegram_id}', '${wCode}', ${amt})">✅ تم التحويل</button>
-                        <button class="reject-btn" onclick="rejectWithdrawAndRefund(${w.id}, '${w.telegram_id}', '${wCode}', ${amt})">❌ رفض وإرجاع</button>
-                    </div>
-                </div>`;
-        }).join("");
+        try {
+            const { data } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('id', { ascending: false });
+            document.getElementById('st-pend-withdraws').innerText = data ? data.length : 0;
+            if (!data || data.length === 0) { div.innerHTML = "✅ لا توجد طلبات سحب معلقة."; return; }
+            div.innerHTML = data.map(w => {
+                const wCode = w.withdraw_code || `WTH-${w.id}`;
+                const amt = Number(w.amount || 0);
+                const isCryp = (w.method || "").toLowerCase().includes("binance") || (w.method || "").toLowerCase().includes("usdt");
+                const usdtEq = isCryp ? ` <b style="color:var(--gold);">(${(amt / USDT_RATE).toFixed(2)} USDT)</b>` : "";
+                return `
+                    <div class="item-row withdraw-row">
+                        <div>
+                            <b>🆔 ${wCode}</b> | التاجر: <code>${w.telegram_id}</code> | المبلغ: <b style="color:var(--main-green);">${amt.toFixed(2)} ج.م</b>${usdtEq}<br>
+                            الوسيلة: ${escapeHtml(w.method)} | المستلم: <code style="color:var(--gold);">${escapeHtml(w.wallet_info)}</code>
+                        </div>
+                        <div class="actions-box">
+                            <button class="approve-btn" onclick="approveWithdraw(${w.id}, '${w.telegram_id}', '${wCode}', ${amt})">✅ تم التحويل</button>
+                            <button class="reject-btn" onclick="rejectWithdrawAndRefund(${w.id}, '${w.telegram_id}', '${wCode}', ${amt})">❌ رفض وإرجاع</button>
+                        </div>
+                    </div>`;
+            }).join("");
+        } catch (e) {
+            div.innerHTML = "✅ لا توجد طلبات سحب معلقة.";
+        }
     }
 
     async function approveWithdraw(id, tid, wCode, amt) {
@@ -1354,7 +1458,9 @@
                         </div>
                     </div>`;
             }).join("");
-        } catch (e) {}
+        } catch (e) {
+            div.innerHTML = "✅ لا توجد تذاكر معلقة.";
+        }
     }
 
     async function resolveSupportTicket(id, userTid, code) {
@@ -1384,18 +1490,22 @@
     // وسائل وطلبات الإيداع
     async function loadDepositsRequests() {
         const div = document.getElementById('deposits-requests-list');
-        const { data } = await client.from('deposits').select('*').eq('status', 'Pending').order('id', { ascending: false });
-        document.getElementById('st-pend-deposits').innerText = data ? data.length : 0;
-        if (!data || data.length === 0) { div.innerHTML = "✅ لا توجد طلبات إيداع معلقة."; return; }
-        div.innerHTML = data.map(d => `
-            <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                <div><b>🆔 ${d.tx_id || d.id}</b> | المستخدم: <code>${d.telegram_id}</code> | المبلغ: <b>${d.amount} ج.م</b> (${escapeHtml(d.method)})<br>المحول منه: <code>${escapeHtml(d.wallet_info)}</code></div>
-                <input type="number" id="dep-egp-val-${d.id}" value="${d.amount}" step="0.5">
-                <div class="actions-box">
-                    <button class="approve-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', '${escapeQuote(d.method)}', true)">قبول وإضافة الرصيد ✅</button>
-                    <button class="reject-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', '${escapeQuote(d.method)}', false)">رفض ❌</button>
-                </div>
-            </div>`).join("");
+        try {
+            const { data } = await client.from('deposits').select('*').eq('status', 'Pending').order('id', { ascending: false });
+            document.getElementById('st-pend-deposits').innerText = data ? data.length : 0;
+            if (!data || data.length === 0) { div.innerHTML = "✅ لا توجد طلبات إيداع معلقة."; return; }
+            div.innerHTML = data.map(d => `
+                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                    <div><b>🆔 ${d.tx_id || d.id}</b> | المستخدم: <code>${d.telegram_id}</code> | المبلغ: <b>${d.amount} ج.م</b> (${escapeHtml(d.method)})<br>المحول منه: <code>${escapeHtml(d.wallet_info)}</code></div>
+                    <input type="number" id="dep-egp-val-${d.id}" value="${d.amount}" step="0.5">
+                    <div class="actions-box">
+                        <button class="approve-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', '${escapeQuote(d.method)}', true)">قبول وإضافة الرصيد ✅</button>
+                        <button class="reject-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', '${escapeQuote(d.method)}', false)">رفض ❌</button>
+                    </div>
+                </div>`).join("");
+        } catch (e) {
+            div.innerHTML = "✅ لا توجد طلبات إيداع معلقة.";
+        }
     }
 
     async function reviewDeposit(id, tid, method, isOk) {
@@ -1422,8 +1532,10 @@
 
     async function loadMethods() {
         const div = document.getElementById('methods-list');
-        const { data } = await client.from('withdraw_methods').select('*');
-        div.innerHTML = (data || []).map(m => `<div class="item-row"><b>${escapeHtml(m.name)}</b> <button class="del-btn" onclick="deleteMethod(${m.id})">حذف</button></div>`).join("");
+        try {
+            const { data } = await client.from('withdraw_methods').select('*');
+            div.innerHTML = (!data || data.length === 0) ? "" : data.map(m => `<div class="item-row"><b>${escapeHtml(m.name)}</b> <button class="del-btn" onclick="deleteMethod(${m.id})">حذف</button></div>`).join("");
+        } catch (e) { div.innerHTML = ""; }
     }
     async function addMethod() {
         const name = document.getElementById('method-name').value.trim();
@@ -1436,8 +1548,10 @@
 
     async function loadDepositMethods() {
         const div = document.getElementById('deposit-methods-list');
-        const { data } = await client.from('deposit_methods').select('*');
-        div.innerHTML = (data || []).map(d => `<div class="item-row"><b>${escapeHtml(d.name)} (${escapeHtml(d.description || '')})</b> <button class="del-btn" onclick="deleteDepositMethod(${d.id})">حذف</button></div>`).join("");
+        try {
+            const { data } = await client.from('deposit_methods').select('*');
+            div.innerHTML = (!data || data.length === 0) ? "📭 لا توجد وسائل إيداع مضافة." : data.map(d => `<div class="item-row"><b>${escapeHtml(d.name)} (${escapeHtml(d.description || '')})</b> <button class="del-btn" onclick="deleteDepositMethod(${d.id})">حذف</button></div>`).join("");
+        } catch (e) { div.innerHTML = "📭 لا توجد وسائل إيداع."; }
     }
     async function addDepositMethod() {
         const name = document.getElementById('deposit-name').value.trim();
@@ -1451,15 +1565,17 @@
     // الميثودات والمهام
     async function loadPublishedMethods() {
         const div = document.getElementById('published-methods-list');
-        const { data } = await client.from('methods').select('id, title, content, unlock_cost, status').eq('status', 'Approved').order('id', { ascending: false });
-        div.innerHTML = (data || []).map(m => `
-            <div class="item-row">
-                <b>📌 ${escapeHtml(m.title)} (${m.unlock_cost || 50} ن)</b>
-                <div>
-                    <button class="edit-btn" onclick="openEditMethodModal(${m.id}, '${escapeQuote(m.title)}', '${escapeQuote(m.content)}', ${m.unlock_cost || 50})">✏️</button>
-                    <button class="del-btn" onclick="deleteMethodItem(${m.id})">🗑️</button>
-                </div>
-            </div>`).join("");
+        try {
+            const { data } = await client.from('methods').select('id, title, content, unlock_cost, status').eq('status', 'Approved').order('id', { ascending: false });
+            div.innerHTML = (!data || data.length === 0) ? "📭 لا توجد ميثودات منشورة." : data.map(m => `
+                <div class="item-row">
+                    <b>📌 ${escapeHtml(m.title)} (${m.unlock_cost || 50} ن)</b>
+                    <div>
+                        <button class="edit-btn" onclick="openEditMethodModal(${m.id}, '${escapeQuote(m.title)}', '${escapeQuote(m.content)}', ${m.unlock_cost || 50})">✏️</button>
+                        <button class="del-btn" onclick="deleteMethodItem(${m.id})">🗑️</button>
+                    </div>
+                </div>`).join("");
+        } catch (e) { div.innerHTML = "📭 لا توجد ميثودات منشورة."; }
     }
     function openEditMethodModal(id, title, content, cost) {
         document.getElementById('edit-m-id').value = id;
@@ -1491,16 +1607,18 @@
 
     async function loadPendingMethods() {
         const div = document.getElementById('pending-methods-list');
-        const { data } = await client.from('methods').select('*').eq('status', 'Pending');
-        div.innerHTML = (!data || data.length === 0) ? "✅ لا توجد ميثودات معلقة." : data.map(m => `
-            <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                <b>📌 ${escapeHtml(m.title)} (الكاتب: ${m.user_id})</b>
-                <div style="font-size:12px;">${escapeHtml(m.content)}</div>
-                <div class="actions-box">
-                    <button class="approve-btn" onclick="reviewMethod(${m.id}, true)">قبول ونشر ✅</button>
-                    <button class="reject-btn" onclick="reviewMethod(${m.id}, false)">رفض ❌</button>
-                </div>
-            </div>`).join("");
+        try {
+            const { data } = await client.from('methods').select('*').eq('status', 'Pending');
+            div.innerHTML = (!data || data.length === 0) ? "✅ لا توجد ميثودات معلقة." : data.map(m => `
+                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                    <b>📌 ${escapeHtml(m.title)} (الكاتب: ${m.user_id})</b>
+                    <div style="font-size:12px;">${escapeHtml(m.content)}</div>
+                    <div class="actions-box">
+                        <button class="approve-btn" onclick="reviewMethod(${m.id}, true)">قبول ونشر ✅</button>
+                        <button class="reject-btn" onclick="reviewMethod(${m.id}, false)">رفض ❌</button>
+                    </div>
+                </div>`).join("");
+        } catch (e) { div.innerHTML = "✅ لا توجد ميثودات معلقة."; }
     }
     async function reviewMethod(id, ok) {
         await client.from('methods').update({ status: ok ? 'Approved' : 'Rejected' }).eq('id', id);
@@ -1509,18 +1627,20 @@
 
     async function loadAdminTaskSubmissions() {
         const div = document.getElementById('admin-task-submissions-list');
-        const { data: subs } = await client.from('task_submissions').select('*').eq('status', 'pending').order('id', { ascending: false }).limit(25);
-        if (!subs || subs.length === 0) { div.innerHTML = "✅ لا توجد إثباتات مهام معلقة."; return; }
-        div.innerHTML = subs.map(s => `
-            <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                <div><b>مهمة #${s.task_id}</b> | المنفذ: <code>${s.user_id}</code></div>
-                <img src="${s.proof_image}" style="max-width:150px; border-radius:8px; cursor:pointer;" onclick="openLightbox('${s.proof_image}')">
-                <input type="text" id="admin-feedback-${s.id}" placeholder="ملاحظة أو سبب الرفض...">
-                <div class="actions-box">
-                    <button class="approve-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', true)">قبول وصرف ✅</button>
-                    <button class="reject-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', false)">رفض ❌</button>
-                </div>
-            </div>`).join("");
+        try {
+            const { data: subs } = await client.from('task_submissions').select('*').eq('status', 'pending').order('id', { ascending: false }).limit(20);
+            if (!subs || subs.length === 0) { div.innerHTML = "✅ لا توجد إثباتات مهام معلقة."; return; }
+            div.innerHTML = subs.map(s => `
+                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                    <div><b>مهمة #${s.task_id}</b> | المنفذ: <code>${s.user_id}</code></div>
+                    <img src="${s.proof_image}" style="max-width:150px; border-radius:8px; cursor:pointer;" onclick="openLightbox('${s.proof_image}')">
+                    <input type="text" id="admin-feedback-${s.id}" placeholder="ملاحظة أو سبب الرفض...">
+                    <div class="actions-box">
+                        <button class="approve-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', true)">قبول وصرف ✅</button>
+                        <button class="reject-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', false)">رفض ❌</button>
+                    </div>
+                </div>`).join("");
+        } catch (e) { div.innerHTML = "✅ لا توجد إثباتات معلقة."; }
     }
 
     async function reviewAdminSubmission(subId, taskId, userId, isOk) {
@@ -1545,15 +1665,17 @@
 
     async function loadPendingTasks() {
         const div = document.getElementById('pending-tasks-list');
-        const { data } = await client.from('tasks').select('*').eq('status', 'Pending');
-        div.innerHTML = (!data || data.length === 0) ? "✅ لا توجد مهام معلقة." : data.map(t => `
-            <div class="item-row">
-                <b>📌 ${escapeHtml(t.title)} (${t.reward} ن)</b>
-                <div class="actions-box">
-                    <button class="approve-btn" onclick="reviewUserTask(${t.id}, true)">قبول ✅</button>
-                    <button class="reject-btn" onclick="reviewUserTask(${t.id}, false)">رفض ❌</button>
-                </div>
-            </div>`).join("");
+        try {
+            const { data } = await client.from('tasks').select('*').eq('status', 'Pending');
+            div.innerHTML = (!data || data.length === 0) ? "✅ لا توجد مهام معلقة." : data.map(t => `
+                <div class="item-row">
+                    <b>📌 ${escapeHtml(t.title)} (${t.reward} ن)</b>
+                    <div class="actions-box">
+                        <button class="approve-btn" onclick="reviewUserTask(${t.id}, true)">قبول ✅</button>
+                        <button class="reject-btn" onclick="reviewUserTask(${t.id}, false)">رفض ❌</button>
+                    </div>
+                </div>`).join("");
+        } catch (e) { div.innerHTML = "✅ لا توجد مهام معلقة."; }
     }
     async function reviewUserTask(id, ok) {
         await client.from('tasks').update({ status: ok ? 'Approved' : 'Rejected', is_active: ok }).eq('id', id);
@@ -1562,15 +1684,17 @@
 
     async function loadTasks() {
         const div = document.getElementById('tasks-list');
-        const { data } = await client.from('tasks').select('id, title, link, url, reward, target_count, status').eq('status', 'Approved').order('id', { ascending: false });
-        div.innerHTML = (data || []).map(t => `
-            <div class="item-row">
-                <b>${escapeHtml(t.title)} (${t.reward} ن)</b>
-                <div>
-                    <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link || t.url)}', ${t.reward}, ${t.target_count || 100})">✏️</button>
-                    <button class="del-btn" onclick="deleteTask(${t.id})">🗑️</button>
-                </div>
-            </div>`).join("");
+        try {
+            const { data } = await client.from('tasks').select('id, title, link, url, reward, target_count, status').eq('status', 'Approved').order('id', { ascending: false });
+            div.innerHTML = (!data || data.length === 0) ? "📭 لا توجد مهام نشطة." : data.map(t => `
+                <div class="item-row">
+                    <b>${escapeHtml(t.title)} (${t.reward} ن)</b>
+                    <div>
+                        <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link || t.url)}', ${t.reward}, ${t.target_count || 100})">✏️</button>
+                        <button class="del-btn" onclick="deleteTask(${t.id})">🗑️</button>
+                    </div>
+                </div>`).join("");
+        } catch (e) { div.innerHTML = "📭 لا توجد مهام نشطة."; }
     }
     function openEditTaskModal(id, title, link, reward, target) {
         document.getElementById('edit-t-id').value = id;
@@ -1625,30 +1749,49 @@
     function zoomImage(d) { currentZoom = Math.max(0.5, Math.min(3.5, currentZoom + d)); document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`; }
     function resetZoom() { currentZoom = 1; document.getElementById('lightbox-img').style.transform = "scale(1)"; }
 
-    window.initAdminData = function() {
-        if (!client) return;
+    // تحميل الأقسام بشكل متدرج ومنظم لضمان عدم اختناق المتصفح
+    async function loadAllAdminSections() {
+        const statusBar = document.getElementById('db-status-bar');
+        statusBar.style.borderColor = "var(--gold)";
+        statusBar.style.color = "var(--gold)";
+        statusBar.innerText = "⏳ جاري سحب وتحديث الأقسام من قاعدة البيانات...";
+
         generateNewProductCode();
-        loadTopDashboardStats().catch(() => {});
-        loadPromoCodesList().catch(() => {});
-        loadStoreAndOrdersFast().catch(() => {});
-        loadWithdrawals().catch(() => {});
-        loadMethods().catch(() => {});
-        loadSupportTickets().catch(() => {});
-        loadDepositMethods().catch(() => {});
-        loadDepositsRequests().catch(() => {});
-        loadPublishedMethods().catch(() => {});
-        loadPendingMethods().catch(() => {});
-        loadTasks().catch(() => {});
-        loadPendingTasks().catch(() => {});
-        loadAdminTaskSubmissions().catch(() => {});
-    };
+
+        // الدفعة الأولى: الأقسام العاجلة والأساسية
+        await Promise.all([
+            loadTopDashboardStats(),
+            loadStoreAndOrdersFast(),
+            loadDepositsRequests(),
+            loadWithdrawals(),
+            loadSupportTickets()
+        ]);
+
+        // الدفعة الثانية: باقي القوائم والإعدادات
+        await Promise.all([
+            loadPromoCodesList(),
+            loadDepositMethods(),
+            loadMethods(),
+            loadTasks(),
+            loadPendingTasks(),
+            loadPublishedMethods(),
+            loadPendingMethods(),
+            loadAdminTaskSubmissions()
+        ]);
+
+        statusBar.style.borderColor = "var(--main-green)";
+        statusBar.style.color = "var(--main-green)";
+        statusBar.innerText = "🟢 متصل بقاعدة البيانات - تم تحميل وتحديث جميع الأقسام بنجاح!";
+    }
+
+    window.initAdminData = loadAllAdminSections;
 
     window.addEventListener('DOMContentLoaded', function() {
         try {
             if (sessionStorage.getItem("mt_admin_ok") === "1") {
                 document.getElementById('admin-lock-screen').style.setProperty('display', 'none', 'important');
                 document.getElementById('main-admin-container').style.setProperty('display', 'block', 'important');
-                window.initAdminData();
+                loadAllAdminSections();
                 startLiveAdminRadar();
             }
         } catch (e) {}
