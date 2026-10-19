@@ -6,11 +6,8 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>MegaTask - لوحة التحكم الإدارية v5.0</title>
-
-    <!-- استخدام نفس مكتبة unpkg السريعة مع وجود محرك Fetch مدمج احتياطي بالأسفل -->
+    <title>MegaTask - لوحة التحكم الإدارية المؤمنة</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
     <style>
         :root { 
             --neon-purple: #bc13fe; 
@@ -29,7 +26,6 @@
         
         .container { max-width: 980px; margin: auto; display: none; }
 
-        /* شريط حالة الاتصال بقاعدة البيانات */
         #db-status-bar {
             background: #141923;
             border: 1px solid var(--neon-blue);
@@ -42,7 +38,6 @@
             text-align: center;
         }
 
-        /* شريط تنبيه الطلبات الجديدة العائم */
         #live-alert-toast {
             display: none;
             position: fixed;
@@ -60,7 +55,6 @@
             white-space: nowrap;
         }
 
-        /* شريط الإحصائيات السريعة العلوي */
         .top-stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -157,20 +151,44 @@
 
 <div id="live-alert-toast">🔔 وصل طلب جديد في لوحة الأدمن!</div>
 
-<!-- 🔒 شاشة قفل لوحة التحكم بكلمة المرور -->
+<!-- 🔒 شاشة قفل لوحة التحكم بكلمة المرور المخفية فقط -->
 <div id="admin-lock-screen">
     <div class="lock-box">
-        <div style="display:inline-block; background:rgba(0,210,106,0.15); color:#00d26a; border:1px solid #00d26a; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:bold; margin-bottom:10px;">
-            الإصدار المباشر المضمون v5.0 🚀
-        </div>
-        <div style="font-size: 44px; margin-bottom: 8px;">🛡️</div>
+        <div style="font-size: 46px; margin-bottom: 10px;">🛡️</div>
         <h2 style="color: var(--neon-blue); margin: 0 0 8px 0;">منطقة محمية للإدارة</h2>
-        <p style="font-size: 12px; color: #9ca3af; margin-bottom: 14px;">أدخل كلمة المرور (أو الـ ID الخاص بك) لفتح اللوحة:</p>
-        <input type="text" id="admin-pin-input" placeholder="Mostafa@2026 أو 875021647" style="text-align: center; font-size: 16px; direction: ltr;" onkeydown="if(event.key==='Enter') unlockAdminPanelNow()">
-        <button type="button" class="method-btn" onclick="unlockAdminPanelNow()">🔓 فتح لوحة التحكم الآن</button>
+        <p style="font-size: 12px; color: #9ca3af; margin-bottom: 14px;">أدخل كلمة المرور السرية الخاصة بالأدمن:</p>
+        <input type="password" id="admin-pin-input" placeholder="••••••••••••" style="text-align: center; font-size: 18px; direction: ltr;" onkeydown="if(event.key==='Enter') unlockAdminPanelNow()">
+        <button type="button" class="method-btn" onclick="unlockAdminPanelNow()">🔓 تسجيل الدخول</button>
         <div id="lock-error-msg" style="color: var(--red); font-size: 12px; margin-top: 10px; display: none;"></div>
     </div>
 </div>
+
+<!-- ⚡ سكريبت فتح القفل الفوري المعزول (يقبل الباسورد فقط ومخفي تماماً) -->
+<script>
+    function unlockAdminPanelNow() {
+        var inp = document.getElementById('admin-pin-input');
+        var val = (inp ? inp.value : '').trim();
+
+        if (val === 'Mostafa@2026' || val.toLowerCase() === 'mostafa@2026') {
+            try { sessionStorage.setItem('mt_admin_auth', '1'); } catch (e) {}
+            document.getElementById('lock-error-msg').style.display = 'none';
+            document.getElementById('admin-lock-screen').style.display = 'none';
+            document.getElementById('main-admin-container').style.display = 'block';
+            if (typeof window.startAdminDashboard === 'function') {
+                window.startAdminDashboard();
+            }
+        } else {
+            var errEl = document.getElementById('lock-error-msg');
+            errEl.style.display = 'block';
+            errEl.innerText = '❌ كلمة المرور غير صحيحة!';
+        }
+    }
+
+    function logoutAdmin() {
+        try { sessionStorage.removeItem('mt_admin_auth'); } catch (e) {}
+        location.reload();
+    }
+</script>
 
 <div class="container" id="main-admin-container">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
@@ -178,11 +196,10 @@
         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
             <button id="btn-sound-radar" class="approve-btn" style="font-size: 11.5px; padding: 8px 12px; flex: unset;" onclick="enableLiveNotifications()">🔔 تفعيل جرس وإشعارات الفون</button>
             <button class="edit-btn" style="font-size: 11.5px; padding: 8px 12px;" onclick="loadAllAdminSections()">🔄 تحديث البيانات</button>
-            <button class="del-btn" style="font-size: 11.5px; padding: 8px 12px;" onclick="logoutAdmin()">🔒 قفل</button>
+            <button class="del-btn" style="font-size: 11.5px; padding: 8px 12px;" onclick="logoutAdmin()">🔒 قفل اللوحة</button>
         </div>
     </div>
 
-    <!-- شريط حالة الاتصال المباشر -->
     <div id="db-status-bar">⏳ جاري الاتصال بقاعدة البيانات وسحب الأقسام...</div>
 
     <!-- 📊 شريط الإحصائيات السريعة العلوي -->
@@ -577,135 +594,53 @@
     </div>
 </div>
 
-<!-- 📡 محرك الأدمن الموحد (مع عميل REST مباشر احتياطي يعمل بدون أي مكاتب خارجية) -->
+<!-- 📡 محرك البيانات الخالي تماماً من أي رموز معادلات رياضية -->
 <script>
-    const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-    const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
-    const USDT_RATE = 53.0;
+    var S_URL = 'https://smukfrwnguvmxvfwqwrv.supabase.co';
+    var S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM';
+    var USDT_RATE = 53.0;
+    var client = window.supabase.createClient(S_URL, S_KEY);
 
-    // محرك اتصال مباشر بـ Supabase يعمل بـ fetch العادي في حال حجب مكتبة CDN
-    function createNativeRestClient(baseUrl, apiKey) {
-        class QueryBuilder {
-            constructor(table) {
-                this.table = table;
-                this.method = "GET";
-                this.params = [];
-                this.bodyData = null;
-                this.isSingle = false;
-                this.isMaybeSingle = false;
-                this.wantCount = false;
-                this.isHead = false;
-            }
-            select(cols = "*", opts = {}) {
-                if (this.method === "GET") this.params.push(`select=${encodeURIComponent(cols)}`);
-                if (opts && opts.count) this.wantCount = true;
-                if (opts && opts.head) this.isHead = true;
-                return this;
-            }
-            eq(col, val) { this.params.push(`${encodeURIComponent(col)}=eq.${encodeURIComponent(val)}`); return this; }
-            in(col, arr) { this.params.push(`${encodeURIComponent(col)}=in.(${arr.map(x => encodeURIComponent(x)).join(",")})`); return this; }
-            order(col, opts = {}) {
-                const dir = (opts && opts.ascending) ? "asc" : "desc";
-                this.params.push(`order=${encodeURIComponent(col)}.${dir}`);
-                return this;
-            }
-            limit(n) { this.params.push(`limit=${n}`); return this; }
-            single() { this.isSingle = true; this.limit(1); return this; }
-            maybeSingle() { this.isMaybeSingle = true; this.limit(1); return this; }
-            insert(payload) { this.method = "POST"; this.bodyData = payload; return this; }
-            update(payload) { this.method = "PATCH"; this.bodyData = payload; return this; }
-            delete() { this.method = "DELETE"; return this; }
+    var adminMethodBase64 = '';
+    var depositLogoBase64 = '';
+    var storeFileBase64 = '';
+    var currentZoom = 1;
+    var searchedUserObj = null;
+    var activeAdminDealObj = null;
 
-            async execute() {
-                try {
-                    const qs = this.params.length ? `?${this.params.join("&")}` : "";
-                    const url = `${baseUrl}/rest/v1/${this.table}${qs}`;
-                    const headers = {
-                        "apikey": apiKey,
-                        "Authorization": `Bearer ${apiKey}`,
-                        "Content-Type": "application/json",
-                        "Prefer": this.wantCount ? "count=exact,return=representation" : "return=representation"
-                    };
-                    const fetchOpts = { method: this.isHead ? "HEAD" : this.method, headers };
-                    if (this.bodyData !== null && !this.isHead) {
-                        fetchOpts.body = JSON.stringify(this.bodyData);
-                    }
-                    const res = await fetch(url, fetchOpts);
-                    let count = null;
-                    const rangeHdr = res.headers.get("content-range");
-                    if (rangeHdr && rangeHdr.includes("/")) {
-                        count = parseInt(rangeHdr.split("/")[1]) || 0;
-                    }
-                    if (!res.ok) {
-                        const errTxt = await res.text();
-                        return { data: null, error: { message: errTxt || res.statusText }, count };
-                    }
-                    if (this.isHead || res.status === 204) {
-                        return { data: null, error: null, count };
-                    }
-                    const json = await res.json();
-                    if (this.isSingle || this.isMaybeSingle) {
-                        return { data: (Array.isArray(json) && json.length > 0) ? json[0] : null, error: null, count };
-                    }
-                    return { data: json, error: null, count };
-                } catch (e) {
-                    return { data: null, error: { message: e.message }, count: 0 };
-                }
-            }
-            then(resolve, reject) { return this.execute().then(resolve, reject); }
-        }
-        return { from: (t) => new QueryBuilder(t) };
+    var cachedStoreProductsMap = {};
+    var cachedAllProducts = [];
+    var cachedAllOrders = [];
+
+    var lastTotalPendingItems = null;
+    var radarInterval = null;
+
+    function escapeQuote(str) {
+        return String(str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     }
 
-    const client = (window.supabase && typeof window.supabase.createClient === "function")
-        ? window.supabase.createClient(S_URL, S_KEY)
-        : createNativeRestClient(S_URL, S_KEY);
+    function escapeHtml(str) {
+        return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
 
-    let adminMethodBase64 = "";
-    let depositLogoBase64 = "";
-    let storeFileBase64 = "";
-    let currentZoom = 1;
-    let searchedUserObj = null;
-    let activeAdminDealObj = null;
-
-    let cachedStoreProductsMap = {};
-    let cachedAllProducts = [];
-    let cachedAllOrders = [];
-
-    let lastTotalPendingItems = null;
-    let radarInterval = null;
-
-    function unlockAdminPanelNow() {
-        const inp = document.getElementById('admin-pin-input');
-        const rawVal = (inp ? inp.value : "").trim().toLowerCase();
-
-        if (rawVal === "mostafa@2026" || rawVal === "875021647") {
-            try { sessionStorage.setItem("mt_admin_ok", "1"); } catch (e) {}
-            document.getElementById('admin-lock-screen').style.setProperty('display', 'none', 'important');
-            document.getElementById('main-admin-container').style.setProperty('display', 'block', 'important');
-            loadAllAdminSections();
-            startLiveAdminRadar();
+    function toggleCard(headerEl) {
+        var body = headerEl.nextElementSibling;
+        var arrow = headerEl.querySelector('.arrow-icon');
+        if (body.style.display === 'block') {
+            body.style.display = 'none';
+            if (arrow) arrow.classList.remove('open');
         } else {
-            const errEl = document.getElementById('lock-error-msg');
-            errEl.style.display = 'block';
-            errEl.innerText = "❌ كلمة المرور غير صحيحة!";
+            body.style.display = 'block';
+            if (arrow) arrow.classList.add('open');
         }
     }
 
-    function logoutAdmin() {
-        try { sessionStorage.removeItem("mt_admin_ok"); } catch (e) {}
-        location.reload();
-    }
-
-    // =========================================================================
-    // 🔔 الجرس الصوتي وإشعارات الفون الحية
-    // =========================================================================
     function playNotificationSound() {
         try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = "sine";
+            var ctx = new (window.AudioContext || window.webkitAudioContext)();
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.type = 'sine';
             osc.frequency.setValueAtTime(880, ctx.currentTime);
             osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.12);
             gain.gain.setValueAtTime(0.25, ctx.currentTime);
@@ -718,47 +653,45 @@
     }
 
     function showToastAlert(txt) {
-        const t = document.getElementById('live-alert-toast');
+        var t = document.getElementById('live-alert-toast');
         t.innerText = txt;
         t.style.display = 'block';
-        setTimeout(() => { t.style.display = 'none'; }, 5000);
+        setTimeout(function() { t.style.display = 'none'; }, 5000);
     }
 
     async function enableLiveNotifications() {
         playNotificationSound();
-        const btn = document.getElementById('btn-sound-radar');
-        btn.innerText = "🟢 جرس وإشعارات الفون مفعل";
-        btn.style.background = "var(--neon-blue)";
+        var btn = document.getElementById('btn-sound-radar');
+        btn.innerText = '🟢 جرس وإشعارات الفون مفعل';
+        btn.style.background = 'var(--neon-blue)';
 
-        if ("Notification" in window && Notification.permission !== "granted") {
+        if ('Notification' in window && Notification.permission !== 'granted') {
             try { await Notification.requestPermission(); } catch (e) {}
         }
-        showToastAlert("🔔 تم تفعيل جرس وإشعارات الهاتف الفورية!");
+        showToastAlert('🔔 تم تفعيل جرس وإشعارات الهاتف الفورية!');
     }
 
     async function checkNewAdminEventsRadar() {
         try {
-            const [dRes, wRes, oRes, tRes] = await Promise.all([
-                client.from('deposits').select('id').eq('status', 'Pending'),
-                client.from('withdrawals').select('id').eq('status', 'Pending'),
-                client.from('store_orders').select('id').in('status', ['Pending', 'Escrow_Held', 'Disputed']),
-                client.from('support_tickets').select('id').eq('status', 'Pending')
-            ]);
+            var dRes = await client.from('deposits').select('id').eq('status', 'Pending');
+            var wRes = await client.from('withdrawals').select('id').eq('status', 'Pending');
+            var oRes = await client.from('store_orders').select('id').in('status', ['Pending', 'Escrow_Held', 'Disputed']);
+            var tRes = await client.from('support_tickets').select('id').eq('status', 'Pending');
 
-            const totalNow =
+            var totalNow =
                 ((dRes.data && dRes.data.length) || 0) +
                 ((wRes.data && wRes.data.length) || 0) +
                 ((oRes.data && oRes.data.length) || 0) +
                 ((tRes.data && tRes.data.length) || 0);
 
             if (lastTotalPendingItems !== null && totalNow > lastTotalPendingItems) {
-                const diff = totalNow - lastTotalPendingItems;
-                const alertMsg = `🔔 وصل (${diff}) طلب جديد في لوحة الأدمن الآن!`;
+                var diff = totalNow - lastTotalPendingItems;
+                var alertMsg = '🔔 وصل (' + diff + ') طلب جديد في لوحة الأدمن الآن!';
                 playNotificationSound();
                 showToastAlert(alertMsg);
 
-                if ("Notification" in window && Notification.permission === "granted") {
-                    try { new Notification("🛡️ إدارة MegaTask", { body: alertMsg }); } catch (e) {}
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    try { new Notification('🛡️ إدارة MegaTask', { body: alertMsg }); } catch (e) {}
                 }
                 loadAllAdminSections();
             }
@@ -772,45 +705,30 @@
         radarInterval = setInterval(checkNewAdminEventsRadar, 12000);
     }
 
-    function escapeQuote(str) { return String(str || "").replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
-    function escapeHtml(str) { return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
-
-    function toggleCard(headerEl) {
-        const body = headerEl.nextElementSibling;
-        const arrow = headerEl.querySelector('.arrow-icon');
-        if (body.style.display === 'block') {
-            body.style.display = 'none';
-            if (arrow) arrow.classList.remove('open');
-        } else {
-            body.style.display = 'block';
-            if (arrow) arrow.classList.add('open');
-        }
-    }
-
     function generateNewProductCode() {
-        const inp = document.getElementById('store-code');
-        if (inp) inp.value = "PRD-" + Math.floor(1000 + Math.random() * 9000);
+        var inp = document.getElementById('store-code');
+        if (inp) inp.value = 'PRD-' + Math.floor(1000 + Math.random() * 9000);
     }
 
     function syncAdminAutoStockTarget() {
-        const raw = document.getElementById('store-auto-stock').value || "";
-        const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        var raw = document.getElementById('store-auto-stock').value || '';
+        var lines = raw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
         if (lines.length > 0) {
             document.getElementById('store-target').value = lines.length;
         }
     }
 
     function calcAdminProductProfit() {
-        const curr = document.getElementById('store-currency').value;
-        const unit = curr === 'egp' ? 'ج.م' : 'نقطة';
-        const price = parseFloat(document.getElementById('store-price').value) || 0;
-        const cost = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
-        const net = price - cost;
-        document.getElementById('admin-profit-preview').innerText = `💰 صافي ربحك في كل بيعة: ${net.toFixed(2)} ${unit}`;
+        var curr = document.getElementById('store-currency').value;
+        var unit = curr === 'egp' ? 'ج.م' : 'نقطة';
+        var price = parseFloat(document.getElementById('store-price').value) || 0;
+        var cost = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
+        var net = price - cost;
+        document.getElementById('admin-profit-preview').innerText = '💰 صافي ربحك في كل بيعة: ' + net.toFixed(2) + ' ' + unit;
     }
 
     function copyCodeText(txt) {
-        navigator.clipboard.writeText(txt).then(() => {
+        navigator.clipboard.writeText(txt).then(function() {
             document.getElementById('global-code-search').value = txt;
             runSmartCodeSearch();
         });
@@ -818,63 +736,56 @@
 
     async function loadTopDashboardStats() {
         try {
-            const { data } = await client.from('users').select('id');
-            if (data) document.getElementById('st-total-users').innerText = data.length.toLocaleString();
+            var res = await client.from('users').select('id');
+            if (res.data) document.getElementById('st-total-users').innerText = res.data.length.toLocaleString();
         } catch (e) {}
     }
 
-    // =========================================================================
-    // 🎁 إدارة وإنشاء أكواد الهدايا (Promo Codes)
-    // =========================================================================
+    // أكواد الهدايا
     function generateRandomPromoName() {
-        const rnd = "MEGA" + Math.floor(100 + Math.random() * 900);
-        document.getElementById('promo-code-inp').value = rnd;
+        document.getElementById('promo-code-inp').value = 'MEGA' + Math.floor(100 + Math.random() * 900);
     }
 
     async function loadPromoCodesList() {
-        const div = document.getElementById('promo-codes-list');
+        var div = document.getElementById('promo-codes-list');
         if (!div) return;
         try {
-            const { data, error } = await client.from('promo_codes').select('*').order('id', { ascending: false }).limit(20);
-            if (error) {
-                div.innerHTML = `<div style="color:#aaa; font-size:12px;">ℹ️ جدول أكواد الهدايا جاهز للعمل فور تشغيل كود SQL الموحد.</div>`;
+            var res = await client.from('promo_codes').select('*').order('id', { ascending: false }).limit(20);
+            if (res.error || !res.data || res.data.length === 0) {
+                div.innerHTML = '<div style="color:#888; font-size:12px;">✅ لا توجد أكواد هدايا مضافة حالياً.</div>';
                 return;
             }
-            if (!data || data.length === 0) {
-                div.innerHTML = `<div style="color:#888; font-size:12px;">✅ لا توجد أكواد هدايا مضافة حالياً.</div>`;
-                return;
-            }
-            div.innerHTML = data.map(c => {
-                const unit = c.reward_type === 'egp' ? 'ج.م' : 'نقطة';
-                const isFull = (c.used_count || 0) >= (c.max_uses || 100) || !c.is_active;
-                return `
-                    <div class="item-row" style="border-right-color:${isFull ? 'var(--red)' : 'var(--main-green)'};">
-                        <div>
-                            <span class="code-pill" onclick="navigator.clipboard.writeText('${c.code}')">${escapeHtml(c.code)} 📋</span>
-                            <b>🎁 الهدية: ${c.reward_amount} ${unit}</b> | 
-                            <span style="font-size:12px; color:#ccc;">المستفيدون: <b>${c.used_count || 0} / ${c.max_uses}</b></span>
-                            ${isFull ? '<span style="color:var(--red); font-size:11px; font-weight:bold;">(مكتمل)</span>' : '<span style="color:var(--main-green); font-size:11px; font-weight:bold;">(نشط 🟢)</span>'}
-                        </div>
-                        <button class="del-btn" onclick="deletePromoCode(${c.id})">حذف 🗑️</button>
-                    </div>
-                `;
-            }).join("");
+            var html = '';
+            res.data.forEach(function(c) {
+                var unit = c.reward_type === 'egp' ? 'ج.م' : 'نقطة';
+                var isFull = (c.used_count || 0) >= (c.max_uses || 100) || !c.is_active;
+                html += '<div class="item-row" style="border-right-color:' + (isFull ? 'var(--red)' : 'var(--main-green)') + ';">' +
+                    '<div>' +
+                    '<span class="code-pill" onclick="navigator.clipboard.writeText(\'' + escapeQuote(c.code) + '\')">' + escapeHtml(c.code) + ' 📋</span> ' +
+                    '<b>🎁 الهدية: ' + c.reward_amount + ' ' + unit + '</b> | ' +
+                    '<span style="font-size:12px; color:#ccc;">المستفيدون: <b>' + (c.used_count || 0) + ' / ' + c.max_uses + '</b></span> ' +
+                    (isFull ? '<span style="color:var(--red); font-size:11px; font-weight:bold;">(مكتمل)</span>' : '<span style="color:var(--main-green); font-size:11px; font-weight:bold;">(نشط 🟢)</span>') +
+                    '</div>' +
+                    '<button class="del-btn" onclick="deletePromoCode(' + c.id + ')">حذف 🗑️</button>' +
+                    '</div>';
+            });
+            div.innerHTML = html;
         } catch (e) {
-            div.innerHTML = `<div style="color:#888; font-size:12px;">لا توجد أكواد هدايا.</div>`;
+            div.innerHTML = '<div style="color:#888; font-size:12px;">✅ لا توجد أكواد هدايا.</div>';
         }
     }
 
     async function createAdminPromoCode(withBroadcast) {
-        const code = (document.getElementById('promo-code-inp').value || "").trim().toUpperCase();
-        const rType = document.getElementById('promo-type-inp').value;
-        const rAmt = parseFloat(document.getElementById('promo-amount-inp').value);
-        const maxU = parseInt(document.getElementById('promo-max-inp').value) || 100;
+        var code = (document.getElementById('promo-code-inp').value || '').trim().toUpperCase();
+        var rType = document.getElementById('promo-type-inp').value;
+        var rAmt = parseFloat(document.getElementById('promo-amount-inp').value);
+        var maxU = parseInt(document.getElementById('promo-max-inp').value) || 100;
 
         if (!code || isNaN(rAmt) || rAmt <= 0) {
-            return alert("⚠️ يرجى كتابة اسم الكود وقيمة المكافأة!");
+            return alert('⚠️ يرجى كتابة اسم الكود وقيمة المكافأة!');
         }
 
-        const { error } = await client.from('promo_codes').insert([{
+        var res = await client.from('promo_codes').insert([{
             code: code,
             reward_type: rType,
             reward_amount: rAmt,
@@ -883,49 +794,51 @@
             is_active: true
         }]);
 
-        if (error) return alert("❌ تعذر إنشاء الكود: " + error.message);
+        if (res.error) return alert('❌ تعذر إنشاء الكود: ' + res.error.message);
 
-        const unit = rType === 'egp' ? 'ج.م' : 'نقطة';
+        var unit = rType === 'egp' ? 'ج.م' : 'نقطة';
         if (withBroadcast) {
             await broadcastToAllUsers(
-                "🎁 كود هدية مجاني جديد!",
-                `تم طرح كود هدية جديد لأول *${maxU} عضو* فقط!\n\n🎟️ *الكود:* \`${code}\`\n💰 *الهدية:* *+${rAmt} ${unit}*\n\nادخل الآن واضغط (🎁 كود هدية) في الصفحة الرئيسية أو أرسل الكود للبوت لاستلام هديتك فوراً!`
+                '🎁 كود هدية مجاني جديد!',
+                'تم طرح كود هدية جديد لأول *' + maxU + ' عضو* فقط!\n\n🎟️ *الكود:* `' + code + '`\n💰 *الهدية:* *+' + rAmt + ' ' + unit + '*\n\nادخل الآن واضغط (🎁 كود هدية) في الصفحة الرئيسية أو أرسل الكود للبوت لاستلام هديتك فوراً!'
             );
         }
 
-        document.getElementById('promo-code-inp').value = "";
-        document.getElementById('promo-amount-inp').value = "";
-        alert(`✅ تم إنشاء كود الهدية (${code}) بنجاح!`);
+        document.getElementById('promo-code-inp').value = '';
+        document.getElementById('promo-amount-inp').value = '';
+        alert('✅ تم إنشاء كود الهدية (' + code + ') بنجاح!');
         loadPromoCodesList();
     }
 
     async function deletePromoCode(id) {
-        if (!confirm("حذف كود الهدية نهائياً؟")) return;
+        if (!confirm('حذف كود الهدية نهائياً؟')) return;
         await client.from('promo_codes').delete().eq('id', id);
         loadPromoCodesList();
     }
 
-    // =========================================================================
-    // 📢 نظام الإذاعة الجماعية لكل المستخدمين
-    // =========================================================================
     async function broadcastToAllUsers(title, messageText) {
         try {
-            const { data: allUsers } = await client.from('users').select('telegram_id');
-            if (!allUsers || allUsers.length === 0) return;
+            var res = await client.from('users').select('telegram_id');
+            var allUsers = res.data || [];
+            if (allUsers.length === 0) return;
 
-            const notifications = allUsers.map(u => ({
-                user_id: String(u.telegram_id),
-                title: title,
-                message: messageText,
-                is_read: false
-            }));
+            var notifications = allUsers.map(function(u) {
+                return {
+                    user_id: String(u.telegram_id),
+                    title: title,
+                    message: messageText,
+                    is_read: false
+                };
+            });
 
-            const formattedBotMessage = `🔔 *${title}*\n━━━━━━━━━━━━━━━\n${messageText}`;
-            const botMessages = allUsers.map(u => ({
-                telegram_id: String(u.telegram_id),
-                message: formattedBotMessage,
-                status: 'pending'
-            }));
+            var formattedBotMessage = '🔔 *' + title + '*\n━━━━━━━━━━━━━━━\n' + messageText;
+            var botMessages = allUsers.map(function(u) {
+                return {
+                    telegram_id: String(u.telegram_id),
+                    message: formattedBotMessage,
+                    status: 'pending'
+                };
+            });
 
             await client.from('user_notifications').insert(notifications);
             await client.from('bot_messages').insert(botMessages);
@@ -933,256 +846,260 @@
     }
 
     async function sendCustomBroadcast() {
-        const title = document.getElementById('bc-title-inp').value.trim();
-        const msg = document.getElementById('bc-msg-inp').value.trim();
-        if (!title || !msg) return alert("⚠️ يرجى كتابة عنوان ونص الرسالة الجماعية!");
-        if (!confirm("🚀 هل أنت متأكد من إرسال هذا الإشعار لجميع مستخدمي البوت الآن؟")) return;
+        var title = document.getElementById('bc-title-inp').value.trim();
+        var msg = document.getElementById('bc-msg-inp').value.trim();
+        if (!title || !msg) return alert('⚠️ يرجى كتابة عنوان ونص الرسالة الجماعية!');
+        if (!confirm('🚀 هل أنت متأكد من إرسال هذا الإشعار لجميع مستخدمي البوت الآن؟')) return;
 
-        const btn = document.getElementById('btn-send-bc');
+        var btn = document.getElementById('btn-send-bc');
         btn.disabled = true;
-        btn.innerText = "⏳ جاري الإرسال لجميع الأعضاء...";
+        btn.innerText = '⏳ جاري الإرسال لجميع الأعضاء...';
 
         await broadcastToAllUsers(title, msg);
 
         btn.disabled = false;
-        btn.innerText = "🚀 إرسال الإشعار لجميع الأعضاء الآن";
-        document.getElementById('bc-title-inp').value = "";
-        document.getElementById('bc-msg-inp').value = "";
-        alert("✅ تم وضع الإشعار الجماعي في طابور الإرسال المباشر بنجاح!");
+        btn.innerText = '🚀 إرسال الإشعار لجميع الأعضاء الآن';
+        document.getElementById('bc-title-inp').value = '';
+        document.getElementById('bc-msg-inp').value = '';
+        alert('✅ تم وضع الإشعار الجماعي في طابور الإرسال المباشر بنجاح!');
     }
 
-    // رادار البحث الذكي بالأكواد
     function runSmartCodeSearch() {
-        const q = (document.getElementById('global-code-search').value || "").trim().toLowerCase();
-        const resDiv = document.getElementById('smart-search-results');
+        var q = (document.getElementById('global-code-search').value || '').trim().toLowerCase();
+        var resDiv = document.getElementById('smart-search-results');
         if (!q) { resDiv.style.display = 'none'; return; }
         resDiv.style.display = 'block';
 
-        const matchedOrders = cachedAllOrders.filter(o => 
-            (o.order_code && o.order_code.toLowerCase().includes(q)) ||
-            String(o.id) === q ||
-            String(o.user_id).toLowerCase().includes(q) ||
-            String(o.seller_id || '').toLowerCase().includes(q) ||
-            (o.product_title && o.product_title.toLowerCase().includes(q))
-        );
+        var matchedOrders = cachedAllOrders.filter(function(o) {
+            return (o.order_code && o.order_code.toLowerCase().includes(q)) ||
+                String(o.id) === q ||
+                String(o.user_id).toLowerCase().includes(q) ||
+                String(o.seller_id || '').toLowerCase().includes(q) ||
+                (o.product_title && o.product_title.toLowerCase().includes(q));
+        });
 
-        const matchedProducts = cachedAllProducts.filter(p => 
-            (p.product_code && p.product_code.toLowerCase().includes(q)) ||
-            String(p.id) === q ||
-            (p.title && p.title.toLowerCase().includes(q))
-        );
+        var matchedProducts = cachedAllProducts.filter(function(p) {
+            return (p.product_code && p.product_code.toLowerCase().includes(q)) ||
+                String(p.id) === q ||
+                (p.title && p.title.toLowerCase().includes(q));
+        });
 
         if (matchedOrders.length === 0 && matchedProducts.length === 0) {
-            resDiv.innerHTML = `<div style="padding:12px; text-align:center; color:#999;">لا توجد نتائج مطابقة للكود: ${escapeHtml(q)}</div>`;
+            resDiv.innerHTML = '<div style="padding:12px; text-align:center; color:#999;">لا توجد نتائج مطابقة للكود: ' + escapeHtml(q) + '</div>';
             return;
         }
 
-        let html = "";
-        matchedOrders.forEach(o => { html += renderOrderCardHTML(o, false); });
-        matchedProducts.forEach(p => {
-            const pCode = p.product_code || `PRD-${p.id}`;
-            html += `<div class="item-row"><b>📦 ${escapeHtml(p.title)} (${pCode})</b> <span>السعر: ${p.price} ${p.currency}</span></div>`;
+        var html = '';
+        matchedOrders.forEach(function(o) { html += renderOrderCardHTML(o, false); });
+        matchedProducts.forEach(function(p) {
+            var pCode = p.product_code || ('PRD-' + p.id);
+            html += '<div class="item-row"><b>📦 ' + escapeHtml(p.title) + ' (' + pCode + ')</b> <span>السعر: ' + p.price + ' ' + p.currency + '</span></div>';
         });
         resDiv.innerHTML = html;
     }
 
-    // إدارة حساب المستخدم وفك الحظر
     async function searchUserWallet() {
-        const uid = document.getElementById('search-user-id').value.trim();
-        if (!uid) return alert("أدخل ID المستخدم أولاً!");
+        var uid = document.getElementById('search-user-id').value.trim();
+        if (!uid) return alert('أدخل ID المستخدم أولاً!');
 
-        const { data: user, error } = await client.from('users').select('*').eq('telegram_id', uid).maybeSingle();
-        const box = document.getElementById('user-wallet-result');
-        if (error || !user) { box.style.display = 'none'; return alert("❌ لم يتم العثور على المستخدم!"); }
+        var res = await client.from('users').select('*').eq('telegram_id', uid).maybeSingle();
+        var user = res.data;
+        var box = document.getElementById('user-wallet-result');
+        if (res.error || !user) { box.style.display = 'none'; return alert('❌ لم يتم العثور على المستخدم!'); }
 
         searchedUserObj = user;
         box.style.display = 'block';
-        const isBanned = user.is_banned === true;
-        const banBtn = document.getElementById('btn-toggle-ban');
-        banBtn.innerText = isBanned ? "🟢 فك الحظر" : "🚫 حظر الحساب";
-        banBtn.style.background = isBanned ? "var(--main-green)" : "var(--red)";
+        var isBanned = user.is_banned === true;
+        var banBtn = document.getElementById('btn-toggle-ban');
+        banBtn.innerText = isBanned ? '🟢 فك الحظر' : '🚫 حظر الحساب';
+        banBtn.style.background = isBanned ? 'var(--main-green)' : 'var(--red)';
 
-        const rCnt = Number(user.seller_rating_count || 0);
-        const rAvg = rCnt > 0 ? (Number(user.seller_rating_sum || 0) / rCnt).toFixed(1) : "جديد";
+        var rCnt = Number(user.seller_rating_count || 0);
+        var rAvg = rCnt > 0 ? (Number(user.seller_rating_sum || 0) / rCnt).toFixed(1) : 'جديد';
 
-        document.getElementById('user-wallet-info').innerHTML = `
-            👤 <b>الاسم:</b> ${escapeHtml(user.name || '')} | <b>ID:</b> ${user.telegram_id} | 
-            <b>الحالة:</b> ${isBanned ? '<b style="color:var(--red);">محظور 🚫</b>' : '<b style="color:var(--main-green);">نشط 🟢</b>'}<br>
-            🪙 <b>النقاط:</b> ${(user.points || 0).toLocaleString()} ن | 
-            💵 <b>رصيد الشراء:</b> ${Number(user.egp_balance || 0).toFixed(2)} ج.م | 
-            💼 <b>أرباح التاجر:</b> <b style="color:var(--gold);">${Number(user.merchant_balance_egp || 0).toFixed(2)} ج.م</b><br>
-            📦 <b>مبيعاته المكتملة:</b> ${user.total_sales_count || 0} | ⭐ <b>تقييمه كتاجر:</b> ${rAvg} (${rCnt} تقييم) | 📱 <b>بصمة الجهاز:</b> <code>${user.device_fp || '---'}</code>
-        `;
+        document.getElementById('user-wallet-info').innerHTML =
+            '👤 <b>الاسم:</b> ' + escapeHtml(user.name || '') + ' | <b>ID:</b> ' + user.telegram_id + ' | ' +
+            '<b>الحالة:</b> ' + (isBanned ? '<b style="color:var(--red);">محظور 🚫</b>' : '<b style="color:var(--main-green);">نشط 🟢</b>') + '<br>' +
+            '🪙 <b>النقاط:</b> ' + (user.points || 0).toLocaleString() + ' ن | ' +
+            '💵 <b>رصيد الشراء:</b> ' + Number(user.egp_balance || 0).toFixed(2) + ' ج.م | ' +
+            '💼 <b>أرباح التاجر:</b> <b style="color:var(--gold);">' + Number(user.merchant_balance_egp || 0).toFixed(2) + ' ج.م</b><br>' +
+            '📦 <b>مبيعاته المكتملة:</b> ' + (user.total_sales_count || 0) + ' | ⭐ <b>تقييمه كتاجر:</b> ' + rAvg + ' (' + rCnt + ' تقييم) | 📱 <b>بصمة الجهاز:</b> <code>' + (user.device_fp || '---') + '</code>';
     }
 
     async function toggleUserBanStatus() {
         if (!searchedUserObj) return;
-        const nextState = !(searchedUserObj.is_banned === true);
+        var nextState = !(searchedUserObj.is_banned === true);
         await client.from('users').update({ is_banned: nextState }).eq('telegram_id', searchedUserObj.telegram_id);
-        alert(nextState ? "🚫 تم حظر الحساب" : "🟢 تم فك الحظر بنجاح");
+        alert(nextState ? '🚫 تم حظر الحساب' : '🟢 تم فك الحظر بنجاح');
         searchUserWallet();
     }
 
     async function applyUserWalletAdjustment() {
         if (!searchedUserObj) return;
-        const currency = document.getElementById('wallet-adjust-currency').value;
-        const amount = parseFloat(document.getElementById('wallet-adjust-amount').value);
-        const reason = document.getElementById('wallet-adjust-reason').value.trim();
-        if (isNaN(amount) || amount === 0) return alert("أدخل مبلغاً صحيحاً!");
+        var currency = document.getElementById('wallet-adjust-currency').value;
+        var amount = parseFloat(document.getElementById('wallet-adjust-amount').value);
+        var reason = document.getElementById('wallet-adjust-reason').value.trim();
+        if (isNaN(amount) || amount === 0) return alert('أدخل مبلغاً صحيحاً!');
 
-        let payload = {};
-        let label = "";
+        var payload = {};
+        var label = '';
         if (currency === 'egp') {
             payload.egp_balance = Math.max(0, Number((Number(searchedUserObj.egp_balance || 0) + amount).toFixed(2)));
-            label = `${Math.abs(amount)} ج.م`;
+            label = Math.abs(amount) + ' ج.م';
         } else if (currency === 'merchant_egp') {
             payload.merchant_balance_egp = Math.max(0, Number((Number(searchedUserObj.merchant_balance_egp || 0) + amount).toFixed(2)));
-            label = `${Math.abs(amount)} ج.م (محفظة التاجر)`;
+            label = Math.abs(amount) + ' ج.م (محفظة التاجر)';
         } else {
-            const delta = Math.round(amount);
+            var delta = Math.round(amount);
             payload.points = Math.max(0, (searchedUserObj.points || 0) + delta);
-            label = `${Math.abs(delta).toLocaleString()} نقطة`;
+            label = Math.abs(delta).toLocaleString() + ' نقطة';
         }
 
         await client.from('users').update(payload).eq('telegram_id', searchedUserObj.telegram_id);
         await client.from('bot_messages').insert([{
             telegram_id: String(searchedUserObj.telegram_id),
-            message: `🔔 *تحديث في رصيد حسابك*\nتم ${amount > 0 ? 'إضافة' : 'خصم'} *${label}* بواسطة الإدارة.${reason ? `\n💬 *ملاحظة:* ${reason}` : ''}`,
+            message: '🔔 *تحديث في رصيد حسابك*\nتم ' + (amount > 0 ? 'إضافة' : 'خصم') + ' *' + label + '* بواسطة الإدارة.' + (reason ? ('\n💬 *ملاحظة:* ' + reason) : ''),
             status: 'pending'
         }]);
-        alert("✅ تم تحديث الرصيد بنجاح!");
+        alert('✅ تم تحديث الرصيد بنجاح!');
         searchUserWallet();
     }
 
-    // =========================================================================
-    // 🛍️ المتجر والطلبات وصفقات الوساطة
-    // =========================================================================
     async function loadStoreAndOrdersFast() {
         try {
-            const [prodRes, ordRes] = await Promise.all([
-                client.from('store_products').select('*').order('id', { ascending: false }).limit(80),
-                client.from('store_orders').select('*').order('id', { ascending: false }).limit(80)
-            ]);
+            var prodRes = await client.from('store_products').select('id, product_code, creator_id, category, currency, title, description, price, supplier_cost, supplier_name, supplier_notes, auto_delivery_data, target_count, completed_count, link, status').order('id', { ascending: false }).limit(80);
+            var ordRes = await client.from('store_orders').select('*').order('id', { ascending: false }).limit(80);
 
             cachedAllProducts = prodRes.data || [];
             cachedAllOrders = ordRes.data || [];
             cachedStoreProductsMap = {};
-            cachedAllProducts.forEach(p => { cachedStoreProductsMap[p.id] = p; });
+            cachedAllProducts.forEach(function(p) { cachedStoreProductsMap[p.id] = p; });
 
-            const prodDiv = document.getElementById('store-products-list');
-            const approved = cachedAllProducts.filter(p => p.status === 'Approved');
-            prodDiv.innerHTML = approved.length === 0 ? "📭 لا توجد منتجات منشورة." : approved.map(p => {
-                const sold = cachedAllOrders.filter(o => Number(o.product_id) === Number(p.id)).length;
-                const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
-                const pCode = p.product_code || `PRD-${p.id}`;
-                const autoLines = String(p.auto_delivery_data || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-                const autoBadge = autoLines.length > 0 ? `<span style="color:var(--neon-blue); font-weight:bold;"> | ⚡ مخزون تلقائي: ${autoLines.length}</span>` : '';
-                return `
-                    <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                        <div style="width:100%; display:flex; justify-content:space-between;">
-                            <b>📦 ${escapeHtml(p.title)} (${p.price}${unit})</b>
-                            <span class="code-pill" onclick="copyCodeText('${pCode}')">${pCode}</span>
-                        </div>
-                        <div style="font-size:12px; color:#aaa;">المورد/البائع: ${escapeHtml(p.supplier_name || p.creator_id || 'ADMIN')} | المبيعات: ${sold}${autoBadge}</div>
-                        <div class="actions-box">
-                            <button class="edit-btn" onclick="openEditStoreModal(${p.id})">تعديل ✏️</button>
-                            <button class="del-btn" onclick="deleteStoreProductItem(${p.id})">حذف 🗑️</button>
-                        </div>
-                    </div>`;
-            }).join("");
+            var prodDiv = document.getElementById('store-products-list');
+            var approved = cachedAllProducts.filter(function(p) { return p.status === 'Approved'; });
+            if (approved.length === 0) {
+                prodDiv.innerHTML = '📭 لا توجد منتجات منشورة.';
+            } else {
+                var pHtml = '';
+                approved.forEach(function(p) {
+                    var sold = cachedAllOrders.filter(function(o) { return Number(o.product_id) === Number(p.id); }).length;
+                    var unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
+                    var pCode = p.product_code || ('PRD-' + p.id);
+                    var autoLines = String(p.auto_delivery_data || '').split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+                    var autoBadge = autoLines.length > 0 ? ('<span style="color:var(--neon-blue); font-weight:bold;"> | ⚡ مخزون تلقائي: ' + autoLines.length + '</span>') : '';
+                    pHtml += '<div class="item-row" style="flex-direction:column; align-items:flex-start;">' +
+                        '<div style="width:100%; display:flex; justify-content:space-between;">' +
+                        '<b>📦 ' + escapeHtml(p.title) + ' (' + p.price + ' ' + unit + ')</b>' +
+                        '<span class="code-pill" onclick="copyCodeText(\'' + escapeQuote(pCode) + '\')">' + pCode + '</span>' +
+                        '</div>' +
+                        '<div style="font-size:12px; color:#aaa;">المورد/البائع: ' + escapeHtml(p.supplier_name || p.creator_id || 'ADMIN') + ' | المبيعات: ' + sold + autoBadge + '</div>' +
+                        '<div class="actions-box">' +
+                        '<button class="edit-btn" onclick="openEditStoreModal(' + p.id + ')">تعديل ✏️</button>' +
+                        '<button class="del-btn" onclick="deleteStoreProductItem(' + p.id + ')">حذف 🗑️</button>' +
+                        '</div></div>';
+                });
+                prodDiv.innerHTML = pHtml;
+            }
 
-            const pendStoreDiv = document.getElementById('pending-store-list');
-            const pendProds = cachedAllProducts.filter(p => p.status === 'Pending');
-            pendStoreDiv.innerHTML = pendProds.length === 0 ? "✅ لا توجد سلع تجار معلقة." : pendProds.map(p => {
-                const pCode = p.product_code || `PRD-${p.id}`;
-                const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
-                return `
-                    <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                        <div><b>📦 ${escapeHtml(p.title)}</b> (${p.price} ${unit}) \vert{} التاجر: <code>${p.creator_id}</code></div>
-                        <div style="font-size:12px; color:#ccc;">${escapeHtml(p.description || '')}</div>
-                        <div class="actions-box">
-                            <button class="approve-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', '${pCode}', true)">قبول ونشر ✅</button>
-                            <button class="reject-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', '${pCode}', false)">رفض ❌</button>
-                        </div>
-                    </div>`;
-            }).join("");
+            var pendStoreDiv = document.getElementById('pending-store-list');
+            var pendProds = cachedAllProducts.filter(function(p) { return p.status === 'Pending'; });
+            if (pendProds.length === 0) {
+                pendStoreDiv.innerHTML = '✅ لا توجد سلع تجار معلقة.';
+            } else {
+                var pendHtml = '';
+                pendProds.forEach(function(p) {
+                    var pCode = p.product_code || ('PRD-' + p.id);
+                    var unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
+                    pendHtml += '<div class="item-row" style="flex-direction:column; align-items:flex-start;">' +
+                        '<div><b>📦 ' + escapeHtml(p.title) + '</b> (' + p.price + ' ' + unit + ') | التاجر: <code>' + p.creator_id + '</code></div>' +
+                        '<div style="font-size:12px; color:#ccc;">' + escapeHtml(p.description || '') + '</div>' +
+                        '<div class="actions-box">' +
+                        '<button class="approve-btn" onclick="reviewStoreProduct(' + p.id + ', \'' + escapeQuote(p.creator_id) + '\', \'' + escapeQuote(p.title) + '\', \'' + escapeQuote(pCode) + '\', true)">قبول ونشر ✅</button>' +
+                        '<button class="reject-btn" onclick="reviewStoreProduct(' + p.id + ', \'' + escapeQuote(p.creator_id) + '\', \'' + escapeQuote(p.title) + '\', \'' + escapeQuote(pCode) + '\', false)">رفض ❌</button>' +
+                        '</div></div>';
+                });
+                pendStoreDiv.innerHTML = pendHtml;
+            }
 
-            const disputes = cachedAllOrders.filter(o => o.status === 'Disputed');
+            var disputes = cachedAllOrders.filter(function(o) { return o.status === 'Disputed'; });
             document.getElementById('st-open-disputes').innerText = disputes.length;
             document.getElementById('escrow-disputes-list').innerHTML = disputes.length === 0
-                ? "✅ لا توجد نزاعات وساطة مفتوحة حالياً."
-                : disputes.map(o => renderOrderCardHTML(o, true)).join("");
+                ? '✅ لا توجد نزاعات وساطة مفتوحة حالياً.'
+                : disputes.map(function(o) { return renderOrderCardHTML(o, true); }).join('');
 
-            const activeOrds = cachedAllOrders.filter(o => ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'].includes(o.status));
+            var activeOrds = cachedAllOrders.filter(function(o) { return ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'].includes(o.status); });
             document.getElementById('st-active-deals').innerText = activeOrds.length;
             document.getElementById('store-orders-list').innerHTML = activeOrds.length === 0
-                ? "✅ لا توجد طلبات أو صفقات ضمان جارية."
-                : activeOrds.map(o => renderOrderCardHTML(o, false)).join("");
+                ? '✅ لا توجد طلبات أو صفقات ضمان جارية.'
+                : activeOrds.map(function(o) { return renderOrderCardHTML(o, false); }).join('');
         } catch (e) {
-            document.getElementById('store-orders-list').innerHTML = "✅ لا توجد طلبات حالياً.";
-            document.getElementById('escrow-disputes-list').innerHTML = "✅ لا توجد نزاعات حالياً.";
+            document.getElementById('store-orders-list').innerHTML = '✅ لا توجد طلبات حالياً.';
+            document.getElementById('escrow-disputes-list').innerHTML = '✅ لا توجد نزاعات حالياً.';
         }
     }
 
     function renderOrderCardHTML(o, isDispute) {
-        const prod = cachedStoreProductsMap[o.product_id] || {};
-        const unit = o.currency === 'egp' ? 'ج.م' : 'نقطة';
-        const oCode = o.order_code || `ESC-${100000 + o.id}`;
-        const sellerId = o.seller_id || prod.creator_id || 'ADMIN';
-        const msgCount = Array.isArray(o.chat_messages) ? o.chat_messages.length : 0;
+        var prod = cachedStoreProductsMap[o.product_id] || {};
+        var unit = o.currency === 'egp' ? 'ج.م' : 'نقطة';
+        var oCode = o.order_code || ('ESC-' + (100000 + o.id));
+        var sellerId = o.seller_id || prod.creator_id || 'ADMIN';
+        var msgCount = Array.isArray(o.chat_messages) ? o.chat_messages.length : 0;
 
-        return `
-            <div class="item-row" style="flex-direction:column; align-items:flex-start; border-right-color:${isDispute ? 'var(--red)' : 'var(--main-green)'};">
-                <div style="width:100%; display:flex; justify-content:space-between;">
-                    <span class="code-pill" onclick="copyCodeText('${oCode}')">${oCode} 📋</span>
-                    <b style="color:var(--gold);">الحالة: ${o.status}</b>
-                </div>
-                <div>
-                    <b>📦 الطلب:</b> ${escapeHtml(o.product_title)} (${o.price_paid}${unit})<br>
-                    <b>🛒 المشتري:</b> <code>${o.user_id}</code> \vert{} <b>🏷️ البائع:</b> <code>${sellerId}</code><br>
-                    <b>📱 بيانات المشتري:</b> <span style="color:var(--main-green);">${escapeHtml(o.buyer_input || '')}</span>
-                </div>
-                <div class="actions-box">
-                    <button class="chat-btn" onclick="openAdminDealChatModal(${o.id})">💬 شات الصفقة (${msgCount})</button>
-                    <button class="approve-btn" onclick="completeStoreOrder(${o.id})">⚖️ تحرير للبائع ✅</button>
-                    <button class="reject-btn" onclick="rejectStoreOrder(${o.id})">↩️ إرجاع للمشتري ❌</button>
-                </div>
-            </div>`;
+        return '<div class="item-row" style="flex-direction:column; align-items:flex-start; border-right-color:' + (isDispute ? 'var(--red)' : 'var(--main-green)') + ';">' +
+            '<div style="width:100%; display:flex; justify-content:space-between;">' +
+            '<span class="code-pill" onclick="copyCodeText(\'' + escapeQuote(oCode) + '\')">' + oCode + ' 📋</span>' +
+            '<b style="color:var(--gold);">الحالة: ' + o.status + '</b>' +
+            '</div>' +
+            '<div>' +
+            '<b>📦 الطلب:</b> ' + escapeHtml(o.product_title) + ' (' + o.price_paid + ' ' + unit + ')<br>' +
+            '<b>🛒 المشتري:</b> <code>' + o.user_id + '</code> | <b>🏷️ البائع:</b> <code>' + sellerId + '</code><br>' +
+            '<b>📱 بيانات المشتري:</b> <span style="color:var(--main-green);">' + escapeHtml(o.buyer_input || '') + '</span>' +
+            '</div>' +
+            '<div class="actions-box">' +
+            '<button class="chat-btn" onclick="openAdminDealChatModal(' + o.id + ')">💬 شات الصفقة (' + msgCount + ')</button>' +
+            '<button class="approve-btn" onclick="completeStoreOrder(' + o.id + ')">⚖️ تحرير للبائع ✅</button>' +
+            '<button class="reject-btn" onclick="rejectStoreOrder(' + o.id + ')">↩️ إرجاع للمشتري ❌</button>' +
+            '</div></div>';
     }
 
     async function openAdminDealChatModal(orderId) {
-        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        var res = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        var ord = res.data;
         if (!ord) return;
         activeAdminDealObj = ord;
-        document.getElementById('adm-dr-title').innerText = `⚖️ غرفة الصفقة (${ord.order_code || ord.id})`;
-        document.getElementById('adm-dr-meta').innerHTML = `📦 <b>${escapeHtml(ord.product_title)}</b> | المشتري: <code>${ord.user_id}</code> \vert{} البائع: <code>${ord.seller_id || 'ADMIN'}</code>`;
+        document.getElementById('adm-dr-title').innerText = '⚖️ غرفة الصفقة (' + (ord.order_code || ord.id) + ')';
+        document.getElementById('adm-dr-meta').innerHTML = '📦 <b>' + escapeHtml(ord.product_title) + '</b> | المشتري: <code>' + ord.user_id + '</code> | البائع: <code>' + (ord.seller_id || 'ADMIN') + '</code>';
 
-        const chatBox = document.getElementById('adm-dr-chat-box');
-        const msgs = Array.isArray(ord.chat_messages) ? ord.chat_messages : [];
-        chatBox.innerHTML = msgs.length === 0 ? `<div class="c-msg c-sys">لا توجد رسائل بعد.</div>` : msgs.map(m => {
-            if (m.sender === 'SYSTEM') return `<div class="c-msg c-sys">${escapeHtml(m.text)}</div>`;
-            const imgTag = m.image ? `<img src="${m.image}" class="chat-thumb-img" onclick="openLightbox('${m.image}')">` : '';
-            if (m.sender === 'ADMIN') return `<div class="c-msg c-admin"><b>👮‍♂️ الإدارة:</b><br>${escapeHtml(m.text \vert{}\vert{} '')}${imgTag}</div>`;
-            const isB = String(m.sender_id) === String(ord.user_id);
-            return `<div class="c-msg ${isB ? 'c-buyer' : 'c-seller'}"><b>${escapeHtml(m.role_label || '')}:</b><br>${escapeHtml(m.text \vert{}\vert{} '')}${imgTag}</div>`;
-        }).join("");
+        var chatBox = document.getElementById('adm-dr-chat-box');
+        var msgs = Array.isArray(ord.chat_messages) ? ord.chat_messages : [];
+        if (msgs.length === 0) {
+            chatBox.innerHTML = '<div class="c-msg c-sys">لا توجد رسائل بعد.</div>';
+        } else {
+            chatBox.innerHTML = msgs.map(function(m) {
+                if (m.sender === 'SYSTEM') return '<div class="c-msg c-sys">' + escapeHtml(m.text) + '</div>';
+                var imgTag = m.image ? ('<img src="' + m.image + '" class="chat-thumb-img" onclick="openLightbox(\'' + m.image + '\')">') : '';
+                if (m.sender === 'ADMIN') return '<div class="c-msg c-admin"><b>👮‍♂️ الإدارة:</b><br>' + escapeHtml(m.text || '') + imgTag + '</div>';
+                var isB = String(m.sender_id) === String(ord.user_id);
+                return '<div class="c-msg ' + (isB ? 'c-buyer' : 'c-seller') + '"><b>' + escapeHtml(m.role_label || '') + ':</b><br>' + escapeHtml(m.text || '') + imgTag + '</div>';
+            }).join('');
+        }
         chatBox.scrollTop = chatBox.scrollHeight;
         document.getElementById('admin-deal-chat-modal').style.display = 'flex';
     }
 
     async function sendAdminMessageInDeal() {
         if (!activeAdminDealObj) return;
-        const txt = document.getElementById('adm-dr-msg-inp').value.trim();
+        var txt = document.getElementById('adm-dr-msg-inp').value.trim();
         if (!txt) return;
-        const ord = activeAdminDealObj;
-        const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
-        msgs.push({ sender: "ADMIN", role_label: "👮‍♂️ الإدارة", text: txt, time: new Date().toLocaleTimeString('ar-EG') });
-        document.getElementById('adm-dr-msg-inp').value = "";
+        var ord = activeAdminDealObj;
+        var msgs = Array.isArray(ord.chat_messages) ? ord.chat_messages.slice() : [];
+        msgs.push({ sender: 'ADMIN', role_label: '👮‍♂️ الإدارة', text: txt, time: new Date().toLocaleTimeString('ar-EG') });
+        document.getElementById('adm-dr-msg-inp').value = '';
         await client.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
 
-        const notifs = [{ telegram_id: String(ord.user_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' }];
+        var notifs = [{ telegram_id: String(ord.user_id), message: '👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (' + (ord.order_code || ord.id) + '):*\n`' + txt + '`', status: 'pending' }];
         if (ord.seller_id && ord.seller_id !== 'ADMIN') {
-            notifs.push({ telegram_id: String(ord.seller_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' });
+            notifs.push({ telegram_id: String(ord.seller_id), message: '👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (' + (ord.order_code || ord.id) + '):*\n`' + txt + '`', status: 'pending' });
         }
         await client.from('bot_messages').insert(notifs);
         openAdminDealChatModal(ord.id);
@@ -1190,23 +1107,23 @@
 
     function sendAdminImageInDeal(input) {
         if (!activeAdminDealObj || !input.files || !input.files[0]) return;
-        const r = new FileReader();
-        r.onload = e => {
-            const img = new Image();
+        var r = new FileReader();
+        r.onload = function(e) {
+            var img = new Image();
             img.src = e.target.result;
-            img.onload = async () => {
-                const canvas = document.createElement('canvas');
-                const maxW = 600;
-                let w = img.width, h = img.height;
+            img.onload = async function() {
+                var canvas = document.createElement('canvas');
+                var maxW = 600;
+                var w = img.width, h = img.height;
                 if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                const b64 = canvas.toDataURL('image/jpeg', 0.65);
+                var b64 = canvas.toDataURL('image/jpeg', 0.65);
 
-                const ord = activeAdminDealObj;
-                const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
-                msgs.push({ sender: "ADMIN", role_label: "👮‍♂️ الإدارة", text: "📷 [صورة مرفقة من الإدارة]", image: b64, time: new Date().toLocaleTimeString('ar-EG') });
-                input.value = "";
+                var ord = activeAdminDealObj;
+                var msgs = Array.isArray(ord.chat_messages) ? ord.chat_messages.slice() : [];
+                msgs.push({ sender: 'ADMIN', role_label: '👮‍♂️ الإدارة', text: '📷 [صورة مرفقة من الإدارة]', image: b64, time: new Date().toLocaleTimeString('ar-EG') });
+                input.value = '';
                 await client.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
                 openAdminDealChatModal(ord.id);
             };
@@ -1227,20 +1144,22 @@
     }
 
     async function completeStoreOrder(orderId) {
-        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        var res = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        var ord = res.data;
         if (!ord || ord.status === 'Completed') return;
-        const note = prompt("ملاحظة التسليم للمشتري:", "تم تأكيد التسليم وتحرير الصفقة بنجاح!");
+        var note = prompt('ملاحظة التسليم للمشتري:', 'تم تأكيد التسليم وتحرير الصفقة بنجاح!');
         if (note === null) return;
 
         await client.from('store_orders').update({ status: 'Completed' }).eq('id', orderId);
-        const prod = cachedStoreProductsMap[ord.product_id] || {};
-        const sellerId = String(ord.seller_id || prod.creator_id || 'ADMIN');
-        const isEgp = ord.currency === 'egp';
-        const pricePaid = Number(ord.price_paid || 0);
+        var prod = cachedStoreProductsMap[ord.product_id] || {};
+        var sellerId = String(ord.seller_id || prod.creator_id || 'ADMIN');
+        var isEgp = ord.currency === 'egp';
+        var pricePaid = Number(ord.price_paid || 0);
 
         if (sellerId !== 'ADMIN') {
-            const netSeller = Number(ord.net_seller_amount) > 0 ? Number(ord.net_seller_amount) : Number((pricePaid * 0.85).toFixed(2));
-            const { data: sUser } = await client.from('users').select('points, merchant_balance_egp, total_sales_count').eq('telegram_id', sellerId).maybeSingle();
+            var netSeller = Number(ord.net_seller_amount) > 0 ? Number(ord.net_seller_amount) : Number((pricePaid * 0.85).toFixed(2));
+            var sRes = await client.from('users').select('points, merchant_balance_egp, total_sales_count').eq('telegram_id', sellerId).maybeSingle();
+            var sUser = sRes.data;
             if (sUser) {
                 if (isEgp) {
                     await client.from('users').update({
@@ -1255,7 +1174,7 @@
                 }
                 await client.from('bot_messages').insert([{
                     telegram_id: sellerId,
-                    message: `🎉 *تم تحرير أرباح صفقتك (${ord.order_code || ord.id})!* 💰\nتم إضافة صافي ربحك (*+${netSeller} ${isEgp ? 'ج.م' : 'نقطة'}*) إلى محفظة التاجر!`,
+                    message: '🎉 *تم تحرير أرباح صفقتك (' + (ord.order_code || ord.id) + ')!* 💰\nتم إضافة صافي ربحك (*+' + netSeller + ' ' + (isEgp ? 'ج.م' : 'نقطة') + '*) إلى محفظة التاجر!',
                     status: 'pending'
                 }]);
             }
@@ -1263,23 +1182,25 @@
 
         await client.from('bot_messages').insert([{
             telegram_id: String(ord.user_id),
-            message: `🎉 *تم إتمام صفقتك (${ord.product_title}) بنجاح!* ✅\n📋 *التفاصيل:* ${note}`,
+            message: '🎉 *تم إتمام صفقتك (' + ord.product_title + ') بنجاح!* ✅\n📋 *التفاصيل:* ' + note,
             status: 'pending'
         }]);
-        alert("✅ تم تحرير الصفقة بنجاح!");
+        alert('✅ تم تحرير الصفقة بنجاح!');
         loadStoreAndOrdersFast();
     }
 
     async function rejectStoreOrder(orderId) {
-        const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        var res = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+        var ord = res.data;
         if (!ord || ord.status === 'Refunded') return;
-        const reason = prompt("سبب إلغاء الصفقة وإرجاع الرصيد للمشتري:", "تم إلغاء الصفقة واسترداد الرصيد");
+        var reason = prompt('سبب إلغاء الصفقة وإرجاع الرصيد للمشتري:', 'تم إلغاء الصفقة واسترداد الرصيد');
         if (reason === null) return;
 
         await client.from('store_orders').update({ status: 'Refunded' }).eq('id', orderId);
-        const isEgp = ord.currency === 'egp';
-        const price = Number(ord.price_paid || 0);
-        const { data: bUser } = await client.from('users').select('points, egp_balance').eq('telegram_id', String(ord.user_id)).maybeSingle();
+        var isEgp = ord.currency === 'egp';
+        var price = Number(ord.price_paid || 0);
+        var bRes = await client.from('users').select('points, egp_balance').eq('telegram_id', String(ord.user_id)).maybeSingle();
+        var bUser = bRes.data;
         if (bUser) {
             if (isEgp) {
                 await client.from('users').update({ egp_balance: Number((Number(bUser.egp_balance || 0) + price).toFixed(2)) }).eq('telegram_id', String(ord.user_id));
@@ -1289,70 +1210,70 @@
         }
         await client.from('bot_messages').insert([{
             telegram_id: String(ord.user_id),
-            message: `↩️ *تم إلغاء الصفقة (${ord.product_title}) وإرجاع (+${price} ${isEgp ? 'ج.م' : 'نقطة'}) لمحفظتك.*\n💬 السبب: ${reason}`,
+            message: '↩️ *تم إلغاء الصفقة (' + ord.product_title + ') وإرجاع (+' + price + ' ' + (isEgp ? 'ج.م' : 'نقطة') + ') لمحفظتك.*\n💬 السبب: ' + reason,
             status: 'pending'
         }]);
-        alert("✅ تم إرجاع الرصيد للمشتري!");
+        alert('✅ تم إرجاع الرصيد للمشتري!');
         loadStoreAndOrdersFast();
     }
 
     async function addStoreProduct() {
-        const category = document.getElementById('store-cat').value;
-        const currency = document.getElementById('store-currency').value;
-        const productCode = document.getElementById('store-code').value.trim() || ("PRD-" + Math.floor(1000 + Math.random() * 9000));
-        const title = document.getElementById('store-title').value.trim();
-        const description = document.getElementById('store-desc').value.trim();
-        const autoStockRaw = document.getElementById('store-auto-stock').value.trim();
-        const autoLines = autoStockRaw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-        const price = parseFloat(document.getElementById('store-price').value);
-        const supplierCost = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
-        const supplierName = document.getElementById('store-supplier-name').value.trim();
-        const supplierNotes = document.getElementById('store-supplier-notes').value.trim();
-        const target = autoLines.length > 0 ? autoLines.length : (parseInt(document.getElementById('store-target').value) || 100);
-        const link = document.getElementById('store-link').value.trim() || "#";
+        var category = document.getElementById('store-cat').value;
+        var currency = document.getElementById('store-currency').value;
+        var productCode = document.getElementById('store-code').value.trim() || ('PRD-' + Math.floor(1000 + Math.random() * 9000));
+        var title = document.getElementById('store-title').value.trim();
+        var description = document.getElementById('store-desc').value.trim();
+        var autoStockRaw = document.getElementById('store-auto-stock').value.trim();
+        var autoLines = autoStockRaw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+        var price = parseFloat(document.getElementById('store-price').value);
+        var supplierCost = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
+        var supplierName = document.getElementById('store-supplier-name').value.trim();
+        var supplierNotes = document.getElementById('store-supplier-notes').value.trim();
+        var target = autoLines.length > 0 ? autoLines.length : (parseInt(document.getElementById('store-target').value) || 100);
+        var link = document.getElementById('store-link').value.trim() || '#';
 
-        if (!title || isNaN(price) || price <= 0) return alert("أدخل العنوان والسعر!");
+        if (!title || isNaN(price) || price <= 0) return alert('أدخل العنوان والسعر!');
         await client.from('store_products').insert([{
-            creator_id: 'ADMIN', product_code: productCode, category, currency, title, description,
-            auto_delivery_data: autoLines.length > 0 ? autoLines.join("\n") : null,
-            price, supplier_cost: supplierCost, supplier_name: supplierName, supplier_notes: supplierNotes,
-            link, target_count: target, image_url: storeFileBase64 || null, status: 'Approved'
+            creator_id: 'ADMIN', product_code: productCode, category: category, currency: currency, title: title, description: description,
+            auto_delivery_data: autoLines.length > 0 ? autoLines.join('\n') : null,
+            price: price, supplier_cost: supplierCost, supplier_name: supplierName, supplier_notes: supplierNotes,
+            link: link, target_count: target, image_url: storeFileBase64 || null, status: 'Approved'
         }]);
-        document.getElementById('store-title').value = "";
-        document.getElementById('store-desc').value = "";
-        document.getElementById('store-auto-stock').value = "";
+        document.getElementById('store-title').value = '';
+        document.getElementById('store-desc').value = '';
+        document.getElementById('store-auto-stock').value = '';
         generateNewProductCode();
-        alert("✅ تم نشر المنتج!");
+        alert('✅ تم نشر المنتج!');
         loadStoreAndOrdersFast();
     }
 
     function openEditStoreModal(id) {
-        const p = cachedStoreProductsMap[id];
+        var p = cachedStoreProductsMap[id];
         if (!p) return;
         document.getElementById('edit-s-id').value = p.id;
-        document.getElementById('edit-s-code').value = p.product_code || `PRD-${p.id}`;
-        document.getElementById('edit-s-title').value = p.title || "";
-        document.getElementById('edit-s-desc').value = p.description || "";
-        document.getElementById('edit-s-auto-stock').value = p.auto_delivery_data || "";
+        document.getElementById('edit-s-code').value = p.product_code || ('PRD-' + p.id);
+        document.getElementById('edit-s-title').value = p.title || '';
+        document.getElementById('edit-s-desc').value = p.description || '';
+        document.getElementById('edit-s-auto-stock').value = p.auto_delivery_data || '';
         document.getElementById('edit-s-price').value = p.price || 0;
         document.getElementById('edit-s-supplier-cost').value = p.supplier_cost || 0;
-        document.getElementById('edit-s-supplier-name').value = p.supplier_name || "";
-        document.getElementById('edit-s-supplier-notes').value = p.supplier_notes || "";
+        document.getElementById('edit-s-supplier-name').value = p.supplier_name || '';
+        document.getElementById('edit-s-supplier-notes').value = p.supplier_notes || '';
         document.getElementById('edit-s-target').value = p.target_count || 100;
-        document.getElementById('edit-s-link').value = p.link || "";
+        document.getElementById('edit-s-link').value = p.link || '';
         document.getElementById('edit-s-currency').value = p.currency || 'points';
         document.getElementById('edit-store-modal').style.display = 'flex';
     }
 
     async function saveEditedStoreProduct() {
-        const id = document.getElementById('edit-s-id').value;
-        const autoRaw = document.getElementById('edit-s-auto-stock').value.trim();
-        const autoLines = autoRaw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        var id = document.getElementById('edit-s-id').value;
+        var autoRaw = document.getElementById('edit-s-auto-stock').value.trim();
+        var autoLines = autoRaw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
         await client.from('store_products').update({
             product_code: document.getElementById('edit-s-code').value.trim(),
             title: document.getElementById('edit-s-title').value.trim(),
             description: document.getElementById('edit-s-desc').value.trim(),
-            auto_delivery_data: autoLines.length > 0 ? autoLines.join("\n") : null,
+            auto_delivery_data: autoLines.length > 0 ? autoLines.join('\n') : null,
             currency: document.getElementById('edit-s-currency').value,
             price: parseFloat(document.getElementById('edit-s-price').value) || 10,
             supplier_cost: parseFloat(document.getElementById('edit-s-supplier-cost').value) || 0,
@@ -1366,7 +1287,7 @@
     }
 
     async function deleteStoreProductItem(id) {
-        if (!confirm("حذف المنتج؟")) return;
+        if (!confirm('حذف المنتج؟')) return;
         await client.from('store_products').delete().eq('id', id);
         loadStoreAndOrdersFast();
     }
@@ -1374,156 +1295,148 @@
     async function reviewStoreProduct(id, creatorId, title, pCode, isApproved) {
         if (isApproved) {
             await client.from('store_products').update({ status: 'Approved', product_code: pCode }).eq('id', id);
-            await client.from('bot_messages').insert([{ telegram_id: creatorId, message: `🎉 *تم قبول ونشر سلعتك (${title}) في المتجر!*`, status: 'pending' }]);
+            await client.from('bot_messages').insert([{ telegram_id: creatorId, message: '🎉 *تم قبول ونشر سلعتك (' + title + ') في المتجر!*', status: 'pending' }]);
         } else {
-            const r = prompt("سبب الرفض:", "مخالفة الشروط");
+            var r = prompt('سبب الرفض:', 'مخالفة الشروط');
             if (r === null) return;
             await client.from('store_products').update({ status: 'Rejected' }).eq('id', id);
         }
         loadStoreAndOrdersFast();
     }
 
-    // طلبات سحب التجار
     async function loadWithdrawals() {
-        const div = document.getElementById('withdraw-list');
+        var div = document.getElementById('withdraw-list');
         try {
-            const { data } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('id', { ascending: false });
-            document.getElementById('st-pend-withdraws').innerText = data ? data.length : 0;
-            if (!data || data.length === 0) { div.innerHTML = "✅ لا توجد طلبات سحب معلقة."; return; }
-            div.innerHTML = data.map(w => {
-                const wCode = w.withdraw_code || `WTH-${w.id}`;
-                const amt = Number(w.amount || 0);
-                const isCryp = (w.method || "").toLowerCase().includes("binance") || (w.method || "").toLowerCase().includes("usdt");
-                const usdtEq = isCryp ? ` <b style="color:var(--gold);">(${(amt / USDT_RATE).toFixed(2)} USDT)</b>` : "";
-                return `
-                    <div class="item-row withdraw-row">
-                        <div>
-                            <b>🆔 ${wCode}</b> | التاجر: <code>${w.telegram_id}</code> | المبلغ: <b style="color:var(--main-green);">${amt.toFixed(2)} ج.م</b>${usdtEq}<br>
-                            الوسيلة: ${escapeHtml(w.method)} | المستلم: <code style="color:var(--gold);">${escapeHtml(w.wallet_info)}</code>
-                        </div>
-                        <div class="actions-box">
-                            <button class="approve-btn" onclick="approveWithdraw(${w.id}, '${w.telegram_id}', '${wCode}', ${amt})">✅ تم التحويل</button>
-                            <button class="reject-btn" onclick="rejectWithdrawAndRefund(${w.id}, '${w.telegram_id}', '${wCode}', ${amt})">❌ رفض وإرجاع</button>
-                        </div>
-                    </div>`;
-            }).join("");
-        } catch (e) {
-            div.innerHTML = "✅ لا توجد طلبات سحب معلقة.";
-        }
+            var res = await client.from('withdrawals').select('*').eq('status', 'Pending').order('id', { ascending: false });
+            var data = res.data || [];
+            document.getElementById('st-pend-withdraws').innerText = data.length;
+            if (data.length === 0) { div.innerHTML = '✅ لا توجد طلبات سحب معلقة.'; return; }
+            div.innerHTML = data.map(function(w) {
+                var wCode = w.withdraw_code || ('WTH-' + w.id);
+                var amt = Number(w.amount || 0);
+                var isCryp = (w.method || '').toLowerCase().includes('binance') || (w.method || '').toLowerCase().includes('usdt');
+                var usdtEq = isCryp ? (' <b style="color:var(--gold);">(' + (amt / USDT_RATE).toFixed(2) + ' USDT)</b>') : '';
+                return '<div class="item-row withdraw-row">' +
+                    '<div>' +
+                    '<b>🆔 ' + wCode + '</b> | التاجر: <code>' + w.telegram_id + '</code> | المبلغ: <b style="color:var(--main-green);">' + amt.toFixed(2) + ' ج.م</b>' + usdtEq + '<br>' +
+                    'الوسيلة: ' + escapeHtml(w.method) + ' | المستلم: <code style="color:var(--gold);">' + escapeHtml(w.wallet_info) + '</code>' +
+                    '</div>' +
+                    '<div class="actions-box">' +
+                    '<button class="approve-btn" onclick="approveWithdraw(' + w.id + ', \'' + escapeQuote(w.telegram_id) + '\', \'' + escapeQuote(wCode) + '\', ' + amt + ')">✅ تم التحويل</button>' +
+                    '<button class="reject-btn" onclick="rejectWithdrawAndRefund(' + w.id + ', \'' + escapeQuote(w.telegram_id) + '\', \'' + escapeQuote(wCode) + '\', ' + amt + ')">❌ رفض وإرجاع</button>' +
+                    '</div></div>';
+            }).join('');
+        } catch (e) { div.innerHTML = '✅ لا توجد طلبات سحب معلقة.'; }
     }
 
     async function approveWithdraw(id, tid, wCode, amt) {
-        if (!confirm(`تأكيد تحويل ${amt} ج.م؟`)) return;
+        if (!confirm('تأكيد تحويل ' + amt + ' ج.م؟')) return;
         await client.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
-        await client.from('bot_messages').insert([{ telegram_id: String(tid), message: `🎉 *تم تحويل أرباحك (${amt.toFixed(2)} ج.م) بنجاح!* (${wCode}) ✅`, status: 'pending' }]);
+        await client.from('bot_messages').insert([{ telegram_id: String(tid), message: '🎉 *تم تحويل أرباحك (' + amt.toFixed(2) + ' ج.م) بنجاح!* (' + wCode + ') ✅', status: 'pending' }]);
         loadWithdrawals();
     }
 
     async function rejectWithdrawAndRefund(id, tid, wCode, amt) {
-        const r = prompt("سبب رفض السحب وإرجاع الرصيد للتاجر:", "بيانات المحفظة غير صحيحة");
+        var r = prompt('سبب رفض السحب وإرجاع الرصيد للتاجر:', 'بيانات المحفظة غير صحيحة');
         if (r === null) return;
         await client.from('withdrawals').update({ status: 'Rejected' }).eq('id', id);
-        const { data: u } = await client.from('users').select('merchant_balance_egp').eq('telegram_id', String(tid)).maybeSingle();
-        if (u) {
-            await client.from('users').update({ merchant_balance_egp: Number((Number(u.merchant_balance_egp || 0) + Number(amt)).toFixed(2)) }).eq('telegram_id', String(tid));
+        var uRes = await client.from('users').select('merchant_balance_egp').eq('telegram_id', String(tid)).maybeSingle();
+        if (uRes.data) {
+            await client.from('users').update({ merchant_balance_egp: Number((Number(uRes.data.merchant_balance_egp || 0) + Number(amt)).toFixed(2)) }).eq('telegram_id', String(tid));
         }
-        await client.from('bot_messages').insert([{ telegram_id: String(tid), message: `↩️ *تم إلغاء طلب السحب (${wCode}) وإرجاع (+${amt} ج.م) لمحفظة التاجر.*\nالسبب: ${r}`, status: 'pending' }]);
+        await client.from('bot_messages').insert([{ telegram_id: String(tid), message: '↩️ *تم إلغاء طلب السحب (' + wCode + ') وإرجاع (+' + amt + ' ج.م) لمحفظة التاجر.*\nالسبب: ' + r, status: 'pending' }]);
         loadWithdrawals();
     }
 
-    // تذاكر الدعم والثغرات
     async function loadSupportTickets() {
-        const div = document.getElementById('support-tickets-list');
+        var div = document.getElementById('support-tickets-list');
         try {
-            const { data, error } = await client.from('support_tickets').select('*').eq('status', 'Pending').order('id', { ascending: false });
-            document.getElementById('st-pend-tickets').innerText = data ? data.length : 0;
-            if (error || !data || data.length === 0) { div.innerHTML = "✅ لا توجد تذاكر أو بلاغات معلقة."; return; }
-            div.innerHTML = data.map(t => {
-                const imgHtml = t.screenshot_url ? `<img src="${t.screenshot_url}" class="chat-thumb-img" onclick="openLightbox('${t.screenshot_url}')">` : '';
-                return `
-                    <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                        <div><b>📌 ${escapeHtml(t.subject || t.category)}</b> (${t.ticket_code}) | المرسل: <code>${t.telegram_id}</code></div>
-                        <div style="background:#111; padding:8px; border-radius:8px; width:100%; font-size:12.5px;">${escapeHtml(t.message)}${imgHtml}</div>
-                        <input type="text" id="tkt-reply-${t.id}" placeholder="رد الإدارة...">
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%;">
-                            <select id="tkt-curr-${t.id}">
-                                <option value="none">بدون مكافأة</option>
-                                <option value="points">🎁 مكافأة نقاط</option>
-                                <option value="egp">💵 مكافأة جنيه</option>
-                            </select>
-                            <input type="number" id="tkt-amt-${t.id}" placeholder="قيمة المكافأة">
-                        </div>
-                        <div class="actions-box">
-                            <button class="approve-btn" onclick="resolveSupportTicket(${t.id}, '${t.telegram_id}', '${escapeQuote(t.ticket_code)}')">إرسال الرد والمكافأة ✅</button>
-                        </div>
-                    </div>`;
-            }).join("");
-        } catch (e) {
-            div.innerHTML = "✅ لا توجد تذاكر معلقة.";
-        }
+            var res = await client.from('support_tickets').select('*').eq('status', 'Pending').order('id', { ascending: false });
+            var data = res.data || [];
+            document.getElementById('st-pend-tickets').innerText = data.length;
+            if (res.error || data.length === 0) { div.innerHTML = '✅ لا توجد تذاكر أو بلاغات معلقة.'; return; }
+            div.innerHTML = data.map(function(t) {
+                var imgHtml = t.screenshot_url ? ('<img src="' + t.screenshot_url + '" class="chat-thumb-img" onclick="openLightbox(\'' + t.screenshot_url + '\')">') : '';
+                return '<div class="item-row" style="flex-direction:column; align-items:flex-start;">' +
+                    '<div><b>📌 ' + escapeHtml(t.subject || t.category) + '</b> (' + t.ticket_code + ') | المرسل: <code>' + t.telegram_id + '</code></div>' +
+                    '<div style="background:#111; padding:8px; border-radius:8px; width:100%; font-size:12.5px;">' + escapeHtml(t.message) + imgHtml + '</div>' +
+                    '<input type="text" id="tkt-reply-' + t.id + '" placeholder="رد الإدارة...">' +
+                    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%;">' +
+                    '<select id="tkt-curr-' + t.id + '">' +
+                    '<option value="none">بدون مكافأة</option>' +
+                    '<option value="points">🎁 مكافأة نقاط</option>' +
+                    '<option value="egp">💵 مكافأة جنيه</option>' +
+                    '</select>' +
+                    '<input type="number" id="tkt-amt-' + t.id + '" placeholder="قيمة المكافأة">' +
+                    '</div>' +
+                    '<div class="actions-box">' +
+                    '<button class="approve-btn" onclick="resolveSupportTicket(' + t.id + ', \'' + escapeQuote(t.telegram_id) + '\', \'' + escapeQuote(t.ticket_code) + '\')">إرسال الرد والمكافأة ✅</button>' +
+                    '</div></div>';
+            }).join('');
+        } catch (e) { div.innerHTML = '✅ لا توجد تذاكر معلقة.'; }
     }
 
     async function resolveSupportTicket(id, userTid, code) {
-        const reply = document.getElementById(`tkt-reply-${id}`).value.trim() || "تمت المراجعة واتخاذ اللازم، شكراً لك!";
-        const curr = document.getElementById(`tkt-curr-${id}`).value;
-        const amt = parseFloat(document.getElementById(`tkt-amt-${id}`).value) || 0;
-        let bonusTxt = "";
+        var reply = document.getElementById('tkt-reply-' + id).value.trim() || 'تمت المراجعة واتخاذ اللازم، شكراً لك!';
+        var curr = document.getElementById('tkt-curr-' + id).value;
+        var amt = parseFloat(document.getElementById('tkt-amt-' + id).value) || 0;
+        var bonusTxt = '';
 
-        if (curr !== "none" && amt > 0) {
-            const { data: u } = await client.from('users').select('points, egp_balance').eq('telegram_id', String(userTid)).maybeSingle();
+        if (curr !== 'none' && amt > 0) {
+            var uRes = await client.from('users').select('points, egp_balance').eq('telegram_id', String(userTid)).maybeSingle();
+            var u = uRes.data;
             if (u) {
                 if (curr === 'egp') {
                     await client.from('users').update({ egp_balance: Number((Number(u.egp_balance || 0) + amt).toFixed(2)) }).eq('telegram_id', String(userTid));
-                    bonusTxt = `\n🎁 *المكافأة المضافة:* +${amt} ج.م`;
+                    bonusTxt = '\n🎁 *المكافأة المضافة:* +' + amt + ' ج.م';
                 } else {
                     await client.from('users').update({ points: Number(u.points || 0) + Math.round(amt) }).eq('telegram_id', String(userTid));
-                    bonusTxt = `\n🎁 *المكافأة المضافة:* +${Math.round(amt)} نقطة`;
+                    bonusTxt = '\n🎁 *المكافأة المضافة:* +' + Math.round(amt) + ' نقطة';
                 }
             }
         }
         await client.from('support_tickets').update({ status: bonusTxt ? 'Rewarded' : 'Resolved', admin_reply: reply }).eq('id', id);
-        await client.from('bot_messages').insert([{ telegram_id: String(userTid), message: `🎧 *رد الإدارة على تذكرتك (${code}):*\n${reply}${bonusTxt}`, status: 'pending' }]);
-        alert("✅ تم إرسال الرد!");
+        await client.from('bot_messages').insert([{ telegram_id: String(userTid), message: '🎧 *رد الإدارة على تذكرتك (' + code + '):*\n' + reply + bonusTxt, status: 'pending' }]);
+        alert('✅ تم إرسال الرد!');
         loadSupportTickets();
     }
 
-    // وسائل وطلبات الإيداع
     async function loadDepositsRequests() {
-        const div = document.getElementById('deposits-requests-list');
+        var div = document.getElementById('deposits-requests-list');
         try {
-            const { data } = await client.from('deposits').select('*').eq('status', 'Pending').order('id', { ascending: false });
-            document.getElementById('st-pend-deposits').innerText = data ? data.length : 0;
-            if (!data || data.length === 0) { div.innerHTML = "✅ لا توجد طلبات إيداع معلقة."; return; }
-            div.innerHTML = data.map(d => `
-                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                    <div><b>🆔 ${d.tx_id || d.id}</b> | المستخدم: <code>${d.telegram_id}</code> | المبلغ: <b>${d.amount} ج.م</b> (${escapeHtml(d.method)})<br>المحول منه: <code>${escapeHtml(d.wallet_info)}</code></div>
-                    <input type="number" id="dep-egp-val-${d.id}" value="${d.amount}" step="0.5">
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', '${escapeQuote(d.method)}', true)">قبول وإضافة الرصيد ✅</button>
-                        <button class="reject-btn" onclick="reviewDeposit(${d.id}, '${d.telegram_id}', '${escapeQuote(d.method)}', false)">رفض ❌</button>
-                    </div>
-                </div>`).join("");
-        } catch (e) {
-            div.innerHTML = "✅ لا توجد طلبات إيداع معلقة.";
-        }
+            var res = await client.from('deposits').select('*').eq('status', 'Pending').order('id', { ascending: false });
+            var data = res.data || [];
+            document.getElementById('st-pend-deposits').innerText = data.length;
+            if (data.length === 0) { div.innerHTML = '✅ لا توجد طلبات إيداع معلقة.'; return; }
+            div.innerHTML = data.map(function(d) {
+                return '<div class="item-row" style="flex-direction:column; align-items:flex-start;">' +
+                    '<div><b>🆔 ' + (d.tx_id || d.id) + '</b> | المستخدم: <code>' + d.telegram_id + '</code> | المبلغ: <b>' + d.amount + ' ج.م</b> (' + escapeHtml(d.method) + ')<br>المحول منه: <code>' + escapeHtml(d.wallet_info) + '</code></div>' +
+                    '<input type="number" id="dep-egp-val-' + d.id + '" value="' + d.amount + '" step="0.5">' +
+                    '<div class="actions-box">' +
+                    '<button class="approve-btn" onclick="reviewDeposit(' + d.id + ', \'' + escapeQuote(d.telegram_id) + '\', \'' + escapeQuote(d.method) + '\', true)">قبول وإضافة الرصيد ✅</button>' +
+                    '<button class="reject-btn" onclick="reviewDeposit(' + d.id + ', \'' + escapeQuote(d.telegram_id) + '\', \'' + escapeQuote(d.method) + '\', false)">رفض ❌</button>' +
+                    '</div></div>';
+            }).join('');
+        } catch (e) { div.innerHTML = '✅ لا توجد طلبات إيداع معلقة.'; }
     }
 
     async function reviewDeposit(id, tid, method, isOk) {
         if (isOk) {
-            const addEgp = parseFloat(document.getElementById(`dep-egp-val-${id}`).value) || 0;
+            var addEgp = parseFloat(document.getElementById('dep-egp-val-' + id).value) || 0;
             await client.from('deposits').update({ status: 'Completed', amount: addEgp }).eq('id', id);
-            const { data: u } = await client.from('users').select('egp_balance, referred_by').eq('telegram_id', tid).maybeSingle();
+            var uRes = await client.from('users').select('egp_balance, referred_by').eq('telegram_id', tid).maybeSingle();
+            var u = uRes.data;
             if (u) {
                 await client.from('users').update({ egp_balance: Number((Number(u.egp_balance || 0) + addEgp).toFixed(2)) }).eq('telegram_id', tid);
                 if (u.referred_by && String(u.referred_by) !== String(tid)) {
-                    const refPts = Math.floor(addEgp * 50);
-                    const { data: rU } = await client.from('users').select('points, total_earned').eq('telegram_id', String(u.referred_by)).maybeSingle();
-                    if (rU && refPts > 0) {
-                        await client.from('users').update({ points: (rU.points || 0) + refPts, total_earned: (rU.total_earned || 0) + refPts }).eq('telegram_id', String(u.referred_by));
+                    var refPts = Math.floor(addEgp * 50);
+                    var rRes = await client.from('users').select('points, total_earned').eq('telegram_id', String(u.referred_by)).maybeSingle();
+                    if (rRes.data && refPts > 0) {
+                        await client.from('users').update({ points: (rRes.data.points || 0) + refPts, total_earned: (rRes.data.total_earned || 0) + refPts }).eq('telegram_id', String(u.referred_by));
                     }
                 }
             }
-            await client.from('bot_messages').insert([{ telegram_id: tid, message: `🎉 *تم قبول شحن رصيدك (+${addEgp.toFixed(2)} ج.م) بنجاح!* ✅`, status: 'pending' }]);
+            await client.from('bot_messages').insert([{ telegram_id: tid, message: '🎉 *تم قبول شحن رصيدك (+' + addEgp.toFixed(2) + ' ج.م) بنجاح!* ✅', status: 'pending' }]);
         } else {
             await client.from('deposits').update({ status: 'Rejected' }).eq('id', id);
         }
@@ -1531,51 +1444,57 @@
     }
 
     async function loadMethods() {
-        const div = document.getElementById('methods-list');
+        var div = document.getElementById('methods-list');
         try {
-            const { data } = await client.from('withdraw_methods').select('*');
-            div.innerHTML = (!data || data.length === 0) ? "" : data.map(m => `<div class="item-row"><b>${escapeHtml(m.name)}</b> <button class="del-btn" onclick="deleteMethod(${m.id})">حذف</button></div>`).join("");
-        } catch (e) { div.innerHTML = ""; }
+            var res = await client.from('withdraw_methods').select('*');
+            var data = res.data || [];
+            div.innerHTML = data.map(function(m) {
+                return '<div class="item-row"><b>' + escapeHtml(m.name) + '</b> <button class="del-btn" onclick="deleteMethod(' + m.id + ')">حذف</button></div>';
+            }).join('');
+        } catch (e) { div.innerHTML = ''; }
     }
     async function addMethod() {
-        const name = document.getElementById('method-name').value.trim();
-        const description = document.getElementById('method-desc').value.trim();
+        var name = document.getElementById('method-name').value.trim();
+        var description = document.getElementById('method-desc').value.trim();
         if (!name) return;
-        await client.from('withdraw_methods').insert([{ name, description }]);
+        await client.from('withdraw_methods').insert([{ name: name, description: description }]);
         loadMethods();
     }
     async function deleteMethod(id) { await client.from('withdraw_methods').delete().eq('id', id); loadMethods(); }
 
     async function loadDepositMethods() {
-        const div = document.getElementById('deposit-methods-list');
+        var div = document.getElementById('deposit-methods-list');
         try {
-            const { data } = await client.from('deposit_methods').select('*');
-            div.innerHTML = (!data || data.length === 0) ? "📭 لا توجد وسائل إيداع مضافة." : data.map(d => `<div class="item-row"><b>${escapeHtml(d.name)} (${escapeHtml(d.description || '')})</b> <button class="del-btn" onclick="deleteDepositMethod(${d.id})">حذف</button></div>`).join("");
-        } catch (e) { div.innerHTML = "📭 لا توجد وسائل إيداع."; }
+            var res = await client.from('deposit_methods').select('*');
+            var data = res.data || [];
+            div.innerHTML = data.length === 0 ? '📭 لا توجد وسائل إيداع مضافة.' : data.map(function(d) {
+                return '<div class="item-row"><b>' + escapeHtml(d.name) + ' (' + escapeHtml(d.description || '') + ')</b> <button class="del-btn" onclick="deleteDepositMethod(' + d.id + ')">حذف</button></div>';
+            }).join('');
+        } catch (e) { div.innerHTML = '📭 لا توجد وسائل إيداع.'; }
     }
     async function addDepositMethod() {
-        const name = document.getElementById('deposit-name').value.trim();
-        const description = document.getElementById('deposit-desc').value.trim();
+        var name = document.getElementById('deposit-name').value.trim();
+        var description = document.getElementById('deposit-desc').value.trim();
         if (!name) return;
-        await client.from('deposit_methods').insert([{ name, description, logo: depositLogoBase64 || null }]);
+        await client.from('deposit_methods').insert([{ name: name, description: description, logo: depositLogoBase64 || null }]);
         loadDepositMethods();
     }
     async function deleteDepositMethod(id) { await client.from('deposit_methods').delete().eq('id', id); loadDepositMethods(); }
 
-    // الميثودات والمهام
     async function loadPublishedMethods() {
-        const div = document.getElementById('published-methods-list');
+        var div = document.getElementById('published-methods-list');
         try {
-            const { data } = await client.from('methods').select('id, title, content, unlock_cost, status').eq('status', 'Approved').order('id', { ascending: false });
-            div.innerHTML = (!data || data.length === 0) ? "📭 لا توجد ميثودات منشورة." : data.map(m => `
-                <div class="item-row">
-                    <b>📌 ${escapeHtml(m.title)} (${m.unlock_cost || 50} ن)</b>
-                    <div>
-                        <button class="edit-btn" onclick="openEditMethodModal(${m.id}, '${escapeQuote(m.title)}', '${escapeQuote(m.content)}', ${m.unlock_cost || 50})">✏️</button>
-                        <button class="del-btn" onclick="deleteMethodItem(${m.id})">🗑️</button>
-                    </div>
-                </div>`).join("");
-        } catch (e) { div.innerHTML = "📭 لا توجد ميثودات منشورة."; }
+            var res = await client.from('methods').select('id, title, content, unlock_cost, status').eq('status', 'Approved').order('id', { ascending: false });
+            var data = res.data || [];
+            div.innerHTML = data.length === 0 ? '📭 لا توجد ميثودات منشورة.' : data.map(function(m) {
+                return '<div class="item-row">' +
+                    '<b>📌 ' + escapeHtml(m.title) + ' (' + (m.unlock_cost || 50) + ' ن)</b>' +
+                    '<div>' +
+                    '<button class="edit-btn" onclick="openEditMethodModal(' + m.id + ', \'' + escapeQuote(m.title) + '\', \'' + escapeQuote(m.content) + '\', ' + (m.unlock_cost || 50) + ')">✏️</button> ' +
+                    '<button class="del-btn" onclick="deleteMethodItem(' + m.id + ')">🗑️</button>' +
+                    '</div></div>';
+            }).join('');
+        } catch (e) { div.innerHTML = '📭 لا توجد ميثودات منشورة.'; }
     }
     function openEditMethodModal(id, title, content, cost) {
         document.getElementById('edit-m-id').value = id;
@@ -1585,7 +1504,7 @@
         document.getElementById('edit-method-modal').style.display = 'flex';
     }
     async function saveEditedMethod() {
-        const id = document.getElementById('edit-m-id').value;
+        var id = document.getElementById('edit-m-id').value;
         await client.from('methods').update({
             title: document.getElementById('edit-m-title').value.trim(),
             content: document.getElementById('edit-m-content').value.trim(),
@@ -1594,31 +1513,32 @@
         document.getElementById('edit-method-modal').style.display = 'none';
         loadPublishedMethods();
     }
-    async function deleteMethodItem(id) { if (!confirm("حذف؟")) return; await client.from('methods').delete().eq('id', id); loadPublishedMethods(); }
+    async function deleteMethodItem(id) { if (!confirm('حذف؟')) return; await client.from('methods').delete().eq('id', id); loadPublishedMethods(); }
     async function addAdminMethod() {
-        const title = document.getElementById('admin-method-title').value.trim();
-        const content = document.getElementById('admin-method-content').value.trim();
-        const unlock_cost = parseInt(document.getElementById('admin-method-cost').value) || 50;
+        var title = document.getElementById('admin-method-title').value.trim();
+        var content = document.getElementById('admin-method-content').value.trim();
+        var unlock_cost = parseInt(document.getElementById('admin-method-cost').value) || 50;
         if (!title || !content) return;
-        await client.from('methods').insert([{ user_id: 'ADMIN', title, content, image_url: adminMethodBase64 || null, status: 'Approved', unlock_cost }]);
-        alert("✅ تم نشر الميثود!");
+        await client.from('methods').insert([{ user_id: 'ADMIN', title: title, content: content, image_url: adminMethodBase64 || null, status: 'Approved', unlock_cost: unlock_cost }]);
+        alert('✅ تم نشر الميثود!');
         loadPublishedMethods();
     }
 
     async function loadPendingMethods() {
-        const div = document.getElementById('pending-methods-list');
+        var div = document.getElementById('pending-methods-list');
         try {
-            const { data } = await client.from('methods').select('*').eq('status', 'Pending');
-            div.innerHTML = (!data || data.length === 0) ? "✅ لا توجد ميثودات معلقة." : data.map(m => `
-                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                    <b>📌 ${escapeHtml(m.title)} (الكاتب: ${m.user_id})</b>
-                    <div style="font-size:12px;">${escapeHtml(m.content)}</div>
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewMethod(${m.id}, true)">قبول ونشر ✅</button>
-                        <button class="reject-btn" onclick="reviewMethod(${m.id}, false)">رفض ❌</button>
-                    </div>
-                </div>`).join("");
-        } catch (e) { div.innerHTML = "✅ لا توجد ميثودات معلقة."; }
+            var res = await client.from('methods').select('*').eq('status', 'Pending');
+            var data = res.data || [];
+            div.innerHTML = data.length === 0 ? '✅ لا توجد ميثودات معلقة.' : data.map(function(m) {
+                return '<div class="item-row" style="flex-direction:column; align-items:flex-start;">' +
+                    '<b>📌 ' + escapeHtml(m.title) + ' (الكاتب: ' + m.user_id + ')</b>' +
+                    '<div style="font-size:12px;">' + escapeHtml(m.content) + '</div>' +
+                    '<div class="actions-box">' +
+                    '<button class="approve-btn" onclick="reviewMethod(' + m.id + ', true)">قبول ونشر ✅</button>' +
+                    '<button class="reject-btn" onclick="reviewMethod(' + m.id + ', false)">رفض ❌</button>' +
+                    '</div></div>';
+            }).join('');
+        } catch (e) { div.innerHTML = '✅ لا توجد ميثودات معلقة.'; }
     }
     async function reviewMethod(id, ok) {
         await client.from('methods').update({ status: ok ? 'Approved' : 'Rejected' }).eq('id', id);
@@ -1626,35 +1546,36 @@
     }
 
     async function loadAdminTaskSubmissions() {
-        const div = document.getElementById('admin-task-submissions-list');
+        var div = document.getElementById('admin-task-submissions-list');
         try {
-            const { data: subs } = await client.from('task_submissions').select('*').eq('status', 'pending').order('id', { ascending: false }).limit(20);
-            if (!subs || subs.length === 0) { div.innerHTML = "✅ لا توجد إثباتات مهام معلقة."; return; }
-            div.innerHTML = subs.map(s => `
-                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                    <div><b>مهمة #${s.task_id}</b> | المنفذ: <code>${s.user_id}</code></div>
-                    <img src="${s.proof_image}" style="max-width:150px; border-radius:8px; cursor:pointer;" onclick="openLightbox('${s.proof_image}')">
-                    <input type="text" id="admin-feedback-${s.id}" placeholder="ملاحظة أو سبب الرفض...">
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', true)">قبول وصرف ✅</button>
-                        <button class="reject-btn" onclick="reviewAdminSubmission(${s.id}, ${s.task_id}, '${s.user_id}', false)">رفض ❌</button>
-                    </div>
-                </div>`).join("");
-        } catch (e) { div.innerHTML = "✅ لا توجد إثباتات معلقة."; }
+            var res = await client.from('task_submissions').select('*').eq('status', 'pending').order('id', { ascending: false }).limit(20);
+            var subs = res.data || [];
+            if (subs.length === 0) { div.innerHTML = '✅ لا توجد إثباتات مهام معلقة.'; return; }
+            div.innerHTML = subs.map(function(s) {
+                return '<div class="item-row" style="flex-direction:column; align-items:flex-start;">' +
+                    '<div><b>مهمة #' + s.task_id + '</b> | المنفذ: <code>' + s.user_id + '</code></div>' +
+                    '<img src="' + s.proof_image + '" style="max-width:150px; border-radius:8px; cursor:pointer;" onclick="openLightbox(\'' + s.proof_image + '\')">' +
+                    '<input type="text" id="admin-feedback-' + s.id + '" placeholder="ملاحظة أو سبب الرفض...">' +
+                    '<div class="actions-box">' +
+                    '<button class="approve-btn" onclick="reviewAdminSubmission(' + s.id + ', ' + s.task_id + ', \'' + escapeQuote(s.user_id) + '\', true)">قبول وصرف ✅</button>' +
+                    '<button class="reject-btn" onclick="reviewAdminSubmission(' + s.id + ', ' + s.task_id + ', \'' + escapeQuote(s.user_id) + '\', false)">رفض ❌</button>' +
+                    '</div></div>';
+            }).join('');
+        } catch (e) { div.innerHTML = '✅ لا توجد إثباتات معلقة.'; }
     }
 
     async function reviewAdminSubmission(subId, taskId, userId, isOk) {
-        const fb = document.getElementById(`admin-feedback-${subId}`).value.trim();
-        const { data: t } = await client.from('tasks').select('*').eq('id', taskId).maybeSingle();
-        const reward = t ? (t.reward || 10) : 10;
+        var fb = document.getElementById('admin-feedback-' + subId).value.trim();
+        var tRes = await client.from('tasks').select('*').eq('id', taskId).maybeSingle();
+        var reward = tRes.data ? (tRes.data.reward || 10) : 10;
         if (isOk) {
             await client.from('task_submissions').update({ status: 'approved', feedback: fb }).eq('id', subId);
-            const { data: u } = await client.from('users').select('points, total_earned, total_tasks, referred_by').eq('telegram_id', String(userId)).maybeSingle();
-            if (u) {
+            var uRes = await client.from('users').select('points, total_earned, total_tasks').eq('telegram_id', String(userId)).maybeSingle();
+            if (uRes.data) {
                 await client.from('users').update({
-                    points: (u.points || 0) + reward,
-                    total_earned: (u.total_earned || 0) + reward,
-                    total_tasks: (u.total_tasks || 0) + 1
+                    points: (uRes.data.points || 0) + reward,
+                    total_earned: (uRes.data.total_earned || 0) + reward,
+                    total_tasks: (uRes.data.total_tasks || 0) + 1
                 }).eq('telegram_id', String(userId));
             }
         } else {
@@ -1664,18 +1585,19 @@
     }
 
     async function loadPendingTasks() {
-        const div = document.getElementById('pending-tasks-list');
+        var div = document.getElementById('pending-tasks-list');
         try {
-            const { data } = await client.from('tasks').select('*').eq('status', 'Pending');
-            div.innerHTML = (!data || data.length === 0) ? "✅ لا توجد مهام معلقة." : data.map(t => `
-                <div class="item-row">
-                    <b>📌 ${escapeHtml(t.title)} (${t.reward} ن)</b>
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="reviewUserTask(${t.id}, true)">قبول ✅</button>
-                        <button class="reject-btn" onclick="reviewUserTask(${t.id}, false)">رفض ❌</button>
-                    </div>
-                </div>`).join("");
-        } catch (e) { div.innerHTML = "✅ لا توجد مهام معلقة."; }
+            var res = await client.from('tasks').select('id, title, reward, status').eq('status', 'Pending');
+            var data = res.data || [];
+            div.innerHTML = data.length === 0 ? '✅ لا توجد مهام معلقة.' : data.map(function(t) {
+                return '<div class="item-row">' +
+                    '<b>📌 ' + escapeHtml(t.title) + ' (' + t.reward + ' ن)</b>' +
+                    '<div class="actions-box">' +
+                    '<button class="approve-btn" onclick="reviewUserTask(' + t.id + ', true)">قبول ✅</button>' +
+                    '<button class="reject-btn" onclick="reviewUserTask(' + t.id + ', false)">رفض ❌</button>' +
+                    '</div></div>';
+            }).join('');
+        } catch (e) { div.innerHTML = '✅ لا توجد مهام معلقة.'; }
     }
     async function reviewUserTask(id, ok) {
         await client.from('tasks').update({ status: ok ? 'Approved' : 'Rejected', is_active: ok }).eq('id', id);
@@ -1683,18 +1605,19 @@
     }
 
     async function loadTasks() {
-        const div = document.getElementById('tasks-list');
+        var div = document.getElementById('tasks-list');
         try {
-            const { data } = await client.from('tasks').select('id, title, link, url, reward, target_count, status').eq('status', 'Approved').order('id', { ascending: false });
-            div.innerHTML = (!data || data.length === 0) ? "📭 لا توجد مهام نشطة." : data.map(t => `
-                <div class="item-row">
-                    <b>${escapeHtml(t.title)} (${t.reward} ن)</b>
-                    <div>
-                        <button class="edit-btn" onclick="openEditTaskModal(${t.id}, '${escapeQuote(t.title)}', '${escapeQuote(t.link || t.url)}', ${t.reward}, ${t.target_count || 100})">✏️</button>
-                        <button class="del-btn" onclick="deleteTask(${t.id})">🗑️</button>
-                    </div>
-                </div>`).join("");
-        } catch (e) { div.innerHTML = "📭 لا توجد مهام نشطة."; }
+            var res = await client.from('tasks').select('id, title, link, url, reward, target_count, status').eq('status', 'Approved').order('id', { ascending: false });
+            var data = res.data || [];
+            div.innerHTML = data.length === 0 ? '📭 لا توجد مهام نشطة.' : data.map(function(t) {
+                return '<div class="item-row">' +
+                    '<b>' + escapeHtml(t.title) + ' (' + t.reward + ' ن)</b>' +
+                    '<div>' +
+                    '<button class="edit-btn" onclick="openEditTaskModal(' + t.id + ', \'' + escapeQuote(t.title) + '\', \'' + escapeQuote(t.link || t.url) + '\', ' + t.reward + ', ' + (t.target_count || 100) + ')">✏️</button> ' +
+                    '<button class="del-btn" onclick="deleteTask(' + t.id + ')">🗑️</button>' +
+                    '</div></div>';
+            }).join('');
+        } catch (e) { div.innerHTML = '📭 لا توجد مهام نشطة.'; }
     }
     function openEditTaskModal(id, title, link, reward, target) {
         document.getElementById('edit-t-id').value = id;
@@ -1705,11 +1628,11 @@
         document.getElementById('edit-task-modal').style.display = 'flex';
     }
     async function saveEditedTask() {
-        const id = document.getElementById('edit-t-id').value;
-        const link = document.getElementById('edit-t-link').value.trim();
+        var id = document.getElementById('edit-t-id').value;
+        var link = document.getElementById('edit-t-link').value.trim();
         await client.from('tasks').update({
             title: document.getElementById('edit-t-title').value.trim(),
-            link, url: link,
+            link: link, url: link,
             reward: parseInt(document.getElementById('edit-t-reward').value) || 10,
             target_count: parseInt(document.getElementById('edit-t-target').value) || 100
         }).eq('id', id);
@@ -1717,48 +1640,46 @@
         loadTasks();
     }
     async function addTask() {
-        const platform = document.getElementById('task-platform').value;
-        const title = document.getElementById('task-title').value.trim();
-        const link = document.getElementById('task-link').value.trim();
-        const reward = parseInt(document.getElementById('task-reward').value) || 10;
+        var platform = document.getElementById('task-platform').value;
+        var title = document.getElementById('task-title').value.trim();
+        var link = document.getElementById('task-link').value.trim();
+        var reward = parseInt(document.getElementById('task-reward').value) || 10;
         if (!title || !link) return;
-        await client.from('tasks').insert([{ platform, title, url: link, link, reward, status: 'Approved', target_count: 100, is_active: true }]);
-        alert("✅ تم نشر المهمة!");
+        await client.from('tasks').insert([{ platform: platform, title: title, url: link, link: link, reward: reward, status: 'Approved', target_count: 100, is_active: true }]);
+        alert('✅ تم نشر المهمة!');
         loadTasks();
     }
-    async function deleteTask(id) { if (!confirm("حذف المهمة؟")) return; await client.from('tasks').delete().eq('id', id); loadTasks(); }
+    async function deleteTask(id) { if (!confirm('حذف المهمة؟')) return; await client.from('tasks').delete().eq('id', id); loadTasks(); }
 
     function previewAdminImage(input) {
         if (!input.files || !input.files[0]) return;
-        const r = new FileReader(); r.onload = e => { adminMethodBase64 = e.target.result; }; r.readAsDataURL(input.files[0]);
+        var r = new FileReader(); r.onload = function(e) { adminMethodBase64 = e.target.result; }; r.readAsDataURL(input.files[0]);
     }
     function previewDepositLogo(input) {
         if (!input.files || !input.files[0]) return;
-        const r = new FileReader(); r.onload = e => { depositLogoBase64 = e.target.result; }; r.readAsDataURL(input.files[0]);
+        var r = new FileReader(); r.onload = function(e) { depositLogoBase64 = e.target.result; }; r.readAsDataURL(input.files[0]);
     }
     function previewStoreFile(input) {
         if (!input.files || !input.files[0]) return;
-        const r = new FileReader(); r.onload = e => { storeFileBase64 = e.target.result; }; r.readAsDataURL(input.files[0]);
+        var r = new FileReader(); r.onload = function(e) { storeFileBase64 = e.target.result; }; r.readAsDataURL(input.files[0]);
     }
 
     function openLightbox(src) {
-        const img = document.getElementById('lightbox-img');
-        img.src = src; currentZoom = 1; img.style.transform = "scale(1)";
+        var img = document.getElementById('lightbox-img');
+        img.src = src; currentZoom = 1; img.style.transform = 'scale(1)';
         document.getElementById('lightbox-modal').style.display = 'flex';
     }
-    function zoomImage(d) { currentZoom = Math.max(0.5, Math.min(3.5, currentZoom + d)); document.getElementById('lightbox-img').style.transform = `scale(${currentZoom})`; }
-    function resetZoom() { currentZoom = 1; document.getElementById('lightbox-img').style.transform = "scale(1)"; }
+    function zoomImage(d) { currentZoom = Math.max(0.5, Math.min(3.5, currentZoom + d)); document.getElementById('lightbox-img').style.transform = 'scale(' + currentZoom + ')'; }
+    function resetZoom() { currentZoom = 1; document.getElementById('lightbox-img').style.transform = 'scale(1)'; }
 
-    // تحميل الأقسام بشكل متدرج ومنظم لضمان عدم اختناق المتصفح
     async function loadAllAdminSections() {
-        const statusBar = document.getElementById('db-status-bar');
-        statusBar.style.borderColor = "var(--gold)";
-        statusBar.style.color = "var(--gold)";
-        statusBar.innerText = "⏳ جاري سحب وتحديث الأقسام من قاعدة البيانات...";
+        var statusBar = document.getElementById('db-status-bar');
+        statusBar.style.borderColor = 'var(--gold)';
+        statusBar.style.color = 'var(--gold)';
+        statusBar.innerText = '⏳ جاري سحب وتحديث الأقسام من قاعدة البيانات...';
 
         generateNewProductCode();
 
-        // الدفعة الأولى: الأقسام العاجلة والأساسية
         await Promise.all([
             loadTopDashboardStats(),
             loadStoreAndOrdersFast(),
@@ -1767,7 +1688,6 @@
             loadSupportTickets()
         ]);
 
-        // الدفعة الثانية: باقي القوائم والإعدادات
         await Promise.all([
             loadPromoCodesList(),
             loadDepositMethods(),
@@ -1779,20 +1699,22 @@
             loadAdminTaskSubmissions()
         ]);
 
-        statusBar.style.borderColor = "var(--main-green)";
-        statusBar.style.color = "var(--main-green)";
-        statusBar.innerText = "🟢 متصل بقاعدة البيانات - تم تحميل وتحديث جميع الأقسام بنجاح!";
+        statusBar.style.borderColor = 'var(--main-green)';
+        statusBar.style.color = 'var(--main-green)';
+        statusBar.innerText = '🟢 متصل بقاعدة البيانات - تم تحميل وتحديث جميع الأقسام بنجاح!';
     }
 
-    window.initAdminData = loadAllAdminSections;
+    window.startAdminDashboard = function() {
+        loadAllAdminSections();
+        startLiveAdminRadar();
+    };
 
     window.addEventListener('DOMContentLoaded', function() {
         try {
-            if (sessionStorage.getItem("mt_admin_ok") === "1") {
-                document.getElementById('admin-lock-screen').style.setProperty('display', 'none', 'important');
-                document.getElementById('main-admin-container').style.setProperty('display', 'block', 'important');
-                loadAllAdminSections();
-                startLiveAdminRadar();
+            if (sessionStorage.getItem('mt_admin_auth') === '1') {
+                document.getElementById('admin-lock-screen').style.display = 'none';
+                document.getElementById('main-admin-container').style.display = 'block';
+                window.startAdminDashboard();
             }
         } catch (e) {}
     });
