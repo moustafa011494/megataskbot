@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>MegaTask - لوحة التحكم الإدارية الشاملة v4.0</title>
+    <title>MegaTask - لوحة التحكم الإدارية الشاملة v4.2</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -20,17 +20,35 @@
             --gold: #ffaa00; 
         }
         body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 18px; margin: 0; padding-bottom: 60px; }
-        h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 20px; text-align: center; font-size: 22px; }
+        h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 15px; text-align: center; font-size: 21px; }
         h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; font-size: 15px; }
         
         .container { max-width: 980px; margin: auto; display: none; }
 
+        /* شريط تنبيه الطلبات الجديدة العائم */
+        #live-alert-toast {
+            display: none;
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #00d26a, #009e4f);
+            color: #000;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-weight: 900;
+            font-size: 13.5px;
+            z-index: 999999;
+            box-shadow: 0 6px 25px rgba(0, 210, 106, 0.5);
+            white-space: nowrap;
+        }
+
         /* شريط الإحصائيات السريعة العلوي */
         .top-stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
             gap: 10px;
-            margin-bottom: 22px;
+            margin-bottom: 20px;
         }
         .stat-box {
             background: linear-gradient(145deg, #1b1f29, #12141a);
@@ -88,22 +106,7 @@
         .actions-box { display: flex; gap: 8px; width: 100%; margin-top: 10px; flex-wrap: wrap; }
         
         .info-text { font-size: 12.5px; color: #aaa; margin-top: 4px; line-height: 1.6; }
-        .currency-badge-egp { background: rgba(0, 242, 255, 0.15); color: var(--neon-blue); border: 1px solid var(--neon-blue); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
-        .currency-badge-pts { background: rgba(0, 210, 106, 0.15); color: var(--main-green); border: 1px solid var(--main-green); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
         .code-pill { background: rgba(255, 170, 0, 0.15); color: var(--gold); border: 1px dashed var(--gold); padding: 2px 9px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: bold; cursor: pointer; }
-
-        .supplier-secret-box {
-            background: rgba(188, 19, 254, 0.08);
-            border: 1px dashed var(--neon-purple);
-            border-radius: 10px;
-            padding: 10px 12px;
-            margin: 8px 0;
-            font-size: 12.5px;
-            line-height: 1.7;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .profit-highlight { background: rgba(0, 210, 106, 0.15); color: var(--main-green); padding: 2px 8px; border-radius: 6px; font-weight: bold; }
 
         #admin-lock-screen {
             position: fixed; inset: 0; background: #07080a; z-index: 999999;
@@ -140,11 +143,13 @@
 </head>
 <body>
 
+<div id="live-alert-toast">🔔 وصل طلب جديد في لوحة الأدمن!</div>
+
 <!-- 🔒 شاشة قفل لوحة التحكم بكلمة المرور -->
 <div id="admin-lock-screen">
     <div class="lock-box">
         <div style="display:inline-block; background:rgba(0,210,106,0.15); color:#00d26a; border:1px solid #00d26a; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:bold; margin-bottom:10px;">
-            الإصدار النهائي الشامل v4.0 🟢
+            الإصدار المصحح السريع v4.2 🟢
         </div>
         <div style="font-size: 44px; margin-bottom: 8px;">🛡️</div>
         <h2 style="color: var(--neon-blue); margin: 0 0 8px 0;">منطقة محمية للإدارة</h2>
@@ -155,55 +160,13 @@
     </div>
 </div>
 
-<!-- ⚡ سكريبت فتح القفل الفوري المعزول -->
-<script>
-    window._adminUnlocked = false;
-
-    function unlockAdminPanelNow() {
-        var inp = document.getElementById('admin-pin-input');
-        var rawVal = (inp ? inp.value : "").trim();
-        var cleanVal = rawVal.toLowerCase();
-
-        if (cleanVal === "mostafa@2026" || cleanVal === "875021647") {
-            window._adminUnlocked = true;
-            try { sessionStorage.setItem("mt_admin_ok", "1"); } catch (e) {}
-            document.getElementById('admin-lock-screen').style.setProperty('display', 'none', 'important');
-            var mainBox = document.getElementById('main-admin-container');
-            if (mainBox) mainBox.style.setProperty('display', 'block', 'important');
-            if (typeof window.initAdminData === 'function') {
-                window.initAdminData();
-            }
-        } else {
-            var errEl = document.getElementById('lock-error-msg');
-            if (errEl) {
-                errEl.style.display = 'block';
-                errEl.innerText = "❌ كلمة المرور غير صحيحة!";
-            }
-        }
-    }
-
-    function logoutAdmin() {
-        try { sessionStorage.removeItem("mt_admin_ok"); } catch (e) {}
-        location.reload();
-    }
-
-    window.addEventListener('DOMContentLoaded', function() {
-        try {
-            if (sessionStorage.getItem("mt_admin_ok") === "1") {
-                window._adminUnlocked = true;
-                document.getElementById('admin-lock-screen').style.setProperty('display', 'none', 'important');
-                document.getElementById('main-admin-container').style.setProperty('display', 'block', 'important');
-            }
-        } catch (e) {}
-    });
-</script>
-
 <div class="container" id="main-admin-container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
         <h1 style="margin: 0;">🛡️ إدارة MegaTask والوسيط المالي</h1>
-        <div style="display: flex; gap: 8px;">
-            <button class="edit-btn" style="font-size: 12px;" onclick="window.initAdminData()">🔄 تحديث الكل</button>
-            <button class="del-btn" style="font-size: 12px;" onclick="logoutAdmin()">🔒 قفل اللوحة</button>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button id="btn-sound-radar" class="approve-btn" style="font-size: 11.5px; padding: 8px 12px; flex: unset;" onclick="enableLiveNotifications()">🔔 تفعيل جرس وإشعارات الفون</button>
+            <button class="edit-btn" style="font-size: 11.5px; padding: 8px 12px;" onclick="window.initAdminData()">🔄 تحديث</button>
+            <button class="del-btn" style="font-size: 11.5px; padding: 8px 12px;" onclick="logoutAdmin()">🔒 قفل</button>
         </div>
     </div>
 
@@ -260,7 +223,7 @@
                 <input type="number" id="promo-amount-inp" placeholder="القيمة (مثلاً: 50)" step="0.5">
                 <input type="number" id="promo-max-inp" placeholder="لأول كام عضو؟" value="100">
             </div>
-            <div style="display: flex; gap: 8px; margin-top: 6px;">
+            <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
                 <button class="deposit-btn" style="margin-top: 0; flex: 2;" onclick="createAdminPromoCode(false)">➕ إنشاء الكود فقط</button>
                 <button class="method-btn" style="margin-top: 0; flex: 2;" onclick="createAdminPromoCode(true)">🚀 إنشاء وإرسال إشعار جماعي للكل</button>
                 <button class="edit-btn" style="flex: 1;" onclick="generateRandomPromoName()">🎲 كود عشوائي</button>
@@ -357,7 +320,7 @@
         </div>
     </div>
 
-    <!-- 3. إضافة منتج جديد للمتجر الرسمي (مع دعم التسليم التلقائي الفوري) -->
+    <!-- 3. إضافة منتج جديد للمتجر الرسمي -->
     <div class="card store-card">
         <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي (عادي أو تسليم تلقائي فوري ⚡) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -380,10 +343,9 @@
             <input type="text" id="store-title" placeholder="عنوان المنتج">
             <textarea id="store-desc" rows="2" placeholder="وصف وتفاصيل المنتج للمشتري..."></textarea>
 
-            <!-- ⚡ خانة أكواد التسليم التلقائي الفوري -->
             <div style="background: rgba(0, 242, 255, 0.06); border: 1px dashed var(--neon-blue); border-radius: 12px; padding: 10px; margin: 8px 0;">
                 <label style="font-size: 12px; color: var(--neon-blue); font-weight: bold;">⚡ أكواد / حسابات التسليم التلقائي الفوري (اختياري - ضع كل كود أو حساب في سطر مستقل):</label>
-                <textarea id="store-auto-stock" rows="3" placeholder="إذا وضعت أكواداً هنا، سيقوم البوت بتسليم المشتري كوداً واحداً فوراً في نفس الثانية عند الشراء دون تدخل منك!" oninput="syncAdminAutoStockTarget()"></textarea>
+                <textarea id="store-auto-stock" rows="3" placeholder="إذا وضعت أكواداً هنا، سيقوم البوت بتسليم المشتري كوداً واحداً فوراً في نفس الثانية عند الشراء!" oninput="syncAdminAutoStockTarget()"></textarea>
             </div>
 
             <div style="background: #10131a; border: 1px dashed var(--neon-purple); border-radius: 14px; padding: 12px; margin: 8px 0;">
@@ -501,7 +463,7 @@
     </div>
 </div>
 
-<!-- 💬 نافذة مراقبة شات غرفة الوساطة والفصل في النزاعات (تدعم عرض وإرسال الصور) -->
+<!-- 💬 نافذة مراقبة شات غرفة الوساطة والفصل في النزاعات -->
 <div id="admin-deal-chat-modal" class="admin-modal">
     <div class="admin-modal-content" style="border-color: var(--gold);">
         <h3 style="color: var(--gold); margin-top: 0;" id="adm-dr-title">⚖️ غرفة مراقبة الصفقة وفض النزاع</h3>
@@ -521,7 +483,7 @@
     </div>
 </div>
 
-<!-- Modal تعديل منتج المتجر (شامل مخزون التسليم التلقائي) -->
+<!-- Modal تعديل منتج المتجر -->
 <div id="edit-store-modal" class="admin-modal">
     <div class="admin-modal-content">
         <h3 style="color: var(--neon-blue);">✏️ تعديل منتج المتجر ومخزون التسليم الفوري</h3>
@@ -600,11 +562,12 @@
     </div>
 </div>
 
-<!-- 📡 سكريبت العمليات والربط بقاعدة البيانات -->
+<!-- 📡 السكريبت الرئيسي الموحد والخالي من أي أخطاء -->
 <script>
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
-    const USDT_RATE = 53.0; // مطابق لملف main.py
+    const ADMIN_MASTER_ID = "875021647";
+    const USDT_RATE = 53.0;
     const client = window.supabase ? window.supabase.createClient(S_URL, S_KEY) : null;
 
     let adminMethodBase64 = "";
@@ -617,6 +580,110 @@
     let cachedStoreProductsMap = {};
     let cachedAllProducts = [];
     let cachedAllOrders = [];
+
+    // متغيرات رادار الإشعارات الصوتية وإشعارات الهاتف
+    let liveNotifEnabled = false;
+    let lastTotalPendingItems = null;
+    let radarInterval = null;
+
+    function unlockAdminPanelNow() {
+        const inp = document.getElementById('admin-pin-input');
+        const rawVal = (inp ? inp.value : "").trim().toLowerCase();
+
+        if (rawVal === "mostafa@2026" || rawVal === "875021647") {
+            try { sessionStorage.setItem("mt_admin_ok", "1"); } catch (e) {}
+            document.getElementById('admin-lock-screen').style.setProperty('display', 'none', 'important');
+            document.getElementById('main-admin-container').style.setProperty('display', 'block', 'important');
+            window.initAdminData();
+            startLiveAdminRadar();
+        } else {
+            const errEl = document.getElementById('lock-error-msg');
+            errEl.style.display = 'block';
+            errEl.innerText = "❌ كلمة المرور غير صحيحة!";
+        }
+    }
+
+    function logoutAdmin() {
+        try { sessionStorage.removeItem("mt_admin_ok"); } catch (e) {}
+        location.reload();
+    }
+
+    // =========================================================================
+    // 🔔 نظام الجرس الصوتي وإشعارات الفون الحية داخل لوحة الأدمن
+    // =========================================================================
+    function playNotificationSound() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            osc.frequency.setValueAtTime(1174.66, ctx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.25, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.45);
+        } catch (e) {}
+    }
+
+    function showToastAlert(txt) {
+        const t = document.getElementById('live-alert-toast');
+        t.innerText = txt;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 5000);
+    }
+
+    async function enableLiveNotifications() {
+        liveNotifEnabled = true;
+        playNotificationSound();
+        const btn = document.getElementById('btn-sound-radar');
+        btn.innerText = "🟢 جرس وإشعارات الفون مفعل";
+        btn.style.background = "var(--neon-blue)";
+
+        if ("Notification" in window && Notification.permission !== "granted") {
+            try { await Notification.requestPermission(); } catch (e) {}
+        }
+        showToastAlert("🔔 تم تفعيل جرس وإشعارات الهاتف الفورية!");
+    }
+
+    async function checkNewAdminEventsRadar() {
+        if (!client) return;
+        try {
+            const [dRes, wRes, oRes, pRes, tRes, sRes] = await Promise.all([
+                client.from('deposits').select('id', { count: 'exact', head: true }).eq('status', 'Pending'),
+                client.from('withdrawals').select('id', { count: 'exact', head: true }).eq('status', 'Pending'),
+                client.from('store_orders').select('id', { count: 'exact', head: true }).in('status', ['Pending', 'Escrow_Held', 'Disputed']),
+                client.from('store_products').select('id', { count: 'exact', head: true }).eq('status', 'Pending'),
+                client.from('support_tickets').select('id', { count: 'exact', head: true }).eq('status', 'Pending'),
+                client.from('task_submissions').select('id', { count: 'exact', head: true }).eq('status', 'pending')
+            ]);
+
+            const totalNow = (dRes.count || 0) + (wRes.count || 0) + (oRes.count || 0) + (pRes.count || 0) + (tRes.count || 0) + (sRes.count || 0);
+
+            if (lastTotalPendingItems !== null && totalNow > lastTotalPendingItems) {
+                const diff = totalNow - lastTotalPendingItems;
+                const alertMsg = `🔔 وصل (${diff}) طلب/حدث جديد في لوحة الأدمن الآن!`;
+                playNotificationSound();
+                showToastAlert(alertMsg);
+
+                if ("Notification" in window && Notification.permission === "granted") {
+                    try { new Notification("🛡️ إدارة MegaTask", { body: alertMsg }); } catch (e) {}
+                }
+
+                // تحديث القوائم تلقائياً
+                window.initAdminData();
+            }
+            lastTotalPendingItems = totalNow;
+        } catch (e) {}
+    }
+
+    function startLiveAdminRadar() {
+        if (radarInterval) clearInterval(radarInterval);
+        checkNewAdminEventsRadar();
+        radarInterval = setInterval(checkNewAdminEventsRadar, 10000);
+    }
 
     function escapeQuote(str) { return String(str || "").replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
     function escapeHtml(str) { return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
@@ -662,7 +729,6 @@
         });
     }
 
-    // تحديث شريط الإحصائيات السريعة العلوي
     async function loadTopDashboardStats() {
         try {
             const { count: usersCnt } = await client.from('users').select('*', { count: 'exact', head: true });
@@ -694,8 +760,9 @@
                     <div class="item-row" style="border-right-color:${isFull ? 'var(--red)' : 'var(--main-green)'};">
                         <div>
                             <span class="code-pill" onclick="navigator.clipboard.writeText('${c.code}')">${escapeHtml(c.code)} 📋</span>
-                            <b>🎁 الهدية: ${c.reward_amount}${unit}</b> | 
-                            <span style="font-size:12px; color:#ccc;">المستفيدون: <b>${c.used_count || 0} / ${c.max_uses}</b></span>${isFull ? '<span style="color:var(--red); font-size:11px; font-weight:bold;">(مكتمل/منتهي)</span>' : '<span style="color:var(--main-green); font-size:11px; font-weight:bold;">(نشط 🟢)</span>'}
+                            <b>🎁 الهدية: ${c.reward_amount} ${unit}</b> | 
+                            <span style="font-size:12px; color:#ccc;">المستفيدون: <b>${c.used_count || 0} / ${c.max_uses}</b></span>
+                            ${isFull ? '<span style="color:var(--red); font-size:11px; font-weight:bold;">(مكتمل)</span>' : '<span style="color:var(--main-green); font-size:11px; font-weight:bold;">(نشط 🟢)</span>'}
                         </div>
                         <button class="del-btn" onclick="deletePromoCode(${c.id})">حذف 🗑️</button>
                     </div>
@@ -723,7 +790,7 @@
             is_active: true
         }]);
 
-        if (error) return alert("❌ تعذر إنشاء الكود (ربما الاسم مستخدم من قبل): " + error.message);
+        if (error) return alert("❌ تعذر إنشاء الكود: " + error.message);
 
         const unit = rType === 'egp' ? 'ج.م' : 'نقطة';
         if (withBroadcast) {
@@ -897,8 +964,8 @@
     // المتجر والطلبات وصفقات الوساطة
     async function loadStoreAndOrdersFast() {
         const [prodRes, ordRes] = await Promise.all([
-            client.from('store_products').select('*').order('id', { ascending: false }),
-            client.from('store_orders').select('*').order('id', { ascending: false })
+            client.from('store_products').select('id, product_code, creator_id, category, currency, title, description, price, supplier_cost, supplier_name, supplier_notes, auto_delivery_data, target_count, completed_count, link, status').order('id', { ascending: false }),
+            client.from('store_orders').select('*').order('id', { ascending: false }).limit(100)
         ]);
 
         cachedAllProducts = prodRes.data || [];
@@ -906,7 +973,6 @@
         cachedStoreProductsMap = {};
         cachedAllProducts.forEach(p => { cachedStoreProductsMap[p.id] = p; });
 
-        // 1. المنتجات المعتمدة
         const prodDiv = document.getElementById('store-products-list');
         const approved = cachedAllProducts.filter(p => p.status === 'Approved');
         prodDiv.innerHTML = approved.length === 0 ? "📭 لا توجد منتجات منشورة." : approved.map(p => {
@@ -929,7 +995,6 @@
                 </div>`;
         }).join("");
 
-        // 2. سلع التجار المعلقة
         const pendStoreDiv = document.getElementById('pending-store-list');
         const pendProds = cachedAllProducts.filter(p => p.status === 'Pending');
         pendStoreDiv.innerHTML = pendProds.length === 0 ? "✅ لا توجد سلع تجار معلقة." : pendProds.map(p => {
@@ -946,7 +1011,6 @@
                 </div>`;
         }).join("");
 
-        // 3. النزاعات والطلبات النشطة
         const disputes = cachedAllOrders.filter(o => o.status === 'Disputed');
         document.getElementById('st-open-disputes').innerText = disputes.length;
         document.getElementById('escrow-disputes-list').innerHTML = disputes.length === 0
@@ -1016,7 +1080,6 @@
         document.getElementById('adm-dr-msg-inp').value = "";
         await client.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
 
-        // إشعار الطرفين في تليجرام برسالة الإدارة
         const notifs = [{ telegram_id: String(ord.user_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' }];
         if (ord.seller_id && ord.seller_id !== 'ADMIN') {
             notifs.push({ telegram_id: String(ord.seller_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' });
@@ -1388,7 +1451,7 @@
     // الميثودات والمهام
     async function loadPublishedMethods() {
         const div = document.getElementById('published-methods-list');
-        const { data } = await client.from('methods').select('*').eq('status', 'Approved').order('id', { ascending: false });
+        const { data } = await client.from('methods').select('id, title, content, unlock_cost, status').eq('status', 'Approved').order('id', { ascending: false });
         div.innerHTML = (data || []).map(m => `
             <div class="item-row">
                 <b>📌 ${escapeHtml(m.title)} (${m.unlock_cost || 50} ن)</b>
@@ -1446,7 +1509,7 @@
 
     async function loadAdminTaskSubmissions() {
         const div = document.getElementById('admin-task-submissions-list');
-        const { data: subs } = await client.from('task_submissions').select('*').eq('status', 'pending').order('id', { ascending: false });
+        const { data: subs } = await client.from('task_submissions').select('*').eq('status', 'pending').order('id', { ascending: false }).limit(25);
         if (!subs || subs.length === 0) { div.innerHTML = "✅ لا توجد إثباتات مهام معلقة."; return; }
         div.innerHTML = subs.map(s => `
             <div class="item-row" style="flex-direction:column; align-items:flex-start;">
@@ -1499,7 +1562,7 @@
 
     async function loadTasks() {
         const div = document.getElementById('tasks-list');
-        const { data } = await client.from('tasks').select('*').eq('status', 'Approved').order('id', { ascending: false });
+        const { data } = await client.from('tasks').select('id, title, link, url, reward, target_count, status').eq('status', 'Approved').order('id', { ascending: false });
         div.innerHTML = (data || []).map(t => `
             <div class="item-row">
                 <b>${escapeHtml(t.title)} (${t.reward} ن)</b>
@@ -1580,9 +1643,16 @@
         loadAdminTaskSubmissions().catch(() => {});
     };
 
-    if (window._adminUnlocked) {
-        window.initAdminData();
-    }
+    window.addEventListener('DOMContentLoaded', function() {
+        try {
+            if (sessionStorage.getItem("mt_admin_ok") === "1") {
+                document.getElementById('admin-lock-screen').style.setProperty('display', 'none', 'important');
+                document.getElementById('main-admin-container').style.setProperty('display', 'block', 'important');
+                window.initAdminData();
+                startLiveAdminRadar();
+            }
+        } catch (e) {}
+    });
 </script>
 </body>
 </html>
