@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MegaTask - Monetag Edition</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>MegaTask Pro - المنصة الموحدة</title>
     
     <!-- سكريبت إعلانات Monetag -->
     <script src='//libtl.com/sdk.js' data-zone='10959333' data-sdk='show_10959333'></script>
@@ -17,18 +18,20 @@
         :root { 
             --main-green: #00d26a; 
             --main-cyan: #00f2ff;
+            --gold: #ffaa00;
+            --violet: #9d4edd;
             --dark-bg: #0d0f12; 
             --card-bg: #1a1d23; 
             --text-gray: #9ca3af; 
         }
-        * { box-sizing: border-box; }
-        html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; padding-bottom: 110px; width: 100%; max-width: 100vw; overflow-x: hidden; position: relative; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; padding-bottom: 115px; width: 100%; max-width: 100vw; overflow-x: hidden; position: relative; }
         
         .header { padding: 18px 15px 10px; display: flex; justify-content: space-between; align-items: center; }
         .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; color: var(--main-green); font-weight: bold; }
         
         /* حاوية العملتين جنباً إلى جنب */
-        .dual-balance-wrapper { padding: 0 15px; margin-bottom: 18px; }
+        .dual-balance-wrapper { padding: 0 15px; margin-bottom: 16px; }
         .dual-balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
         
         .wallet-card {
@@ -51,7 +54,7 @@
             box-shadow: 0 4px 15px rgba(0, 242, 255, 0.08);
         }
         .wallet-label { font-size: 12px; color: var(--text-gray); display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: bold; }
-        .wallet-amount { font-size: 26px; font-weight: 800; margin: 8px 0 4px; letter-spacing: 0.5px; }
+        .wallet-amount { font-size: 25px; font-weight: 800; margin: 8px 0 4px; letter-spacing: 0.5px; }
         .wallet-points .wallet-amount { color: var(--main-green); text-shadow: 0 0 10px rgba(0, 210, 106, 0.25); }
         .wallet-egp .wallet-amount { color: var(--main-cyan); text-shadow: 0 0 10px rgba(0, 242, 255, 0.25); }
         .wallet-sub { font-size: 10px; color: #7a8291; margin-bottom: 12px; }
@@ -65,13 +68,14 @@
             font-size: 12px;
             cursor: pointer;
             transition: 0.2s;
+            font-family: inherit;
         }
         .btn-wallet-action:active { transform: scale(0.96); }
         
-        .btn-withdraw-soon {
-            background: rgba(0, 210, 106, 0.12);
+        .btn-withdraw-gate {
+            background: rgba(0, 210, 106, 0.14);
             color: var(--main-green);
-            border: 1px dashed rgba(0, 210, 106, 0.5);
+            border: 1px solid rgba(0, 210, 106, 0.45);
         }
         .btn-deposit {
             background: linear-gradient(135deg, #00f2ff, #0077ff);
@@ -79,27 +83,52 @@
             box-shadow: 0 2px 10px rgba(0, 242, 255, 0.25);
         }
 
-        /* زر تحويل الجنيه إلى نقاط */
+        /* صف التحويل السريع + كود الهدية (Promo Code) */
+        .quick-bars-row {
+            display: grid;
+            grid-template-columns: 1.35fr 1fr;
+            gap: 8px;
+        }
         .btn-exchange-bar {
             width: 100%;
             background: linear-gradient(90deg, rgba(0, 242, 255, 0.1), rgba(0, 210, 106, 0.1));
             border: 1px solid #2d3542;
             color: #fff;
-            padding: 10px;
+            padding: 10px 8px;
             border-radius: 12px;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
             transition: 0.2s;
+            font-family: inherit;
         }
-        .btn-exchange-bar span { color: #ffaa00; }
+        .btn-exchange-bar span { color: var(--gold); }
         .btn-exchange-bar:active { transform: scale(0.98); }
+
+        .btn-promo-bar {
+            width: 100%;
+            background: linear-gradient(135deg, rgba(255, 170, 0, 0.16), rgba(157, 78, 221, 0.16));
+            border: 1px dashed var(--gold);
+            color: var(--gold);
+            padding: 10px 8px;
+            border-radius: 12px;
+            font-size: 11.5px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .btn-promo-bar:active { transform: scale(0.98); }
         
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 15px; margin-bottom: 18px; }
         .stat-card { background: var(--card-bg); padding: 12px 10px; border-radius: 15px; text-align: center; border: 1px solid #2d333d; }
         .stat-card b { display: block; font-size: 15px; margin-bottom: 3px; color: var(--main-green); }
         .stat-card span { font-size: 11px; color: var(--text-gray); }
@@ -139,7 +168,7 @@
             background: rgba(255, 0, 85, 0.08); 
             color: #ff4d79; 
             border: 1px dashed #ff0055; 
-            opacity: 0.75;
+            opacity: 0.85;
             width: 100%;
         }
 
@@ -150,22 +179,23 @@
             border: none;
             padding: 16px;
             border-radius: 16px;
-            font-size: 15px;
-            font-weight: bold;
+            font-size: 14.5px;
+            font-weight: 900;
             cursor: pointer;
             text-align: center;
             box-shadow: 0 4px 15px rgba(0, 242, 255, 0.25);
             transition: 0.2s;
+            font-family: inherit;
         }
         .btn-store-full:active { transform: scale(0.98); }
 
-        .services-section { padding: 0 15px; margin-top: 25px; text-align: right; }
+        .services-section { padding: 0 15px; margin-top: 22px; text-align: right; }
         .service-title { color: var(--main-green); font-size: 14px; margin: 0 0 15px 0; border-right: 3px solid var(--main-green); padding-right: 10px; }
-        .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
         .btn-service { 
             background: #16191e; 
             border: 1px solid #2d333d; 
-            padding: 25px 10px; 
+            padding: 22px 10px; 
             border-radius: 20px; 
             text-align: center; 
             font-size: 13px; 
@@ -179,18 +209,31 @@
             border-color: var(--main-green);
             box-shadow: 0 0 15px rgba(0, 210, 106, 0.2); 
         }
-        .btn-service span { font-size: 32px; display: block; margin-bottom: 12px; filter: drop-shadow(0 0 5px rgba(0, 210, 106, 0.1)); }
+        .btn-service span { font-size: 30px; display: block; margin-bottom: 10px; filter: drop-shadow(0 0 5px rgba(0, 210, 106, 0.1)); }
 
         #ref-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: var(--card-bg); padding: 25px; border-radius: 25px; border: 1px solid var(--main-green); text-align: center; width: 100%; max-width: 340px; }
-        .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 15px 0; outline: none; font-size: 15px; }
+        .modal-input { width: 100%; background: #000; border: 1px solid #333; padding: 12px; color: var(--main-green); text-align: center; border-radius: 10px; margin: 12px 0; outline: none; font-size: 15px; font-family: inherit; }
         
-        /* نافذة عجلة الحظ والتحويل */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 99999; align-items: center; justify-content: center; padding: 20px; }
-        .modal-box { background: #181b22; border: 1px solid #2d333d; border-radius: 20px; padding: 22px; width: 100%; max-width: 350px; text-align: center; }
-        .btn-confirm-ad { width: 100%; background: var(--main-green); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        /* النوافذ المنبثقة */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 99999; align-items: center; justify-content: center; padding: 18px; }
+        .modal-box { background: #181b22; border: 1.5px solid #2d333d; border-radius: 22px; padding: 20px; width: 100%; max-width: 370px; max-height: 90vh; overflow-y: auto; text-align: center; }
+        .btn-confirm-ad { width: 100%; background: var(--main-green); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: bold; cursor: pointer; font-family: inherit; }
         .wheel-container-box { position: relative; width: 260px; height: 260px; margin: 15px auto; display: flex; align-items: center; justify-content: center; }
         .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 22px solid #ff3b5c; z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+
+        /* شريط تقدم شروط سحب النقاط */
+        .req-prog-box {
+            background: #0d1016;
+            border: 1px solid #262e3d;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            text-align: right;
+            font-size: 12px;
+        }
+        .req-bar-bg { width: 100%; height: 7px; background: #1a202c; border-radius: 8px; overflow: hidden; margin-top: 5px; }
+        .req-bar-fill { height: 100%; background: var(--main-green); width: 0%; transition: width 0.3s; }
 
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
@@ -206,18 +249,93 @@
 </head>
 <body>
 
-    <!-- نافذة التسجيل وكود الدعوة -->
+    <!-- 1. نافذة التسجيل وكود الدعوة -->
     <div id="ref-modal">
         <div class="modal-content">
             <h2 style="color: var(--main-green); margin: 0;">AGENT REGISTER</h2>
-            <p style="font-size: 12px; color: var(--text-gray); margin-top: 6px;">أدخل كود الدعوة إن وجد أو تخطى للبدء</p>
+            <p style="font-size: 12px; color: var(--text-gray); margin-top: 6px;">أدخل كود الدعوة إن وجد للحصول على +10 نقاط ترحيبية أو تخطى للبدء</p>
             <input type="text" id="ref-input" class="modal-input" placeholder="ENTER CODE (ID)">
-            <button class="btn-confirm-ad" onclick="submitRegistration()">ابدأ الآن</button>
+            <button class="btn-confirm-ad" onclick="submitRegistration()">ابدأ الآن 🚀</button>
             <button onclick="submitRegistration(true)" style="background: none; border: none; color: #777; margin-top: 12px; cursor: pointer;">تخطي ⬅</button>
         </div>
     </div>
 
-    <!-- نافذة تحويل الجنيه إلى نقاط (+20% بونص) -->
+    <!-- 2. نافذة تفعيل كود الهدية (Promo Code Modal) -->
+    <div id="promo-modal" class="modal-overlay">
+        <div class="modal-box" style="border-color: var(--gold);">
+            <div style="font-size: 40px; margin-bottom: 4px;">🎁</div>
+            <h3 style="color: var(--gold); margin: 0 0 6px;">تفعيل كود هدية (Promo Code)</h3>
+            <p style="font-size: 12px; color: var(--text-gray); margin: 0 0 10px; line-height: 1.5;">
+                أدخل كود الهدية المنشور في القناة الرسمية للحصول على نقاط أو رصيد جنيه مجاني فوراً!
+            </p>
+            <input type="text" id="promo-code-input" class="modal-input" style="color: var(--gold); border-color: var(--gold); text-transform: uppercase; font-weight: bold; letter-spacing: 1px;" placeholder="مثال: MEGA50">
+            <button id="btn-redeem-promo" class="btn-confirm-ad" style="background: linear-gradient(135deg, var(--gold), #e67e00); margin-bottom: 8px;" onclick="redeemPromoCodeNow()">
+                🎉 تفعيل الكود واستلام الهدية
+            </button>
+            <button class="btn-confirm-ad" style="background: #252932; color: #ccc;" onclick="closePromoModal()">
+                إغلاق
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. نافذة بوابة سحب الأرباح الذكية (النقاط + أرباح التجار) -->
+    <div id="withdraw-hub-modal" class="modal-overlay">
+        <div class="modal-box" style="border-color: var(--main-green);">
+            <h3 style="color: var(--main-green); margin-top: 0; margin-bottom: 8px;">💸 بوابة سحب الأرباح</h3>
+
+            <!-- أ: بوابة سحب التجار والوسطاء الفورية -->
+            <div style="background: rgba(157, 78, 221, 0.12); border: 1px dashed var(--violet); border-radius: 14px; padding: 12px; margin-bottom: 14px; text-align: right;">
+                <b style="color: #e9d5ff; font-size: 13px; display: block; margin-bottom: 4px;">💼 هل أنت تاجر أو بائع بالمتجر؟</b>
+                <span style="font-size: 11.5px; color: #cbd5e1; display: block; margin-bottom: 8px;">أرباح مبيعاتك وصفقات الوساطة متاحة للسحب كاش أو USDT في أي وقت بحد أدنى 20 ج.م فقط!</span>
+                <button onclick="goMerchantWithdraw()" style="width: 100%; background: var(--violet); color: #fff; border: none; padding: 10px; border-radius: 10px; font-weight: bold; font-size: 12px; cursor: pointer;">
+                    💼 الانتقال لبوابة سحب التجار الآن ⬅
+                </button>
+            </div>
+
+            <!-- ب: شروط وطلب سحب النقاط المجانية -->
+            <div style="text-align: right; font-size: 12.5px; font-weight: bold; color: var(--main-cyan); margin-bottom: 8px;">
+                🪙 سحب رصيد النقاط المجانية (50,000 ن = 50 ج.م):
+            </div>
+
+            <div class="req-prog-box">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>1️⃣ رصيد النقاط المطلوب:</span>
+                    <b id="w-req-pts-txt" style="color: var(--main-green);">0 / 50,000</b>
+                </div>
+                <div class="req-bar-bg"><div id="w-req-pts-bar" class="req-bar-fill"></div></div>
+            </div>
+
+            <div class="req-prog-box">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>2️⃣ المهام المنفذة المطلوبة:</span>
+                    <b id="w-req-tasks-txt" style="color: var(--gold);">0 / 15 مهمة</b>
+                </div>
+                <div class="req-bar-bg"><div id="w-req-tasks-bar" class="req-bar-fill" style="background: var(--gold);"></div></div>
+            </div>
+
+            <div id="pts-withdraw-form-area" style="display: none; margin-top: 10px; text-align: right;">
+                <select id="pts-w-method" class="modal-input" style="margin: 6px 0; font-size: 13px;">
+                    <option value="فودافون كاش">🔴 فودافون كاش</option>
+                    <option value="إنستا باي">🟣 إنستا باي (InstaPay)</option>
+                    <option value="Binance Pay USDT">🟡 Binance Pay (USDT)</option>
+                </select>
+                <input type="text" id="pts-w-wallet" class="modal-input" style="margin: 6px 0; font-size: 13px;" placeholder="رقم المحفظة أو Binance ID المستلم...">
+                <button id="btn-submit-pts-w" class="btn-confirm-ad" style="margin-top: 6px;" onclick="submitPointsWithdrawalRequest()">
+                    🚀 إرسال طلب سحب الـ 50 ج.م الآن
+                </button>
+            </div>
+
+            <div id="pts-withdraw-locked-hint" style="font-size: 11.5px; color: var(--text-gray); margin: 10px 0; line-height: 1.5;">
+                💡 أكمل الشريطين بالأعلى لفتح نموذج السحب المباشر، أو استغل نقاطك الآن بدون أي شروط في <b>شراء منتجات المتجر</b> أو <b>تمويل قناتك</b>!
+            </div>
+
+            <button class="btn-confirm-ad" style="background: #252932; color: #ccc; margin-top: 6px;" onclick="closeWithdrawHubModal()">
+                إغلاق
+            </button>
+        </div>
+    </div>
+
+    <!-- 4. نافذة تحويل الجنيه إلى نقاط (+20% بونص) -->
     <div id="exchange-modal" class="modal-overlay">
         <div class="modal-box" style="border-color: var(--main-cyan);">
             <h3 style="color: var(--main-cyan); margin-top:0;">⚡ تحويل الجنيه إلى نقاط</h3>
@@ -237,7 +355,7 @@
         </div>
     </div>
 
-    <!-- نافذة عجلة الحظ اليومية -->
+    <!-- 5. نافذة عجلة الحظ اليومية -->
     <div id="wheel-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="color: #ffaa00; margin-top:0;">🎡 عجلة الحظ اليومية</h3>
@@ -262,7 +380,7 @@
         <div style="color: var(--text-gray); font-size: 12px;">WELCOME BACK</div>
     </div>
 
-    <!-- قسم العملتين الجديد (النقاط على جنب والجنيه على جنب) -->
+    <!-- قسم العملتين (النقاط على جنب والجنيه على جنب) -->
     <div class="dual-balance-wrapper">
         <div class="dual-balance-grid">
             <!-- بطاقة النقاط -->
@@ -272,8 +390,8 @@
                     <div class="wallet-amount" id="user-points">0</div>
                     <div class="wallet-sub">1000 نقطة = 1 جنيه</div>
                 </div>
-                <button class="btn-wallet-action btn-withdraw-soon" onclick="showWithdrawSoon()">
-                    ↗ السحب (قريباً ⏳)
+                <button class="btn-wallet-action btn-withdraw-gate" onclick="openWithdrawHubModal()">
+                    ↗ سحب الأرباح 💸
                 </button>
             </div>
 
@@ -282,18 +400,23 @@
                 <div>
                     <div class="wallet-label">💵 رصيد الجنيه</div>
                     <div class="wallet-amount" id="user-egp">0.00 ج.م</div>
-                    <div class="wallet-sub">للشراء والتمويل المباشر</div>
+                    <div class="wallet-sub">للشراء والوساطة والتمويل</div>
                 </div>
                 <button class="btn-wallet-action btn-deposit" onclick="goDeposit()">
-                    📥 شحن رصيد
+                    📥 شحن فوري ⚡
                 </button>
             </div>
         </div>
 
-        <!-- شريط تحويل الجنيه إلى نقاط -->
-        <button class="btn-exchange-bar" onclick="openExchangeModal()">
-            🔄 تحويل الجنيه إلى نقاط <span>(1 ج.م = 1200 نقطة 🔥)</span>
-        </button>
+        <!-- صف تحويل الجنيه لنقاط + تفعيل كود هدية Promo Code -->
+        <div class="quick-bars-row">
+            <button class="btn-exchange-bar" onclick="openExchangeModal()">
+                🔄 تبديل عملة <span>(+20% بونص 🔥)</span>
+            </button>
+            <button class="btn-promo-bar" onclick="openPromoModal()">
+                🎁 كود هدية (Promo)
+            </button>
+        </div>
     </div>
 
     <!-- شبكة الإحصائيات -->
@@ -332,8 +455,8 @@
     </div>
 
     <div class="action-box">
-        <div class="btn-action btn-offers" onclick="showSoon('عروض CPA')">🎯 عروض CPA (قريباً..)</div>
-        <button class="btn-store-full" onclick="goStore()">🛍️ متجر MegaTask (منتجات بالنقاط وبالجنيه)</button>
+        <button class="btn-store-full" onclick="goStore()">🛍️ المتجر والوسيط المالي المضمون (Escrow 🤝)</button>
+        <div class="btn-action btn-offers" onclick="showSoon('عروض CPA العالمية')">🎯 عروض وشركات CPA (قريباً بمكافآت مضاعفة..)</div>
     </div>
 
     <div class="services-section">
@@ -360,7 +483,7 @@
     <script src="streak.js"></script>
 
     <script>
-        // ⭐ نسخة مدمجة احتياطية من StreakManager تعمل تلقائياً إذا لم يتم تحميل ملف streak.js الخارجي أو كان قديماً في الكاش
+        // نسخة مدمجة احتياطية من StreakManager
         if (typeof window.StreakManager === 'undefined') {
             window.StreakManager = (function() {
                 let _client = null;
@@ -947,6 +1070,7 @@
 
         const tg = window.Telegram.WebApp;
         tg.expand();
+        const ADMIN_MASTER_ID = "875021647";
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
@@ -962,7 +1086,14 @@
             }
             localStorage.setItem('telegram_id', userId);
 
-            // 🛡️ فحص درع الحماية لمنع فتح أكثر من حساب على نفس الهاتف
+            // التقاط كود الإحالة التلقائي إن وجد في الرابط
+            const urlRef = (params.get('ref') || "").trim();
+            if (urlRef && urlRef !== userId) {
+                const refInp = document.getElementById('ref-input');
+                if (refInp) refInp.value = urlRef;
+            }
+
+            // فحص درع الحماية لمنع فتح أكثر من حساب على نفس الهاتف
             if (typeof MegaSecurity !== 'undefined') {
                 const secCheck = await MegaSecurity.verifyDeviceAndAccount(client, userId);
                 if (!secCheck.allowed) return;
@@ -1052,6 +1183,8 @@
                     }
                 }
                 newUser.referred_by = refCode;
+                newUser.points = 10;
+                newUser.total_earned = 10;
             }
             
             const { data, error } = await client.from('users').insert([newUser]).select().single();
@@ -1087,8 +1220,196 @@
             document.getElementById('user-lvl').innerText = `LEVEL ${userLevel}`;
         }
 
-        function showWithdrawSoon() {
-            tg.showAlert("⏳ سحب نقاط المهام قيد التجهيز قريباً!\n\n💼 أما إذا كنت تاجراً في المتجر، فيمكنك سحب أرباح مبيعاتك كاش أو USDT فوراً من داخل (المتجر ⬅ سحب التجار).");
+        // =========================================================================
+        // 🎁 نظام تفعيل أكواد الهدايا (Promo Codes) من الصفحة الرئيسية
+        // =========================================================================
+        function openPromoModal() {
+            document.getElementById('promo-code-input').value = "";
+            document.getElementById('promo-modal').style.display = 'flex';
+        }
+
+        function closePromoModal() {
+            document.getElementById('promo-modal').style.display = 'none';
+        }
+
+        async function redeemPromoCodeNow() {
+            const rawCode = (document.getElementById('promo-code-input').value || "").trim().toUpperCase();
+            if (!rawCode) return tg.showAlert("⚠️ يرجى كتابة كود الهدية أولاً!");
+
+            const btn = document.getElementById('btn-redeem-promo');
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري التحقق من الكود...";
+
+            try {
+                // 1. التحقق من وجود الكود وصلاحيته في جدول promo_codes
+                const { data: promo, error: pErr } = await client
+                    .from('promo_codes')
+                    .select('*')
+                    .eq('code', rawCode)
+                    .eq('is_active', true)
+                    .maybeSingle();
+
+                if (pErr || !promo) {
+                    btn.disabled = false;
+                    btn.innerText = "🎉 تفعيل الكود واستلام الهدية";
+                    return tg.showAlert(`❌ كود الهدية (${rawCode}) غير صحيح أو منتهي الصلاحية!`);
+                }
+
+                const usedCnt = Number(promo.used_count || 0);
+                const maxUses = Number(promo.max_uses || 100);
+                if (usedCnt >= maxUses) {
+                    btn.disabled = false;
+                    btn.innerText = "🎉 تفعيل الكود واستلام الهدية";
+                    return tg.showAlert(`💔 للأسف! اكتمل العدد المسموح به لهذا الكود (${maxUses}/${maxUses}).`);
+                }
+
+                // 2. التحقق من عدم استخدام العضو لنفس الكود مسبقاً
+                const { data: alreadyUsed } = await client
+                    .from('promo_redemptions')
+                    .select('id')
+                    .eq('code', rawCode)
+                    .eq('telegram_id', userId)
+                    .maybeSingle();
+
+                if (alreadyUsed) {
+                    btn.disabled = false;
+                    btn.innerText = "🎉 تفعيل الكود واستلام الهدية";
+                    return tg.showAlert(`⚠️ لقد قمت باستلام هدية الكود (${rawCode}) من قبل!`);
+                }
+
+                // 3. عرض إعلان سريع قبل منح الهدية (إن توفر)
+                if (typeof show_10959333 === 'function') {
+                    btn.innerText = "⏳ شاهد الإعلان لاستلام الهدية...";
+                    try { await show_10959333(); } catch (adE) {}
+                }
+
+                // 4. توثيق الاستخدام
+                const { error: redErr } = await client.from('promo_redemptions').insert([{
+                    code: rawCode,
+                    telegram_id: String(userId)
+                }]);
+                if (redErr) throw new Error("تم استخدام الكود مسبقاً");
+
+                const nextUsed = usedCnt + 1;
+                await client.from('promo_codes').update({
+                    used_count: nextUsed,
+                    is_active: nextUsed < maxUses
+                }).eq('id', promo.id);
+
+                // 5. إضافة المكافأة لرصيد المستخدم
+                const rType = promo.reward_type || 'points';
+                const rAmt = Number(promo.reward_amount || 0);
+                let rewardText = "";
+
+                if (rType === 'egp') {
+                    const nextEgp = Number((Number(userData?.egp_balance || 0) + rAmt).toFixed(2));
+                    await client.from('users').update({ egp_balance: nextEgp }).eq('telegram_id', userId);
+                    userData.egp_balance = nextEgp;
+                    rewardText = `+${rAmt.toFixed(2)} ج.م`;
+                } else {
+                    const ptsAdd = Math.round(rAmt);
+                    const nextPts = Number(userData?.points || 0) + ptsAdd;
+                    const nextTot = Number(userData?.total_earned || 0) + ptsAdd;
+                    await client.from('users').update({ points: nextPts, total_earned: nextTot }).eq('telegram_id', userId);
+                    userData.points = nextPts;
+                    userData.total_earned = nextTot;
+                    rewardText = `+${ptsAdd.toLocaleString()} نقطة`;
+                }
+
+                await client.from('transactions').insert([{
+                    telegram_id: String(userId),
+                    type: rType === 'egp' ? 'egp' : 'points',
+                    title: `هدية برومو كود (${rawCode})`,
+                    amount: rewardText,
+                    status: 'مكتمل'
+                }]);
+
+                updateUI();
+                closePromoModal();
+                tg.showAlert(`🎉 مبروك! تم تفعيل كود الهدية (${rawCode}) بنجاح!\n💰 تمت إضافة (${rewardText}) إلى رصيدك فوراً!`);
+            } catch (e) {
+                tg.showAlert("❌ تعذر تفعيل الكود: " + (e.message || ""));
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🎉 تفعيل الكود واستلام الهدية";
+            }
+        }
+
+        // =========================================================================
+        // 💸 نافذة وبوابة السحب الذكية (سحب النقاط بشروط + بوابة سحب التجار)
+        // =========================================================================
+        function openWithdrawHubModal() {
+            const pts = Number(userData?.points || 0);
+            const tasks = Number(userData?.total_tasks || 0);
+            const reqPts = 50000;
+            const reqTasks = 15;
+
+            document.getElementById('w-req-pts-txt').innerText = `${pts.toLocaleString()} /${reqPts.toLocaleString()}`;
+            document.getElementById('w-req-pts-bar').style.width = `${Math.min(100, (pts / reqPts) * 100)}%`;
+
+            document.getElementById('w-req-tasks-txt').innerText = `${tasks} /${reqTasks} مهمة`;
+            document.getElementById('w-req-tasks-bar').style.width = `${Math.min(100, (tasks / reqTasks) * 100)}%`;
+
+            const unlocked = (pts >= reqPts && tasks >= reqTasks);
+            document.getElementById('pts-withdraw-form-area').style.display = unlocked ? 'block' : 'none';
+            document.getElementById('pts-withdraw-locked-hint').style.display = unlocked ? 'none' : 'block';
+
+            document.getElementById('withdraw-hub-modal').style.display = 'flex';
+        }
+
+        function closeWithdrawHubModal() {
+            document.getElementById('withdraw-hub-modal').style.display = 'none';
+        }
+
+        async function submitPointsWithdrawalRequest() {
+            const pts = Number(userData?.points || 0);
+            const tasks = Number(userData?.total_tasks || 0);
+            if (pts < 50000 || tasks < 15) {
+                return tg.showAlert("⚠️ يجب إكمال شروط السحب أولاً (50,000 نقطة + 15 مهمة منفذة)!");
+            }
+
+            const method = document.getElementById('pts-w-method').value;
+            const wallet = document.getElementById('pts-w-wallet').value.trim();
+            if (!wallet || wallet.length < 4) {
+                return tg.showAlert("⚠️ يرجى إدخال رقم المحفظة أو الحساب المستلم بشكل صحيح!");
+            }
+
+            const btn = document.getElementById('btn-submit-pts-w');
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري إرسال طلب السحب...";
+
+            try {
+                const wCode = "WTH-" + Math.floor(100000 + Math.random() * 900000);
+                const newPts = pts - 50000;
+
+                const { error: uErr } = await client.from('users').update({ points: newPts }).eq('telegram_id', userId);
+                if (uErr) throw uErr;
+
+                await client.from('withdrawals').insert([{
+                    withdraw_code: wCode,
+                    telegram_id: String(userId),
+                    amount: 50,
+                    method: `${method} (سحب نقاط)`,
+                    wallet_info: wallet,
+                    status: 'Pending'
+                }]);
+
+                await client.from('bot_messages').insert([{
+                    telegram_id: ADMIN_MASTER_ID,
+                    message: `💸 *طلب سحب نقاط جديد!* 🔔\n━━━━━━━━━━━━━━━\n🆔 *الكود:* \`${wCode}\`\n👤 *العضو:* \`${userId}\`\n💵 *القيمة:* 50.00 ج.م (50,000 نقطة)\n💳 *الوسيلة:* ${method}\n📥 *المستلم:* \`${wallet}\``,
+                    status: 'pending'
+                }]);
+
+                userData.points = newPts;
+                updateUI();
+                closeWithdrawHubModal();
+                tg.showAlert(`🎉 تم إرسال طلب السحب (${wCode}) بقيمة 50 ج.م بنجاح!\nسيتم المراجعة والتحويل إلى حسابك قريباً.`);
+            } catch (e) {
+                tg.showAlert("❌ حدث خطأ أثناء الإرسال: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🚀 إرسال طلب سحب الـ 50 ج.م الآن";
+            }
         }
 
         function showSoon(featureName) {
@@ -1163,9 +1484,10 @@
             }
         }
 
-        // دوال التنقل (تمت إضافة goContact و gocontact معاً لضمان عمل الزر دائماً)
+        // دوال التنقل
         function goContact() { window.location.href = `contact.html?id=${userId}&t=${Date.now()}`; }
         function gocontact() { goContact(); }
+        function goMerchantWithdraw() { window.location.href = `merchant_withdraw.html?id=${userId}&t=${Date.now()}`; }
 
         function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
