@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>MegaTask - لوحة التحكم الإدارية v3.5</title>
+    <title>MegaTask - لوحة التحكم الإدارية الشاملة v4.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -19,14 +19,34 @@
             --red: #ff4d4d; 
             --gold: #ffaa00; 
         }
-        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; margin: 0; padding-bottom: 60px; }
-        h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 25px; text-align: center; font-size: 22px; }
+        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 18px; margin: 0; padding-bottom: 60px; }
+        h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin-bottom: 20px; text-align: center; font-size: 22px; }
         h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; font-size: 15px; }
         
         .container { max-width: 980px; margin: auto; display: none; }
+
+        /* شريط الإحصائيات السريعة العلوي */
+        .top-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+        .stat-box {
+            background: linear-gradient(145deg, #1b1f29, #12141a);
+            border: 1px solid #2d3546;
+            border-radius: 16px;
+            padding: 12px 10px;
+            text-align: center;
+        }
+        .stat-box span { font-size: 11.5px; color: #9ca3af; display: block; margin-bottom: 4px; }
+        .stat-box b { font-size: 20px; font-weight: 900; color: var(--neon-blue); }
+
         .card { background: var(--card-bg); border: 1px solid #333; padding: 20px; border-radius: 20px; margin-bottom: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .search-hub-card { border-top: 4px solid var(--gold); background: linear-gradient(145deg, #1b1912, #141414); }
         .dispute-card { border-top: 4px solid var(--red); background: linear-gradient(145deg, #211215, #141414); }
+        .promo-card { border-top: 4px solid var(--main-green); background: linear-gradient(145deg, #111f18, #141414); }
+        .broadcast-card { border-top: 4px solid var(--neon-purple); }
         .merchant-w-card { border-top: 4px solid var(--gold); }
         .tickets-card { border-top: 4px solid var(--neon-blue); }
         .task-card { border-top: 4px solid var(--neon-purple); }
@@ -100,7 +120,7 @@
 
         .admin-chat-log {
             background: #080a0f; border: 1px solid #2b3346; border-radius: 12px;
-            padding: 12px; height: 240px; overflow-y: auto; margin: 10px 0;
+            padding: 12px; height: 250px; overflow-y: auto; margin: 10px 0;
             display: flex; flex-direction: column; gap: 8px;
         }
         .c-msg { padding: 8px 11px; border-radius: 10px; font-size: 12.5px; line-height: 1.5; }
@@ -108,6 +128,7 @@
         .c-seller { background: rgba(255, 170, 0, 0.12); border: 1px solid rgba(255, 170, 0, 0.35); color: #fff; }
         .c-admin { background: rgba(188, 19, 254, 0.18); border: 1px solid var(--neon-purple); color: #f3e8ff; }
         .c-sys { background: #161922; border: 1px dashed #444; color: #cbd5e1; text-align: center; font-size: 11.5px; }
+        .chat-thumb-img { max-width: 170px; max-height: 160px; border-radius: 8px; margin-top: 6px; border: 1px solid #444; cursor: zoom-in; display: block; }
 
         #lightbox-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); z-index: 100000; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px; }
         .lightbox-toolbar { width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
@@ -123,7 +144,7 @@
 <div id="admin-lock-screen">
     <div class="lock-box">
         <div style="display:inline-block; background:rgba(0,210,106,0.15); color:#00d26a; border:1px solid #00d26a; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:bold; margin-bottom:10px;">
-            الإصدار المحدث v3.5 🟢
+            الإصدار النهائي الشامل v4.0 🟢
         </div>
         <div style="font-size: 44px; margin-bottom: 8px;">🛡️</div>
         <h2 style="color: var(--neon-blue); margin: 0 0 8px 0;">منطقة محمية للإدارة</h2>
@@ -134,7 +155,7 @@
     </div>
 </div>
 
-<!-- ⚡ سكريبت فتح القفل الفوري المعزول (يعمل فوراً في السطر الأول قبل أي كود آخر) -->
+<!-- ⚡ سكريبت فتح القفل الفوري المعزول -->
 <script>
     window._adminUnlocked = false;
 
@@ -178,9 +199,40 @@
 </script>
 
 <div class="container" id="main-admin-container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h1 style="margin: 0;">🛡️ إدارة MegaTask والوسيط المالي</h1>
-        <button class="del-btn" style="font-size: 12px;" onclick="logoutAdmin()">🔒 قفل اللوحة</button>
+        <div style="display: flex; gap: 8px;">
+            <button class="edit-btn" style="font-size: 12px;" onclick="window.initAdminData()">🔄 تحديث الكل</button>
+            <button class="del-btn" style="font-size: 12px;" onclick="logoutAdmin()">🔒 قفل اللوحة</button>
+        </div>
+    </div>
+
+    <!-- 📊 شريط الإحصائيات السريعة العلوي -->
+    <div class="top-stats-grid">
+        <div class="stat-box">
+            <span>👥 إجمالي الأعضاء</span>
+            <b id="st-total-users">0</b>
+        </div>
+        <div class="stat-box">
+            <span>🤝 صفقات جارية</span>
+            <b id="st-active-deals" style="color: var(--gold);">0</b>
+        </div>
+        <div class="stat-box">
+            <span>🚨 نزاعات مفتوحة</span>
+            <b id="st-open-disputes" style="color: var(--red);">0</b>
+        </div>
+        <div class="stat-box">
+            <span>📥 إيداعات معلقة</span>
+            <b id="st-pend-deposits" style="color: var(--main-green);">0</b>
+        </div>
+        <div class="stat-box">
+            <span>💸 سحوبات معلقة</span>
+            <b id="st-pend-withdraws" style="color: var(--orange);">0</b>
+        </div>
+        <div class="stat-box">
+            <span>🎧 تذاكر الدعم</span>
+            <b id="st-pend-tickets" style="color: var(--neon-purple);">0</b>
+        </div>
     </div>
 
     <!-- 🔍 00. رادار البحث الذكي بالأكواد -->
@@ -192,6 +244,28 @@
                 <button class="admin-method-btn" style="margin: 0; width: 140px; padding: 12px;" onclick="runSmartCodeSearch()">بحث 🔍</button>
             </div>
             <div id="smart-search-results" class="list-container" style="max-height: 420px; display: none;"></div>
+        </div>
+    </div>
+
+    <!-- 🎁 00-B. إدارة وإنشاء أكواد الهدايا والمسابقات (Promo Codes) -->
+    <div class="card promo-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🎁 إنشاء وإدارة أكواد الهدايا والمسابقات (Promo Codes) <span class="arrow-icon open">▼</span></h3>
+        <div class="collapsible-body" style="display: block;">
+            <div style="display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 8px;">
+                <input type="text" id="promo-code-inp" placeholder="الكود (مثلاً: MEGA50)" style="text-transform: uppercase; font-weight: bold; color: var(--gold);">
+                <select id="promo-type-inp">
+                    <option value="points">🪙 هدية نقاط</option>
+                    <option value="egp">💵 هدية جنيه (EGP)</option>
+                </select>
+                <input type="number" id="promo-amount-inp" placeholder="القيمة (مثلاً: 50)" step="0.5">
+                <input type="number" id="promo-max-inp" placeholder="لأول كام عضو؟" value="100">
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                <button class="deposit-btn" style="margin-top: 0; flex: 2;" onclick="createAdminPromoCode(false)">➕ إنشاء الكود فقط</button>
+                <button class="method-btn" style="margin-top: 0; flex: 2;" onclick="createAdminPromoCode(true)">🚀 إنشاء وإرسال إشعار جماعي للكل</button>
+                <button class="edit-btn" style="flex: 1;" onclick="generateRandomPromoName()">🎲 كود عشوائي</button>
+            </div>
+            <div id="promo-codes-list" class="list-container" style="max-height: 240px;">جاري تحميل الأكواد...</div>
         </div>
     </div>
 
@@ -223,6 +297,16 @@
         <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🎧 تذاكر الدعم وبلاغات الثغرات (Bug Bounty) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div id="support-tickets-list" class="list-container">جاري فحص التذاكر...</div>
+        </div>
+    </div>
+
+    <!-- 📢 04. إرسال إشعار وإذاعة جماعية لكل المستخدمين -->
+    <div class="card broadcast-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-purple);">📢 إرسال إشعار جماعي لكل مستخدمي البوت (Broadcast) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <input type="text" id="bc-title-inp" placeholder="عنوان الإشعار (مثلاً: 🔥 تحديث جديد وعروض نارية في المتجر!)">
+            <textarea id="bc-msg-inp" rows="3" placeholder="اكتب نص الرسالة الجماعية هنا... ستصل لكل المستخدمين في محادثة البوت وداخل المنصة!"></textarea>
+            <button id="btn-send-bc" class="main-btn" onclick="sendCustomBroadcast()">🚀 إرسال الإشعار لجميع الأعضاء الآن</button>
         </div>
     </div>
 
@@ -273,9 +357,9 @@
         </div>
     </div>
 
-    <!-- 3. إضافة منتج جديد للمتجر الرسمي -->
+    <!-- 3. إضافة منتج جديد للمتجر الرسمي (مع دعم التسليم التلقائي الفوري) -->
     <div class="card store-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي (عادي أو تسليم تلقائي فوري ⚡) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                 <select id="store-cat">
@@ -294,7 +378,13 @@
                 <input type="text" id="store-code" placeholder="PRD-XXXX" style="border-color: var(--gold); color: var(--gold); font-weight: bold; text-align: center;">
             </div>
             <input type="text" id="store-title" placeholder="عنوان المنتج">
-            <textarea id="store-desc" rows="2" placeholder="وصف وتفاصيل المنتج..."></textarea>
+            <textarea id="store-desc" rows="2" placeholder="وصف وتفاصيل المنتج للمشتري..."></textarea>
+
+            <!-- ⚡ خانة أكواد التسليم التلقائي الفوري -->
+            <div style="background: rgba(0, 242, 255, 0.06); border: 1px dashed var(--neon-blue); border-radius: 12px; padding: 10px; margin: 8px 0;">
+                <label style="font-size: 12px; color: var(--neon-blue); font-weight: bold;">⚡ أكواد / حسابات التسليم التلقائي الفوري (اختياري - ضع كل كود أو حساب في سطر مستقل):</label>
+                <textarea id="store-auto-stock" rows="3" placeholder="إذا وضعت أكواداً هنا، سيقوم البوت بتسليم المشتري كوداً واحداً فوراً في نفس الثانية عند الشراء دون تدخل منك!" oninput="syncAdminAutoStockTarget()"></textarea>
+            </div>
 
             <div style="background: #10131a; border: 1px dashed var(--neon-purple); border-radius: 14px; padding: 12px; margin: 8px 0;">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -307,7 +397,7 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="number" id="store-target" value="100" placeholder="الكمية">
+                <input type="number" id="store-target" value="100" placeholder="الكمية المتاحة">
                 <input type="text" id="store-link" placeholder="رابط عام (اختياري)">
             </div>
             <input type="file" id="store-file" accept="image/*" onchange="previewStoreFile(this)">
@@ -411,15 +501,17 @@
     </div>
 </div>
 
-<!-- 💬 نافذة مراقبة شات غرفة الوساطة والفصل في النزاعات -->
+<!-- 💬 نافذة مراقبة شات غرفة الوساطة والفصل في النزاعات (تدعم عرض وإرسال الصور) -->
 <div id="admin-deal-chat-modal" class="admin-modal">
     <div class="admin-modal-content" style="border-color: var(--gold);">
         <h3 style="color: var(--gold); margin-top: 0;" id="adm-dr-title">⚖️ غرفة مراقبة الصفقة وفض النزاع</h3>
         <div id="adm-dr-meta" style="font-size: 12.5px; color: #ddd; background: #111; padding: 10px; border-radius: 10px; line-height: 1.7;"></div>
         <div class="admin-chat-log" id="adm-dr-chat-box"></div>
-        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-            <input type="text" id="adm-dr-msg-inp" placeholder="اكتب رسالة رسمية للطرفين باسم (👮‍♂️ الإدارة)..." style="margin: 0;">
-            <button class="method-btn" style="margin: 0; width: 120px; padding: 10px;" onclick="sendAdminMessageInDeal()">إرسال 💬</button>
+        <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+            <input type="file" id="adm-dr-img-inp" accept="image/*" style="display: none;" onchange="sendAdminImageInDeal(this)">
+            <button type="button" onclick="document.getElementById('adm-dr-img-inp').click()" style="background: #222; border: 1px solid var(--gold); color: var(--gold); padding: 0 12px; font-size: 16px;" title="إرفاق صورة">📷</button>
+            <input type="text" id="adm-dr-msg-inp" placeholder="اكتب رسالة رسمية للطرفين باسم (👮‍♂️ الإدارة)..." style="margin: 0;" onkeydown="if(event.key==='Enter') sendAdminMessageInDeal()">
+            <button class="method-btn" style="margin: 0; width: 110px; padding: 10px;" onclick="sendAdminMessageInDeal()">إرسال 💬</button>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <button class="approve-btn" onclick="adminSettleDealForSeller()">⚖️ حكم للبائع (تحرير الأرباح) ✅</button>
@@ -429,10 +521,10 @@
     </div>
 </div>
 
-<!-- Modal تعديل منتج المتجر -->
+<!-- Modal تعديل منتج المتجر (شامل مخزون التسليم التلقائي) -->
 <div id="edit-store-modal" class="admin-modal">
     <div class="admin-modal-content">
-        <h3 style="color: var(--neon-blue);">✏️ تعديل منتج المتجر</h3>
+        <h3 style="color: var(--neon-blue);">✏️ تعديل منتج المتجر ومخزون التسليم الفوري</h3>
         <input type="hidden" id="edit-s-id">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <input type="text" id="edit-s-code" style="color: var(--gold); font-weight: bold;">
@@ -443,6 +535,8 @@
         </div>
         <input type="text" id="edit-s-title" placeholder="العنوان">
         <textarea id="edit-s-desc" rows="2" placeholder="الوصف"></textarea>
+        <label style="font-size: 11.5px; color: var(--neon-blue);">⚡ أكواد التسليم التلقائي الفوري (كل كود في سطر):</label>
+        <textarea id="edit-s-auto-stock" rows="3" placeholder="اتركه فارغاً للتسليم اليدوي، أو ضع الأكواد هنا للتسليم الفوري..."></textarea>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <input type="number" id="edit-s-price" step="0.5" placeholder="سعر البيع">
             <input type="number" id="edit-s-supplier-cost" step="0.5" placeholder="التكلفة">
@@ -510,6 +604,7 @@
 <script>
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"; 
+    const USDT_RATE = 53.0; // مطابق لملف main.py
     const client = window.supabase ? window.supabase.createClient(S_URL, S_KEY) : null;
 
     let adminMethodBase64 = "";
@@ -543,6 +638,14 @@
         if (inp) inp.value = "PRD-" + Math.floor(1000 + Math.random() * 9000);
     }
 
+    function syncAdminAutoStockTarget() {
+        const raw = document.getElementById('store-auto-stock').value || "";
+        const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        if (lines.length > 0) {
+            document.getElementById('store-target').value = lines.length;
+        }
+    }
+
     function calcAdminProductProfit() {
         const curr = document.getElementById('store-currency').value;
         const unit = curr === 'egp' ? 'ج.م' : 'نقطة';
@@ -557,6 +660,135 @@
             document.getElementById('global-code-search').value = txt;
             runSmartCodeSearch();
         });
+    }
+
+    // تحديث شريط الإحصائيات السريعة العلوي
+    async function loadTopDashboardStats() {
+        try {
+            const { count: usersCnt } = await client.from('users').select('*', { count: 'exact', head: true });
+            if (usersCnt !== null) document.getElementById('st-total-users').innerText = usersCnt.toLocaleString();
+        } catch (e) {}
+    }
+
+    // =========================================================================
+    // 🎁 إدارة وإنشاء أكواد الهدايا (Promo Codes)
+    // =========================================================================
+    function generateRandomPromoName() {
+        const rnd = "MEGA" + Math.floor(100 + Math.random() * 900);
+        document.getElementById('promo-code-inp').value = rnd;
+    }
+
+    async function loadPromoCodesList() {
+        const div = document.getElementById('promo-codes-list');
+        if (!div) return;
+        try {
+            const { data, error } = await client.from('promo_codes').select('*').order('id', { ascending: false }).limit(20);
+            if (error || !data || data.length === 0) {
+                div.innerHTML = `<div style="text-align:center; color:#888; font-size:12px; padding:10px;">لا توجد أكواد هدايا مضافة حالياً.</div>`;
+                return;
+            }
+            div.innerHTML = data.map(c => {
+                const unit = c.reward_type === 'egp' ? 'ج.م' : 'نقطة';
+                const isFull = (c.used_count || 0) >= (c.max_uses || 100) || !c.is_active;
+                return `
+                    <div class="item-row" style="border-right-color:${isFull ? 'var(--red)' : 'var(--main-green)'};">
+                        <div>
+                            <span class="code-pill" onclick="navigator.clipboard.writeText('${c.code}')">${escapeHtml(c.code)} 📋</span>
+                            <b>🎁 الهدية: ${c.reward_amount}${unit}</b> | 
+                            <span style="font-size:12px; color:#ccc;">المستفيدون: <b>${c.used_count || 0} / ${c.max_uses}</b></span>${isFull ? '<span style="color:var(--red); font-size:11px; font-weight:bold;">(مكتمل/منتهي)</span>' : '<span style="color:var(--main-green); font-size:11px; font-weight:bold;">(نشط 🟢)</span>'}
+                        </div>
+                        <button class="del-btn" onclick="deletePromoCode(${c.id})">حذف 🗑️</button>
+                    </div>
+                `;
+            }).join("");
+        } catch (e) {}
+    }
+
+    async function createAdminPromoCode(withBroadcast) {
+        const code = (document.getElementById('promo-code-inp').value || "").trim().toUpperCase();
+        const rType = document.getElementById('promo-type-inp').value;
+        const rAmt = parseFloat(document.getElementById('promo-amount-inp').value);
+        const maxU = parseInt(document.getElementById('promo-max-inp').value) || 100;
+
+        if (!code || isNaN(rAmt) || rAmt <= 0) {
+            return alert("⚠️ يرجى كتابة اسم الكود وقيمة المكافأة!");
+        }
+
+        const { error } = await client.from('promo_codes').insert([{
+            code: code,
+            reward_type: rType,
+            reward_amount: rAmt,
+            max_uses: maxU,
+            used_count: 0,
+            is_active: true
+        }]);
+
+        if (error) return alert("❌ تعذر إنشاء الكود (ربما الاسم مستخدم من قبل): " + error.message);
+
+        const unit = rType === 'egp' ? 'ج.م' : 'نقطة';
+        if (withBroadcast) {
+            await broadcastToAllUsers(
+                "🎁 كود هدية مجاني جديد!",
+                `تم طرح كود هدية جديد لأول *${maxU} عضو* فقط!\n\n🎟️ *الكود:* \`${code}\`\n💰 *الهدية:* *+${rAmt}${unit}*\n\nادخل الآن واضغط (🎁 كود هدية) في الصفحة الرئيسية أو أرسل الكود للبوت لاستلام هديتك فوراً!`
+            );
+        }
+
+        document.getElementById('promo-code-inp').value = "";
+        document.getElementById('promo-amount-inp').value = "";
+        alert(`✅ تم إنشاء كود الهدية (${code}) بنجاح!`);
+        loadPromoCodesList();
+    }
+
+    async function deletePromoCode(id) {
+        if (!confirm("حذف كود الهدية نهائياً؟")) return;
+        await client.from('promo_codes').delete().eq('id', id);
+        loadPromoCodesList();
+    }
+
+    // =========================================================================
+    // 📢 نظام الإذاعة الجماعية لكل المستخدمين (Broadcast)
+    // =========================================================================
+    async function broadcastToAllUsers(title, messageText) {
+        try {
+            const { data: allUsers } = await client.from('users').select('telegram_id');
+            if (!allUsers || allUsers.length === 0) return;
+
+            const notifications = allUsers.map(u => ({
+                user_id: String(u.telegram_id),
+                title: title,
+                message: messageText,
+                is_read: false
+            }));
+
+            const formattedBotMessage = `🔔 *${title}*\n━━━━━━━━━━━━━━━\n${messageText}`;
+            const botMessages = allUsers.map(u => ({
+                telegram_id: String(u.telegram_id),
+                message: formattedBotMessage,
+                status: 'pending'
+            }));
+
+            await client.from('user_notifications').insert(notifications);
+            await client.from('bot_messages').insert(botMessages);
+        } catch (e) {}
+    }
+
+    async function sendCustomBroadcast() {
+        const title = document.getElementById('bc-title-inp').value.trim();
+        const msg = document.getElementById('bc-msg-inp').value.trim();
+        if (!title || !msg) return alert("⚠️ يرجى كتابة عنوان ونص الرسالة الجماعية!");
+        if (!confirm("🚀 هل أنت متأكد من إرسال هذا الإشعار لجميع مستخدمي البوت الآن؟")) return;
+
+        const btn = document.getElementById('btn-send-bc');
+        btn.disabled = true;
+        btn.innerText = "⏳ جاري الإرسال لجميع الأعضاء...";
+
+        await broadcastToAllUsers(title, msg);
+
+        btn.disabled = false;
+        btn.innerText = "🚀 إرسال الإشعار لجميع الأعضاء الآن";
+        document.getElementById('bc-title-inp').value = "";
+        document.getElementById('bc-msg-inp').value = "";
+        alert("✅ تم وضع الإشعار الجماعي في طابور الإرسال المباشر بنجاح!");
     }
 
     // رادار البحث الذكي بالأكواد
@@ -589,7 +821,7 @@
         matchedOrders.forEach(o => { html += renderOrderCardHTML(o, false); });
         matchedProducts.forEach(p => {
             const pCode = p.product_code || `PRD-${p.id}`;
-            html += `<div class="item-row"><b>📦 ${escapeHtml(p.title)} (${pCode})</b> <span>السعر: ${p.price} ${p.currency}</span></div>`;
+            html += `<div class="item-row"><b>📦 ${escapeHtml(p.title)} (${pCode})</b> <span>السعر: ${p.price}${p.currency}</span></div>`;
         });
         resDiv.innerHTML = html;
     }
@@ -610,12 +842,16 @@
         banBtn.innerText = isBanned ? "🟢 فك الحظر" : "🚫 حظر الحساب";
         banBtn.style.background = isBanned ? "var(--main-green)" : "var(--red)";
 
+        const rCnt = Number(user.seller_rating_count || 0);
+        const rAvg = rCnt > 0 ? (Number(user.seller_rating_sum || 0) / rCnt).toFixed(1) : "جديد";
+
         document.getElementById('user-wallet-info').innerHTML = `
-            👤 <b>الاسم:</b> ${escapeHtml(user.name || '')} | <b>ID:</b> ${user.telegram_id} | 
+            👤 <b>الاسم:</b> ${escapeHtml(user.name \vert{}\vert{} '')} \vert{} <b>ID:</b>${user.telegram_id} | 
             <b>الحالة:</b> ${isBanned ? '<b style="color:var(--red);">محظور 🚫</b>' : '<b style="color:var(--main-green);">نشط 🟢</b>'}<br>
             🪙 <b>النقاط:</b> ${(user.points || 0).toLocaleString()} ن | 
             💵 <b>رصيد الشراء:</b> ${Number(user.egp_balance || 0).toFixed(2)} ج.م | 
-            💼 <b>أرباح التاجر:</b> <b style="color:var(--gold);">${Number(user.merchant_balance_egp || 0).toFixed(2)} ج.م</b>
+            💼 <b>أرباح التاجر:</b> <b style="color:var(--gold);">${Number(user.merchant_balance_egp || 0).toFixed(2)} ج.م</b><br>
+            📦 <b>مبيعاته المكتملة:</b> ${user.total_sales_count \vert{}\vert{} 0} \vert{} ⭐ <b>تقييمه كتاجر:</b> ${rAvg} (${rCnt} تقييم) \vert{} 📱 <b>بصمة الجهاز:</b> <code>${user.device_fp || '---'}</code>
         `;
     }
 
@@ -677,13 +913,15 @@
             const sold = cachedAllOrders.filter(o => Number(o.product_id) === Number(p.id)).length;
             const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
             const pCode = p.product_code || `PRD-${p.id}`;
+            const autoLines = String(p.auto_delivery_data || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+            const autoBadge = autoLines.length > 0 ? `<span style="color:var(--neon-blue); font-weight:bold;"> | ⚡ مخزون تلقائي متبقي: ${autoLines.length}</span>` : '';
             return `
                 <div class="item-row" style="flex-direction:column; align-items:flex-start;">
                     <div style="width:100%; display:flex; justify-content:space-between;">
-                        <b>📦 ${escapeHtml(p.title)} (${p.price} ${unit})</b>
+                        <b>📦 ${escapeHtml(p.title)} (${p.price}${unit})</b>
                         <span class="code-pill" onclick="copyCodeText('${pCode}')">${pCode}</span>
                     </div>
-                    <div style="font-size:12px; color:#aaa;">المورد/البائع: ${escapeHtml(p.supplier_name || p.creator_id || 'ADMIN')} | المبيعات: ${sold}</div>
+                    <div style="font-size:12px; color:#aaa;">المورد/البائع: ${escapeHtml(p.supplier_name || p.creator_id || 'ADMIN')} | المبيعات: ${sold}${autoBadge}</div>
                     <div class="actions-box">
                         <button class="edit-btn" onclick="openEditStoreModal(${p.id})">تعديل ✏️</button>
                         <button class="del-btn" onclick="deleteStoreProductItem(${p.id})">حذف 🗑️</button>
@@ -699,7 +937,7 @@
             const unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
             return `
                 <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                    <div><b>📦 ${escapeHtml(p.title)}</b> (${p.price} ${unit}) | التاجر: <code>${p.creator_id}</code></div>
+                    <div><b>📦 ${escapeHtml(p.title)}</b> (${p.price} ${unit}) \vert{} التاجر: <code>${p.creator_id}</code></div>
                     <div style="font-size:12px; color:#ccc;">${escapeHtml(p.description || '')}</div>
                     <div class="actions-box">
                         <button class="approve-btn" onclick="reviewStoreProduct(${p.id}, '${p.creator_id}', '${escapeQuote(p.title)}', '${pCode}', true)">قبول ونشر ✅</button>
@@ -710,11 +948,13 @@
 
         // 3. النزاعات والطلبات النشطة
         const disputes = cachedAllOrders.filter(o => o.status === 'Disputed');
+        document.getElementById('st-open-disputes').innerText = disputes.length;
         document.getElementById('escrow-disputes-list').innerHTML = disputes.length === 0
             ? "✅ لا توجد نزاعات وساطة مفتوحة حالياً."
             : disputes.map(o => renderOrderCardHTML(o, true)).join("");
 
         const activeOrds = cachedAllOrders.filter(o => ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'].includes(o.status));
+        document.getElementById('st-active-deals').innerText = activeOrds.length;
         document.getElementById('store-orders-list').innerHTML = activeOrds.length === 0
             ? "✅ لا توجد طلبات أو صفقات ضمان جارية."
             : activeOrds.map(o => renderOrderCardHTML(o, false)).join("");
@@ -734,8 +974,8 @@
                     <b style="color:var(--gold);">الحالة: ${o.status}</b>
                 </div>
                 <div>
-                    <b>📦 الطلب:</b> ${escapeHtml(o.product_title)} (${o.price_paid} ${unit})<br>
-                    <b>🛒 المشتري:</b> <code>${o.user_id}</code> | <b>🏷️ البائع:</b> <code>${sellerId}</code><br>
+                    <b>📦 الطلب:</b> ${escapeHtml(o.product_title)} (${o.price_paid}${unit})<br>
+                    <b>🛒 المشتري:</b> <code>${o.user_id}</code> \vert{} <b>🏷️ البائع:</b> <code>${sellerId}</code><br>
                     <b>📱 بيانات المشتري:</b> <span style="color:var(--main-green);">${escapeHtml(o.buyer_input || '')}</span>
                 </div>
                 <div class="actions-box">
@@ -751,16 +991,18 @@
         if (!ord) return;
         activeAdminDealObj = ord;
         document.getElementById('adm-dr-title').innerText = `⚖️ غرفة الصفقة (${ord.order_code || ord.id})`;
-        document.getElementById('adm-dr-meta').innerHTML = `📦 <b>${escapeHtml(ord.product_title)}</b> | المشتري: <code>${ord.user_id}</code> | البائع: <code>${ord.seller_id || 'ADMIN'}</code>`;
+        document.getElementById('adm-dr-meta').innerHTML = `📦 <b>${escapeHtml(ord.product_title)}</b> | المشتري: <code>${ord.user_id}</code> \vert{} البائع: <code>${ord.seller_id || 'ADMIN'}</code>`;
 
         const chatBox = document.getElementById('adm-dr-chat-box');
         const msgs = Array.isArray(ord.chat_messages) ? ord.chat_messages : [];
         chatBox.innerHTML = msgs.length === 0 ? `<div class="c-msg c-sys">لا توجد رسائل بعد.</div>` : msgs.map(m => {
             if (m.sender === 'SYSTEM') return `<div class="c-msg c-sys">${escapeHtml(m.text)}</div>`;
-            if (m.sender === 'ADMIN') return `<div class="c-msg c-admin"><b>👮‍♂️ الإدارة:</b> ${escapeHtml(m.text)}</div>`;
+            const imgTag = m.image ? `<img src="${m.image}" class="chat-thumb-img" onclick="openLightbox('${m.image}')">` : '';
+            if (m.sender === 'ADMIN') return `<div class="c-msg c-admin"><b>👮‍♂️ الإدارة:</b><br>${escapeHtml(m.text \vert{}\vert{} '')}${imgTag}</div>`;
             const isB = String(m.sender_id) === String(ord.user_id);
-            return `<div class="c-msg ${isB ? 'c-buyer' : 'c-seller'}"><b>${escapeHtml(m.role_label || '')}:</b> ${escapeHtml(m.text)}</div>`;
+            return `<div class="c-msg ${isB ? 'c-buyer' : 'c-seller'}"><b>${escapeHtml(m.role_label || '')}:</b><br>${escapeHtml(m.text \vert{}\vert{} '')}${imgTag}</div>`;
         }).join("");
+        chatBox.scrollTop = chatBox.scrollHeight;
         document.getElementById('admin-deal-chat-modal').style.display = 'flex';
     }
 
@@ -773,7 +1015,40 @@
         msgs.push({ sender: "ADMIN", role_label: "👮‍♂️ الإدارة", text: txt, time: new Date().toLocaleTimeString('ar-EG') });
         document.getElementById('adm-dr-msg-inp').value = "";
         await client.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
+
+        // إشعار الطرفين في تليجرام برسالة الإدارة
+        const notifs = [{ telegram_id: String(ord.user_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' }];
+        if (ord.seller_id && ord.seller_id !== 'ADMIN') {
+            notifs.push({ telegram_id: String(ord.seller_id), message: `👮‍♂️ *رسالة من الإدارة في غرفة الصفقة (${ord.order_code || ord.id}):*\n\`${txt}\``, status: 'pending' });
+        }
+        await client.from('bot_messages').insert(notifs);
         openAdminDealChatModal(ord.id);
+    }
+
+    function sendAdminImageInDeal(input) {
+        if (!activeAdminDealObj || !input.files || !input.files[0]) return;
+        const r = new FileReader();
+        r.onload = e => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = async () => {
+                const canvas = document.createElement('canvas');
+                const maxW = 600;
+                let w = img.width, h = img.height;
+                if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                const b64 = canvas.toDataURL('image/jpeg', 0.65);
+
+                const ord = activeAdminDealObj;
+                const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
+                msgs.push({ sender: "ADMIN", role_label: "👮‍♂️ الإدارة", text: "📷 [صورة مرفقة من الإدارة]", image: b64, time: new Date().toLocaleTimeString('ar-EG') });
+                input.value = "";
+                await client.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
+                openAdminDealChatModal(ord.id);
+            };
+        };
+        r.readAsDataURL(input.files[0]);
     }
 
     function adminSettleDealForSeller() {
@@ -864,19 +1139,26 @@
         const productCode = document.getElementById('store-code').value.trim() || ("PRD-" + Math.floor(1000 + Math.random() * 9000));
         const title = document.getElementById('store-title').value.trim();
         const description = document.getElementById('store-desc').value.trim();
+        const autoStockRaw = document.getElementById('store-auto-stock').value.trim();
+        const autoLines = autoStockRaw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
         const price = parseFloat(document.getElementById('store-price').value);
         const supplierCost = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
         const supplierName = document.getElementById('store-supplier-name').value.trim();
         const supplierNotes = document.getElementById('store-supplier-notes').value.trim();
-        const target = parseInt(document.getElementById('store-target').value) || 100;
+        const target = autoLines.length > 0 ? autoLines.length : (parseInt(document.getElementById('store-target').value) || 100);
         const link = document.getElementById('store-link').value.trim() || "#";
 
         if (!title || isNaN(price) || price <= 0) return alert("أدخل العنوان والسعر!");
         await client.from('store_products').insert([{
             creator_id: 'ADMIN', product_code: productCode, category, currency, title, description,
+            auto_delivery_data: autoLines.length > 0 ? autoLines.join("\n") : null,
             price, supplier_cost: supplierCost, supplier_name: supplierName, supplier_notes: supplierNotes,
             link, target_count: target, image_url: storeFileBase64 || null, status: 'Approved'
         }]);
+        document.getElementById('store-title').value = "";
+        document.getElementById('store-desc').value = "";
+        document.getElementById('store-auto-stock').value = "";
+        generateNewProductCode();
         alert("✅ تم نشر المنتج!");
         loadStoreAndOrdersFast();
     }
@@ -888,6 +1170,7 @@
         document.getElementById('edit-s-code').value = p.product_code || `PRD-${p.id}`;
         document.getElementById('edit-s-title').value = p.title || "";
         document.getElementById('edit-s-desc').value = p.description || "";
+        document.getElementById('edit-s-auto-stock').value = p.auto_delivery_data || "";
         document.getElementById('edit-s-price').value = p.price || 0;
         document.getElementById('edit-s-supplier-cost').value = p.supplier_cost || 0;
         document.getElementById('edit-s-supplier-name').value = p.supplier_name || "";
@@ -900,10 +1183,13 @@
 
     async function saveEditedStoreProduct() {
         const id = document.getElementById('edit-s-id').value;
+        const autoRaw = document.getElementById('edit-s-auto-stock').value.trim();
+        const autoLines = autoRaw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
         await client.from('store_products').update({
             product_code: document.getElementById('edit-s-code').value.trim(),
             title: document.getElementById('edit-s-title').value.trim(),
             description: document.getElementById('edit-s-desc').value.trim(),
+            auto_delivery_data: autoLines.length > 0 ? autoLines.join("\n") : null,
             currency: document.getElementById('edit-s-currency').value,
             price: parseFloat(document.getElementById('edit-s-price').value) || 10,
             supplier_cost: parseFloat(document.getElementById('edit-s-supplier-cost').value) || 0,
@@ -938,14 +1224,17 @@
     async function loadWithdrawals() {
         const div = document.getElementById('withdraw-list');
         const { data } = await client.from('withdrawals').select('*').eq('status', 'Pending').order('id', { ascending: false });
+        document.getElementById('st-pend-withdraws').innerText = data ? data.length : 0;
         if (!data || data.length === 0) { div.innerHTML = "✅ لا توجد طلبات سحب معلقة."; return; }
         div.innerHTML = data.map(w => {
             const wCode = w.withdraw_code || `WTH-${w.id}`;
             const amt = Number(w.amount || 0);
+            const isCryp = (w.method || "").toLowerCase().includes("binance") || (w.method || "").toLowerCase().includes("usdt");
+            const usdtEq = isCryp ? ` <b style="color:var(--gold);">(${(amt / USDT_RATE).toFixed(2)} USDT)</b>` : "";
             return `
                 <div class="item-row withdraw-row">
                     <div>
-                        <b>🆔 ${wCode}</b> | التاجر: <code>${w.telegram_id}</code> | المبلغ: <b style="color:var(--main-green);">${amt.toFixed(2)} ج.م</b><br>
+                        <b>🆔 ${wCode}</b> | التاجر: <code>${w.telegram_id}</code> | المبلغ: <b style="color:var(--main-green);">${amt.toFixed(2)} ج.م</b>${usdtEq}<br>
                         الوسيلة: ${escapeHtml(w.method)} | المستلم: <code style="color:var(--gold);">${escapeHtml(w.wallet_info)}</code>
                     </div>
                     <div class="actions-box">
@@ -980,24 +1269,28 @@
         const div = document.getElementById('support-tickets-list');
         try {
             const { data, error } = await client.from('support_tickets').select('*').eq('status', 'Pending').order('id', { ascending: false });
+            document.getElementById('st-pend-tickets').innerText = data ? data.length : 0;
             if (error || !data || data.length === 0) { div.innerHTML = "✅ لا توجد تذاكر أو بلاغات معلقة."; return; }
-            div.innerHTML = data.map(t => `
-                <div class="item-row" style="flex-direction:column; align-items:flex-start;">
-                    <div><b>📌 ${escapeHtml(t.subject || t.category)}</b> (${t.ticket_code}) | المرسل: <code>${t.telegram_id}</code></div>
-                    <div style="background:#111; padding:8px; border-radius:8px; width:100%; font-size:12.5px;">${escapeHtml(t.message)}</div>
-                    <input type="text" id="tkt-reply-${t.id}" placeholder="رد الإدارة...">
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%;">
-                        <select id="tkt-curr-${t.id}">
-                            <option value="none">بدون مكافأة</option>
-                            <option value="points">🎁 مكافأة نقاط</option>
-                            <option value="egp">💵 مكافأة جنيه</option>
-                        </select>
-                        <input type="number" id="tkt-amt-${t.id}" placeholder="قيمة المكافأة">
-                    </div>
-                    <div class="actions-box">
-                        <button class="approve-btn" onclick="resolveSupportTicket(${t.id}, '${t.telegram_id}', '${escapeQuote(t.ticket_code)}')">إرسال الرد والمكافأة ✅</button>
-                    </div>
-                </div>`).join("");
+            div.innerHTML = data.map(t => {
+                const imgHtml = t.screenshot_url ? `<img src="${t.screenshot_url}" class="chat-thumb-img" onclick="openLightbox('${t.screenshot_url}')">` : '';
+                return `
+                    <div class="item-row" style="flex-direction:column; align-items:flex-start;">
+                        <div><b>📌 ${escapeHtml(t.subject || t.category)}</b> (${t.ticket_code}) | المرسل: <code>${t.telegram_id}</code></div>
+                        <div style="background:#111; padding:8px; border-radius:8px; width:100%; font-size:12.5px;">${escapeHtml(t.message)}${imgHtml}</div>
+                        <input type="text" id="tkt-reply-${t.id}" placeholder="رد الإدارة...">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%;">
+                            <select id="tkt-curr-${t.id}">
+                                <option value="none">بدون مكافأة</option>
+                                <option value="points">🎁 مكافأة نقاط</option>
+                                <option value="egp">💵 مكافأة جنيه</option>
+                            </select>
+                            <input type="number" id="tkt-amt-${t.id}" placeholder="قيمة المكافأة">
+                        </div>
+                        <div class="actions-box">
+                            <button class="approve-btn" onclick="resolveSupportTicket(${t.id}, '${t.telegram_id}', '${escapeQuote(t.ticket_code)}')">إرسال الرد والمكافأة ✅</button>
+                        </div>
+                    </div>`;
+            }).join("");
         } catch (e) {}
     }
 
@@ -1019,7 +1312,7 @@
                 }
             }
         }
-        await client.from('support_tickets').update({ status: 'Resolved', admin_reply: reply }).eq('id', id);
+        await client.from('support_tickets').update({ status: bonusTxt ? 'Rewarded' : 'Resolved', admin_reply: reply }).eq('id', id);
         await client.from('bot_messages').insert([{ telegram_id: String(userTid), message: `🎧 *رد الإدارة على تذكرتك (${code}):*\n${reply}${bonusTxt}`, status: 'pending' }]);
         alert("✅ تم إرسال الرد!");
         loadSupportTickets();
@@ -1029,6 +1322,7 @@
     async function loadDepositsRequests() {
         const div = document.getElementById('deposits-requests-list');
         const { data } = await client.from('deposits').select('*').eq('status', 'Pending').order('id', { ascending: false });
+        document.getElementById('st-pend-deposits').innerText = data ? data.length : 0;
         if (!data || data.length === 0) { div.innerHTML = "✅ لا توجد طلبات إيداع معلقة."; return; }
         div.innerHTML = data.map(d => `
             <div class="item-row" style="flex-direction:column; align-items:flex-start;">
@@ -1045,8 +1339,17 @@
         if (isOk) {
             const addEgp = parseFloat(document.getElementById(`dep-egp-val-${id}`).value) || 0;
             await client.from('deposits').update({ status: 'Completed', amount: addEgp }).eq('id', id);
-            const { data: u } = await client.from('users').select('egp_balance').eq('telegram_id', tid).maybeSingle();
-            if (u) await client.from('users').update({ egp_balance: Number((Number(u.egp_balance || 0) + addEgp).toFixed(2)) }).eq('telegram_id', tid);
+            const { data: u } = await client.from('users').select('egp_balance, referred_by').eq('telegram_id', tid).maybeSingle();
+            if (u) {
+                await client.from('users').update({ egp_balance: Number((Number(u.egp_balance || 0) + addEgp).toFixed(2)) }).eq('telegram_id', tid);
+                if (u.referred_by && String(u.referred_by) !== String(tid)) {
+                    const refPts = Math.floor(addEgp * 50);
+                    const { data: rU } = await client.from('users').select('points, total_earned').eq('telegram_id', String(u.referred_by)).maybeSingle();
+                    if (rU && refPts > 0) {
+                        await client.from('users').update({ points: (rU.points || 0) + refPts, total_earned: (rU.total_earned || 0) + refPts }).eq('telegram_id', String(u.referred_by));
+                    }
+                }
+            }
             await client.from('bot_messages').insert([{ telegram_id: tid, message: `🎉 *تم قبول شحن رصيدك (+${addEgp.toFixed(2)} ج.م) بنجاح!* ✅`, status: 'pending' }]);
         } else {
             await client.from('deposits').update({ status: 'Rejected' }).eq('id', id);
@@ -1163,7 +1466,7 @@
         const reward = t ? (t.reward || 10) : 10;
         if (isOk) {
             await client.from('task_submissions').update({ status: 'approved', feedback: fb }).eq('id', subId);
-            const { data: u } = await client.from('users').select('points, total_earned, total_tasks').eq('telegram_id', String(userId)).maybeSingle();
+            const { data: u } = await client.from('users').select('points, total_earned, total_tasks, referred_by').eq('telegram_id', String(userId)).maybeSingle();
             if (u) {
                 await client.from('users').update({
                     points: (u.points || 0) + reward,
@@ -1262,6 +1565,8 @@
     window.initAdminData = function() {
         if (!client) return;
         generateNewProductCode();
+        loadTopDashboardStats().catch(() => {});
+        loadPromoCodesList().catch(() => {});
         loadStoreAndOrdersFast().catch(() => {});
         loadWithdrawals().catch(() => {});
         loadMethods().catch(() => {});
