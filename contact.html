@@ -43,7 +43,6 @@
             overflow-x: hidden;
         }
 
-        /* الشريط العلوي */
         .top-bar {
             display: flex;
             justify-content: space-between;
@@ -78,7 +77,6 @@
         }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-        /* الهيدر */
         .hero-card {
             background: linear-gradient(145deg, #131926, #0d111a);
             border: 1.5px solid var(--card-border);
@@ -91,7 +89,6 @@
         .hero-card h1 { margin: 0 0 5px; font-size: 19px; color: var(--cyan); }
         .hero-card p { margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.55; }
 
-        /* 1. شبكة قنوات التواصل السريع المباشر */
         .direct-channels-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -127,7 +124,6 @@
         .ch-info b { display: block; font-size: 12.5px; margin-bottom: 2px; }
         .ch-info span { display: block; font-size: 10px; color: var(--text-muted); }
 
-        /* 2. بانر مكافآت مكتشفي الثغرات (Bug Bounty) */
         .bounty-banner {
             background: linear-gradient(135deg, rgba(255, 179, 0, 0.14), rgba(255, 61, 87, 0.12));
             border: 1.5px dashed var(--amber);
@@ -138,23 +134,10 @@
             align-items: center;
             gap: 12px;
         }
-        .bounty-icon {
-            font-size: 34px;
-            flex-shrink: 0;
-        }
-        .bounty-text h4 {
-            margin: 0 0 4px;
-            font-size: 13.5px;
-            color: var(--amber);
-        }
-        .bounty-text p {
-            margin: 0;
-            font-size: 11.5px;
-            color: #e2e8f0;
-            line-height: 1.55;
-        }
+        .bounty-icon { font-size: 34px; flex-shrink: 0; }
+        .bounty-text h4 { margin: 0 0 4px; font-size: 13.5px; color: var(--amber); }
+        .bounty-text p { margin: 0; font-size: 11.5px; color: #e2e8f0; line-height: 1.55; }
 
-        /* 3. شريط التبويبات الـ 4 */
         .tabs-nav {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -181,7 +164,6 @@
         }
         .tab-item.active span { color: #fff; }
 
-        /* حاوية النماذج */
         .form-panel {
             display: none;
             background: var(--card-bg);
@@ -225,7 +207,6 @@
         }
         input:focus, textarea:focus, select:focus { border-color: var(--cyan); }
 
-        /* مستويات خطورة الثغرة والمكافآت */
         .severity-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -247,7 +228,6 @@
         .sev-card.active-med { border-color: var(--amber); background: rgba(255, 179, 0, 0.12); }
         .sev-card.active-high { border-color: var(--crimson); background: rgba(255, 61, 87, 0.14); }
 
-        /* نجوم التقييم التفاعلية */
         .stars-box {
             display: flex;
             justify-content: center;
@@ -285,7 +265,6 @@
         .btn-submit:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--emerald-dark); }
         .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* سجل بلاغاتي وتذاكري السابقة */
         .section-title {
             font-size: 14.5px;
             font-weight: bold;
@@ -330,7 +309,6 @@
             line-height: 1.5;
         }
 
-        /* كروت التقييمات العامة */
         .review-item {
             background: #0c1018;
             border: 1px solid #1e2738;
@@ -340,7 +318,6 @@
             font-size: 12px;
         }
 
-        /* شريط التنقل السفلي */
         .navbar {
             position: fixed;
             bottom: 0;
@@ -358,7 +335,6 @@
 </head>
 <body>
 
-    <!-- الشريط العلوي -->
     <div class="top-bar">
         <button class="btn-back" onclick="goHome()">↩️ الرئيسية</button>
         <div class="support-status">
@@ -367,13 +343,11 @@
         </div>
     </div>
 
-    <!-- الهيدر -->
     <div class="hero-card">
         <h1>🎧 تواصل معنا ومركز المكافآت</h1>
         <p>تواصل مع الإدارة مباشرة، أبلغ عن أي ثغرة واحصل على مكافأة مالية، اقترح مميزات جديدة، أو قيّم تجربتك في البوت!</p>
     </div>
 
-    <!-- 1. قنوات التواصل المباشر (واتساب + بوت تليجرام + قناة + إيميل) -->
     <div class="direct-channels-grid">
         <div class="channel-btn whatsapp" onclick="openExternalContact('whatsapp')">
             <div class="ch-icon">💬</div>
@@ -386,8 +360,8 @@
         <div class="channel-btn tg-bot" onclick="openExternalContact('tg_support')">
             <div class="ch-icon">🤖</div>
             <div class="ch-info">
-                <b style="color: var(--cyan);">بوت الدعم الفني</b>
-                <span>مراسلة عبر تليجرام</span>
+                <b style="color: var(--cyan);">جروب المجتمع</b>
+                <span>نقاش ودعم مباشر</span>
             </div>
         </div>
 
@@ -408,16 +382,14 @@
         </div>
     </div>
 
-    <!-- 2. بانر مكافأة مكتشفي الثغرات -->
     <div class="bounty-banner">
         <div class="bounty-icon">🛡️</div>
         <div class="bounty-text">
             <h4>💰 مكافأة مالية فورية لمكتشفي الثغرات!</h4>
-            <p>هل اكتشفت ثغرة أمنية أو خطأ برمجي في البوت؟ أبلغنا عنها الآن من التبويب الأول بالأسفل وسيتم تعويضك بمكافأة مالية حقيقية (بالجنيه أو النقاط) حسب قوة الثغره!</p>
+            <p>هل اكتشفت ثغرة أمنية أو خطأ برمجي في البوت؟ أبلغنا عنها الآن من التبويب الأول بالأسفل وسيتم تعويضك بمكافأة مالية حقيقية (بالجنيه أو النقاط) حسب قوة الثغرة!</p>
         </div>
     </div>
 
-    <!-- 3. التبويبات الـ 4 (ثغرة / مشكلة فنية أو شخصية / اقتراح إضافة / تقييم البوت) -->
     <div class="tabs-nav">
         <div class="tab-item active" onclick="switchTab('bug', this)">
             <span class="ic">🐛</span>
@@ -437,9 +409,6 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         التبويب 1: الإبلاغ عن ثغرة بمقابل مادي (Bug Bounty)
-    =========================================== -->
     <div id="panel-bug" class="form-panel active">
         <h3 class="panel-title">
             <span>🛡️ الإبلاغ عن ثغرة واستلام المكافأة</span>
@@ -490,9 +459,6 @@
         </button>
     </div>
 
-    <!-- ==========================================
-         التبويب 2: الإبلاغ عن مشكلة فنية أو شخصية
-    =========================================== -->
     <div id="panel-issue" class="form-panel">
         <h3 class="panel-title">
             <span>🛠️ الإبلاغ عن مشكلة فنية أو شخصية</span>
@@ -513,7 +479,7 @@
 
         <div class="field-group">
             <label>عنوان المشكلة أو رقم الطلب (إن وجد):</label>
-            <input type="text" id="issue-subject" placeholder="مثلاً: كود الطلب ORD-123456 أو رقم التحويل...">
+            <input type="text" id="issue-subject" placeholder="مثلاً: كود الطلب ESC-123456 أو رقم التحويل...">
         </div>
 
         <div class="field-group">
@@ -531,9 +497,6 @@
         </button>
     </div>
 
-    <!-- ==========================================
-         التبويب 3: اقتراح إضافة أو ميزة جديدة للبوت
-    =========================================== -->
     <div id="panel-suggest" class="form-panel">
         <h3 class="panel-title">
             <span>💡 اقترح ميزة أو إضافة جديدة للبوت</span>
@@ -566,9 +529,6 @@
         </button>
     </div>
 
-    <!-- ==========================================
-         التبويب 4: تقييم البوت وآراء المستخدمين
-    =========================================== -->
     <div id="panel-rating" class="form-panel">
         <h3 class="panel-title">
             <span>⭐ قيّم تجربتك في منصة MegaTask</span>
@@ -600,7 +560,6 @@
         </div>
     </div>
 
-    <!-- 4. سجل تذاكري وبلاغاتي السابقة والردود -->
     <div class="section-title">
         <span>📂 سجل بلاغاتي وتذاكري السابقة</span>
         <button onclick="loadMyTickets()" style="background:none; border:1px solid var(--cyan); color:var(--cyan); border-radius:8px; padding:4px 10px; font-size:11px; font-weight:bold; cursor:pointer;">🔄 تحديث</button>
@@ -611,7 +570,6 @@
         </div>
     </div>
 
-    <!-- شريط التنقل السفلي -->
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
         <div onclick="goTasks()" class="nav-item">📋<br>المهام</div>
@@ -624,14 +582,12 @@
         const tg = window.Telegram?.WebApp;
         if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
 
-        // =========================================================================
-        // ⚙️ إعدادات روابط التواصل المباشر ومعرف الأدمن (عدّل الروابط الخاصة بك هنا)
-        // =========================================================================
         const CONTACT_CONFIG = {
-            ADMIN_TELEGRAM_ID: "875021647", // يرسل إليه البوت كل التذاكر والثغرات فوراً في شات تليجرام
+            ADMIN_TELEGRAM_ID: "875021647",
+            PROOFS_CHANNEL_ID: "@MegaTask_Proofs",
             WHATSAPP_URL: "https://wa.me/201022647804?text=" + encodeURIComponent("مرحباً إدارة MegaTask، أحتاج للمساعدة بخصوص البوت:"),
-            TG_SUPPORT_BOT_URL: "https://t.me/MegaTask1Bot", // ضع رابط بوت التواصل أو يوزر حسابك هنا
-            TG_CHANNEL_URL: "https://t.me/MegaTask1Bot",     // ضع رابط قناتك الرسمية هنا
+            TG_SUPPORT_BOT_URL: "https://t.me/MegaTask_group",
+            TG_CHANNEL_URL: "https://t.me/MegaTask_Bott",
             SUPPORT_EMAIL: "mostafashiref011494@gmail.com"
         };
 
@@ -677,7 +633,6 @@
             loadCommunityReviews();
         }
 
-        // فتح روابط التواصل المباشر (واتساب / تليجرام / إيميل)
         function openExternalContact(type) {
             let url = "";
             if (type === 'whatsapp') url = CONTACT_CONFIG.WHATSAPP_URL;
@@ -724,7 +679,6 @@
             });
         }
 
-        // ضغط الصورة المرفقة إلى Base64 خفيف
         function compressAttachment(input, key) {
             if (!input.files || !input.files[0]) return;
             const reader = new FileReader();
@@ -745,7 +699,7 @@
         }
 
         // =========================================================================
-        // 📤 إرسال التذكرة / الثغرة / الاقتراح / التقييم وحفظها وإشعار الأدمن فوراً
+        // 📤 إرسال التذكرة / الثغرة / الاقتراح / التقييم (مصحح بالكامل بدون .catch)
         // =========================================================================
         async function submitTicket(category) {
             if (!tid) return notifyUser("❌ يرجى فتح الصفحة من داخل البوت أولاً.");
@@ -821,15 +775,15 @@
                     status: 'Pending'
                 };
 
-                // 1. الحفظ في جدول support_tickets في Supabase (إن وجد)
-                await client.from('support_tickets').insert([payload]).catch(() => {});
+                // 1. الحفظ في جدول support_tickets بطريقة صحيحة متوافقة مع Supabase v2
+                await client.from('support_tickets').insert([payload]);
 
                 // 2. الحفظ أيضاً في الذاكرة المحلية ليظهر للمستخدم فوراً
                 const localList = JSON.parse(localStorage.getItem(`my_tickets_${tid}`) || "[]");
                 localList.unshift({ ...payload, created_at: new Date().toISOString() });
                 localStorage.setItem(`my_tickets_${tid}`, JSON.stringify(localList.slice(0, 20)));
 
-                // 3. إرسال إشعار فوري للأدمن (875021647) في شات تليجرام عبر جدول bot_messages
+                // 3. إرسال إشعار فوري للأدمن في شات تليجرام
                 const catBadges = {
                     bug: "🛡️ *بلاغ عن ثغرة جديدة (Bug Bounty)*",
                     issue: "🛠️ *تذكرة دعم فني / مشكلة مستخدم*",
@@ -866,19 +820,16 @@
                 if (category === 'rating') { document.getElementById('rating-comment').value = ""; loadCommunityReviews(); }
 
                 loadMyTickets();
-                notifyUser(`🎉 تم الإرسال بنجاح!\n🆔 رقم التذكرة: ${ticketCode}\n\nوصلت رسالتك للإدارة الآن، وتم إرسال نسخة تأكيد إلى محادثتك في البوت.`);
+                notifyUser(`🎉 تم الإرسال بنجاح!\n🆔 رقم التذكرة: ${ticketCode}`);
             } catch (e) {
                 console.error(e);
-                notifyUser("❌ حدث خطأ أثناء الإرسال، يرجى المحاولة مرة أخرى.");
+                notifyUser("❌ حدث خطأ أثناء الإرسال: " + (e.message || ""));
             } finally {
                 btn.disabled = false;
                 btn.innerText = origText;
             }
         }
 
-        // =========================================================================
-        // 📂 عرض سجل تذاكر وبلاغات المستخدم والردود عليها
-        // =========================================================================
         async function loadMyTickets() {
             const container = document.getElementById('my-tickets-container');
             let list = [];
@@ -931,7 +882,6 @@
             }).join("");
         }
 
-        // عرض تقييمات الأعضاء في تبويب التقييم
         async function loadCommunityReviews() {
             const box = document.getElementById('community-reviews-list');
             let reviews = [];
