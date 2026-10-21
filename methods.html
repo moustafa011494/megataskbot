@@ -7,6 +7,7 @@
     <title>MegaTask - سوق الميثودات والثغرات</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="security.js"></script>
     <style>
         :root { 
             --main-green: #00d26a; 
@@ -19,7 +20,6 @@
         }
         * { 
             box-sizing: border-box; 
-            /* حماية شاملة ضد تحديد النص أو النسخ أو السحب */
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
@@ -40,7 +40,6 @@
             overflow-x: hidden;
         }
 
-        /* طبقة الحماية عند محاولة التصوير أو فقدان التركيز */
         #security-shield {
             display: none;
             position: fixed;
@@ -54,7 +53,6 @@
             backdrop-filter: blur(20px);
         }
 
-        /* هيدر المحفظتين */
         .wallets-header {
             background: linear-gradient(145deg, #1a1f28, #12151b);
             border: 1px solid #2d333d;
@@ -83,13 +81,11 @@
         .btn-submit-method { background: linear-gradient(135deg, #00d26a, #009e4f); color: #000; border: none; padding: 12px 10px; border-radius: 14px; font-size: 12.5px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(0, 210, 106, 0.2); }
         .btn-my-methods { background: #161920; color: white; border: 1px solid #2d333d; padding: 12px 10px; border-radius: 14px; font-size: 12px; font-weight: bold; cursor: pointer; }
 
-        /* فلاتر سريعة (الكل / نقاط / جنيه / مفتوحة) */
         .filter-bar { display: flex; gap: 6px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
         .filter-bar::-webkit-scrollbar { display: none; }
         .f-chip { background: #14171e; border: 1px solid #2b303c; color: var(--text-gray); padding: 8px 13px; border-radius: 12px; font-size: 11.5px; font-weight: bold; white-space: nowrap; cursor: pointer; transition: 0.2s; }
         .f-chip.active { background: var(--main-green); color: black; border-color: var(--main-green); }
 
-        /* كروت الميثودات */
         .methods-container { display: flex; flex-direction: column; gap: 14px; }
         .method-card { 
             background: var(--card-bg); 
@@ -118,7 +114,6 @@
         .price-pts { background: rgba(0, 210, 106, 0.12); color: var(--main-green); border: 1px solid rgba(0, 210, 106, 0.35); }
         .price-egp { background: rgba(0, 242, 255, 0.12); color: var(--neon-blue); border: 1px solid rgba(0, 242, 255, 0.35); }
 
-        /* صندوق المحتوى المحمي مع العلامة المائية */
         .protected-content-wrapper {
             position: relative;
             background: #101318;
@@ -153,7 +148,6 @@
             word-break: break-word; 
         }
 
-        /* أزرار الروابط القابلة للضغط داخل الميثود */
         .clickable-link-btn {
             display: inline-flex;
             align-items: center;
@@ -172,7 +166,6 @@
         }
         .clickable-link-btn:active { transform: scale(0.95); background: var(--neon-blue); color: black; }
 
-        /* عرض الصور والفيديوهات المحمية */
         .media-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; position: relative; z-index: 3; }
         .method-img-container { position: relative; width: 100%; border-radius: 12px; overflow: hidden; max-height: 230px; border: 1px solid #333; cursor: zoom-in; }
         .method-img-container img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
@@ -180,7 +173,6 @@
         .method-video-container { position: relative; width: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--neon-blue); background: #000; }
         .method-video-container video { width: 100%; max-height: 260px; display: block; outline: none; }
 
-        /* صندوق الميثود المقفولة */
         .teaser-box { font-size: 12px; color: #cbd5e1; background: #13171f; padding: 9px 12px; border-radius: 10px; border-right: 3px solid var(--gold); margin-bottom: 6px; }
         .locked-box { 
             background: linear-gradient(145deg, #13161c, #0e1015); 
@@ -202,7 +194,6 @@
         .method-footer { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-gray); border-top: 1px solid #252932; padding-top: 10px; }
         .sales-badge { color: var(--gold); font-weight: bold; }
 
-        /* Modal Styles */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
         .modal-body { background: var(--card-bg); border: 1px solid #2d333d; border-radius: 22px; padding: 20px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; text-align: right; }
         .modal-title { font-size: 17px; color: var(--main-green); margin-top: 0; margin-bottom: 8px; text-align: center; }
@@ -227,7 +218,6 @@
         .btn-confirm { background: var(--main-green); color: black; }
         .btn-cancel { background: #252932; color: white; }
 
-        /* Lightbox with watermark */
         #lightbox-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.96); z-index: 100000; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px; }
         .lightbox-toolbar { width: 100%; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
         .lightbox-controls { display: flex; gap: 10px; }
@@ -244,7 +234,6 @@
 </head>
 <body oncontextmenu="return false;" oncopy="return false;" oncut="return false;" ondragstart="return false;">
 
-    <!-- درع الحماية ضد تصوير الشاشة وتسريب الميثودات -->
     <div id="security-shield">
         <div>
             <div style="font-size: 45px; margin-bottom: 10px;">🛡️</div>
@@ -256,7 +245,6 @@
         </div>
     </div>
 
-    <!-- هيدر المحفظتين (النقاط والجنيه) -->
     <div class="wallets-header">
         <div class="wallets-grid">
             <div class="w-card pts" onclick="goDeposit()">
@@ -276,7 +264,6 @@
 
     <input type="text" id="search-input" class="search-bar" placeholder="🔍 ابحث عن ميثود، ثغرة، أو شرح..." oninput="renderMethods()">
 
-    <!-- أزرار نشر ميثود ومتابعة أرباحي -->
     <div class="top-actions-grid">
         <button class="btn-submit-method" onclick="openSubmitModal()">
             ➕ انشر ميثود للبيع (اكسب 75%)
@@ -286,7 +273,6 @@
         </button>
     </div>
 
-    <!-- شريط الفلترة -->
     <div class="filter-bar">
         <div class="f-chip active" onclick="setFilter('all', this)">🌐 الكل</div>
         <div class="f-chip" onclick="setFilter('points', this)">🪙 بالنقاط</div>
@@ -294,12 +280,11 @@
         <div class="f-chip" onclick="setFilter('unlocked', this)">🔓 مفتوحة لي</div>
     </div>
 
-    <!-- قائمة الميثودات -->
     <div id="methods-list" class="methods-container">
         <div class="status-box">⏳ جاري جلب الميثودات...</div>
     </div>
 
-    <!-- نافذة نشر ميثود جديدة للبيع (نقاط أو جنيه + صور وفيديو) -->
+    <!-- نافذة نشر ميثود جديدة للبيع -->
     <div id="submit-modal" class="modal-overlay">
         <div class="modal-body">
             <h3 class="modal-title">💡 نشر ميثود أو ثغرة للبيع</h3>
@@ -402,12 +387,14 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        const tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(tg.initDataUnsafe?.user?.id || params.get('id') || localStorage.getItem('telegram_id') || "").trim();
         
         let userPoints = 0;
         let userEgp = 0;
         let userName = tg.initDataUnsafe.user?.first_name || "USER";
-        let allMethods = [];
+        let allMethodsList = [];
         let unlockedMethodsSet = new Set();
         let activeFilter = 'all';
         let selectedCurrency = 'points';
@@ -415,13 +402,12 @@
         let methodBase64Video = "";
         let currentZoom = 1;
 
-        // ==========================================
-        // 🛡️ نظام الحماية ضد النسخ ولقطات الشاشة
-        // ==========================================
+        // القائمة العامة الآمنة: لا تسحب المحتوى السري أو المرفقات لمنع التسريب من تبويب Network
+        const SAFE_PUBLIC_METHOD_COLS = "id, user_id, title, teaser, currency, unlock_cost, sales_count, status, created_at";
+
         function setupAntiPiracyProtection() {
             const shield = document.getElementById('security-shield');
 
-            // إخفاء المحتوى فور محاولة الخروج أو أخذ Screenshot / تبديل النافذة
             window.addEventListener('blur', () => {
                 document.body.style.filter = 'blur(18px)';
                 shield.style.display = 'flex';
@@ -445,7 +431,6 @@
                 document.body.style.filter = 'none';
             });
 
-            // منع اختصارات النسخ والطباعة والتصوير في الكيبورد
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'PrintScreen' || ((e.ctrlKey || e.metaKey) && ['c', 's', 'u', 'p', 'a'].includes(e.key.toLowerCase()))) {
                     e.preventDefault();
@@ -459,7 +444,6 @@
             return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        // ⭐ تحويل الروابط داخل النص المحمي إلى أزرار تفاعلية قابلة للضغط تفتح عبر تيليجرام
         function formatProtectedContentWithLinks(text) {
             const escaped = escapeHtml(text);
             const urlRegex = /(https?:\/\/[^\s"'<>]+)/g;
@@ -481,7 +465,6 @@
             }
         }
 
-        // توليد علامة مائية ديناميكية برقم حساب المستخدم لمنع التسريب
         function generateWatermarkHtml() {
             const stamp = `MegaTask • ID:${tid} • ${userName}`;
             let html = "";
@@ -517,18 +500,19 @@
             document.getElementById('user-egp').innerText = userEgp.toFixed(2) + " ج.م";
         }
 
+        // جلب العناوين العامة الآمنة فقط لمنع سرقة المحتوى من الـ Inspect
         async function loadApprovedMethods() {
             const container = document.getElementById('methods-list');
             try {
                 const { data: methods, error } = await client
                     .from('methods')
-                    .select('*')
+                    .select(SAFE_PUBLIC_METHOD_COLS)
                     .eq('status', 'Approved')
                     .order('id', { ascending: false });
 
                 if (error) throw error;
 
-                allMethods = methods || [];
+                allMethodsList = methods || [];
                 renderMethods();
             } catch (err) {
                 console.error("Load methods error:", err);
@@ -547,7 +531,7 @@
             const container = document.getElementById('methods-list');
             const query = (document.getElementById('search-input')?.value || "").toLowerCase();
 
-            let filtered = allMethods.filter(m => {
+            let filtered = allMethodsList.filter(m => {
                 const mId = String(m.id);
                 const isOwner = String(m.user_id) === String(tid);
                 const isUnlocked = unlockedMethodsSet.has(mId) || isOwner;
@@ -592,48 +576,17 @@
 
                 let bodyHtml = "";
 
-                // إذا كانت الميثود مفتوحة للمستخدم نعرض المحتوى والصور والفيديو مع العلامة المائية
                 if (isUnlocked) {
-                    const imgHtml = m.image_url ? `
-                        <div class="method-img-container" onclick="openLightbox('${m.image_url}')">
-                            <img src="${m.image_url}" alt="Method Image">
-                            <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.8); color: white; font-size: 11px; padding: 4px 9px; border-radius: 6px;">🔍 اضغط لتكبير الصورة</div>
-                        </div>
-                    ` : '';
-
-                    let videoHtml = '';
-                    if (m.video_url) {
-                        if (m.video_url.startsWith('data:video') || m.video_url.endsWith('.mp4') || m.video_url.endsWith('.webm')) {
-                            videoHtml = `
-                                <div class="method-video-container">
-                                    <video src="${m.video_url}" controls controlsList="nodownload" disablePictureInPicture oncontextmenu="return false;"></video>
-                                </div>`;
-                        } else {
-                            const safeVUrl = m.video_url.replace(/'/g, "\\'");
-                            videoHtml = `
-                                <div style="text-align:center; margin-top:6px;">
-                                    <span class="clickable-link-btn" style="padding:8px 16px; font-size:12.5px;" onclick="openExternalSafeLink('${safeVUrl}')">🎬 مشاهدة فيديو الشرح المرفق ↗</span>
-                                </div>`;
-                        }
-                    }
-
+                    // إذا كانت الميثود مفتوحة، نقوم بسحب محتواها ومرفقاتها السرية لحظياً من قاعدة البيانات عبر دالة فك القفل
                     bodyHtml = `
-                        <div class="protected-content-wrapper">
-                            ${generateWatermarkHtml()}
-                            <div class="method-content">${formatProtectedContentWithLinks(m.content)}</div>
-                            <div class="media-grid">
-                                ${imgHtml}
-                                ${videoHtml}
-                            </div>
+                        <div id="secret-box-${mId}" class="protected-content-wrapper">
+                            <div class="status-box" style="padding:15px; font-size:12px;">⏳ جاري جلب الشرح والمرفقات المحمية...</div>
                         </div>
                     `;
+                    // سحب المحتوى السري في الخلفية وعرضه
+                    fetchSecretMethodContent(mId);
                 } else {
-                    // إذا كانت مقفولة: لا نضع النص السري أو الصور في الـ DOM نهائياً لمنع سرقتها من الـ Inspect!
                     const teaserHtml = m.teaser ? `<div class="teaser-box">💡 <b>نبذة:</b> ${escapeHtml(m.teaser)}</div>` : '';
-                    const hasImg = !!m.image_url;
-                    const hasVid = !!m.video_url;
-                    const hasLinks = (m.content || "").includes("http");
-
                     const btnClass = isEgp ? 'btn-unlock-egp' : 'btn-unlock-pts';
                     const unitTxt = isEgp ? 'ج.م' : 'نقطة';
 
@@ -644,9 +597,8 @@
                             قم بشراء وفك قفل الميثود لعرض الشرح الكامل والمرفقات فوراً:
                             <div class="media-indicators">
                                 <span class="media-pill">📝 شرح مفصل</span>
-                                ${hasImg ? '<span class="media-pill">📸 صورة مرفقة</span>' : ''}
-                                ${hasVid ? '<span class="media-pill">🎥 فيديو شرح</span>' : ''}
-                                ${hasLinks ? '<span class="media-pill">🔗 روابط مباشرة</span>' : ''}
+                                <span class="media-pill">📸 صور/فيديو مرفقة</span>
+                                <span class="media-pill">🔗 روابط مباشرة</span>
                             </div>
                             <button class="btn-unlock ${btnClass}" onclick="unlockMethod(${m.id})">
                                 🔓 شراء وفك القفل الآن (${cost.toLocaleString()} ${unitTxt})
@@ -679,9 +631,62 @@
             });
         }
 
-        // ⭐ شراء وفك قفل الميثود + تحويل 75% لصاحب الميثود تلقائياً و25% للبوت
+        // سحب محتوى الميثود السري عند الطلب فقط (لمنع التسريب العام)
+        async function fetchSecretMethodContent(methodId) {
+            const wrapper = document.getElementById(`secret-box-${methodId}`);
+            if (!wrapper) return;
+
+            try {
+                const { data: secretData } = await client
+                    .from('methods')
+                    .select('content, image_url, video_url')
+                    .eq('id', parseInt(methodId))
+                    .maybeSingle();
+
+                if (!secretData) {
+                    wrapper.innerHTML = '<div style="color:var(--crimson); text-align:center;">❌ تعذر جلب محتوى الميثود.</div>';
+                    return;
+                }
+
+                const imgHtml = secretData.image_url ? `
+                    <div class="method-img-container" onclick="openLightbox('${secretData.image_url}')">
+                        <img src="${secretData.image_url}" alt="Method Image">
+                        <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.8); color: white; font-size: 11px; padding: 4px 9px; border-radius: 6px;">🔍 اضغط لتكبير الصورة</div>
+                    </div>
+                ` : '';
+
+                let videoHtml = '';
+                if (secretData.video_url) {
+                    if (secretData.video_url.startsWith('data:video') || secretData.video_url.endsWith('.mp4') || secretData.video_url.endsWith('.webm')) {
+                        videoHtml = `
+                            <div class="method-video-container">
+                                <video src="${secretData.video_url}" controls controlsList="nodownload" disablePictureInPicture oncontextmenu="return false;"></video>
+                            </div>`;
+                    } else {
+                        const safeVUrl = secretData.video_url.replace(/'/g, "\\'");
+                        videoHtml = `
+                            <div style="text-align:center; margin-top:6px;">
+                                <span class="clickable-link-btn" style="padding:8px 16px; font-size:12.5px;" onclick="openExternalSafeLink('${safeVUrl}')">🎬 مشاهدة فيديو الشرح المرفق ↗</span>
+                            </div>`;
+                    }
+                }
+
+                wrapper.innerHTML = `
+                    ${generateWatermarkHtml()}
+                    <div class="method-content">${formatProtectedContentWithLinks(secretData.content)}</div>
+                    <div class="media-grid">
+                        ${imgHtml}
+                        ${videoHtml}
+                    </div>
+                `;
+            } catch (e) {
+                wrapper.innerHTML = '<div style="color:var(--crimson); text-align:center;">❌ خطأ أثناء تحميل الشرح.</div>';
+            }
+        }
+
+        // ⭐ شراء وفك قفل الميثود + تحويل 75% لصاحب الميثود تلقائياً
         async function unlockMethod(methodId) {
-            const m = allMethods.find(item => item.id === methodId);
+            const m = allMethodsList.find(item => item.id === methodId);
             if (!m) return;
 
             const isEgp = m.currency === 'egp';
@@ -704,7 +709,6 @@
             if (!confirm(`تأكيد شراء وفك قفل ميثود (${m.title}) مقابل ${cost.toLocaleString()} ${unitTxt}؟`)) return;
 
             try {
-                // 1. خصم السعر من المشتري
                 let buyerUpdate = {};
                 if (isEgp) {
                     userEgp = Number((userEgp - cost).toFixed(2));
@@ -717,19 +721,16 @@
                 const { error: buyerErr } = await client.from('users').update(buyerUpdate).eq('telegram_id', tid);
                 if (buyerErr) throw buyerErr;
 
-                // 2. تسجيل فتح الميثود للمشتري
                 const { error: unlErr } = await client.from('method_unlocks').insert([{
                     user_id: tid,
                     method_id: parseInt(methodId)
                 }]);
                 if (unlErr) throw unlErr;
 
-                // 3. زيادة عداد مبيعات الميثود
                 const newSalesCount = (m.sales_count || 0) + 1;
                 await client.from('methods').update({ sales_count: newSalesCount }).eq('id', m.id);
                 m.sales_count = newSalesCount;
 
-                // 4. توثيق عملية الشراء في هيستوري المشتري
                 await client.from('transactions').insert([{
                     telegram_id: String(tid),
                     type: isEgp ? 'egp' : 'points',
@@ -738,7 +739,6 @@
                     status: 'مكتمل'
                 }]);
 
-                // ⭐ 5. تحويل 75% من السعر لصاحب الميثود تلقائياً (إذا لم يكن ADMIN)
                 if (m.user_id && m.user_id !== 'ADMIN' && String(m.user_id) !== String(tid)) {
                     const creatorId = String(m.user_id);
                     const { data: creatorUser } = await client.from('users').select('points, egp_balance, total_earned').eq('telegram_id', creatorId).maybeSingle();
@@ -758,7 +758,6 @@
                             creatorShareText = `+${sharePts.toLocaleString()} نقطة`;
                         }
 
-                        // تسجيل الربح في هيستوري البائع
                         await client.from('transactions').insert([{
                             telegram_id: creatorId,
                             type: isEgp ? 'egp' : 'points',
@@ -767,7 +766,6 @@
                             status: 'مكتمل'
                         }]);
 
-                        // إرسال إشعار فوري للبائع في شات البوت
                         await client.from('bot_messages').insert([{
                             telegram_id: creatorId,
                             message: `🎉 *مبيعة جديدة للميثود الخاصة بك!* 💰\n\n📌 *الميثود:* ${m.title}\n🎁 *ربحك الصافي (75%):* تم إضافة *${creatorShareText}* إلى رصيدك فوراً!`,
@@ -786,7 +784,6 @@
             }
         }
 
-        // --- نافذة نشر ميثود جديدة ---
         function openSubmitModal() {
             if (!tid) return tg.showAlert("❌ يرجى فتح المنصة من داخل البوت.");
             document.getElementById('m-title').value = "";
@@ -863,7 +860,6 @@
         function previewMethodVideo(input) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
-            // حد أقصى 4 ميجابايت لملف الفيديو المباشر لضمان سرعة الحفظ في قاعدة البيانات
             if (file.size > 4.5 * 1024 * 1024) {
                 input.value = "";
                 return tg.showAlert("⚠️ حجم الفيديو كبير جداً! يرجى اختيار فيديو قصير أقل من 4 ميجابايت أو وضع رابط الفيديو في الخانة المخصصة.");
@@ -930,7 +926,6 @@
             }
         }
 
-        // --- نافذة متابعة ميثوداتي ومبيعاتي ---
         async function openMyMethodsModal() {
             document.getElementById('my-methods-modal').style.display = 'flex';
             const box = document.getElementById('my-methods-content');
