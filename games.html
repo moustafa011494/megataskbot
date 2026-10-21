@@ -14,7 +14,6 @@
 <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<!-- درع الحماية ضد تعدد الحسابات -->
 <script src="security.js"></script>
 
 <style>
@@ -61,7 +60,6 @@ html, body {
     letter-spacing: 0.5px;
 }
 
-/* شريط الهيدر العلوي للأركيد */
 .arcade-top-bar {
     padding: 16px 15px 10px;
     display: flex;
@@ -121,7 +119,6 @@ html, body {
     50% { transform: scale(1.35); opacity: 0.5; }
 }
 
-/* كبسولات الرصيد الثلاثية الأبعاد */
 .wallets-hud {
     display: grid;
     grid-template-columns: 1fr 1.15fr;
@@ -177,7 +174,6 @@ html, body {
     border-radius: 6px;
 }
 
-/* شريط طاقة الجولات اليومية (30 جولة) + زر الشحن */
 .energy-panel {
     margin: 0 15px 16px;
     background: var(--panel-bg);
@@ -251,7 +247,6 @@ html, body {
     box-shadow: none;
 }
 
-/* صندوق الكنز اليومي (Mystery Vault) */
 .vault-card {
     margin: 0 15px 16px;
     background: #151221;
@@ -307,7 +302,6 @@ html, body {
     cursor: not-allowed;
 }
 
-/* مفاعل النقرات السريعة التفاعلي (3D Plasma Core) */
 .reactor-section {
     margin: 0 15px 20px;
     background: var(--panel-bg);
@@ -410,7 +404,6 @@ html, body {
     min-height: 20px;
 }
 
-/* أرقام طائرة عند الضغط على المفاعل */
 .floating-tap {
     position: fixed;
     pointer-events: none;
@@ -427,7 +420,6 @@ html, body {
     100% { opacity: 0; transform: translateY(-55px) scale(1.25); }
 }
 
-/* شبكة الألعاب الـ 7 بتصميم كروت الكونسول */
 .section-header-row {
     padding: 0 15px;
     margin: 22px 0 12px;
@@ -536,7 +528,6 @@ html, body {
     border-radius: 6px;
 }
 
-/* مهام الأركيد اليومية */
 .quests-box {
     margin: 0 15px 20px;
     display: flex;
@@ -575,7 +566,6 @@ html, body {
     cursor: not-allowed;
 }
 
-/* لوحة شرف أباطرة الألماس */
 .lb-container {
     margin: 0 15px 20px;
     background: var(--panel-bg);
@@ -608,7 +598,6 @@ html, body {
 .lb-rank.r2 { background: #cbd5e1; color: #000; }
 .lb-rank.r3 { background: #d97706; color: #000; }
 
-/* النوافذ المنبثقة */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -659,7 +648,6 @@ html, body {
     font-family: inherit;
 }
 
-/* شريط التنقل السفلي */
 .navbar {
     position: fixed;
     bottom: 0;
@@ -685,7 +673,6 @@ html, body {
 </head>
 <body>
 
-<!-- الهيدر العلوي -->
 <div class="arcade-top-bar">
     <div class="arcade-brand">
         <div class="brand-badge">
@@ -704,7 +691,6 @@ html, body {
     </div>
 </div>
 
-<!-- كبسولات الأرصدة (نقاط البوت + الألماس القابل للتحويل) -->
 <div class="wallets-hud">
     <div class="hud-box">
         <div class="hud-icon pts-ic">
@@ -734,7 +720,6 @@ html, body {
     </div>
 </div>
 
-<!-- شريط طاقة الجولات اليومية (30 جولة) + شحن جولات إضافية -->
 <div class="energy-panel">
     <div class="energy-top">
         <div class="energy-label">
@@ -752,7 +737,6 @@ html, body {
     </div>
 </div>
 
-<!-- خزنة الهدايا اليومية العشوائية -->
 <div class="vault-card">
     <div class="vault-left">
         <div class="vault-svg-box">
@@ -769,7 +753,6 @@ html, body {
     <button id="btn-mystery-box" class="btn-vault" onclick="openMysteryBox()">فتح الخزنة</button>
 </div>
 
-<!-- مفاعل النقرات السريعة التفاعلي (Reactor Core) -->
 <div class="reactor-section">
     <div class="reactor-header">
         <div class="reactor-title">
@@ -796,14 +779,12 @@ html, body {
     <div id="clicker-status-msg" class="reactor-status">اضغط على نواة المفاعل لشحن 10/10 واستلام +10 ألماسات!</div>
 </div>
 
-<!-- قسم الألعاب المتاحة بتصميم SVG مخصص -->
 <div class="section-header-row">
     <h3 class="section-title">منصات اللعب المتاحة</h3>
     <span style="font-size: 11px; color: var(--text-muted);">اختر لعبتك المفضلة</span>
 </div>
 
 <div class="games-grid">
-    <!-- 1. Frost Breakout (عرض كامل مميز) -->
     <div class="arcade-card featured-wide" onclick="openGame('frost-breakout')">
         <span class="hot-badge">🔥 الأكثر ربحاً</span>
         <div style="flex: 1; padding-left: 12px;">
@@ -822,7 +803,6 @@ html, body {
         </div>
     </div>
 
-    <!-- 2. حرب الفضاء -->
     <div class="arcade-card" onclick="openGame('space')">
         <span class="hot-badge" style="background: var(--violet);">PRO</span>
         <div class="game-svg-emblem">
@@ -836,7 +816,6 @@ html, body {
         <span class="game-reward-pill">10 نيازك = +1 💎</span>
     </div>
 
-    <!-- 3. كويز العباقرة -->
     <div class="arcade-card" onclick="openGame('quiz')">
         <span class="hot-badge" style="background: var(--emerald); color:#000;">API</span>
         <div class="game-svg-emblem">
@@ -849,7 +828,6 @@ html, body {
         <span class="game-reward-pill">الصح = +2 💎</span>
     </div>
 
-    <!-- 4. إكس أو الذكية -->
     <div class="arcade-card" onclick="openGame('tictactoe')">
         <div class="game-svg-emblem">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
@@ -863,7 +841,6 @@ html, body {
         <span class="game-reward-pill">فوز سريع 💎</span>
     </div>
 
-    <!-- 5. صناديق الحظ -->
     <div class="arcade-card" onclick="openGame('chests')">
         <div class="game-svg-emblem">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
@@ -876,7 +853,6 @@ html, body {
         <span class="game-reward-pill">جوائز مضاعفة 💎</span>
     </div>
 
-    <!-- 6. لعبة الذاكرة -->
     <div class="arcade-card" onclick="openGame('memory')">
         <div class="game-svg-emblem">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
@@ -891,7 +867,6 @@ html, body {
         <span class="game-reward-pill">تركيز وأرباح 💎</span>
     </div>
 
-    <!-- 7. مغامرة الحصان -->
     <div class="arcade-card" onclick="openGame('seahorse')">
         <div class="game-svg-emblem">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
@@ -904,17 +879,13 @@ html, body {
     </div>
 </div>
 
-<!-- مهام الأركيد اليومية الإضافية -->
 <div class="section-header-row">
     <h3 class="section-title">مهام الأركيد اليومية</h3>
     <span style="font-size: 11px; color: var(--amber);">مكافآت إضافية</span>
 </div>
 
-<div class="quests-box" id="daily-quests-container">
-    <!-- يتم توليدها تلقائياً -->
-</div>
+<div class="quests-box" id="daily-quests-container"></div>
 
-<!-- لوحة شرف أباطرة الألماس -->
 <div class="section-header-row">
     <h3 class="section-title">أباطرة الألماس (Top 5)</h3>
     <span style="font-size: 11px; color: var(--cyan);">الأعلى رصيداً</span>
@@ -924,7 +895,6 @@ html, body {
     <div style="text-align: center; padding: 12px; color: var(--text-muted); font-size: 12px;">⏳ جاري تحميل المتصدرين...</div>
 </div>
 
-<!-- نافذة تحويل الألماس لرصيد البوت -->
 <div id="convert-modal" class="modal-overlay">
     <div class="modal-box">
         <h3 style="color: var(--cyan); margin-top: 0;">💎 خزنة تحويل الألماس</h3>
@@ -940,7 +910,6 @@ html, body {
     </div>
 </div>
 
-<!-- شريط التنقل السفلي -->
 <nav class="navbar">
     <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
     <div onclick="goTasks()" class="nav-item">📋<br>المهام</div>
@@ -959,19 +928,16 @@ const client = supabase.createClient(
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM"
 );
 
-let tid = new URLSearchParams(location.search).get("id") || tg.initDataUnsafe?.user?.id || localStorage.getItem("telegram_id") || localStorage.getItem("megatask_uid");
-if (tid && tid !== "undefined" && tid !== "null") {
-    tid = String(tid).trim();
-    localStorage.setItem("telegram_id", tid);
-    localStorage.setItem("megatask_uid", tid);
-}
+let tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+    ? MegaSecurity.getVerifiedUserId(new URLSearchParams(location.search).get('id'))
+    : String(new URLSearchParams(location.search).get("id") || tg.initDataUnsafe?.user?.id || localStorage.getItem("telegram_id") || "").trim();
 
 let userData = null;
 let dailyRoundTimer = null;
 let cooldownInterval = null;
-let isAdBusy = false; // قفل لمنع تكرار الضغط أثناء تحميل الإعلان
+let isAdBusy = false;
+let isBoxOpenedInDB = false;
 
-// الحصول على تاريخ اليوم بالتوقيت المحلي (لتجنب تضارب توقيت UTC مع منتصف الليل المحلي)
 function getLocalTodayStr() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -993,7 +959,6 @@ function triggerHaptic(style = 'light') {
 async function init() {
     if (!tid) return tg.showAlert("❌ لم يتم العثور على معرف تيليجرام، افتح الصفحة من داخل البوت.");
 
-    // 🛡️ 1. فحص درع الحماية ضد تعدد الحسابات على نفس الهاتف
     if (typeof MegaSecurity !== "undefined") {
         const secCheck = await MegaSecurity.verifyDeviceAndAccount(client, tid);
         if (!secCheck.allowed) return;
@@ -1015,8 +980,8 @@ async function init() {
         localStorage.setItem("megatask_uid", tid);
 
         await prepareDailyRounds();
+        await syncMysteryBoxWithDB();
 
-        // استرجاع حالة المفاعل اليومية
         const saved = localStorage.getItem(`clicker_game_${tid}`);
         if (saved) {
             try {
@@ -1051,21 +1016,39 @@ async function prepareDailyRounds() {
     startDailyTimer();
 }
 
+// فحص قاعدة البيانات للتأكد من عدم فتح خزنة الألماس اليومية اليوم (ضد مسح الـ Cache)
+async function syncMysteryBoxWithDB() {
+    try {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const { data: txs } = await client
+            .from('transactions')
+            .select('id')
+            .eq('telegram_id', String(tid))
+            .eq('title', 'جائزة خزنة الأركيد اليومية')
+            .gte('created_at', startOfToday.toISOString())
+            .limit(1);
+
+        if (txs && txs.length > 0) {
+            isBoxOpenedInDB = true;
+            localStorage.setItem(`mystery_box_${tid}`, getLocalTodayStr());
+        }
+    } catch (e) {}
+}
+
 function updateAllUI() {
     if (!userData) return;
 
-    // 1. الأرصدة
     document.getElementById("user-real-points").innerText = Number(userData.points || 0).toLocaleString();
     document.getElementById("game-diamonds-counter").innerText = Number(userData.gamepoints || 0).toLocaleString();
 
-    // 2. شريط الجولات اليومية
     const roundsUsed = Math.min(30, Math.max(0, Number(userData.daily_game_rounds || 0)));
     document.getElementById("daily-rounds").innerText = roundsUsed;
     document.getElementById("daily-progress-bar").style.width = ((roundsUsed / 30) * 100) + "%";
 
-    // 3. حالة خزنة الهدايا اليومية
     const vaultBtn = document.getElementById("btn-mystery-box");
-    const openedToday = localStorage.getItem(`mystery_box_${tid}`) === getLocalTodayStr();
+    const openedToday = isBoxOpenedInDB || localStorage.getItem(`mystery_box_${tid}`) === getLocalTodayStr();
     if (openedToday) {
         vaultBtn.className = "btn-vault opened";
         vaultBtn.innerText = "تم الفتح ✅";
@@ -1074,7 +1057,6 @@ function updateAllUI() {
         vaultBtn.innerText = "فتح الخزنة 🔓";
     }
 
-    // 4. حلقة المفاعل والضغطات
     document.getElementById("daily-clicks-count").innerText = clickerData.dailyClicks;
     document.getElementById("batch-clicks-label").innerText = `${clickerData.batchClicks} / 10`;
     const ring = document.getElementById("reactor-progress-ring");
@@ -1082,7 +1064,6 @@ function updateAllUI() {
     const offset = circumference - (clickerData.batchClicks / 10) * circumference;
     ring.style.strokeDashoffset = offset;
 
-    // 5. تحديث مهام الأركيد اليومية
     renderDailyQuests();
 }
 
@@ -1115,7 +1096,6 @@ function saveClickerState() {
     }
 }
 
-// رسم رقم طائر عند مكان اللمس
 function spawnFloatingTapText(e) {
     const el = document.createElement("div");
     el.className = "floating-tap";
@@ -1165,7 +1145,10 @@ async function triggerClickerAd() {
     try {
         if (typeof show_10959333 === "function") await show_10959333();
 
-        let n = Number(userData.gamepoints || 0) + 10;
+        // جلب أحدث رصيد ألماس لحظة الصرف
+        const { data: freshU } = await client.from("users").select("gamepoints").eq("telegram_id", String(tid)).single();
+        let n = Number(freshU?.gamepoints || userData.gamepoints || 0) + 10;
+
         const { data, error } = await client
             .from("users")
             .update({ gamepoints: n })
@@ -1177,7 +1160,7 @@ async function triggerClickerAd() {
 
         userData = data;
         clickerData.batchClicks = 0;
-        clickerData.cooldownUntil = Date.now() + 300000; // 5 دقائق
+        clickerData.cooldownUntil = Date.now() + 300000;
         saveClickerState();
         updateAllUI();
         startCooldownTimer();
@@ -1186,7 +1169,6 @@ async function triggerClickerAd() {
         tg.showAlert("🎉 تم شحن المفاعل بنجاح!\n\nتمت إضافة +10 ألماسات 💎 إلى خزنتك.\nبدأ مؤقت تبريد المفاعل (5 دقائق).");
     } catch (e) {
         console.error(e);
-        // إذا ألغى الإعلان نرجع العداد لـ 9 ليضغط ضغطة واحدة ويعيد المحاولة دون ضياع ضغطاته
         clickerData.dailyClicks = Math.max(0, clickerData.dailyClicks - 1);
         clickerData.batchClicks = 9;
         saveClickerState();
@@ -1224,7 +1206,6 @@ function checkCooldownTimer() {
     if (clickerData.cooldownUntil > Date.now()) startCooldownTimer();
 }
 
-// ⭐ ميزة شحن +5 جولات إضافية بمشاهدة إعلان (حد أقصى مرتين يومياً)
 async function refillBonusRoundsWithAd() {
     if (!userData || isAdBusy) return;
     const today = getLocalTodayStr();
@@ -1264,24 +1245,39 @@ async function refillBonusRoundsWithAd() {
     }
 }
 
-// ⭐ خزنة الهدايا اليومية العشوائية
+// ⭐ خزنة الهدايا اليومية المؤمّنة بقاعدة البيانات (ضد مسح الـ Cache)
 async function openMysteryBox() {
-    if (!userData || isAdBusy) return;
+    if (!userData || isAdBusy || isBoxOpenedInDB) return;
     const today = getLocalTodayStr();
-    const lastOpen = localStorage.getItem(`mystery_box_${tid}`);
-
-    if (lastOpen === today) {
-        return tg.showAlert("⏳ لقد فتحت خزنة الألماس اليوم بالفعل! تتجدد الخزنة عند منتصف الليل 🎁");
-    }
 
     isAdBusy = true;
     try {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        const { data: checkTx } = await client
+            .from('transactions')
+            .select('id')
+            .eq('telegram_id', String(tid))
+            .eq('title', 'جائزة خزنة الأركيد اليومية')
+            .gte('created_at', startOfToday.toISOString())
+            .limit(1);
+
+        if (checkTx && checkTx.length > 0) {
+            isBoxOpenedInDB = true;
+            localStorage.setItem(`mystery_box_${tid}`, today);
+            updateAllUI();
+            isAdBusy = false;
+            return tg.showAlert("⏳ لقد فتحت خزنة الألماس اليوم بالفعل! تتجدد الخزنة عند منتصف الليل 🎁");
+        }
+
         if (typeof show_10959333 === "function") await show_10959333();
 
         const prizes = [15, 20, 25, 30, 40, 50];
         const wonDiamonds = prizes[Math.floor(Math.random() * prizes.length)];
 
-        let newGamePts = Number(userData.gamepoints || 0) + wonDiamonds;
+        const { data: freshU } = await client.from("users").select("gamepoints").eq("telegram_id", String(tid)).single();
+        let newGamePts = Number(freshU?.gamepoints || userData.gamepoints || 0) + wonDiamonds;
+
         const { data, error } = await client
             .from("users")
             .update({ gamepoints: newGamePts })
@@ -1291,10 +1287,6 @@ async function openMysteryBox() {
 
         if (!error && data) userData = data;
 
-        localStorage.setItem(`mystery_box_${tid}`, today);
-        updateAllUI();
-        triggerHaptic('heavy');
-
         await client.from("transactions").insert([{
             telegram_id: String(tid),
             type: "points",
@@ -1302,6 +1294,11 @@ async function openMysteryBox() {
             amount: `+${wonDiamonds} 💎`,
             status: "مكتمل"
         }]);
+
+        isBoxOpenedInDB = true;
+        localStorage.setItem(`mystery_box_${tid}`, today);
+        updateAllUI();
+        triggerHaptic('heavy');
 
         tg.showAlert(`🎁 مبروك! فتحت الخزنة اليومية وربحت +${wonDiamonds} ألماسة 💎 تمت إضافتها لرصيدك!`);
     } catch (e) {
@@ -1311,7 +1308,6 @@ async function openMysteryBox() {
     }
 }
 
-// ⭐ نظام مهام الأركيد اليومية (3 مهام تفاعلية)
 function renderDailyQuests() {
     const container = document.getElementById("daily-quests-container");
     const today = getLocalTodayStr();
@@ -1319,7 +1315,7 @@ function renderDailyQuests() {
 
     const roundsPlayed = Number(userData?.daily_game_rounds || 0);
     const clicksDone = clickerData.dailyClicks || 0;
-    const boxOpened = localStorage.getItem(`mystery_box_${tid}`) === today;
+    const boxOpened = isBoxOpenedInDB || localStorage.getItem(`mystery_box_${tid}`) === today;
 
     const quests = [
         { id: "q_rounds", title: "العب 5 جولات في أي لعبة اليوم", reward: 15, progress: `${Math.min(5, roundsPlayed)}/5`, done: roundsPlayed >= 5 },
@@ -1357,7 +1353,9 @@ async function claimArcadeQuest(questId, rewardDiamonds, questTitle) {
     const claimed = JSON.parse(localStorage.getItem(key) || "[]");
     if (claimed.includes(questId)) return;
 
-    const newD = Number(userData.gamepoints || 0) + rewardDiamonds;
+    const { data: freshU } = await client.from("users").select("gamepoints").eq("telegram_id", String(tid)).single();
+    let newD = Number(freshU?.gamepoints || userData.gamepoints || 0) + rewardDiamonds;
+
     const { data, error } = await client
         .from("users")
         .update({ gamepoints: newD })
@@ -1384,7 +1382,6 @@ async function claimArcadeQuest(questId, rewardDiamonds, questTitle) {
     }
 }
 
-// ⭐ لوحة شرف أباطرة الألماس (تستبعد أصحاب الرصيد 0)
 async function loadDiamondsLeaderboard() {
     const box = document.getElementById("diamonds-leaderboard");
     try {
@@ -1419,7 +1416,6 @@ async function loadDiamondsLeaderboard() {
     }
 }
 
-// ⭐ تحويل الألماس لرصيد البوت الحقيقي (+ 10% عمولة إحالة للداعي)
 function openConvertModal() {
     if (!userData) return tg.showAlert("⚠️ بيانات حسابك لم يتم تحميلها بعد.");
     let d = Number(userData.gamepoints || 0);
@@ -1437,12 +1433,15 @@ function closeConvertModal() {
 
 async function confirmAndWatchAdConversion() {
     if (!userData || isAdBusy) return;
-    let d = Number(userData.gamepoints || 0);
+    
+    // سحب أحدث رصيد ألماس لحظة التحويل
+    const { data: freshU } = await client.from("users").select("gamepoints, points, total_earned, referred_by").eq("telegram_id", String(tid)).single();
+    let d = Number(freshU?.gamepoints || userData.gamepoints || 0);
     if (d < 10) return tg.showAlert("⚠️ لا توجد ألماسات كافية للتحويل.");
 
     let points = Math.floor(d / 10);
     let used = points * 10;
-    let newPoints = Number(userData.points || 0) + points;
+    let newPoints = Number(freshU.points || userData.points || 0) + points;
     let remaining = d - used;
 
     closeConvertModal();
@@ -1454,7 +1453,7 @@ async function confirmAndWatchAdConversion() {
         let obj = {
             points: newPoints,
             gamepoints: remaining,
-            total_earned: Number(userData.total_earned || 0) + points
+            total_earned: Number(freshU.total_earned || userData.total_earned || 0) + points
         };
 
         const { data, error } = await client
@@ -1477,14 +1476,14 @@ async function confirmAndWatchAdConversion() {
             status: "مكتمل"
         }]);
 
-        // عمولة إحالة 10% للداعي عند تحويل الألماس لنقاط
         if (userData.referred_by && String(userData.referred_by) !== String(tid)) {
             const refBonus = Math.max(1, Math.floor(points * 0.10));
-            const { data: refU } = await client.from("users").select("points, total_earned").eq("telegram_id", String(userData.referred_by)).maybeSingle();
+            const { data: refU } = await client.from("users").select("points, total_earned, total_ref_commission").eq("telegram_id", String(userData.referred_by)).maybeSingle();
             if (refU) {
                 await client.from("users").update({
-                    points: Number(refU.points || 0) + refBonus,
-                    total_earned: Number(refU.total_earned || 0) + refBonus
+                    points: (refU.points || 0) + refBonus,
+                    total_earned: (refU.total_earned || 0) + refBonus,
+                    total_ref_commission: (refU.total_ref_commission || 0) + refBonus
                 }).eq("telegram_id", String(userData.referred_by));
             }
         }
