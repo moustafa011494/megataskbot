@@ -247,7 +247,7 @@
         لا يتم احتساب النقاط إلا بعد التأكد الآلي من فتح الإعلان والبقاء داخله لمدة 15 ثانية كاملة. العودة للبوت قبل انتهاء الوقت توقف العداد تلقائياً!
     </div>
 
-    <!-- قسم الإعلانات المحدث (SDK المدمج المؤكد + الزيارة برادار الخروج الحقيقي) -->
+    <!-- قسم الإعلانات المحدث -->
     <div class="ads-section">
         
         <!-- النوع 1: إعلان البوت المدمج المؤكد (Monetag SDK Promise) -->
@@ -315,7 +315,7 @@
         <div class="status-box">⏳ جاري جلب المهام النشطة...</div>
     </div>
 
-    <!-- 🛡️ نافذة رادار التحقق الحقيقي من زيارة موقع المعلن (توقف العداد لو المستخدم داخل البوت!) -->
+    <!-- 🛡️ نافذة رادار التحقق الحقيقي من زيارة موقع المعلن -->
     <div id="ad-verify-modal" class="modal-overlay">
         <div class="modal-body" style="text-align: center; border-color: var(--main-cyan);">
             <h3 style="color: var(--main-cyan); margin-top: 0;">📡 رادار التحقق من تصفح الإعلان</h3>
@@ -398,7 +398,7 @@
             <label style="font-size: 12px; color: #cbd5e1; font-weight: bold; display: block; margin-bottom: 6px;">اختر وسيلة تمويل المهمة:</label>
             <div class="pay-curr-selector">
                 <div id="pay-opt-pts" class="pay-opt active-pts" onclick="selectTaskPayCurrency('points')">🪙 الدفع بالنقاط</div>
-                <div id="pay-opt-egp" class="pay-opt" onclick="selectTaskPayCurrency('egp')">💵 الدفع بالجنيه (خصم 15% 🔥)</div>
+                <div id="pay-opt-egp" class="pay-opt" onclick="selectTaskPayCurrency('egp')">💵 الدفع بالجنيه (خصم 10% 🔥)</div>
             </div>
 
             <div class="input-group">
@@ -522,8 +522,6 @@
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-        // التوكن المحدث المطابق لملف main1.py لضمان عمل فحص القنوات الآلي بنجاح
-        const BOT_TOKEN = "8487785406:AAFfUPkobuBF9h-BwAJTQxNyEmFnzcB9AGM";
         const BOT_ID = "8487785406";
         const client = supabase.createClient(S_URL, S_KEY);
 
@@ -534,9 +532,13 @@
         const REQUIRED_AWAY_SECONDS = 15; // 15 ثانية بقاء فعلي خارج البوت داخل صفحة الإعلان
         const MAX_DAILY_ADS = 5; 
         const AD_LINK_DIRECT = "https://omg10.com/4/10959404";
+        const DAILY_QUEST_REWARD_TITLE = "مكافأة إتمام التحدي اليومي (5 إنجازات)";
 
         const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe?.user?.id || localStorage.getItem('telegram_id') || "").trim();
+        const tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(tg.initDataUnsafe?.user?.id || params.get('id') || localStorage.getItem('telegram_id') || "").trim();
+
         let userData = null;
         let selectedPlatform = "telegram";
         let selectedPayCurrency = "points";
@@ -550,11 +552,11 @@
         let watchTimerInterval = null;
         let onclickTimerInterval = null;
 
-        // متغيرات رادار البقاء الفعلي داخل الإعلان الخارجي (Visibility & Blur Tracker)
         let isTrackingWebVisit = false;
         let leftBotTimestamp = null;
         let accumulatedAwaySeconds = 0;
         let awayMonitorInterval = null;
+        let isDailyQuestClaimedInDB = false;
 
         const PLATFORM_CONFIG = {
             telegram: { title: "📢 ترويج قناة / جروب تيليجرام", icon: "📢", lblLink: "معرف القناة أو الرابط:", phLink: "@MyChannel أو https://t.me/...", showAdminAlert: true },
@@ -583,6 +585,57 @@
             return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
         }
 
+        // =========================================================================
+        // 🛡️ دالة فحص اشتراك القنوات السحابية عبر السيرفر (بدون وضع التوكن في المتصفح!)
+        // =========================================================================
+        async function verifyChannelViaServer(channelId, mode, targetUserId) {
+            try {
+                const payload = JSON.stringify({
+                    channel_id: channelId,
+                    mode: mode, // 'admin' أو 'member'
+                    user_id: String(targetUserId)
+                });
+
+                const { data: reqRow, error } = await client
+                    .from('bot_messages')
+                    .insert([{
+                        telegram_id: String(tid),
+                        message: `__TG_CHECK__:${payload}`,
+                        status: 'pending'
+                    }])
+                    .select('id')
+                    .single();
+
+                if (error || !reqRow) return "CHECK_ERROR";
+
+                const checkId = reqRow.id;
+                let finalStatus = "TIMEOUT";
+
+                // انتظار رد السيرفر (يفحص كل 700 ملي ثانية لمدة 6 ثوانٍ كحد أقصى)
+                for (let i = 0; i < 9; i++) {
+                    await new Promise(r => setTimeout(r, 700));
+                    const { data: pollRow } = await client
+                        .from('bot_messages')
+                        .select('status')
+                        .eq('id', checkId)
+                        .maybeSingle();
+
+                    if (!pollRow) break;
+                    if (pollRow.status && pollRow.status !== 'pending') {
+                        finalStatus = pollRow.status;
+                        break;
+                    }
+                }
+
+                // تنظيف الصف بعد انتهاء الفحص
+                await client.from('bot_messages').delete().eq('id', checkId);
+                return finalStatus;
+            } catch (err) {
+                console.error("Server TG Check Error:", err);
+                return "CHECK_ERROR";
+            }
+        }
+
         async function init() {
             if (!tid) {
                 document.getElementById('tasks-list').innerHTML = '<div class="status-box">❌ يرجى فتح الصفحة من داخل البوت.</div>';
@@ -600,7 +653,7 @@
                     userData = user;
                     updateUI();
                     checkAdsStatus();
-                    updateDailyQuestUI();
+                    await syncDailyQuestWithDB();
                 }
             } catch (e) {
                 console.error("User fetch error:", e);
@@ -617,8 +670,30 @@
         }
 
         // =========================================================================
-        // 🏆 نظام تحدي الإنجاز اليومي (5 مهام أو إعلانات = +10 نقاط بونص)
+        // 🏆 نظام تحدي الإنجاز اليومي المؤمن بقاعدة البيانات (ضد مسح الـ Cache)
         // =========================================================================
+        async function syncDailyQuestWithDB() {
+            try {
+                const startOfToday = new Date();
+                startOfToday.setHours(0, 0, 0, 0);
+
+                // فحص ما إذا كان قد استلم مكافأة التحدي اليومي اليوم في جدول transactions
+                const { data: txToday } = await client
+                    .from('transactions')
+                    .select('id, created_at')
+                    .eq('telegram_id', String(tid))
+                    .eq('title', DAILY_QUEST_REWARD_TITLE)
+                    .gte('created_at', startOfToday.toISOString())
+                    .limit(1);
+
+                if (txToday && txToday.length > 0) {
+                    isDailyQuestClaimedInDB = true;
+                    localStorage.setItem(`mt_daily_quest_claimed_${tid}_${getTodayStr()}`, "1");
+                }
+            } catch (e) {}
+            updateDailyQuestUI();
+        }
+
         function incrementDailyQuestCounter() {
             const key = `mt_daily_quest_cnt_${tid}_${getTodayStr()}`;
             const cur = parseInt(localStorage.getItem(key) || "0") + 1;
@@ -627,10 +702,15 @@
         }
 
         function updateDailyQuestUI() {
+            const now = new Date();
+            let watchToday = (userData?.ads_watch_date && isSameDay(new Date(userData.ads_watch_date), now)) ? Number(userData.ads_watch_count || 0) : 0;
+            let clickToday = (userData?.ads_onclick_date && isSameDay(new Date(userData.ads_onclick_date), now)) ? Number(userData.ads_onclick_count || 0) : 0;
+
             const cntKey = `mt_daily_quest_cnt_${tid}_${getTodayStr()}`;
             const claimedKey = `mt_daily_quest_claimed_${tid}_${getTodayStr()}`;
-            const count = Math.min(5, parseInt(localStorage.getItem(cntKey) || "0"));
-            const isClaimed = localStorage.getItem(claimedKey) === "1";
+            const localCnt = parseInt(localStorage.getItem(cntKey) || "0");
+            const count = Math.min(5, Math.max(localCnt, watchToday + clickToday));
+            const isClaimed = isDailyQuestClaimedInDB || localStorage.getItem(claimedKey) === "1";
 
             document.getElementById('quest-progress-txt').innerText = `${count} / 5`;
             document.getElementById('quest-bar-fill').style.width = `${(count / 5) * 100}%`;
@@ -640,6 +720,7 @@
 
             if (isClaimed) {
                 btn.style.display = 'none';
+                hint.style.display = 'block';
                 hint.innerHTML = `<span style="color:var(--main-green); font-weight:bold;">✅ استلمت بونص التحدي اليومي (+10 نقاط) بنجاح! يتجدد غداً.</span>`;
             } else if (count >= 5) {
                 btn.style.display = 'block';
@@ -652,13 +733,31 @@
 
         async function claimDailyQuestBonus() {
             const claimedKey = `mt_daily_quest_claimed_${tid}_${getTodayStr()}`;
-            if (localStorage.getItem(claimedKey) === "1") return;
+            if (isDailyQuestClaimedInDB || localStorage.getItem(claimedKey) === "1") return;
 
             const btn = document.getElementById('btn-claim-quest');
             btn.disabled = true;
-            btn.innerText = "⏳ جاري عرض إعلان المكافأة...";
+            btn.innerText = "⏳ جاري التحقق وعرض إعلان المكافأة...";
 
             try {
+                // فحص أمني من قاعدة البيانات قبل الصرف لمنع التكرار عبر مسح المتصفح
+                const startOfToday = new Date();
+                startOfToday.setHours(0, 0, 0, 0);
+                const { data: checkClaim } = await client
+                    .from('transactions')
+                    .select('id')
+                    .eq('telegram_id', String(tid))
+                    .eq('title', DAILY_QUEST_REWARD_TITLE)
+                    .gte('created_at', startOfToday.toISOString())
+                    .limit(1);
+
+                if (checkClaim && checkClaim.length > 0) {
+                    isDailyQuestClaimedInDB = true;
+                    localStorage.setItem(claimedKey, "1");
+                    updateDailyQuestUI();
+                    return tg.showAlert("⚠️ لقد قمت باستلام بونص التحدي اليومي اليوم بالفعل!");
+                }
+
                 if (typeof show_10959333 === 'function') {
                     await show_10959333();
                 }
@@ -669,12 +768,14 @@
                 await client.from('transactions').insert([{
                     telegram_id: String(tid),
                     type: 'points',
-                    title: 'مكافأة إتمام التحدي اليومي (5 إنجازات)',
+                    title: DAILY_QUEST_REWARD_TITLE,
                     amount: '+10 نقطة',
                     status: 'مكتمل'
                 }]);
 
                 userData.points = newPts;
+                userData.total_earned = newTot;
+                isDailyQuestClaimedInDB = true;
                 localStorage.setItem(claimedKey, "1");
                 updateUI();
                 updateDailyQuestUI();
@@ -693,7 +794,6 @@
             if (!userData) return;
             const now = new Date();
 
-            // 1. فحص إعلان SDK
             let watchCount = userData.ads_watch_count || 0;
             let watchDate = userData.ads_watch_date ? new Date(userData.ads_watch_date) : null;
             if (!watchDate || !isSameDay(watchDate, now)) watchCount = 0;
@@ -714,7 +814,6 @@
                 enableAdBtn('watch');
             }
 
-            // 2. فحص إعلان الزيارة الخارجي
             let clickCount = userData.ads_onclick_count || 0;
             let clickDate = userData.ads_onclick_date ? new Date(userData.ads_onclick_date) : null;
             if (!clickDate || !isSameDay(clickDate, now)) clickCount = 0;
@@ -783,7 +882,7 @@
         }
 
         // =========================================================================
-        // ⚡ الطريقة الأولى: إعلان الـ SDK المدمج المؤكد 100% (لا يمنح نقاطاً إلا إذا اكتمل العرض)
+        // ⚡ الطريقة الأولى: إعلان الـ SDK المدمج المؤكد 100%
         // =========================================================================
         async function triggerVerifiedSdkAd() {
             if (typeof MegaSecurity !== 'undefined') {
@@ -795,7 +894,6 @@
             const btn = document.getElementById('btn-ad-watch');
 
             if (typeof show_10959333 !== 'function') {
-                // إذا حظر متصفح المستخدم سكريبت الـ SDK، نحوله تلقائياً لرادار الزيارة الحقيقي حتى لا نخسر الإعلان
                 return triggerRealWebVisitAd('watch');
             }
 
@@ -803,7 +901,6 @@
             btn.innerText = "⏳ جاري تحميل وعرض الإعلان...";
 
             try {
-                // لا يتم تنفيذ السطر التالي إلا إذا فتح الإعلان وشاهده المستخدم فعلياً حتى النهاية
                 await show_10959333();
                 await saveAdRewardToDatabase('watch');
             } catch (err) {
@@ -814,7 +911,7 @@
         }
 
         // =========================================================================
-        // 📡 الطريقة الثانية: رادار حساب وقت البقاء الفعلي خارج البوت (يمنع الغش 100%)
+        // 📡 الطريقة الثانية: رادار حساب وقت البقاء الفعلي خارج البوت
         // =========================================================================
         function triggerRealWebVisitAd(forcedType = 'onclick') {
             currentAdType = forcedType;
@@ -862,7 +959,6 @@
             const isUserOutsideBot = document.hidden || !document.hasFocus();
             const circle = document.getElementById('ad-countdown-circle');
             const reopenBtn = document.getElementById('btn-reopen-ad-link');
-            const claimBtn = document.getElementById('btn-claim-ad');
 
             if (isUserOutsideBot) {
                 if (!leftBotTimestamp) leftBotTimestamp = Date.now();
@@ -874,7 +970,6 @@
                     markWebVisitCompletedUI();
                 }
             } else {
-                // المستخدم عاد إلى شاشة البوت! نحسب كم ثانية قضاها فعلياً بالخارج
                 if (leftBotTimestamp) {
                     const spent = Math.floor((Date.now() - leftBotTimestamp) / 1000);
                     accumulatedAwaySeconds += spent;
@@ -886,7 +981,6 @@
                 if (rem <= 0) {
                     markWebVisitCompletedUI();
                 } else {
-                    // عاد للبوت قبل انتهاء الـ 15 ثانية! نوقف العداد ونطالبه بالبقاء في الإعلان
                     circle.style.color = "#ff4d4d";
                     circle.style.borderColor = "#ff4d4d";
                     circle.innerText = `⛔ توقف العداد! متبقي (${rem} ثانية)`;
@@ -930,6 +1024,27 @@
             await saveAdRewardToDatabase(currentAdType);
         }
 
+        // دالة موحدة لإعطاء الداعي عمولة الـ 10% وتحديث سجل عمولاته في قاعدة البيانات مرة واحدة فقط
+        async function awardReferrerCommission(referredByTid, earnedPoints) {
+            if (!referredByTid || String(referredByTid) === String(tid)) return;
+            const refBonus = Math.max(1, Math.floor(earnedPoints * 0.10));
+            try {
+                const { data: refUser } = await client
+                    .from('users')
+                    .select('points, total_earned, total_ref_commission')
+                    .eq('telegram_id', String(referredByTid))
+                    .maybeSingle();
+
+                if (refUser) {
+                    await client.from('users').update({
+                        points: (refUser.points || 0) + refBonus,
+                        total_earned: (refUser.total_earned || 0) + refBonus,
+                        total_ref_commission: (refUser.total_ref_commission || 0) + refBonus
+                    }).eq('telegram_id', String(referredByTid));
+                }
+            } catch (e) {}
+        }
+
         async function saveAdRewardToDatabase(adType) {
             const isWatch = (adType === 'watch');
             const rewardPoints = isWatch ? 2 : 3;
@@ -941,7 +1056,7 @@
             try {
                 const { data: currentUser, error: fetchErr } = await client
                     .from('users')
-                    .select(`points, total_earned, ${dbFieldTime}, ${dbFieldCount}, ${dbFieldDate}, referred_by`)
+                    .select(`points, total_earned, task_earnings, ${dbFieldTime}, ${dbFieldCount}, ${dbFieldDate}, referred_by`)
                     .eq('telegram_id', tid)
                     .single();
 
@@ -976,7 +1091,8 @@
                 
                 const updatePayload = { 
                     points: updatedPoints,
-                    total_earned: (currentUser.total_earned || 0) + rewardPoints
+                    total_earned: (currentUser.total_earned || 0) + rewardPoints,
+                    task_earnings: (currentUser.task_earnings || 0) + rewardPoints
                 };
                 updatePayload[dbFieldTime] = nowIso;
                 updatePayload[dbFieldCount] = newCount;
@@ -993,16 +1109,7 @@
                     status: 'مكتمل'
                 }]);
 
-                if (currentUser.referred_by && String(currentUser.referred_by) !== String(tid)) {
-                    const refBonus = Math.max(1, Math.round(rewardPoints * 0.10));
-                    const { data: refUser } = await client.from('users').select('points, total_earned').eq('telegram_id', String(currentUser.referred_by)).maybeSingle();
-                    if (refUser) {
-                        await client.from('users').update({
-                            points: (refUser.points || 0) + refBonus,
-                            total_earned: (refUser.total_earned || 0) + refBonus
-                        }).eq('telegram_id', String(currentUser.referred_by));
-                    }
-                }
+                await awardReferrerCommission(currentUser.referred_by, rewardPoints);
 
                 userData.points = updatedPoints;
                 userData[dbFieldTime] = nowIso;
@@ -1022,7 +1129,7 @@
         }
 
         // =========================================================================
-        // ➕ إنشاء المهام (بالنقاط أو بالجنيه مع خصم 15% للجنيه)
+        // ➕ إنشاء المهام (بالنقاط أو بالجنيه مع خصم 10% للجنيه لضمان ربح البوت)
         // =========================================================================
         function selectTaskPayCurrency(curr) {
             selectedPayCurrency = curr;
@@ -1038,9 +1145,9 @@
             const box = document.getElementById('task-cost-summary-box');
 
             if (selectedPayCurrency === 'egp') {
-                // كل 1000 نقطة = 1 جنيه مع خصم تشجيعي 15% للدفع بالجنيه
-                const egpCost = Math.max(1, Number(((totalPts / 1000) * 0.85).toFixed(2)));
-                box.innerHTML = `💵 التكلفة بالجنيه (شامل خصم 15%): <span style="color:var(--main-cyan);">${egpCost.toFixed(2)} ج.م</span> (يحصل كل منفذ على ${Math.floor(cost * 0.75)} نقطة)`;
+                // كل 1000 نقطة = 1 جنيه مع خصم 10% للدفع بالجنيه
+                const egpCost = Math.max(1, Number(((totalPts / 1000) * 0.90).toFixed(2)));
+                box.innerHTML = `💵 التكلفة بالجنيه (شامل خصم 10%): <span style="color:var(--main-cyan);">${egpCost.toFixed(2)} ج.م</span> (يحصل كل منفذ على ${Math.floor(cost * 0.75)} نقطة)`;
             } else {
                 box.innerHTML = `💳 إجمالي النقاط المخصومة منك: <span id="sum-total">${totalPts.toLocaleString()}</span> نقطة (يحصل كل منفذ على ${Math.floor(cost * 0.75)} نقطة)`;
             }
@@ -1134,26 +1241,20 @@
             btn.disabled = true;
             btn.innerText = "⏳ جاري الفحص...";
 
+            // فحص رتبة البوت في القناة عبر السيرفر بدون كشف التوكن
             if (selectedPlatform === "telegram") {
                 btn.innerText = "⏳ فحص رتبة البوت في القناة...";
-                try {
-                    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${channelId}&user_id=${BOT_ID}`);
-                    const data = await res.json();
+                const checkStatus = await verifyChannelViaServer(channelId, 'admin', BOT_ID);
 
-                    if (!data.ok || !["administrator", "creator"].includes(data.result?.status)) {
-                        btn.disabled = false;
-                        btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
-                        return tg.showAlert("⛔ تعذر نشر المهمة!\n\nبوت المنصة (@MegaTask1Bot) ليس مشرفاً في هذه القناة حتى الآن.\n\nأضف البوت مشرفاً أولاً ثم اضغط تأكيد النشر.");
-                    }
-                } catch (e) {
+                if (checkStatus !== "VERIFIED_ADMIN") {
                     btn.disabled = false;
                     btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
-                    return tg.showAlert("⚠️ تعذر فحص القناة حالياً، تأكد من المعرف وحاول ثانية.");
+                    return tg.showAlert("⛔ تعذر نشر المهمة!\n\nبوت المنصة (@MegaTask1Bot) ليس مشرفاً في هذه القناة حتى الآن (أو أن البوت غير متصل).\n\nأضف البوت مشرفاً أولاً ثم اضغط تأكيد النشر.");
                 }
             }
 
             const totalPointsCost = cost * target;
-            const totalEgpCost = Math.max(1, Number(((totalPointsCost / 1000) * 0.85).toFixed(2)));
+            const totalEgpCost = Math.max(1, Number(((totalPointsCost / 1000) * 0.90).toFixed(2)));
             let userUpdateObj = {};
 
             if (selectedPayCurrency === 'egp') {
@@ -1192,7 +1293,7 @@
                 image_url: taskLogoBase64 || null,
                 channel_id: channelId || linkRaw,
                 url: finalUrl,
-                 link: finalUrl,
+                link: finalUrl,
                 cost_per_user: cost,
                 reward: rewardForExecutor,
                 target_count: target,
@@ -1417,25 +1518,29 @@
             }
         }
 
+        // فحص اشتراك العضو في القناة عبر بوابة السيرفر الآمنة بدون كشف التوكن
         async function verifyTelegramSubscription(taskId, channelId, reward, btn) {
             btn.disabled = true;
             btn.innerText = "⏳ جاري الفحص...";
 
             try {
-                const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getChatMember?chat_id=${channelId}&user_id=${tid}`);
-                const data = await res.json();
+                const checkStatus = await verifyChannelViaServer(channelId, 'member', tid);
 
-                if (data.ok && ["member", "administrator", "creator"].includes(data.result.status)) {
+                if (checkStatus === "VERIFIED_MEMBER") {
                     await claimTaskSuccess(taskId, reward, tid, btn);
-                } else {
+                } else if (checkStatus === "NOT_MEMBER") {
                     btn.disabled = false;
                     btn.innerText = "فحص الاشتراك 🔍";
                     tg.showAlert("❌ أنت لم تشترك في القناة بعد!\nاشترك أولاً ثم اضغط فحص الاشتراك لاستلام النقاط.");
+                } else {
+                    btn.disabled = false;
+                    btn.innerText = "فحص الاشتراك 🔍";
+                    tg.showAlert("⚠️ تعذر التحقق من القناة حالياً، تأكد من اشتراكك وحاول بعد ثوانٍ.");
                 }
             } catch (err) {
                 btn.disabled = false;
                 btn.innerText = "فحص الاشتراك 🔍";
-                tg.showAlert("⚠️ تعذر الاتصال بتيليجرام حالياً، يرجى المحاولة لاحقاً.");
+                tg.showAlert("⚠️ تعذر الاتصال حالياً، يرجى المحاولة لاحقاً.");
             }
         }
 
@@ -1641,17 +1746,34 @@
             }
         }
 
+        // صرف مكافأة المهمة مع حماية كاملة ضد التكرار وتحديث أرباح الإحالة تلقائياً
         async function claimTaskSuccess(taskId, reward, targetUserId, btn = null) {
             try {
-                try {
-                    await client.from('task_completions').insert([{ 
-                        task_id: parseInt(taskId), 
-                        user_id: String(targetUserId) 
-                    }]);
-                } catch (e) {}
+                // 1. فحص عدم استلام نفس المهمة مسبقاً
+                const { data: existingComp } = await client
+                    .from('task_completions')
+                    .select('id')
+                    .eq('task_id', parseInt(taskId))
+                    .eq('user_id', String(targetUserId))
+                    .maybeSingle();
+
+                if (existingComp) {
+                    if (btn) {
+                        btn.className = "btn-action done";
+                        btn.disabled = true;
+                        btn.innerText = "تم الصرف ✅";
+                    }
+                    return;
+                }
+
+                await client.from('task_completions').insert([{ 
+                    task_id: parseInt(taskId), 
+                    user_id: String(targetUserId) 
+                }]);
 
                 const { data: execUser } = await client.from('users').select('*').eq('telegram_id', String(targetUserId)).single();
                 if (execUser) {
+                    const wasZeroTasks = Number(execUser.total_tasks || 0) === 0 && Number(execUser.task_earnings || 0) === 0;
                     const newPoints = (execUser.points || 0) + reward;
                     const newTotalEarned = (execUser.total_earned || 0) + reward;
                     const newTaskEarnings = (execUser.task_earnings || 0) + reward;
@@ -1672,14 +1794,25 @@
                         status: 'مكتمل'
                     }]);
 
+                    // إضافة عمولة الإحالة (10%) وتوثيقها في total_ref_commission و invited_count
                     if (execUser.referred_by && String(execUser.referred_by) !== String(targetUserId)) {
                         const refBonus = Math.max(1, Math.floor(reward * 0.10));
-                        const { data: refUser } = await client.from('users').select('points, total_earned').eq('telegram_id', String(execUser.referred_by)).maybeSingle();
+                        const { data: refUser } = await client
+                            .from('users')
+                            .select('points, total_earned, total_ref_commission, invited_count')
+                            .eq('telegram_id', String(execUser.referred_by))
+                            .maybeSingle();
+
                         if (refUser) {
-                            await client.from('users').update({
+                            const refPayload = {
                                 points: (refUser.points || 0) + refBonus,
-                                total_earned: (refUser.total_earned || 0) + refBonus
-                            }).eq('telegram_id', String(execUser.referred_by));
+                                total_earned: (refUser.total_earned || 0) + refBonus,
+                                total_ref_commission: (refUser.total_ref_commission || 0) + refBonus
+                            };
+                            if (wasZeroTasks) {
+                                refPayload.invited_count = (refUser.invited_count || 0) + 1;
+                            }
+                            await client.from('users').update(refPayload).eq('telegram_id', String(execUser.referred_by));
                         }
                     }
 
