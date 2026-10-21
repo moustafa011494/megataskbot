@@ -360,14 +360,14 @@
     <div class="instant-convert-card">
         <h4>🔥 تحويل فوري لأرباحك بدون انتظار سحب (+بونص مجاني!)</h4>
         <p>
-            بدلاً من انتظار السحب الخارجي، حوّل أرباح مبيعاتك فوراً إلى رصيد الشراء بالبوت واحصل على <b>+5% جنيه إضافي</b>، أو حوّلها لنقاط واحصل على <b>+25% نقاط بونص</b>!
+            بدلاً من انتظار السحب الخارجي، حوّل أرباح مبيعاتك فوراً إلى رصيد الشراء بالبوت واحصل على <b>+2% جنيه إضافي</b>، أو حوّلها لنقاط واحصل على <b>+10% نقاط بونص</b>!
         </p>
         <div class="convert-btns-row">
             <button class="btn-conv btn-conv-egp" onclick="convertMerchantBalance('egp')">
-                💵 تحويل لرصيد الشراء (+5% بونص)
+                💵 تحويل لرصيد الشراء (+2% بونص)
             </button>
             <button class="btn-conv btn-conv-pts" onclick="convertMerchantBalance('points')">
-                🪙 تحويل لنقاط (+25% بونص)
+                🪙 تحويل لنقاط (+10% بونص)
             </button>
         </div>
     </div>
@@ -426,7 +426,7 @@
         if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
 
         const ADMIN_MASTER_ID = "875021647";
-        const USDT_EXCHANGE_RATE = 50.0; // سعر الدولار الرقمي عند السحب عبر Binance Pay
+        const USDT_EXCHANGE_RATE = 53.0; // موحد مع باقي المنصة (53.0 ج.م لكل 1 USDT)
         const MIN_WITHDRAW_EGP = 20;     // الحد الأدنى للسحب بالجنيه
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
@@ -434,19 +434,16 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        let tid = String(
-            tg?.initDataUnsafe?.user?.id ||
-            params.get('id') ||
-            localStorage.getItem('telegram_id') ||
-            ""
-        ).trim();
+        let tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(tg?.initDataUnsafe?.user?.id || params.get('id') || localStorage.getItem('telegram_id') || "").trim();
         if (tid === "undefined" || tid === "null") tid = "";
 
         let userData = null;
         let merchantAvailEgp = 0;
         let selectedWithdrawMethod = null;
+        let isBusyAction = false;
 
-        // وسائل السحب الافتراضية الجاهزة (تندمج مع جدول withdraw_methods إن وجد)
         let withdrawMethodsList = [
             { id: "vf_cash", name: "فودافون كاش", icon: "🔴", hint: "أدخل رقم محفظة فودافون كاش (11 رقم)", min: 20, isCrypto: false },
             { id: "instapay", name: "إنستا باي (InstaPay)", icon: "🟣", hint: "أدخل عنوان IPA أو رقم الهاتف المرتبط بإنستا باي", min: 20, isCrypto: false },
@@ -530,10 +527,9 @@
         async function refreshMerchantStats() {
             if (!tid) return;
 
-            // 1. جلب رصيد التاجر الجاهز للسحب وعدد مبيعاته من جدول users
             const { data: u } = await client
                 .from('users')
-                .select('name, points, egp_balance, merchant_balance_egp, total_sales_count')
+                .select('name, points, egp_balance, merchant_balance_egp, total_sales_count, is_banned')
                 .eq('telegram_id', tid)
                 .maybeSingle();
 
@@ -544,7 +540,6 @@
                 document.getElementById('merch-sales-count').innerText = `${Number(u.total_sales_count || 0)} صفقة`;
             }
 
-            // 2. حساب المبالغ المعلقة حالياً في خزنة الضمان (Escrow_Held أو Delivered) لهذا التاجر
             const { data: heldOrders } = await client
                 .from('store_orders')
                 .select('price_paid, net_seller_amount, currency')
@@ -582,17 +577,19 @@
             box.style.display = 'block';
             if (selectedWithdrawMethod.isCrypto) {
                 const usdtVal = (amt / USDT_EXCHANGE_RATE).toFixed(2);
-                box.innerHTML = `🟡 سيتم إرسال صافي: <b style="color:var(--binance-yellow); font-size:14px;">${usdtVal} USDT</b> إلى حسابك في Binance Pay (بدون رسوم تحويل).`;
+                box.innerHTML = `🟡 سيتم إرسال صافي: <b style="color:var(--binance-yellow); font-size:14px;">${usdtVal} USDT</b> إلى حسابك في Binance Pay (سعر الصرف: ${USDT_EXCHANGE_RATE} ج.م).`;
             } else {
                 box.innerHTML = `💵 المبلغ المستلم على محفظتك (${escapeHtml(selectedWithdrawMethod.name)}): <b style="color:var(--emerald); font-size:14px;">${amt.toFixed(2)} ج.م</b> صافي.`;
             }
         }
 
         // =========================================================================
-        // 🔥 ميزة تحويل أرباح التاجر لرصيد شراء بالبوت (+5%) أو نقاط (+25%) فوراً
+        // 🔥 ميزة تحويل أرباح التاجر لرصيد شراء بالبوت (+2%) أو نقاط (+10%) فوراً (مؤمنة)
         // =========================================================================
         async function convertMerchantBalance(targetType) {
-            if (!tid || !userData) return;
+            if (!tid || !userData || isBusyAction) return;
+
+            await refreshMerchantStats();
             if (merchantAvailEgp < 1) {
                 return notifyUser("⚠️ الحد الأدنى للتحويل الفوري هو 1.00 ج.م من أرباح مبيعاتك!");
             }
@@ -605,52 +602,77 @@
                 return notifyUser("❌ يرجى إدخال مبلغ صحيح لا يتجاوز رصيد أرباحك المتاح!");
             }
 
-            if (targetType === 'egp') {
-                const bonusEgp = Number((amt * 1.05).toFixed(2));
-                if (!confirm(`💵 هل تريد تحويل (${amt.toFixed(2)} ج.م) من أرباح المبيعات إلى رصيد الشراء بالبوت واستلام (${bonusEgp} ج.م شامل +5% بونص مجاني) فوراً؟`)) return;
+            isBusyAction = true;
+            try {
+                // جلب أحدث رصيد من قاعدة البيانات لحظة التنفيذ لمنع التكرار
+                const { data: freshU, error: fErr } = await client
+                    .from('users')
+                    .select('points, egp_balance, merchant_balance_egp, is_banned')
+                    .eq('telegram_id', tid)
+                    .single();
 
-                const newMerch = Number((merchantAvailEgp - amt).toFixed(2));
-                const newMainEgp = Number((Number(userData.egp_balance || 0) + bonusEgp).toFixed(2));
-
-                const { error } = await client.from('users').update({
-                    merchant_balance_egp: newMerch,
-                    egp_balance: newMainEgp
-                }).eq('telegram_id', tid);
-
-                if (!error) {
-                    await client.from('transactions').insert([{
-                        telegram_id: String(tid),
-                        type: 'egp',
-                        title: `تحويل أرباح التاجر لرصيد الشراء (+5% بونص)`,
-                        amount: `+${bonusEgp} ج.م`,
-                        status: 'مكتمل'
-                    }]);
+                if (fErr || !freshU || freshU.is_banned) throw new Error("تعذر التحقق من الحساب");
+                const realMerch = Number(freshU.merchant_balance_egp || 0);
+                if (amt > realMerch) {
                     await refreshMerchantStats();
-                    notifyUser(`🎉 تم التحويل فوراً! تمت إضافة (${bonusEgp} ج.م) إلى رصيدك الأساسي.`);
+                    return notifyUser("❌ رصيد أرباحك المتاح غير كافٍ!");
                 }
-            } else {
-                const bonusPts = Math.floor(amt * 1250);
-                if (!confirm(`🪙 هل تريد تحويل (${amt.toFixed(2)} ج.م) من أرباح المبيعات إلى نقاط واستلام (${bonusPts.toLocaleString()} نقطة شامل +25% بونص للتجار) فوراً؟`)) return;
 
-                const newMerch = Number((merchantAvailEgp - amt).toFixed(2));
-                const newPts = Number(userData.points || 0) + bonusPts;
+                if (targetType === 'egp') {
+                    const bonusEgp = Number((amt * 1.02).toFixed(2));
+                    if (!confirm(`💵 هل تريد تحويل (${amt.toFixed(2)} ج.م) من أرباح المبيعات إلى رصيد الشراء بالبوت واستلام (${bonusEgp} ج.م شامل +2% بونص مجاني) فوراً؟`)) {
+                        return;
+                    }
 
-                const { error } = await client.from('users').update({
-                    merchant_balance_egp: newMerch,
-                    points: newPts
-                }).eq('telegram_id', tid);
+                    const newMerch = Number((realMerch - amt).toFixed(2));
+                    const newMainEgp = Number((Number(freshU.egp_balance || 0) + bonusEgp).toFixed(2));
 
-                if (!error) {
-                    await client.from('transactions').insert([{
-                        telegram_id: String(tid),
-                        type: 'points',
-                        title: `تحويل أرباح التاجر إلى نقاط (+25% بونص)`,
-                        amount: `+${bonusPts.toLocaleString()} نقطة`,
-                        status: 'مكتمل'
-                    }]);
-                    await refreshMerchantStats();
-                    notifyUser(`🎉 تم التحويل فوراً! تمت إضافة (${bonusPts.toLocaleString()} نقطة) إلى رصيدك.`);
+                    const { error } = await client.from('users').update({
+                        merchant_balance_egp: newMerch,
+                        egp_balance: newMainEgp
+                    }).eq('telegram_id', tid);
+
+                    if (!error) {
+                        await client.from('transactions').insert([{
+                            telegram_id: String(tid),
+                            type: 'egp',
+                            title: `تحويل أرباح التاجر لرصيد الشراء (+2% بونص)`,
+                            amount: `+${bonusEgp} ج.م`,
+                            status: 'مكتمل'
+                        }]);
+                        await refreshMerchantStats();
+                        notifyUser(`🎉 تم التحويل فوراً! تمت إضافة (${bonusEgp} ج.م) إلى رصيدك الأساسي.`);
+                    }
+                } else {
+                    const bonusPts = Math.floor(amt * 1100);
+                    if (!confirm(`🪙 هل تريد تحويل (${amt.toFixed(2)} ج.م) من أرباح المبيعات إلى نقاط واستلام (${bonusPts.toLocaleString()} نقطة شامل +10% بونص للتجار) فوراً؟`)) {
+                        return;
+                    }
+
+                    const newMerch = Number((realMerch - amt).toFixed(2));
+                    const newPts = Number(freshU.points || 0) + bonusPts;
+
+                    const { error } = await client.from('users').update({
+                        merchant_balance_egp: newMerch,
+                        points: newPts
+                    }).eq('telegram_id', tid);
+
+                    if (!error) {
+                        await client.from('transactions').insert([{
+                            telegram_id: String(tid),
+                            type: 'points',
+                            title: `تحويل أرباح التاجر إلى نقاط (+10% بونص)`,
+                            amount: `+${bonusPts.toLocaleString()} نقطة`,
+                            status: 'مكتمل'
+                        }]);
+                        await refreshMerchantStats();
+                        notifyUser(`🎉 تم التحويل فوراً! تمت إضافة (${bonusPts.toLocaleString()} نقطة) إلى رصيدك.`);
+                    }
                 }
+            } catch (e) {
+                notifyUser("❌ حدث خطأ أثناء التحويل.");
+            } finally {
+                isBusyAction = false;
             }
         }
 
@@ -658,7 +680,7 @@
         // 💸 إرسال طلب سحب الأرباح الخارجي وخصم المبلغ وتنبيه الأدمن فوراً
         // =========================================================================
         async function submitMerchantWithdrawal() {
-            if (!tid || !userData || !selectedWithdrawMethod) return;
+            if (!tid || !userData || !selectedWithdrawMethod || isBusyAction) return;
 
             const amt = parseFloat(document.getElementById('w-amount-inp').value);
             const wallet = document.getElementById('w-wallet-inp').value.trim();
@@ -669,10 +691,6 @@
                 return notifyUser(`⚠️ الحد الأدنى للسحب عبر (${selectedWithdrawMethod.name}) هو ${selectedWithdrawMethod.min} ج.م!`);
             }
 
-            if (amt > merchantAvailEgp) {
-                return notifyUser(`❌ رصيد أرباح مبيعاتك غير كافٍ!\nالمطلوب: ${amt.toFixed(2)} ج.م\nالمتاح للسحب: ${merchantAvailEgp.toFixed(2)} ج.م`);
-            }
-
             if (!wallet || wallet.length < 4) {
                 return notifyUser("⚠️ يرجى إدخال رقم المحفظة أو معرف الحساب المستلم بشكل صحيح!");
             }
@@ -681,15 +699,32 @@
                 return;
             }
 
+            isBusyAction = true;
             btn.disabled = true;
-            btn.innerText = "⏳ جاري تسجيل طلب السحب...";
+            btn.innerText = "⏳ جاري التحقق وتسجيل طلب السحب...";
 
             try {
+                // جلب أحدث رصيد للتاجر من قاعدة البيانات قبل الخصم مباشرة لمنع السحب المزدوج
+                const { data: freshU, error: fErr } = await client
+                    .from('users')
+                    .select('name, merchant_balance_egp, is_banned')
+                    .eq('telegram_id', tid)
+                    .single();
+
+                if (fErr || !freshU) throw new Error("تعذر التحقق من بيانات الحساب");
+                if (freshU.is_banned) throw new Error("هذا الحساب محظور");
+
+                const realMerchAvail = Number(freshU.merchant_balance_egp || 0);
+                if (amt > realMerchAvail) {
+                    await refreshMerchantStats();
+                    return notifyUser(`❌ رصيد أرباح مبيعاتك غير كافٍ!\nالمطلوب: ${amt.toFixed(2)} ج.م\nالمتاح الفعلي: ${realMerchAvail.toFixed(2)} ج.م`);
+                }
+
                 const wCode = "WTH-" + Math.floor(100000 + Math.random() * 900000);
-                const newMerchBal = Number((merchantAvailEgp - amt).toFixed(2));
+                const newMerchBal = Number((realMerchAvail - amt).toFixed(2));
                 const fullWalletDetails = note ? `${wallet} (${note})` : wallet;
 
-                // 1. خصم المبلغ من رصيد التاجر المتاح لمنع تكرار السحب
+                // 1. خصم المبلغ من رصيد التاجر المتاح
                 const { error: uErr } = await client
                     .from('users')
                     .update({ merchant_balance_egp: newMerchBal })
@@ -716,7 +751,7 @@
                     status: 'قيد المراجعة'
                 }]);
 
-                // 4. إشعار فوري للأدمن (875021647) في شات البوت
+                // 4. إشعار فوري للأدمن في شات البوت
                 const cryptoNote = selectedWithdrawMethod.isCrypto
                     ? `\n💲 *المعادل بالـ USDT:* \`${(amt / USDT_EXCHANGE_RATE).toFixed(2)} USDT\``
                     : "";
@@ -727,7 +762,7 @@
                         `💸 *طلب سحب أرباح تاجر جديد!* 🔔\n` +
                         `━━━━━━━━━━━━━━━\n` +
                         `🆔 *كود الطلب:* \`${wCode}\`\n` +
-                        `👤 *التاجر:* ${userData.name || 'عضو'} (\`${tid}\`)\n` +
+                        `👤 *التاجر:* ${freshU.name || 'عضو'} (\`${tid}\`)\n` +
                         `💵 *المبلغ:* *${amt.toFixed(2)} ج.م*${cryptoNote}\n` +
                         `💳 *الوسيلة:* ${selectedWithdrawMethod.name}\n` +
                         `📥 *الحساب المستلم:* \`${fullWalletDetails}\``,
@@ -759,13 +794,14 @@
             } catch (e) {
                 notifyUser("❌ حدث خطأ أثناء إرسال الطلب: " + e.message);
             } finally {
+                isBusyAction = false;
                 btn.disabled = false;
                 btn.innerText = "💸 تأكيد وإرسال طلب سحب الأرباح الآن";
             }
         }
 
         // =========================================================================
-        // 📂 عرض سجل السحوبات + إمكانية إلغاء الطلب المعلق واسترجاع الرصيد
+        // 📂 عرض سجل السحوبات + إمكانية إلغاء الطلب المعلق واسترجاع الرصيد (محمي ضد التكرار)
         // =========================================================================
         async function loadMyWithdrawalsHistory() {
             const box = document.getElementById('my-withdrawals-list');
@@ -808,27 +844,50 @@
         }
 
         async function cancelPendingWithdrawal(wId, amount) {
+            if (isBusyAction) return;
             if (!confirm(`هل تريد إلغاء طلب السحب هذا وإرجاع مبلغ (${Number(amount).toFixed(2)} ج.م) إلى محفظة أرباحك فوراً؟`)) return;
 
-            const { data: checkW } = await client.from('withdrawals').select('status').eq('id', wId).maybeSingle();
-            if (!checkW || checkW.status !== 'Pending') {
-                return notifyUser("⚠️ لا يمكن إلغاء هذا الطلب لأنه تم تنفيذه أو إلغاؤه بالفعل.");
+            isBusyAction = true;
+            try {
+                // تحديث ذري مشروط بأن تكون الحالة Pending فقط لمنع الضغط المزدوج واسترداد المبلغ مرتين
+                const { data: updatedW, error: wErr } = await client
+                    .from('withdrawals')
+                    .update({ status: 'Cancelled' })
+                    .eq('id', wId)
+                    .eq('telegram_id', String(tid))
+                    .eq('status', 'Pending')
+                    .select('id, amount');
+
+                if (wErr || !updatedW || updatedW.length === 0) {
+                    await loadMyWithdrawalsHistory();
+                    return notifyUser("⚠️ لا يمكن إلغاء هذا الطلب لأنه تم تنفيذه أو إلغاؤه بالفعل.");
+                }
+
+                const refundAmt = Number(updatedW[0].amount || amount);
+                const { data: freshU } = await client
+                    .from('users')
+                    .select('merchant_balance_egp')
+                    .eq('telegram_id', tid)
+                    .single();
+
+                const newMerch = Number((Number(freshU?.merchant_balance_egp || 0) + refundAmt).toFixed(2));
+                await client.from('users').update({ merchant_balance_egp: newMerch }).eq('telegram_id', tid);
+
+                await refreshMerchantStats();
+                await loadMyWithdrawalsHistory();
+                notifyUser(`✅ تم إلغاء الطلب وإرجاع (${refundAmt.toFixed(2)} ج.م) إلى محفظة التاجر الخاصة بك!`);
+            } catch (e) {
+                notifyUser("❌ حدث خطأ أثناء إلغاء الطلب.");
+            } finally {
+                isBusyAction = false;
             }
-
-            await client.from('withdrawals').update({ status: 'Cancelled' }).eq('id', wId);
-            const newMerch = Number((merchantAvailEgp + Number(amount)).toFixed(2));
-            await client.from('users').update({ merchant_balance_egp: newMerch }).eq('telegram_id', tid);
-
-            await refreshMerchantStats();
-            await loadMyWithdrawalsHistory();
-            notifyUser(`✅ تم إلغاء الطلب وإرجاع (${Number(amount).toFixed(2)} ج.م) إلى محفظة التاجر الخاصة بك!`);
         }
 
-        function goHome() { window.location.href = `index.html?id=${tid}`; }
-        function goStore() { window.location.href = `store.html?id=${tid}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
-        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
-        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
+        function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
+        function goStore() { window.location.href = `store.html?id=${tid}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
 
         initMerchantWithdrawPage();
     </script>
