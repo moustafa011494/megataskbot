@@ -169,7 +169,6 @@
         .badge-user { background: rgba(255, 170, 0, 0.12); color: var(--gold); border: 1px solid rgba(255, 170, 0, 0.3); }
         .badge-verified { background: rgba(0, 210, 106, 0.18); color: #00ff80; border: 1px solid var(--main-green); font-size: 9.5px; padding: 2px 6px; border-radius: 6px; font-weight: bold; }
         .badge-escrow { background: rgba(0, 210, 106, 0.12); color: var(--main-green); border: 1px solid rgba(0, 210, 106, 0.3); font-size: 9.5px; padding: 2px 6px; border-radius: 6px; }
-        .badge-autodlv { background: rgba(157, 78, 221, 0.2); color: #e9d5ff; border: 1px solid var(--violet); font-size: 9.5px; padding: 2px 6px; border-radius: 6px; font-weight: bold; }
 
         .product-title { font-size: 15px; font-weight: bold; color: white; margin: 0; line-height: 1.3; }
         
@@ -372,7 +371,7 @@
         </div>
         <div class="wallets-actions-row">
             <button class="btn-top-deposit" onclick="goDeposit()">📥 شحن جنيه</button>
-            <button class="btn-top-exchange" onclick="openExchangeModal()">🔄 تبديل (+20%)</button>
+            <button class="btn-top-exchange" onclick="openExchangeModal()">🔄 تبديل لنقاط</button>
             <button class="btn-top-merchant" onclick="goMerchantWithdraw()">💼 سحب التجار</button>
         </div>
     </div>
@@ -539,7 +538,7 @@
     </div>
 
     <!-- =========================================================================
-         4. نافذة بيع سلعة عامة في المتجر (شاملة ميزة التسليم الفوري التلقائي للأكواد)
+         4. نافذة بيع سلعة عامة في المتجر
     ========================================================================== -->
     <div id="sell-modal" class="modal-overlay">
         <div class="modal-body">
@@ -595,7 +594,7 @@
             <!-- ⚡ خيار التسليم التلقائي الفوري للأكواد والحسابات الجاهزة -->
             <div class="input-group" style="background: rgba(157, 78, 221, 0.08); border: 1px dashed var(--violet); padding: 10px; border-radius: 12px;">
                 <label style="color: #e9d5ff;">⚡ بيانات التسليم التلقائي الفوري (اختياري - للأكواد والحسابات الجاهزة):</label>
-                <textarea id="sell-auto-stock" class="input-field" rows="2" placeholder="ضع كل كود أو حساب في سطر مستقل... عند الشراء سيسحب البوت سطراً واحداً ويسلمه للمشتري تلقائياً بدون انتظارك!" oninput="syncAutoStockCount()"></textarea>
+                <textarea id="sell-auto-stock" class="input-field" rows="2" placeholder="ضع كل كود أو حساب في سطر مستقل... البيانات مشفرة ولا تظهر لأحد إلا للمشتري بعد الدفع!" oninput="syncAutoStockCount()"></textarea>
             </div>
 
             <div class="input-group">
@@ -637,12 +636,12 @@
         </div>
     </div>
 
-    <!-- 6. نافذة تحويل الجنيه إلى نقاط (+20% بونص) -->
+    <!-- 6. نافذة تحويل الجنيه إلى نقاط (1 جنيه = 1000 نقطة) -->
     <div id="exchange-modal" class="modal-overlay">
         <div class="modal-body" style="border-color: var(--neon-blue); text-align: center;">
             <h3 style="color: var(--neon-blue); margin-top:0;">⚡ تحويل سريع: جنيه ⬅ نقاط</h3>
             <p style="font-size: 12px; color: var(--text-gray);">
-                كل <b style="color: var(--neon-blue);">1 جنيه</b> يمنحك <b style="color: var(--gold);">1,200 نقطة</b> فوراً (شامل 20% بونص إضافي!)
+                كل <b style="color: var(--neon-blue);">1 جنيه</b> يمنحك <b style="color: var(--gold);">1,000 نقطة</b> فوراً لشراء خدمات النقاط أو تمويل المهام!
             </p>
             <input type="number" id="ex-egp-input" class="input-field" style="text-align: center; font-size: 15px; margin: 10px 0;" placeholder="أدخل المبلغ بالجنيه (مثلاً: 5)" min="1" step="0.5" oninput="updateStoreExchangePreview()">
             <div id="ex-pts-preview" style="font-size: 14px; color: var(--main-green); font-weight: bold; margin-bottom: 12px;">
@@ -687,13 +686,16 @@
         const ADMIN_MASTER_ID = "875021647";
         const STORE_COMMISSION_RATE = 0.15;   // 15% عمولة البوت على مبيعات المتجر
         const PRIVATE_ESCROW_RATE = 0.10;     // 10% عمولة البوت على صفقات الوساطة الخاصة
+        const EGP_TO_POINTS_RATE = 1000;      // 1 جنيه = 1000 نقطة (مؤمن مالياً لمنع ثغرات التدوير)
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe?.user?.id || localStorage.getItem('telegram_id') || "").trim();
+        const tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(tg.initDataUnsafe?.user?.id || params.get('id') || localStorage.getItem('telegram_id') || "").trim();
         
         let userPoints = 0;
         let userEgp = 0;
@@ -707,6 +709,10 @@
         let selectedProductForBuy = null;
         let currentOpenedOrder = null;
         let selectedRatingStars = 5;
+        let isProcessingEscrowAction = false;
+
+        // قائمة الأعمدة الآمنة للعرض العام (بدون عمود auto_delivery_data السري!)
+        const SAFE_PUBLIC_PRODUCT_COLS = "id, product_code, creator_id, category, currency, title, description, price, link, image_url, target_count, completed_count, status";
 
         const CAT_ICONS = {
             recharge: "🔋",
@@ -719,7 +725,6 @@
             escrow_private: "🤝"
         };
 
-        // دالة نسخ مضمونة 100% لجميع الهواتف داخل Telegram WebView
         function copyCodeText(codeVal) {
             const clean = String(codeVal || "").trim();
             if (!clean) return;
@@ -791,11 +796,12 @@
             document.getElementById('active-deals-badge').innerText = data ? data.length : 0;
         }
 
+        // جلب المنتجات بأمان دون كشف عمود الأكواد السرية auto_delivery_data
         async function loadStoreProducts() {
             const container = document.getElementById('products-list');
             const { data, error } = await client
                 .from('store_products')
-                .select('*')
+                .select(SAFE_PUBLIC_PRODUCT_COLS)
                 .eq('status', 'Approved')
                 .neq('category', 'escrow_private')
                 .order('id', { ascending: false });
@@ -807,7 +813,6 @@
 
             allProducts = data || [];
 
-            // جلب تقييمات وعدد مبيعات التجار العارضين لعرض شارة "تاجر موثق ☑️" والنجوم
             const creatorIds = [...new Set(allProducts.map(p => p.creator_id).filter(id => id && id !== 'ADMIN'))];
             if (creatorIds.length > 0) {
                 try {
@@ -873,11 +878,7 @@
                 const isOfficial = !p.creator_id || p.creator_id === 'ADMIN';
                 const catIcon = CAT_ICONS[p.category] || "📦";
 
-                const autoLines = getAutoStockLines(p.auto_delivery_data);
-                const hasAutoDelivery = autoLines.length > 0;
-                const remainingStock = hasAutoDelivery
-                    ? autoLines.length
-                    : Math.max(0, (p.target_count || 100) - (p.completed_count || 0));
+                const remainingStock = Math.max(0, (p.target_count || 100) - (p.completed_count || 0));
                 const isSoldOut = remainingStock <= 0;
 
                 const borderClass = isEgp ? 'egp-border' : 'pts-border';
@@ -900,10 +901,6 @@
                     `;
                 }
 
-                const autoBadgeHtml = hasAutoDelivery
-                    ? `<span class="badge-autodlv">⚡ تسليم تلقائي فوري</span>`
-                    : `<span class="badge-escrow">🔒 محمي بالضمان</span>`;
-
                 const thumbHtml = (p.image_url && p.image_url.startsWith('data:image'))
                     ? `<div class="product-thumb"><img src="${p.image_url}" alt="Product"></div>`
                     : `<div class="product-thumb">${catIcon}</div>`;
@@ -914,9 +911,9 @@
                 } else if (String(p.creator_id) === String(tid)) {
                     buyBtnHtml = `<button class="btn-buy btn-buy-soldout" onclick="openMyActivityModal()">سلعتك الخاصة 🏷️</button>`;
                 } else if (isEgp) {
-                    buyBtnHtml = `<button class="btn-buy btn-buy-egp" onclick="openBuyModal(${p.id})">${hasAutoDelivery ? '⚡ شراء واستلام فوري' : '🔒 شراء بضمان الوسيط'}</button>`;
+                    buyBtnHtml = `<button class="btn-buy btn-buy-egp" onclick="openBuyModal(${p.id})">🔒 شراء بضمان الوسيط</button>`;
                 } else {
-                    buyBtnHtml = `<button class="btn-buy btn-buy-pts" onclick="openBuyModal(${p.id})">${hasAutoDelivery ? '⚡ شراء واستلام فوري' : '🔒 شراء بضمان الوسيط'}</button>`;
+                    buyBtnHtml = `<button class="btn-buy btn-buy-pts" onclick="openBuyModal(${p.id})">🔒 شراء بضمان الوسيط</button>`;
                 }
 
                 container.innerHTML += `
@@ -926,7 +923,7 @@
                             <div class="product-main-info">
                                 <div class="badges-row">
                                     ${sellerBadgeHtml}
-                                    ${autoBadgeHtml}
+                                    <span class="badge-escrow">🔒 محمي بالضمان</span>
                                 </div>
                                 <h3 class="product-title">${escapeHtml(p.title)}</h3>
                             </div>
@@ -1001,7 +998,7 @@
                 target_count: 1,
                 completed_count: 0,
                 status: 'Approved'
-            }]).select().single();
+            }]).select(SAFE_PUBLIC_PRODUCT_COLS).single();
 
             btn.disabled = false;
             btn.innerText = "توليد كود الصفقة الآن 🔐";
@@ -1033,7 +1030,7 @@
 
             const { data: dealProd } = await client
                 .from('store_products')
-                .select('*')
+                .select(SAFE_PUBLIC_PRODUCT_COLS)
                 .or(`product_code.eq.${code},link.eq.${code}`)
                 .maybeSingle();
 
@@ -1055,7 +1052,7 @@
         }
 
         // =========================================================================
-        // 🛍️ 2. عرض سلعة عامة في المتجر (مع دعم أكواد التسليم الفوري التلقائي)
+        // 🛍️ 2. عرض سلعة عامة في المتجر
         // =========================================================================
         function openSellModal() {
             if (!tid) return tg.showAlert("❌ يرجى فتح المنصة من داخل البوت.");
@@ -1187,7 +1184,7 @@
         }
 
         // =========================================================================
-        // 🔒 3. شراء المنتج وحجز المبلغ في الضمان + فحص التسليم التلقائي الفوري
+        // 🔒 3. شراء المنتج وحجز المبلغ في الضمان + سحب كود التسليم الفوري بعد الدفع فقط
         // =========================================================================
         function openBuyModal(productId) {
             const p = allProducts.find(item => item.id === productId);
@@ -1197,26 +1194,26 @@
             const isEgp = p.currency === 'egp';
             const priceText = isEgp ? `${Number(p.price).toFixed(2)} ج.م` : `${Number(p.price).toLocaleString()} نقطة`;
             const myBalText = isEgp ? `${userEgp.toFixed(2)} ج.م` : `${userPoints.toLocaleString()} نقطة`;
-            const hasAuto = getAutoStockLines(p.auto_delivery_data).length > 0;
 
             document.getElementById('buy-modal-title').innerText = `🔒 شراء بضمان الوسيط: ${p.title}`;
             document.getElementById('buy-modal-price').innerHTML = `
                 💰 <b>المبلغ المطلوب:</b> <span style="color: ${isEgp ? 'var(--neon-blue)' : 'var(--main-green)'}; font-weight:bold;">${priceText}</span><br>
                 💼 <b>رصيدك الحالي:</b> ${myBalText}<br>
-                ${hasAuto ? '⚡ <b style="color:#e9d5ff;">ميزة المنتج:</b> تسليم تلقائي فوري للكود/الحساب بمجرد الدفع!<br>' : ''}
                 🛡️ <b>نظام الحماية:</b> يُحجز المبلغ في خزنة البوت ولا يُسلّم للبائع إلا بعد استلامك وتأكيدك بنفسك!
             `;
-            document.getElementById('buyer-input').value = hasAuto ? "استلام تلقائي فوري" : "";
+            document.getElementById('buyer-input').value = "";
             document.getElementById('buy-modal').style.display = 'flex';
         }
 
         async function confirmPurchase() {
-            if (!selectedProductForBuy) return;
+            if (!selectedProductForBuy || isProcessingEscrowAction) return;
             const p = selectedProductForBuy;
             const buyerInput = document.getElementById('buyer-input').value.trim();
             const btn = document.getElementById('btn-confirm-buy');
 
             if (!buyerInput) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام أو ملاحظتك للبائع أولاً!");
+
+            await refreshUserBalances();
 
             const isEgp = p.currency === 'egp';
             const price = Number(p.price);
@@ -1233,7 +1230,7 @@
                 if (userPoints < price) {
                     closeModal('buy-modal');
                     if (userEgp >= 1) {
-                        if (confirm(`❌ رصيد نقاطك غير كافٍ!\nهل ترغب في تحويل الجنيه إلى نقاط (+20% بونص) لإتمام الشراء فوراً؟`)) {
+                        if (confirm(`❌ رصيد نقاطك غير كافٍ!\nهل ترغب في تحويل الجنيه إلى نقاط لإتمام الشراء فوراً؟`)) {
                             openExchangeModal();
                         }
                     } else {
@@ -1246,27 +1243,12 @@
             const unitLabel = isEgp ? 'ج.م' : 'نقطة';
             if (!confirm(`🔒 تأكيد دفع (${price.toLocaleString()} ${unitLabel}) وحجزها في خزنة الضمان لشراء (${p.title})؟`)) return;
 
+            isProcessingEscrowAction = true;
             btn.disabled = true;
             btn.innerText = "⏳ جاري حجز المبلغ وفتح غرفة الوساطة...";
 
             try {
-                // جلب أحدث نسخة من المنتج لفحص مخزون التسليم التلقائي الفوري
-                const { data: freshProd } = await client
-                    .from('store_products')
-                    .select('auto_delivery_data, completed_count, target_count')
-                    .eq('id', p.id)
-                    .maybeSingle();
-
-                const autoStockArr = getAutoStockLines(freshProd ? freshProd.auto_delivery_data : p.auto_delivery_data);
-                let deliveredAutoItem = null;
-                let remainingAutoStockStr = null;
-
-                if (autoStockArr.length > 0) {
-                    deliveredAutoItem = autoStockArr.shift();
-                    remainingAutoStockStr = autoStockArr.length > 0 ? autoStockArr.join("\n") : null;
-                }
-
-                // 1. خصم المبلغ من المشتري وحجزه في الضمان
+                // 1. خصم المبلغ من المشتري أولاً قبل قراءة أي بيانات تسليم تلقائي
                 let userUpdatePayload = {};
                 if (isEgp) {
                     userEgp = Number((userEgp - price).toFixed(2));
@@ -1278,6 +1260,22 @@
 
                 const { error: err1 } = await client.from('users').update(userUpdatePayload).eq('telegram_id', tid);
                 if (err1) throw err1;
+
+                // 2. بعد خصم الرصيد بنجاح، نفحص هل المنتج يحتوي على كود تسليم تلقائي فوري
+                const { data: freshProd } = await client
+                    .from('store_products')
+                    .select('auto_delivery_data, completed_count, target_count')
+                    .eq('id', p.id)
+                    .maybeSingle();
+
+                const autoStockArr = getAutoStockLines(freshProd ? freshProd.auto_delivery_data : "");
+                let deliveredAutoItem = null;
+                let remainingAutoStockStr = null;
+
+                if (autoStockArr.length > 0) {
+                    deliveredAutoItem = autoStockArr.shift();
+                    remainingAutoStockStr = autoStockArr.length > 0 ? autoStockArr.join("\n") : null;
+                }
 
                 const sellerId = p.creator_id || 'ADMIN';
                 const isPrivateEscrow = p.category === 'escrow_private';
@@ -1329,9 +1327,7 @@
                 }
                 await client.from('store_products').update(prodUpdateObj).eq('id', p.id);
                 p.completed_count = newCompletedCount;
-                p.auto_delivery_data = remainingAutoStockStr;
 
-                // إشعار المشتري في شات البوت
                 if (deliveredAutoItem) {
                     await client.from('bot_messages').insert([{
                         telegram_id: String(tid),
@@ -1346,7 +1342,6 @@
                     }]);
                 }
 
-                // إشعار البائع فوراً في شات البوت
                 const targetNotifySeller = sellerId === 'ADMIN' ? ADMIN_MASTER_ID : sellerId;
                 await client.from('bot_messages').insert([{
                     telegram_id: String(targetNotifySeller),
@@ -1365,13 +1360,14 @@
             } catch (e) {
                 tg.showAlert("❌ حدث خطأ أثناء إتمام الشراء: " + e.message);
             } finally {
+                isProcessingEscrowAction = false;
                 btn.disabled = false;
                 btn.innerText = "🔒 دفع وحجز المبلغ في الضمان";
             }
         }
 
         // =========================================================================
-        // 💬 4. غرفة الوساطة المباشرة (الشات + الصور + مؤقت الـ 24 ساعة + التقييم)
+        // 💬 4. غرفة الوساطة المباشرة (محمية ضد تكرار التحرير أو الاسترداد)
         // =========================================================================
         async function openDealRoom(orderId) {
             const { data: ord, error } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
@@ -1433,7 +1429,6 @@
                 <div>${statusTxt}</div>
             `;
 
-            // عرض رسائل وصور الشات داخل الغرفة
             const chatBox = document.getElementById('dr-chat-box');
             const msgs = Array.isArray(ord.chat_messages) ? ord.chat_messages : [];
             if (msgs.length === 0) {
@@ -1463,13 +1458,11 @@
             }
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            // إظهار أو إخفاء أزرار التحكم وصندوق التقييم
             const actionsBox = document.getElementById('dr-actions-container');
             const isClosed = ['Completed', 'Rejected', 'Refunded'].includes(ord.status);
             document.getElementById('dr-chat-input-row').style.display = isClosed ? 'none' : 'flex';
 
             if (isClosed) {
-                // إذا كانت الصفقة مكتملة والمشتري لم يقيّم البائع بعد، نعرض له صندوق التقييم بالنجوم
                 if (ord.status === 'Completed' && isBuyer && !ord.is_rated && ord.seller_id && ord.seller_id !== 'ADMIN') {
                     selectedRatingStars = 5;
                     actionsBox.innerHTML = `
@@ -1530,7 +1523,14 @@
             const ord = currentOpenedOrder;
             const sellerId = String(ord.seller_id);
 
-            await client.from('store_orders').update({ is_rated: true }).eq('id', ord.id);
+            const { data: updatedOrd } = await client
+                .from('store_orders')
+                .update({ is_rated: true })
+                .eq('id', ord.id)
+                .eq('is_rated', false)
+                .select('id');
+
+            if (!updatedOrd || updatedOrd.length === 0) return;
 
             const { data: sUser } = await client
                 .from('users')
@@ -1587,7 +1587,6 @@
             await refreshCurrentDealRoom();
         }
 
-        // إرسال صورة / لقطة شاشة داخل شات غرفة الوساطة
         function sendDealRoomImage(input) {
             if (!currentOpenedOrder || !input.files || !input.files[0]) return;
             const file = input.files[0];
@@ -1638,43 +1637,50 @@
             reader.readAsDataURL(file);
         }
 
-        // تأكيد البائع أنه سلّم الطلب (مع ختم توقيت delivered_at لعداد الـ 24 ساعة)
         async function sellerMarkDelivered() {
-            if (!currentOpenedOrder) return;
+            if (!currentOpenedOrder || isProcessingEscrowAction) return;
             const ord = currentOpenedOrder;
-            const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
-            msgs.push({
-                sender: "SYSTEM",
-                text: "📦 أعلن البائع أنه قام بتسليم الطلب (بدأ عداد الحماية 24 ساعة). يرجى من المشتري الفحص والضغط على (✅ استلمت الطلب) لتحرير المبلغ.",
-                time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-            });
+            if (!['Pending', 'Escrow_Held'].includes(ord.status)) return;
 
-            await client.from('store_orders').update({
-                status: 'Delivered',
-                delivered_at: new Date().toISOString(),
-                chat_messages: msgs
-            }).eq('id', ord.id);
+            isProcessingEscrowAction = true;
+            try {
+                const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
+                msgs.push({
+                    sender: "SYSTEM",
+                    text: "📦 أعلن البائع أنه قام بتسليم الطلب (بدأ عداد الحماية 24 ساعة). يرجى من المشتري الفحص والضغط على (✅ استلمت الطلب) لتحرير المبلغ.",
+                    time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+                });
 
-            await client.from('bot_messages').insert([{
-                telegram_id: String(ord.user_id),
-                message: `📦 *قام البائع بتسليم طلبك (${ord.product_title})!* ✅\n\nيرجى فتح غرفة الوساطة في المتجر وفحص بيانات التسليم، ثم الضغط على *(✅ استلمت الطلب)* لتحرير المبلغ للبائع (أو سيتم تحريره تلقائياً بعد 24 ساعة في حال عدم وجود اعتراض).`,
-                status: 'pending'
-            }]);
+                await client.from('store_orders').update({
+                    status: 'Delivered',
+                    delivered_at: new Date().toISOString(),
+                    chat_messages: msgs
+                }).eq('id', ord.id).in('status', ['Pending', 'Escrow_Held']);
 
-            await refreshCurrentDealRoom();
-            tg.showAlert("✅ تم تحديث الحالة إلى (تم التسليم) وبدء عداد الـ 24 ساعة التلقائي!");
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(ord.user_id),
+                    message: `📦 *قام البائع بتسليم طلبك (${ord.product_title})!* ✅\n\nيرجى فتح غرفة الوساطة في المتجر وفحص بيانات التسليم، ثم الضغط على *(✅ استلمت الطلب)* لتحرير المبلغ للبائع (أو سيتم تحريره تلقائياً بعد 24 ساعة في حال عدم وجود اعتراض).`,
+                    status: 'pending'
+                }]);
+
+                await refreshCurrentDealRoom();
+                tg.showAlert("✅ تم تحديث الحالة إلى (تم التسليم) وبدء عداد الـ 24 ساعة التلقائي!");
+            } finally {
+                isProcessingEscrowAction = false;
+            }
         }
 
-        // تحرير المشتري للمبلغ من خزنة الضمان إلى محفظة البائع
+        // تحرير المشتري للمبلغ من خزنة الضمان إلى محفظة البائع (محمي ضد التكرار)
         async function buyerReleaseEscrowFunds() {
-            if (!currentOpenedOrder) return;
+            if (!currentOpenedOrder || isProcessingEscrowAction) return;
             const ord = currentOpenedOrder;
-            if (ord.status === 'Completed') return;
+            if (['Completed', 'Rejected', 'Refunded'].includes(ord.status)) return;
 
             if (!confirm("✅ هل تأكدت من استلام الخدمة/السلعة كاملة؟\n\nبضغطك على موافق، سيقوم البوت بتحرير المبلغ من خزنة الضمان وتحويله إلى حساب البائع نهائياً ولا يمكن التراجع.")) {
                 return;
             }
 
+            isProcessingEscrowAction = true;
             try {
                 const isEgp = ord.currency === 'egp';
                 const unit = isEgp ? 'ج.م' : 'نقطة';
@@ -1693,11 +1699,22 @@
                     time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
                 });
 
-                const { error: updErr } = await client.from('store_orders').update({
-                    status: 'Completed',
-                    chat_messages: msgs
-                }).eq('id', ord.id);
+                // تحديث ذري مشروط بأن الصفقة لم تكتمل أو تُلغَ مسبقاً لمنع صرف الربح مرتين
+                const { data: updatedRows, error: updErr } = await client
+                    .from('store_orders')
+                    .update({
+                        status: 'Completed',
+                        chat_messages: msgs
+                    })
+                    .eq('id', ord.id)
+                    .in('status', ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'])
+                    .select('id');
+
                 if (updErr) throw updErr;
+                if (!updatedRows || updatedRows.length === 0) {
+                    await refreshCurrentDealRoom();
+                    return tg.showAlert("ℹ️ هذه الصفقة تم تحريرها أو إغلاقها بالفعل.");
+                }
 
                 if (sellerId !== 'ADMIN') {
                     const { data: sellerUser } = await client
@@ -1744,16 +1761,32 @@
                 tg.showAlert("🎉 شكراً لك! تم تأكيد الاستلام وتحرير المبلغ للبائع بنجاح. يمكنك الآن تقييم البائع بالنجوم!");
             } catch (e) {
                 tg.showAlert("❌ حدث خطأ أثناء تحرير المبلغ: " + e.message);
+            } finally {
+                isProcessingEscrowAction = false;
             }
         }
 
-        // إلغاء البائع للصفقة وإرجاع المال للمشتري فوراً
+        // إلغاء البائع للصفقة وإرجاع المال للمشتري فوراً (محمي ضد التكرار)
         async function sellerRefundBuyer() {
-            if (!currentOpenedOrder) return;
+            if (!currentOpenedOrder || isProcessingEscrowAction) return;
             const ord = currentOpenedOrder;
+            if (['Completed', 'Rejected', 'Refunded'].includes(ord.status)) return;
             if (!confirm("↩️ هل أنت متأكد من إلغاء هذه الصفقة وإرجاع المبلغ المحجوز بالكامل إلى محفظة المشتري؟")) return;
 
+            isProcessingEscrowAction = true;
             try {
+                const { data: updatedRows, error: refErr } = await client
+                    .from('store_orders')
+                    .update({ status: 'Refunded' })
+                    .eq('id', ord.id)
+                    .in('status', ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'])
+                    .select('id');
+
+                if (refErr || !updatedRows || updatedRows.length === 0) {
+                    await refreshCurrentDealRoom();
+                    return tg.showAlert("⚠️ هذه الصفقة تم إغلاقها أو استردادها بالفعل.");
+                }
+
                 const isEgp = ord.currency === 'egp';
                 const unit = isEgp ? 'ج.م' : 'نقطة';
                 const price = Number(ord.price_paid || 0);
@@ -1769,8 +1802,6 @@
                     }
                 }
 
-                await client.from('store_orders').update({ status: 'Refunded' }).eq('id', ord.id);
-
                 await client.from('bot_messages').insert([{
                     telegram_id: String(ord.user_id),
                     message: `↩️ *تم إلغاء الصفقة (${ord.product_title}) من قِبل البائع*\n✅ تم استرداد مبلغ (*+${price} ${unit}*) من خزنة الضمان إلى محفظتك فوراً!`,
@@ -1781,40 +1812,48 @@
                 await updateActiveDealsBadge();
                 await refreshCurrentDealRoom();
                 tg.showAlert("✅ تم إلغاء الصفقة وإرجاع المبلغ للمشتري.");
-            } catch (e) {}
+            } catch (e) {} finally {
+                isProcessingEscrowAction = false;
+            }
         }
 
-        // فتح نزاع واستدعاء الإدارة (Dispute)
         async function openEscrowDispute() {
-            if (!currentOpenedOrder) return;
+            if (!currentOpenedOrder || isProcessingEscrowAction) return;
             const ord = currentOpenedOrder;
+            if (['Completed', 'Rejected', 'Refunded', 'Disputed'].includes(ord.status)) return;
+
             const reason = prompt("🚨 اكتب سبب فتح النزاع بالتفصيل (ستتدخل الإدارة وتفحص الشات وتفصل بينكما):");
             if (!reason) return;
 
-            const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
-            msgs.push({
-                sender: "SYSTEM",
-                text: `🚨 فتح المشتري نزاعاً رسمياً! السبب: ${reason} — تم تجميد المبلغ وإيقاف المؤقت التلقائي واستدعاء الإدارة.`,
-                time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-            });
+            isProcessingEscrowAction = true;
+            try {
+                const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
+                msgs.push({
+                    sender: "SYSTEM",
+                    text: `🚨 فتح المشتري نزاعاً رسمياً! السبب: ${reason} — تم تجميد المبلغ وإيقاف المؤقت التلقائي واستدعاء الإدارة.`,
+                    time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+                });
 
-            await client.from('store_orders').update({
-                status: 'Disputed',
-                chat_messages: msgs
-            }).eq('id', ord.id);
+                await client.from('store_orders').update({
+                    status: 'Disputed',
+                    chat_messages: msgs
+                }).eq('id', ord.id).in('status', ['Pending', 'Escrow_Held', 'Delivered']);
 
-            await client.from('bot_messages').insert([{
-                telegram_id: ADMIN_MASTER_ID,
-                message: `🚨 *نزاع وساطة مالية عاجل!* ⚠️\n━━━━━━━━━━━━━━━\n🆔 *كود الصفقة:* \`${ord.order_code || ord.id}\`\n📦 *السلعة:* ${ord.product_title}\n💰 *المبلغ المجمد:* ${ord.price_paid} ${ord.currency}\n👤 *المشتري:* \`${ord.user_id}\`\n🏷️ *البائع:* \`${ord.seller_id}\`\n📝 *سبب النزاع:* ${reason}`,
-                status: 'pending'
-            }]);
+                await client.from('bot_messages').insert([{
+                    telegram_id: ADMIN_MASTER_ID,
+                    message: `🚨 *نزاع وساطة مالية عاجل!* ⚠️\n━━━━━━━━━━━━━━━\n🆔 *كود الصفقة:* \`${ord.order_code || ord.id}\`\n📦 *السلعة:* ${ord.product_title}\n💰 *المبلغ المجمد:* ${ord.price_paid} ${ord.currency}\n👤 *المشتري:* \`${ord.user_id}\`\n🏷️ *البائع:* \`${ord.seller_id}\`\n📝 *سبب النزاع:* ${reason}`,
+                    status: 'pending'
+                }]);
 
-            await refreshCurrentDealRoom();
-            tg.showAlert("🚨 تم تجميد المبلغ في خزنة البوت وإبلاغ الإدارة للفصل في النزاع!");
+                await refreshCurrentDealRoom();
+                tg.showAlert("🚨 تم تجميد المبلغ في خزنة البوت وإبلاغ الإدارة للفصل في النزاع!");
+            } finally {
+                isProcessingEscrowAction = false;
+            }
         }
 
         // =========================================================================
-        // 📦 5. نافذة صفقاتي وطلباتي وسلعي (مع أزرار نسخ الكود المباشرة)
+        // 📦 5. نافذة صفقاتي وطلباتي وسلعي
         // =========================================================================
         async function openMyActivityModal() {
             document.getElementById('activity-modal').style.display = 'flex';
@@ -1830,7 +1869,7 @@
 
             const { data: myItems } = await client
                 .from('store_products')
-                .select('*')
+                .select(SAFE_PUBLIC_PRODUCT_COLS)
                 .eq('creator_id', tid)
                 .order('id', { ascending: false });
 
@@ -1895,7 +1934,7 @@
             box.innerHTML = html;
         }
 
-        // تحويل الجنيه لنقاط داخل المتجر
+        // تحويل الجنيه لنقاط داخل المتجر (1 جنيه = 1000 نقطة)
         function openExchangeModal() {
             document.getElementById('ex-egp-input').value = "";
             document.getElementById('ex-pts-preview').innerText = "ستحصل على: 0 نقطة";
@@ -1904,16 +1943,18 @@
 
         function updateStoreExchangePreview() {
             const val = parseFloat(document.getElementById('ex-egp-input').value) || 0;
-            const pts = Math.floor(val * 1200);
-            document.getElementById('ex-pts-preview').innerText = `ستحصل على: ${pts.toLocaleString()} نقطة 🔥`;
+            const pts = Math.floor(val * EGP_TO_POINTS_RATE);
+            document.getElementById('ex-pts-preview').innerText = `ستحصل على: ${pts.toLocaleString()} نقطة ⚡`;
         }
 
         async function confirmStoreExchange() {
             const egpAmt = parseFloat(document.getElementById('ex-egp-input').value);
             if (!egpAmt || egpAmt < 1) return tg.showAlert("⚠️ الحد الأدنى للتحويل هو 1 جنيه.");
+
+            await refreshUserBalances();
             if (egpAmt > userEgp) return tg.showAlert("❌ رصيدك بالجنيه غير كافٍ!");
 
-            const ptsToAdd = Math.floor(egpAmt * 1200);
+            const ptsToAdd = Math.floor(egpAmt * EGP_TO_POINTS_RATE);
             const newEgp = Number((userEgp - egpAmt).toFixed(2));
             const newPts = userPoints + ptsToAdd;
 
@@ -1946,13 +1987,13 @@
 
         function escapeHtml(str) { return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
 
-        function goHome() { window.location.href = `index.html?id=${tid}`; }
-        function goStore() { window.location.href = `store.html?id=${tid}`; }
-        function goDeposit() { window.location.href = `deposit.html?id=${tid}`; }
-        function goMerchantWithdraw() { window.location.href = `merchant_withdraw.html?id=${tid}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
-        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
-        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
+        function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
+        function goStore() { window.location.href = `store.html?id=${tid}&t=${Date.now()}`; }
+        function goDeposit() { window.location.href = `deposit.html?id=${tid}&t=${Date.now()}`; }
+        function goMerchantWithdraw() { window.location.href = `merchant_withdraw.html?id=${tid}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
 
         init();
     </script>
