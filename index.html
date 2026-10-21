@@ -256,7 +256,7 @@
             <p style="font-size: 12px; color: var(--text-gray); margin-top: 6px;">أدخل كود الدعوة إن وجد للحصول على +10 نقاط ترحيبية أو تخطى للبدء</p>
             <input type="text" id="ref-input" class="modal-input" placeholder="ENTER CODE (ID)">
             <button class="btn-confirm-ad" onclick="submitRegistration()">ابدأ الآن 🚀</button>
-            <button onclick="submitRegistration(true)" style="background: none; border: none; color: #777; margin-top: 12px; cursor: pointer;">تخطي ⬅</button>
+            <button onclick="submitRegistration(true)" style="background: none; border: none; color: #777; margin-top: 12px; cursor: pointer;">تخطى ⬅</button>
         </div>
     </div>
 
@@ -308,7 +308,7 @@
             <div class="req-prog-box">
                 <div style="display: flex; justify-content: space-between;">
                     <span>2️⃣ المهام المنفذة المطلوبة:</span>
-                    <b id="w-req-tasks-txt" style="color: var(--gold);">0 / 15 مهمة</b>
+                    <b id="w-req-tasks-txt" style="color: var(--gold);">0 / 50 مهمة</b>
                 </div>
                 <div class="req-bar-bg"><div id="w-req-tasks-bar" class="req-bar-fill" style="background: var(--gold);"></div></div>
             </div>
@@ -335,18 +335,18 @@
         </div>
     </div>
 
-    <!-- 4. نافذة تحويل الجنيه إلى نقاط (+20% بونص) -->
+    <!-- 4. نافذة تحويل الجنيه إلى نقاط (1 جنيه = 1000 نقطة) -->
     <div id="exchange-modal" class="modal-overlay">
         <div class="modal-box" style="border-color: var(--main-cyan);">
             <h3 style="color: var(--main-cyan); margin-top:0;">⚡ تحويل الجنيه إلى نقاط</h3>
             <p style="font-size: 12px; color: var(--text-gray); margin-bottom: 12px;">
-                احصل على <b style="color: #ffaa00;">1,200 نقطة</b> مقابل كل <b style="color: var(--main-cyan);">1 جنيه</b> (شامل 20% نقاط إضافية مجاناً لتمويل مهامك ومشترياتك!)
+                احصل على <b style="color: #ffaa00;">1,000 نقطة</b> مقابل كل <b style="color: var(--main-cyan);">1 جنيه</b> فوراً لتمويل مهامك أو الشراء من عروض النقاط بالمتجر!
             </p>
             <input type="number" id="exchange-egp-input" class="modal-input" placeholder="أدخل المبلغ بالجنيه (مثلاً: 5)" min="1" step="0.5" oninput="updateExchangePreview()">
             <div id="exchange-preview" style="font-size: 13px; color: var(--main-green); font-weight: bold; margin-bottom: 15px;">
                 ستحصل على: 0 نقطة
             </div>
-            <button class="btn-confirm-ad" style="background: linear-gradient(135deg, #00f2ff, #0077ff); margin-bottom: 8px;" onclick="confirmExchangeEgpToPoints()">
+            <button id="btn-confirm-exchange" class="btn-confirm-ad" style="background: linear-gradient(135deg, #00f2ff, #0077ff); margin-bottom: 8px;" onclick="confirmExchangeEgpToPoints()">
                 ✅ تأكيد التحويل فوراً
             </button>
             <button class="btn-confirm-ad" style="background: #252932; color: #ccc;" onclick="closeExchangeModal()">
@@ -411,7 +411,7 @@
         <!-- صف تحويل الجنيه لنقاط + تفعيل كود هدية Promo Code -->
         <div class="quick-bars-row">
             <button class="btn-exchange-bar" onclick="openExchangeModal()">
-                🔄 تبديل عملة <span>(+20% بونص 🔥)</span>
+                🔄 تبديل عملة <span>(جنيه ⬅ نقاط ⚡)</span>
             </button>
             <button class="btn-promo-bar" onclick="openPromoModal()">
                 🎁 كود هدية (Promo)
@@ -733,10 +733,6 @@
                 }
 
                 async function getOrCreateUser() {
-                    if (!_tid || _tid === "test_user") {
-                        _tid = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "123456789");
-                    }
-
                     let { data: userCurrent } = await _client
                         .from('users')
                         .select('*')
@@ -805,14 +801,15 @@
                             const refBonus = Math.max(1, Math.round(pointsChange * 0.10));
                             const { data: refUser } = await _client
                                 .from('users')
-                                .select('points, total_earned')
+                                .select('points, total_earned, total_ref_commission')
                                 .eq('telegram_id', String(uInfo.referred_by))
                                 .maybeSingle();
 
                             if (refUser) {
                                 await _client.from('users').update({
                                     points: (refUser.points || 0) + refBonus,
-                                    total_earned: (refUser.total_earned || 0) + refBonus
+                                    total_earned: (refUser.total_earned || 0) + refBonus,
+                                    total_ref_commission: (refUser.total_ref_commission || 0) + refBonus
                                 }).eq('telegram_id', String(uInfo.referred_by));
                             }
                         }
@@ -1071,29 +1068,35 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
         const ADMIN_MASTER_ID = "875021647";
+        const EGP_TO_POINTS_RATE = 1000;      // 1 جنيه = 1000 نقطة (مؤمن ضد ثغرة تدوير السحب)
+        const REQ_WITHDRAW_POINTS = 50000;    // 50,000 نقطة = 50 ج.م
+        const REQ_WITHDRAW_TASKS = 50;        // 50 مهمة منفذة لفتح سحب النقاط المجانية
+
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         let userId = "";
         let userData = null;
+        let isBusyTransaction = false;
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
-            userId = String(params.get('id') || tg.initDataUnsafe?.user?.id || localStorage.getItem('telegram_id') || "").trim();
+            userId = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+                ? MegaSecurity.getVerifiedUserId(params.get('id'))
+                : String(tg.initDataUnsafe?.user?.id || params.get('id') || localStorage.getItem('telegram_id') || "").trim();
+
             if (!userId || userId === "undefined" || userId === "null") {
-                userId = "123456789";
+                return tg.showAlert("❌ يرجى فتح المنصة من داخل بوت تيليجرام الرسمي.");
             }
             localStorage.setItem('telegram_id', userId);
 
-            // التقاط كود الإحالة التلقائي إن وجد في الرابط
             const urlRef = (params.get('ref') || "").trim();
             if (urlRef && urlRef !== userId) {
                 const refInp = document.getElementById('ref-input');
                 if (refInp) refInp.value = urlRef;
             }
 
-            // فحص درع الحماية لمنع فتح أكثر من حساب على نفس الهاتف
             if (typeof MegaSecurity !== 'undefined') {
                 const secCheck = await MegaSecurity.verifyDeviceAndAccount(client, userId);
                 if (!secCheck.allowed) return;
@@ -1233,15 +1236,16 @@
         }
 
         async function redeemPromoCodeNow() {
+            if (isBusyTransaction) return;
             const rawCode = (document.getElementById('promo-code-input').value || "").trim().toUpperCase();
             if (!rawCode) return tg.showAlert("⚠️ يرجى كتابة كود الهدية أولاً!");
 
             const btn = document.getElementById('btn-redeem-promo');
+            isBusyTransaction = true;
             btn.disabled = true;
             btn.innerText = "⏳ جاري التحقق من الكود...";
 
             try {
-                // 1. التحقق من وجود الكود وصلاحيته في جدول promo_codes
                 const { data: promo, error: pErr } = await client
                     .from('promo_codes')
                     .select('*')
@@ -1250,20 +1254,15 @@
                     .maybeSingle();
 
                 if (pErr || !promo) {
-                    btn.disabled = false;
-                    btn.innerText = "🎉 تفعيل الكود واستلام الهدية";
                     return tg.showAlert(`❌ كود الهدية (${rawCode}) غير صحيح أو منتهي الصلاحية!`);
                 }
 
                 const usedCnt = Number(promo.used_count || 0);
                 const maxUses = Number(promo.max_uses || 100);
                 if (usedCnt >= maxUses) {
-                    btn.disabled = false;
-                    btn.innerText = "🎉 تفعيل الكود واستلام الهدية";
                     return tg.showAlert(`💔 للأسف! اكتمل العدد المسموح به لهذا الكود (${maxUses}/${maxUses}).`);
                 }
 
-                // 2. التحقق من عدم استخدام العضو لنفس الكود مسبقاً
                 const { data: alreadyUsed } = await client
                     .from('promo_redemptions')
                     .select('id')
@@ -1272,18 +1271,14 @@
                     .maybeSingle();
 
                 if (alreadyUsed) {
-                    btn.disabled = false;
-                    btn.innerText = "🎉 تفعيل الكود واستلام الهدية";
                     return tg.showAlert(`⚠️ لقد قمت باستلام هدية الكود (${rawCode}) من قبل!`);
                 }
 
-                // 3. عرض إعلان سريع قبل منح الهدية (إن توفر)
                 if (typeof show_10959333 === 'function') {
                     btn.innerText = "⏳ شاهد الإعلان لاستلام الهدية...";
                     try { await show_10959333(); } catch (adE) {}
                 }
 
-                // 4. توثيق الاستخدام
                 const { error: redErr } = await client.from('promo_redemptions').insert([{
                     code: rawCode,
                     telegram_id: String(userId)
@@ -1296,20 +1291,21 @@
                     is_active: nextUsed < maxUses
                 }).eq('id', promo.id);
 
-                // 5. إضافة المكافأة لرصيد المستخدم
+                // جلب أحدث رصيد من قاعدة البيانات قبل الإضافة
+                const { data: freshU } = await client.from('users').select('points, egp_balance, total_earned').eq('telegram_id', userId).single();
                 const rType = promo.reward_type || 'points';
                 const rAmt = Number(promo.reward_amount || 0);
                 let rewardText = "";
 
                 if (rType === 'egp') {
-                    const nextEgp = Number((Number(userData?.egp_balance || 0) + rAmt).toFixed(2));
+                    const nextEgp = Number((Number(freshU?.egp_balance || 0) + rAmt).toFixed(2));
                     await client.from('users').update({ egp_balance: nextEgp }).eq('telegram_id', userId);
                     userData.egp_balance = nextEgp;
                     rewardText = `+${rAmt.toFixed(2)} ج.م`;
                 } else {
                     const ptsAdd = Math.round(rAmt);
-                    const nextPts = Number(userData?.points || 0) + ptsAdd;
-                    const nextTot = Number(userData?.total_earned || 0) + ptsAdd;
+                    const nextPts = Number(freshU?.points || 0) + ptsAdd;
+                    const nextTot = Number(freshU?.total_earned || 0) + ptsAdd;
                     await client.from('users').update({ points: nextPts, total_earned: nextTot }).eq('telegram_id', userId);
                     userData.points = nextPts;
                     userData.total_earned = nextTot;
@@ -1330,27 +1326,26 @@
             } catch (e) {
                 tg.showAlert("❌ تعذر تفعيل الكود: " + (e.message || ""));
             } finally {
+                isBusyTransaction = false;
                 btn.disabled = false;
                 btn.innerText = "🎉 تفعيل الكود واستلام الهدية";
             }
         }
 
         // =========================================================================
-        // 💸 نافذة وبوابة السحب الذكية (سحب النقاط بشروط + بوابة سحب التجار)
+        // 💸 نافذة وبوابة السحب الذكية المؤمنة (50,000 نقطة + 50 مهمة منفذة)
         // =========================================================================
         function openWithdrawHubModal() {
             const pts = Number(userData?.points || 0);
             const tasks = Number(userData?.total_tasks || 0);
-            const reqPts = 50000;
-            const reqTasks = 15;
 
-            document.getElementById('w-req-pts-txt').innerText = `${pts.toLocaleString()} /${reqPts.toLocaleString()}`;
-            document.getElementById('w-req-pts-bar').style.width = `${Math.min(100, (pts / reqPts) * 100)}%`;
+            document.getElementById('w-req-pts-txt').innerText = `${pts.toLocaleString()} /${REQ_WITHDRAW_POINTS.toLocaleString()}`;
+            document.getElementById('w-req-pts-bar').style.width = `${Math.min(100, (pts / REQ_WITHDRAW_POINTS) * 100)}%`;
 
-            document.getElementById('w-req-tasks-txt').innerText = `${tasks} /${reqTasks} مهمة`;
-            document.getElementById('w-req-tasks-bar').style.width = `${Math.min(100, (tasks / reqTasks) * 100)}%`;
+            document.getElementById('w-req-tasks-txt').innerText = `${tasks} /${REQ_WITHDRAW_TASKS} مهمة`;
+            document.getElementById('w-req-tasks-bar').style.width = `${Math.min(100, (tasks / REQ_WITHDRAW_TASKS) * 100)}%`;
 
-            const unlocked = (pts >= reqPts && tasks >= reqTasks);
+            const unlocked = (pts >= REQ_WITHDRAW_POINTS && tasks >= REQ_WITHDRAW_TASKS);
             document.getElementById('pts-withdraw-form-area').style.display = unlocked ? 'block' : 'none';
             document.getElementById('pts-withdraw-locked-hint').style.display = unlocked ? 'none' : 'block';
 
@@ -1362,11 +1357,7 @@
         }
 
         async function submitPointsWithdrawalRequest() {
-            const pts = Number(userData?.points || 0);
-            const tasks = Number(userData?.total_tasks || 0);
-            if (pts < 50000 || tasks < 15) {
-                return tg.showAlert("⚠️ يجب إكمال شروط السحب أولاً (50,000 نقطة + 15 مهمة منفذة)!");
-            }
+            if (isBusyTransaction) return;
 
             const method = document.getElementById('pts-w-method').value;
             const wallet = document.getElementById('pts-w-wallet').value.trim();
@@ -1375,12 +1366,34 @@
             }
 
             const btn = document.getElementById('btn-submit-pts-w');
+            isBusyTransaction = true;
             btn.disabled = true;
-            btn.innerText = "⏳ جاري إرسال طلب السحب...";
+            btn.innerText = "⏳ جاري التحقق وإرسال طلب السحب...";
 
             try {
+                // سحب الرصيد الحقيقي من قاعدة البيانات مباشرة قبل الخصم لمنع أي تلاعب أو ضغط مزدوج
+                const { data: freshU, error: fErr } = await client
+                    .from('users')
+                    .select('points, total_tasks, is_banned')
+                    .eq('telegram_id', userId)
+                    .single();
+
+                if (fErr || !freshU) throw new Error("تعذر التحقق من الحساب");
+                if (freshU.is_banned) throw new Error("هذا الحساب محظور");
+
+                const realPts = Number(freshU.points || 0);
+                const realTasks = Number(freshU.total_tasks || 0);
+
+                if (realPts < REQ_WITHDRAW_POINTS || realTasks < REQ_WITHDRAW_TASKS) {
+                    userData.points = realPts;
+                    userData.total_tasks = realTasks;
+                    updateUI();
+                    openWithdrawHubModal();
+                    return tg.showAlert(`⚠️ يجب إكمال شروط السحب أولاً (${REQ_WITHDRAW_POINTS.toLocaleString()} نقطة + ${REQ_WITHDRAW_TASKS} مهمة منفذة)!`);
+                }
+
                 const wCode = "WTH-" + Math.floor(100000 + Math.random() * 900000);
-                const newPts = pts - 50000;
+                const newPts = realPts - REQ_WITHDRAW_POINTS;
 
                 const { error: uErr } = await client.from('users').update({ points: newPts }).eq('telegram_id', userId);
                 if (uErr) throw uErr;
@@ -1392,6 +1405,14 @@
                     method: `${method} (سحب نقاط)`,
                     wallet_info: wallet,
                     status: 'Pending'
+                }]);
+
+                await client.from('transactions').insert([{
+                    telegram_id: String(userId),
+                    type: 'withdraw',
+                    title: `طلب سحب 50,000 نقطة (${method})`,
+                    amount: '-50,000 نقطة (50 ج.م)',
+                    status: 'قيد المراجعة'
                 }]);
 
                 await client.from('bot_messages').insert([{
@@ -1407,6 +1428,7 @@
             } catch (e) {
                 tg.showAlert("❌ حدث خطأ أثناء الإرسال: " + e.message);
             } finally {
+                isBusyTransaction = false;
                 btn.disabled = false;
                 btn.innerText = "🚀 إرسال طلب سحب الـ 50 ج.م الآن";
             }
@@ -1432,55 +1454,78 @@
                 document.getElementById('exchange-preview').innerText = "ستحصل على: 0 نقطة";
                 return;
             }
-            const pointsToGet = Math.floor(val * 1200);
-            document.getElementById('exchange-preview').innerText = `ستحصل على: ${pointsToGet.toLocaleString()} نقطة 🔥`;
+            const pointsToGet = Math.floor(val * EGP_TO_POINTS_RATE);
+            document.getElementById('exchange-preview').innerText = `ستحصل على: ${pointsToGet.toLocaleString()} نقطة ⚡`;
         }
 
         async function confirmExchangeEgpToPoints() {
-            if (!userData) return;
+            if (!userData || isBusyTransaction) return;
             const egpAmount = parseFloat(document.getElementById('exchange-egp-input').value);
-            const currentEgp = Number(userData.egp_balance || 0);
 
             if (!egpAmount || egpAmount < 1) {
                 tg.showAlert("⚠️ الحد الأدنى للتحويل هو 1 جنيه.");
                 return;
             }
 
-            if (egpAmount > currentEgp) {
-                tg.showAlert("❌ رصيدك بالجنيه غير كافٍ! قم بشحن رصيدك أولاً.");
-                return;
-            }
+            const btn = document.getElementById('btn-confirm-exchange');
+            isBusyTransaction = true;
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري التحويل...";
 
-            const pointsToAdd = Math.floor(egpAmount * 1200);
-            const newEgpBalance = Number((currentEgp - egpAmount).toFixed(2));
-            const newPointsBalance = (userData.points || 0) + pointsToAdd;
+            try {
+                // جلب أحدث رصيد جنيه من قاعدة البيانات لمنع أي تلاعب
+                const { data: freshU, error: fErr } = await client
+                    .from('users')
+                    .select('points, egp_balance')
+                    .eq('telegram_id', userId)
+                    .single();
 
-            const { data, error } = await client
-                .from('users')
-                .update({
-                    egp_balance: newEgpBalance,
-                    points: newPointsBalance
-                })
-                .eq('telegram_id', userId)
-                .select()
-                .single();
+                if (fErr || !freshU) throw new Error("تعذر جلب الرصيد");
 
-            if (!error && data) {
-                userData = data;
-                updateUI();
-                closeExchangeModal();
+                const currentEgp = Number(freshU.egp_balance || 0);
+                if (egpAmount > currentEgp) {
+                    userData.egp_balance = currentEgp;
+                    updateUI();
+                    return tg.showAlert("❌ رصيدك بالجنيه غير كافٍ! قم بشحن رصيدك أولاً.");
+                }
 
-                await client.from('transactions').insert([{
-                    telegram_id: String(userId),
-                    type: 'points',
-                    title: `تحويل ${egpAmount} ج.م إلى نقاط (+20% بونص)`,
-                    amount: `+${pointsToAdd.toLocaleString()} نقطة`,
-                    status: 'مكتمل'
-                }]);
+                const pointsToAdd = Math.floor(egpAmount * EGP_TO_POINTS_RATE);
+                const newEgpBalance = Number((currentEgp - egpAmount).toFixed(2));
+                const newPointsBalance = Number(freshU.points || 0) + pointsToAdd;
 
-                tg.showAlert(`🎉 تم التحويل بنجاح!\nتم خصم ${egpAmount} ج.م وإضافة ${pointsToAdd.toLocaleString()} نقطة إلى رصيدك.`);
-            } else {
-                tg.showAlert("❌ حدث خطأ أثناء التحويل، حاول مرة أخرى.");
+                const { data, error } = await client
+                    .from('users')
+                    .update({
+                        egp_balance: newEgpBalance,
+                        points: newPointsBalance
+                    })
+                    .eq('telegram_id', userId)
+                    .select()
+                    .single();
+
+                if (!error && data) {
+                    userData = data;
+                    updateUI();
+                    closeExchangeModal();
+
+                    await client.from('transactions').insert([{
+                        telegram_id: String(userId),
+                        type: 'points',
+                        title: `تحويل ${egpAmount} ج.م إلى نقاط`,
+                        amount: `+${pointsToAdd.toLocaleString()} نقطة`,
+                        status: 'مكتمل'
+                    }]);
+
+                    tg.showAlert(`🎉 تم التحويل بنجاح!\nتم خصم ${egpAmount} ج.م وإضافة ${pointsToAdd.toLocaleString()} نقطة إلى رصيدك.`);
+                } else {
+                    tg.showAlert("❌ حدث خطأ أثناء التحويل، حاول مرة أخرى.");
+                }
+            } catch (e) {
+                tg.showAlert("❌ حدث خطأ أثناء التحويل.");
+            } finally {
+                isBusyTransaction = false;
+                btn.disabled = false;
+                btn.innerText = "✅ تأكيد التحويل فوراً";
             }
         }
 
