@@ -44,23 +44,16 @@
         .comm-tasks b { color: var(--main-green); }
         .comm-deposit b { color: var(--main-cyan); }
 
-        /* زر جمع الكل بضغطة واحدة */
-        .btn-claim-all {
-            width: 100%;
-            background: linear-gradient(135deg, #00d26a, #009e4f);
-            color: #000;
-            border: none;
-            padding: 12px;
-            border-radius: 12px;
+        .auto-credit-note {
+            margin-top: 10px;
+            background: rgba(0, 210, 106, 0.1);
+            border: 1px dashed rgba(0, 210, 106, 0.4);
+            color: #a7f3d0;
+            padding: 7px 10px;
+            border-radius: 10px;
+            font-size: 11px;
             font-weight: bold;
-            font-size: 13px;
-            margin-top: 12px;
-            cursor: pointer;
-            display: none;
-            box-shadow: 0 4px 15px rgba(0, 210, 106, 0.25);
-            transition: 0.2s;
         }
-        .btn-claim-all:active { transform: scale(0.98); }
 
         /* قسم تسجيل الكود أو الرابط */
         #register-section { background: rgba(0, 210, 106, 0.06); border: 1px dashed var(--main-green); padding: 15px; border-radius: 18px; margin-bottom: 15px; display: none; text-align: center; }
@@ -177,25 +170,15 @@
         .status-valid { background: rgba(0, 210, 106, 0.12); color: var(--main-green); border: 1px solid rgba(0, 210, 106, 0.3); }
         .status-pending { background: rgba(255, 170, 0, 0.12); color: var(--gold); border: 1px solid rgba(255, 170, 0, 0.3); }
 
-        /* زر جمع أرباح المهام */
         .btn-claim {
-            background: var(--main-green);
-            color: #000;
-            border: none;
-            padding: 8px 12px;
+            background: #1c2e24;
+            color: var(--main-green);
+            border: 1px solid #254a35;
+            padding: 7px 11px;
             border-radius: 10px;
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
             white-space: nowrap;
-        }
-        .btn-claim:active { transform: scale(0.95); }
-        .btn-claim.claimed {
-            background: #252932;
-            color: var(--text-gray);
-            cursor: not-allowed;
-            border: 1px solid #333842;
         }
 
         /* نافذة QR Code */
@@ -221,14 +204,14 @@
                 <span>من كل النقاط التي يجمعها صديقك مدى الحياة</span>
             </div>
             <div class="comm-badge comm-deposit">
-                <b>💵 5% مكافأة شحن</b>
+                <b>💵 2% مكافأة شحن</b>
                 <span>نقاط مجانية عند قيام صديقك بشحن رصيد الجنيه</span>
             </div>
         </div>
 
-        <button id="btn-claim-all" class="btn-claim-all" onclick="claimAllFriendsCommissions()">
-            📥 جمع كل العمولات المتاحة الآن (+0 نقطة)
-        </button>
+        <div class="auto-credit-note">
+            ⚡ تُضاف عمولات أصدقائك (10%) تلقائياً وفوراً إلى رصيد نقاطك مع كل مهمة ينفذونها!
+        </div>
     </div>
 
     <!-- قسم إدخال كود الدعوة لمن لم يسجل كود بعد -->
@@ -237,7 +220,7 @@
             🎁 هل دعاك صديق؟ فعّل كوده الآن واحصل على +10 نقاط ترحيبية!
         </div>
         <input type="text" id="input-promo" class="input-ref" placeholder="الصق كود الدعوة (ID) أو رابط الصديق هنا">
-        <button class="btn-green" style="width: 100%;" onclick="submitInvite()">تفعيل كود الدعوة ✅</button>
+        <button id="btn-activate-ref" class="btn-green" style="width: 100%;" onclick="submitInvite()">تفعيل كود الدعوة ✅</button>
     </div>
 
     <!-- شبكة الإحصائيات -->
@@ -272,7 +255,7 @@
         <ul class="rules-list">
             <li><b>1. التسجيل بالرابط أو الكود:</b> يدخل صديقك البوت عبر رابطك أو يضع الـ ID الخاص بك في خانة التفعيل.</li>
             <li><b>2. شرط التفعيل (الدعوة الصالحة ✅):</b> لكي تُحتسب الدعوة في <b>لوحة الصدارة</b> وجوائز الإنجازات، يجب أن ينفذ صديقك <b>مهمة واحدة أو إعلاناً واحداً على الأقل</b> (الحسابات الخاملة ذات الـ 0 نقاط تظل "غير نشطة ⏳" ولا تُحتسب).</li>
-            <li><b>3. الأرباح المستمرة:</b> تحصل على <b>10%</b> من جميع نقاط مهامه + <b>5%</b> مكافأة نقاط على كل إيداع يشحنه بالجنيه!</li>
+            <li><b>3. الأرباح المستمرة:</b> تحصل تلقائياً على <b>10%</b> من جميع نقاط مهامه + <b>2%</b> مكافأة نقاط على كل إيداع يشحنه بالجنيه!</li>
         </ul>
     </div>
 
@@ -337,16 +320,20 @@
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-        const BOT_TOKEN = "8487785406:AAHLd5lakTZH1xv1Kbc5-BktFNEHNV8AYck";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        const tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(tg.initDataUnsafe?.user?.id || params.get('id') || localStorage.getItem('telegram_id') || "").trim();
+
         const botUser = "MegaTask1Bot";
         
         let myData = null;
         let allInvitedUsers = [];
+        let claimedMilestonesSet = new Set();
         let currentFilter = 'all';
+        let isClaimingMilestone = false;
 
         // مستويات جوائز الإنجازات للدعوات الصالحة (Milestones)
         const REF_MILESTONES = [
@@ -357,19 +344,20 @@
             { count: 100, reward: 1500, label: "100 صديق 👑" }
         ];
 
-        async function sendTelegramMessage(chatId, text) {
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // إرسال إشعارات تيليجرام بأمان تام عبر طابور السيرفر bot_messages (بدون كشف التوكن في المتصفح!)
+        async function queueBotNotification(chatId, text) {
             try {
-                await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: text,
-                        parse_mode: 'Markdown'
-                    })
-                });
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(chatId),
+                    message: text,
+                    status: 'pending'
+                }]);
             } catch (err) {
-                console.error("Telegram notify error:", err);
+                console.error("Queue bot message error:", err);
             }
         }
 
@@ -389,7 +377,6 @@
         }
 
         async function init() {
-            // 🛡️ فحص درع الحماية لمنع فتح أكثر من حساب على نفس الهاتف
             if (typeof MegaSecurity !== 'undefined') {
                 const secCheck = await MegaSecurity.verifyDeviceAndAccount(client, tid);
                 if (!secCheck.allowed) return;
@@ -407,9 +394,37 @@
                 if (!user.referred_by) {
                     document.getElementById('register-section').style.display = 'block';
                 }
+                await syncClaimedMilestonesFromDB();
                 await loadMyInvites();
                 await loadLeaderboard();
                 await calculateRank();
+            }
+        }
+
+        // جلب الإنجازات المستلمة فعلياً من جدول transactions في قاعدة البيانات (لمنع الغش بمسح الكاش)
+        async function syncClaimedMilestonesFromDB() {
+            claimedMilestonesSet.clear();
+            const localArr = JSON.parse(localStorage.getItem(`claimed_milestones_${tid}`) || "[]");
+            localArr.forEach(c => claimedMilestonesSet.add(Number(c)));
+
+            try {
+                const { data: txs } = await client
+                    .from('transactions')
+                    .select('title')
+                    .eq('telegram_id', String(tid))
+                    .ilike('title', 'جائزة إنجاز دعوة%');
+
+                if (txs && txs.length > 0) {
+                    txs.forEach(t => {
+                        const m = String(t.title || "").match(/(\d+)/);
+                        if (m && m[1]) {
+                            claimedMilestonesSet.add(Number(m[1]));
+                        }
+                    });
+                    localStorage.setItem(`claimed_milestones_${tid}`, JSON.stringify([...claimedMilestonesSet]));
+                }
+            } catch (e) {
+                console.error("Sync milestones error:", e);
             }
         }
 
@@ -417,7 +432,7 @@
         async function loadMyInvites() {
             const { data, error } = await client
                 .from('users')
-                .select('*')
+                .select('telegram_id, name, task_earnings, total_tasks, total_earned')
                 .eq('referred_by', tid)
                 .order('id', { ascending: false });
 
@@ -427,7 +442,6 @@
             const validUsers = allInvitedUsers.filter(u => isFriendValid(u));
             const pendingUsers = allInvitedUsers.filter(u => !isFriendValid(u));
 
-            // تحديث العدادات في الشاشة
             document.getElementById('total-ref').innerText = allInvitedUsers.length;
             document.getElementById('valid-ref').innerText = validUsers.length;
             document.getElementById('f-count-all').innerText = allInvitedUsers.length;
@@ -454,30 +468,24 @@
 
         function renderInvitesList() {
             const container = document.getElementById('history-list');
-            const claimedMap = JSON.parse(localStorage.getItem(`claimed_refs_${tid}`) || "{}");
 
             let totalCommissionSum = 0;
-            let totalClaimableNow = 0;
-
             allInvitedUsers.forEach(u => {
                 const taskEarnings = Number(u.task_earnings || 0);
-                const comm = Math.floor(taskEarnings * 0.10);
-                totalCommissionSum += comm;
-                const friendId = String(u.telegram_id || u.name);
-                const alreadyClaimed = claimedMap[friendId] || 0;
-                totalClaimableNow += Math.max(0, comm - alreadyClaimed);
+                totalCommissionSum += Math.floor(taskEarnings * 0.10);
             });
 
-            document.getElementById('total-comm').innerText = Math.max(totalCommissionSum, Number(myData?.total_ref_commission || 0)).toLocaleString();
+            // حساب مجموع جوائز الإنجازات المستلمة أيضاً ضمن إجمالي أرباح الإحالات
+            let milestonesEarnedSum = 0;
+            REF_MILESTONES.forEach(m => {
+                if (claimedMilestonesSet.has(m.count)) milestonesEarnedSum += m.reward;
+            });
 
-            // إظهار أو إخفاء زر "جمع الكل"
-            const btnClaimAll = document.getElementById('btn-claim-all');
-            if (totalClaimableNow > 0) {
-                btnClaimAll.style.display = 'block';
-                btnClaimAll.innerText = `📥 جمع كل العمولات المتاحة بضغطة واحدة (+${totalClaimableNow.toLocaleString()} نقطة)`;
-            } else {
-                btnClaimAll.style.display = 'none';
-            }
+            const displayedTotalComm = Math.max(
+                totalCommissionSum + milestonesEarnedSum,
+                Number(myData?.total_ref_commission || 0)
+            );
+            document.getElementById('total-comm').innerText = displayedTotalComm.toLocaleString();
 
             let filtered = allInvitedUsers;
             if (currentFilter === 'valid') filtered = allInvitedUsers.filter(u => isFriendValid(u));
@@ -493,10 +501,7 @@
                 const taskEarnings = Number(u.task_earnings || 0);
                 const commissionFromThisFriend = Math.floor(taskEarnings * 0.10);
                 const isValid = isFriendValid(u);
-
-                const friendId = String(u.telegram_id || u.name);
-                const alreadyClaimed = claimedMap[friendId] || 0;
-                const claimable = Math.max(0, commissionFromThisFriend - alreadyClaimed);
+                const safeFriendName = escapeHtml(u.name || 'مستخدم');
 
                 const statusBadge = isValid
                     ? `<span class="status-pill status-valid">✅ دعوة صالحة</span>`
@@ -504,18 +509,16 @@
 
                 let actionButtonHtml = '';
                 if (!isValid && commissionFromThisFriend === 0) {
-                    actionButtonHtml = `<button class="btn-claim" style="opacity: 0.7; background: #22262f; color: #9ca3af;" onclick="alertNoPoints('${u.name}')">لم ينفذ مهام</button>`;
-                } else if (claimable > 0) {
-                    actionButtonHtml = `<button class="btn-claim" onclick="claimFromFriend('${friendId}', '${u.name}', ${claimable}, this)">📥 جمع +${claimable}</button>`;
+                    actionButtonHtml = `<button class="btn-claim" style="opacity: 0.7; background: #22262f; color: #9ca3af; border-color:#333; cursor:pointer;" onclick="alertNoPoints('${safeFriendName.replace(/'/g, "\\'")}')">لم ينفذ مهام</button>`;
                 } else {
-                    actionButtonHtml = `<button class="btn-claim claimed" disabled>تم الجمع ✅</button>`;
+                    actionButtonHtml = `<span class="btn-claim">⚡ مضاف تلقائياً (+${commissionFromThisFriend})</span>`;
                 }
 
                 container.innerHTML += `
                     <div class="item-row">
                         <div class="user-info">
-                            <b>${u.name || 'مستخدم'} ${statusBadge}</b>
-                            <small>أرباح مهامه: ${taskEarnings.toLocaleString()} نقطة • عمولتك (10%): <span style="color:var(--main-green); font-weight:bold;">+${commissionFromThisFriend}</span></small>
+                            <b>${safeFriendName} ${statusBadge}</b>
+                            <small>أرباح مهامه: ${taskEarnings.toLocaleString()} ن • عمولتك (10%): <span style="color:var(--main-green); font-weight:bold;">+${commissionFromThisFriend} نقطة</span></small>
                         </div>
                         <div>
                             ${actionButtonHtml}
@@ -525,111 +528,16 @@
         }
 
         function alertNoPoints(friendName) {
-            tg.showAlert(`⏳ صديقك (${friendName}) سجل في البوت لكنه لم ينفذ أي مهمة أو إعلان بعد!\n\n💡 ذكره بتنفيذ أول مهمة له لكي تُحتسب دعوتك "صالحة" وتبدأ في جني 10% من أرباحه.`);
+            tg.showAlert(`⏳ صديقك (${friendName}) سجل في البوت لكنه لم ينفذ أي مهمة أو إعلان بعد!\n\n💡 ذكره بتنفيذ أول مهمة له لكي تُحتسب دعوتك "صالحة" وتبدأ في جني 10% من أرباحه تلقائياً.`);
         }
 
-        // جمع عمولة صديق واحد
-        async function claimFromFriend(friendId, friendName, amount, btn) {
-            if (!myData || amount <= 0) return;
-
-            btn.disabled = true;
-            btn.innerText = "⏳...";
-
-            const newPoints = (myData.points || 0) + amount;
-            const newTotalEarned = (myData.total_earned || 0) + amount;
-            const newTotalComm = (myData.total_ref_commission || 0) + amount;
-
-            const { data, error } = await client.from('users').update({
-                points: newPoints,
-                total_earned: newTotalEarned,
-                total_ref_commission: newTotalComm
-            }).eq('telegram_id', tid).select().single();
-
-            if (!error && data) {
-                myData = data;
-
-                let claimedMap = JSON.parse(localStorage.getItem(`claimed_refs_${tid}`) || "{}");
-                claimedMap[friendId] = (claimedMap[friendId] || 0) + amount;
-                localStorage.setItem(`claimed_refs_${tid}`, JSON.stringify(claimedMap));
-
-                await client.from('transactions').insert([{
-                    telegram_id: String(tid),
-                    type: 'points',
-                    title: `عمولة إحالة (10%) من: ${friendName}`,
-                    amount: `+${amount} نقطة`,
-                    status: 'مكتمل'
-                }]);
-
-                renderInvitesList();
-                tg.showAlert(`🎉 مبروك! تم جمع +${amount} نقطة من مهام صديقك (${friendName}) وإضافتها لرصيدك!`);
-            } else {
-                btn.disabled = false;
-                btn.innerText = `📥 جمع +${amount}`;
-                tg.showAlert("❌ حدث خطأ أثناء إضافة النقاط، يرجى المحاولة مرة أخرى.");
-            }
-        }
-
-        // ⭐ ميزة جمع كل العمولات المتاحة بضغطة واحدة
-        async function claimAllFriendsCommissions() {
-            const btnAll = document.getElementById('btn-claim-all');
-            let claimedMap = JSON.parse(localStorage.getItem(`claimed_refs_${tid}`) || "{}");
-            let totalToClaim = 0;
-
-            allInvitedUsers.forEach(u => {
-                const taskEarnings = Number(u.task_earnings || 0);
-                const comm = Math.floor(taskEarnings * 0.10);
-                const friendId = String(u.telegram_id || u.name);
-                const alreadyClaimed = claimedMap[friendId] || 0;
-                const diff = Math.max(0, comm - alreadyClaimed);
-                if (diff > 0) {
-                    totalToClaim += diff;
-                    claimedMap[friendId] = alreadyClaimed + diff;
-                }
-            });
-
-            if (totalToClaim <= 0) return;
-
-            btnAll.disabled = true;
-            btnAll.innerText = "⏳ جاري جمع كافة العمولات...";
-
-            const newPoints = (myData.points || 0) + totalToClaim;
-            const newTotalEarned = (myData.total_earned || 0) + totalToClaim;
-            const newTotalComm = (myData.total_ref_commission || 0) + totalToClaim;
-
-            const { data, error } = await client.from('users').update({
-                points: newPoints,
-                total_earned: newTotalEarned,
-                total_ref_commission: newTotalComm
-            }).eq('telegram_id', tid).select().single();
-
-            btnAll.disabled = false;
-            if (!error && data) {
-                myData = data;
-                localStorage.setItem(`claimed_refs_${tid}`, JSON.stringify(claimedMap));
-
-                await client.from('transactions').insert([{
-                    telegram_id: String(tid),
-                    type: 'points',
-                    title: `جمع شامل لعمولات الأصدقاء (10%)`,
-                    amount: `+${totalToClaim} نقطة`,
-                    status: 'مكتمل'
-                }]);
-
-                renderInvitesList();
-                tg.showAlert(`🎉 عاش يا بطل! تم جمع +${totalToClaim.toLocaleString()} نقطة دفعة واحدة وإضافتها لرصيدك!`);
-            } else {
-                tg.showAlert("❌ تعذر جمع العمولات حالياً، حاول مرة أخرى.");
-            }
-        }
-
-        // ⭐ نظام جوائز إنجازات الدعوة (Milestones)
+        // ⭐ نظام جوائز إنجازات الدعوة المؤمن بقاعدة البيانات (Milestones)
         function renderMilestones(validCount) {
             const container = document.getElementById('milestones-container');
-            const claimedMilestones = JSON.parse(localStorage.getItem(`claimed_milestones_${tid}`) || "[]");
             container.innerHTML = "";
 
             REF_MILESTONES.forEach(m => {
-                const isClaimed = claimedMilestones.includes(m.count);
+                const isClaimed = claimedMilestonesSet.has(m.count);
                 const isUnlocked = validCount >= m.count;
 
                 let cardClass = "milestone-item";
@@ -656,46 +564,76 @@
         }
 
         async function claimMilestone(targetCount, rewardPts) {
-            let claimedMilestones = JSON.parse(localStorage.getItem(`claimed_milestones_${tid}`) || "[]");
-            if (claimedMilestones.includes(targetCount)) return;
+            if (isClaimingMilestone || claimedMilestonesSet.has(targetCount)) return;
 
-            const newPoints = (myData.points || 0) + rewardPts;
-            const newTotalEarned = (myData.total_earned || 0) + rewardPts;
-            const newTotalComm = (myData.total_ref_commission || 0) + rewardPts;
+            const validCount = allInvitedUsers.filter(u => isFriendValid(u)).length;
+            if (validCount < targetCount) {
+                return tg.showAlert("⚠️ لم تصل للعدد المطلوب من الأصدقاء النشطين بعد!");
+            }
 
-            const { data, error } = await client.from('users').update({
-                points: newPoints,
-                total_earned: newTotalEarned,
-                total_ref_commission: newTotalComm
-            }).eq('telegram_id', tid).select().single();
+            isClaimingMilestone = true;
+            const milestoneTitle = `جائزة إنجاز دعوة ${targetCount} صديق نشط`;
 
-            if (!error && data) {
-                myData = data;
-                claimedMilestones.push(targetCount);
-                localStorage.setItem(`claimed_milestones_${tid}`, JSON.stringify(claimedMilestones));
+            try {
+                // فحص أمني صارم من قاعدة البيانات لمنع تكرار الاستلام عبر مسح المتصفح
+                const { data: existingTx } = await client
+                    .from('transactions')
+                    .select('id')
+                    .eq('telegram_id', String(tid))
+                    .eq('title', milestoneTitle)
+                    .limit(1);
 
-                await client.from('transactions').insert([{
+                if (existingTx && existingTx.length > 0) {
+                    claimedMilestonesSet.add(targetCount);
+                    localStorage.setItem(`claimed_milestones_${tid}`, JSON.stringify([...claimedMilestonesSet]));
+                    renderMilestones(validCount);
+                    isClaimingMilestone = false;
+                    return tg.showAlert("⚠️ لقد استلمت جائزة هذا الإنجاز مسبقاً!");
+                }
+
+                // توثيق الاستلام أولاً في جدول المعاملات
+                const { error: txErr } = await client.from('transactions').insert([{
                     telegram_id: String(tid),
                     type: 'points',
-                    title: `جائزة إنجاز دعوة ${targetCount} صديق نشط`,
+                    title: milestoneTitle,
                     amount: `+${rewardPts} نقطة`,
                     status: 'مكتمل'
                 }]);
+                if (txErr) throw txErr;
 
-                const validCount = allInvitedUsers.filter(u => isFriendValid(u)).length;
-                renderMilestones(validCount);
-                renderInvitesList();
-                tg.showAlert(`🏆 إنجاز رائع!\nاستلمت مكافأة +${rewardPts} نقطة لوصولك إلى ${targetCount} دعوة صالحة!`);
+                const newPoints = (myData.points || 0) + rewardPts;
+                const newTotalEarned = (myData.total_earned || 0) + rewardPts;
+                const newTotalComm = (myData.total_ref_commission || 0) + rewardPts;
+
+                const { data, error } = await client.from('users').update({
+                    points: newPoints,
+                    total_earned: newTotalEarned,
+                    total_ref_commission: newTotalComm
+                }).eq('telegram_id', tid).select().single();
+
+                if (!error && data) {
+                    myData = data;
+                    claimedMilestonesSet.add(targetCount);
+                    localStorage.setItem(`claimed_milestones_${tid}`, JSON.stringify([...claimedMilestonesSet]));
+
+                    renderMilestones(validCount);
+                    renderInvitesList();
+                    tg.showAlert(`🏆 إنجاز رائع!\nاستلمت مكافأة +${rewardPts} نقطة لوصولك إلى ${targetCount} دعوة صالحة!`);
+                }
+            } catch (e) {
+                tg.showAlert("❌ حدث خطأ أثناء استلام الجائزة، حاول مرة أخرى.");
+            } finally {
+                isClaimingMilestone = false;
             }
         }
 
-        // ⭐ لوحة الصدارة (تستبعد أي شخص دعواته 0 نهائياً + تمييز المتصدر الأول)
+        // ⭐ لوحة الصدارة (تستبعد أي شخص دعواته 0 نهائياً)
         async function loadLeaderboard() {
             const container = document.getElementById('leaderboard-list');
             const { data, error } = await client
                 .from('users')
                 .select('telegram_id, name, invited_count')
-                .gt('invited_count', 0) // منع ظهور أي مستخدم دعواته 0
+                .gt('invited_count', 0)
                 .order('invited_count', { ascending: false })
                 .limit(15);
 
@@ -731,7 +669,8 @@
                 }
 
                 const isMe = String(u.telegram_id) === String(tid);
-                const nameDisplay = isMe ? `${u.name} (أنت ⭐)` : (u.name || "مستخدم");
+                const safeName = escapeHtml(u.name || "مستخدم");
+                const nameDisplay = isMe ? `${safeName} (أنت ⭐)` : safeName;
 
                 container.innerHTML += `
                     <div class="${rowClass}">
@@ -760,7 +699,6 @@
             document.getElementById('my-rank').innerText = `#${(count || 0) + 1}`;
         }
 
-        // عداد تنازلي لنهاية الأسبوع (الجمعة 11:59 مساءً)
         function startWeeklyCountdown() {
             function updateTimer() {
                 const now = new Date();
@@ -793,27 +731,39 @@
             el.classList.add('active');
         }
 
-        // تفعيل كود الدعوة بالنظام الآمن الجديد + درع منع الإحالة الذاتية من نفس الفون
+        // تفعيل كود الدعوة بالنظام الآمن بدون كشف التوكن
         async function submitInvite() {
             const rawValue = document.getElementById('input-promo').value.trim();
             const refCode = extractRefCode(rawValue);
+            const btn = document.getElementById('btn-activate-ref');
 
             if (!refCode || refCode === tid) return tg.showAlert("❌ كود أو رابط غير صالح!");
+            if (myData && myData.referred_by) return tg.showAlert("⚠️ لقد قمت بتفعيل كود دعوة مسبقاً!");
+
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري الفحص والتفعيل...";
 
             let inviter = null;
-            // 🛡️ فحص درع الحماية لمنع دعوة النفس من نفس الهاتف أو نفس شبكة الـ IP
             if (typeof MegaSecurity !== 'undefined') {
                 const refCheck = await MegaSecurity.canAcceptReferral(client, tid, refCode);
-                if (!refCheck.ok) return tg.showAlert(refCheck.msg);
+                if (!refCheck.ok) {
+                    btn.disabled = false;
+                    btn.innerText = "تفعيل كود الدعوة ✅";
+                    return tg.showAlert(refCheck.msg);
+                }
                 inviter = refCheck.inviter;
             } else {
                 let { data } = await client.from('users').select('*').eq('telegram_id', refCode).maybeSingle();
                 inviter = data;
             }
 
-            if (!inviter) return tg.showAlert("❌ هذا الكود / المستخدم غير مسجل بالنظام!");
+            if (!inviter) {
+                btn.disabled = false;
+                btn.innerText = "تفعيل كود الدعوة ✅";
+                return tg.showAlert("❌ هذا الكود / المستخدم غير مسجل بالنظام!");
+            }
 
-            const welcomeBonus = 10; // 10 نقاط هدية ترحيبية للمستخدم الجديد
+            const welcomeBonus = 10;
             const newPointsForMe = (myData.points || 0) + welcomeBonus;
             const newTotalForMe = (myData.total_earned || 0) + welcomeBonus;
 
@@ -835,26 +785,26 @@
                 const myName = myData.name || "مستخدم جديد";
                 const inviterName = inviter.name || "صديقك";
 
-                // 1. إشعار لصاحب الدعوة يشرح النظام الجديد
                 const msgForInviter = 
                     `🎉 *صديق جديد سجل بكود دعوتك!*\n` +
                     `━━━━━━━━━━━━━━━\n` +
                     `👤 *الصديق:* ${myName}\n` +
                     `✅ *حالة الدعوة:* ستُحتسب دعوة صالحة في لوحة الصدارة فور تنفيذه لأول مهمة!\n` +
-                    `💎 *أرباحك منه:* ستحصل على *10%* من جميع أرباح مهامه + *5%* مكافأة نقاط على أي شحن يقوم به!`;
-                sendTelegramMessage(refCode, msgForInviter);
+                    `💎 *أرباحك منه:* ستحصل تلقائياً على *10%* من جميع أرباح مهامه + *2%* مكافأة نقاط على أي شحن يقوم به!`;
+                await queueBotNotification(refCode, msgForInviter);
 
-                // 2. إشعار للمستخدم الجديد
                 const msgForNewUser = 
                     `🎉 *تم تفعيل كود الدعوة بنجاح!*\n` +
                     `━━━━━━━━━━━━━━━\n` +
                     `👤 *تمت دعوتك بواسطة:* ${inviterName}\n` +
                     `🎁 *هدية التفعيل:* حصلت على +${welcomeBonus} نقاط ترحيبية في رصيدك!`;
-                sendTelegramMessage(tid, msgForNewUser);
+                await queueBotNotification(tid, msgForNewUser);
 
                 tg.showAlert(`✅ تم تفعيل كود الدعوة بنجاح وحصلت على +${welcomeBonus} نقاط ترحيبية!`);
                 location.reload();
             } else {
+                btn.disabled = false;
+                btn.innerText = "تفعيل كود الدعوة ✅";
                 tg.showAlert("❌ حدث خطأ أثناء تفعيل الكود، يرجى المحاولة لاحقاً.");
             }
         }
