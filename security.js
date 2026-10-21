@@ -1,5 +1,5 @@
 /**
- * MegaTask - Ultimate Anti-VPN, Anti-Proxy & Anti-Multi-Account Shield v4.1 (security.js)
+ * MegaTask - Ultimate Anti-VPN, Anti-Proxy, Anti-Spoofing & Anti-Multi-Account Shield v5.0 (security.js)
  */
 const MegaSecurity = (function () {
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
@@ -48,6 +48,7 @@ const MegaSecurity = (function () {
         "africa/khartoum": "SD"
     };
 
+    // 1. توليد بصمة العتاد الفريدة للجهاز (Hardware Fingerprint)
     function generateHardwareFingerprint() {
         try {
             const components = [];
@@ -97,6 +98,7 @@ const MegaSecurity = (function () {
         }
     }
 
+    // 2. فحص متعدد الطبقات لكشف الـ VPN والـ Proxy
     async function detectIpAndVpnMultiLayer() {
         const deviceTz = (Intl.DateTimeFormat().resolvedOptions().timeZone || "").toLowerCase().trim();
         let detectedIp = null;
@@ -196,20 +198,20 @@ const MegaSecurity = (function () {
         setTimeout(stopAll, 350);
     }
 
-    function showPermanentBanScreen(primaryAccountId, currentAccountId) {
+    function showPermanentBanScreen(primaryAccountId, currentAccountId, customReason) {
         const stopAll = () => {
             document.body.innerHTML = `
                 <div style="position:fixed; inset:0; background:#08090d; z-index:2147483647; display:flex; align-items:center; justify-content:center; padding:22px; text-align:center; font-family:'Segoe UI',Tahoma,sans-serif; direction:rtl; user-select:none;">
                     <div style="background:#151821; border:2px solid #ff3b30; border-radius:24px; padding:28px 20px; max-width:360px; width:100%; box-shadow:0 0 50px rgba(255,59,48,0.35);">
                         <div style="font-size:56px; margin-bottom:10px;">🚫</div>
-                        <h2 style="color:#ff4d4d; margin:0 0 10px 0; font-size:20px;">تم حظر هذا الحساب الفرعي!</h2>
+                        <h2 style="color:#ff4d4d; margin:0 0 10px 0; font-size:20px;">تم حظر الوصول لهذا الحساب!</h2>
                         <p style="color:#d1d5db; font-size:13px; line-height:1.7; margin-bottom:16px;">
-                            تم اكتشاف فتح أكثر من حساب من نفس الهاتف أو نفس شبكة الإنترنت. تم حظر هذا الحساب وإلغاء الإحالة تلقائياً.
+                            ${customReason || 'تم اكتشاف فتح أكثر من حساب من نفس الهاتف. يُسمح بحساب واحد فقط لكل جهاز على منصة MegaTask.'}
                         </p>
                         <div style="background:#0c0e13; border:1px dashed #ff3b30; border-radius:12px; padding:12px; font-size:12px; color:#9ca3af; margin-bottom:16px; line-height:1.9;">
                             ✅ <b style="color:#00d26a;">الحساب الأساسي المسجل لهذا الجهاز:</b><br>
                             <span style="color:white; font-family:monospace; font-size:14px;">ID: ${primaryAccountId}</span><br>
-                            ❌ <b style="color:#ff4d4d;">الحساب المحظور حالياً:</b><br>
+                            ❌ <b style="color:#ff4d4d;">الحساب الموقوف حالياً:</b><br>
                             <span style="color:#ff7b72; font-family:monospace; font-size:14px;">ID: ${currentAccountId}</span>
                         </div>
                     </div>
@@ -223,10 +225,18 @@ const MegaSecurity = (function () {
     function pickMasterAccount(matchedUsers, currentUser) {
         const adminAcc = matchedUsers.find(u => String(u.telegram_id) === ADMIN_MASTER_ID);
         if (adminAcc) return adminAcc;
+
+        const savedLocalMaster = localStorage.getItem("megatask_master_owner_id");
+        if (savedLocalMaster) {
+            const localMasterAcc = matchedUsers.find(u => String(u.telegram_id) === String(savedLocalMaster) && u.is_banned !== true);
+            if (localMasterAcc) return localMasterAcc;
+        }
+
         if (currentUser && currentUser.referred_by) {
             const inviterAcc = matchedUsers.find(u => String(u.telegram_id) === String(currentUser.referred_by));
             if (inviterAcc) return inviterAcc;
         }
+
         const unbannedList = matchedUsers.filter(u => u.is_banned !== true);
         const pool = unbannedList.length > 0 ? unbannedList : matchedUsers;
         pool.sort((a, b) => {
@@ -237,17 +247,36 @@ const MegaSecurity = (function () {
         return pool[0];
     }
 
+    // 3. استخراج والتحقق من هوية المستخدم الحقيقية (منع التلاعب بـ ?id= في الرابط)
+    function getVerifiedUserId(passedTid) {
+        const tgUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+        const urlId = new URLSearchParams(window.location.search).get('id');
+
+        if (tgUserId) {
+            const realIdStr = String(tgUserId).trim();
+            // إذا حاول شخص تمرير ID مختلف في الرابط عن حساب تيليجرام المفتوح فعلياً، نعتمد حساب تيليجرام الحقيقي فقط
+            if (urlId && String(urlId).trim() !== realIdStr && realIdStr !== ADMIN_MASTER_ID) {
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('id', realIdStr);
+                window.history.replaceState({}, '', newUrl.toString());
+            }
+            localStorage.setItem('telegram_id', realIdStr);
+            localStorage.setItem('megatask_uid', realIdStr);
+            return realIdStr;
+        }
+
+        return String(passedTid || urlId || localStorage.getItem('telegram_id') || "").trim();
+    }
+
     async function verifyDeviceAndAccount(supabaseClient, passedTid) {
         try {
-            const tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-            const urlId = new URLSearchParams(window.location.search).get('id');
-            const currentTid = String(tgId || passedTid || urlId || localStorage.getItem('telegram_id') || "").trim();
+            const currentTid = getVerifiedUserId(passedTid);
 
             _deviceFp = generateHardwareFingerprint();
             const netCheck = await detectIpAndVpnMultiLayer();
             _userIp = netCheck.ip;
 
-            // ⭐ إيقاف الـ VPN على جميع المستخدمين مع استثناء حساب الأدمن الأساسي فقط
+            // إيقاف الـ VPN على جميع المستخدمين مع استثناء حساب الأدمن الأساسي فقط
             if (netCheck.isVpn && currentTid !== ADMIN_MASTER_ID) {
                 showVpnBlockScreen(netCheck.reason, _userIp);
                 return { allowed: false, reason: "vpn_detected" };
@@ -255,6 +284,13 @@ const MegaSecurity = (function () {
 
             if (!currentTid || currentTid === "undefined" || currentTid === "null") {
                 return { allowed: true };
+            }
+
+            // فحص الحماية المحلية السريعة: هل هذا المتصفح مربوط مسبقاً بحساب آخر؟
+            const boundMasterId = localStorage.getItem("megatask_master_owner_id");
+            if (boundMasterId && boundMasterId !== currentTid && currentTid !== ADMIN_MASTER_ID && boundMasterId !== "123456789") {
+                showPermanentBanScreen(boundMasterId, currentTid, "هذا الهاتف مسجل ومربوط مسبقاً بحساب أساسي آخر. لا يُسمح بفتح حسابات متعددة على نفس الجهاز!");
+                return { allowed: false, reason: "local_device_bound_to_other" };
             }
 
             const db = supabaseClient || (window.supabase ? window.supabase.createClient(S_URL, S_KEY) : null);
@@ -269,10 +305,12 @@ const MegaSecurity = (function () {
             if (!myUser) return { allowed: true };
 
             if (myUser.is_banned === true && currentTid !== ADMIN_MASTER_ID) {
-                showPermanentBanScreen(myUser.referred_by || "حساب آخر على نفس الهاتف", currentTid);
+                showPermanentBanScreen(myUser.referred_by || boundMasterId || "حساب آخر على نفس الهاتف", currentTid);
                 return { allowed: false, reason: "already_banned" };
             }
 
+            // ⭐ الاعتماد في حظر تعدد الحسابات على بصمة العتاد (device_fp) فقط
+            // لمنع الحظر الخاطئ لمستخدمي شبكات المحمول في مصر (CGNAT Shared IP)
             let matchedUsers = [];
             if (_deviceFp && _deviceFp !== "FP_FALLBACK") {
                 const { data: fpMatches } = await db
@@ -280,14 +318,6 @@ const MegaSecurity = (function () {
                     .select('telegram_id, name, points, total_tasks, device_fp, last_ip, is_banned, referred_by')
                     .eq('device_fp', _deviceFp);
                 if (fpMatches) matchedUsers.push(...fpMatches);
-            }
-
-            if (_userIp && !netCheck.isVpn) {
-                const { data: ipMatches } = await db
-                    .from('users')
-                    .select('telegram_id, name, points, total_tasks, device_fp, last_ip, is_banned, referred_by')
-                    .eq('last_ip', _userIp);
-                if (ipMatches) matchedUsers.push(...ipMatches);
             }
 
             const uniqueMap = {};
@@ -313,7 +343,7 @@ const MegaSecurity = (function () {
                     if (hadRef) {
                         await db.from('bot_messages').insert([{
                             telegram_id: masterId,
-                            message: `🚫 *تنبيه أمني من نظام الحماية:*\n\nتم اكتشاف محاولة فتح حساب فرعي (\`${currentTid}\`) من نفس هاتفك أو نفس شبكة الإنترنت.\n❌ تم حظر الحساب الفرعي وإلغاء احتساب الإحالة تلقائياً.`,
+                            message: `🚫 *تنبيه أمني من نظام الحماية:*\n\nتم اكتشاف محاولة فتح حساب فرعي (\`${currentTid}\`) من نفس هاتفك.\n❌ تم حظر الحساب الفرعي وإلغاء احتساب الإحالة تلقائياً.`,
                             status: 'pending'
                         }]);
                     }
@@ -337,11 +367,10 @@ const MegaSecurity = (function () {
 
             localStorage.setItem("megatask_master_owner_id", currentTid);
             const updatePayload = { device_fp: _deviceFp };
-            // لا نحفظ IP الـ VPN على حساب الأدمن لكي يبقى الـ IP المصري الأصلي محفوظاً
             if (_userIp && !netCheck.isVpn) updatePayload.last_ip = _userIp;
 
             await db.from('users').update(updatePayload).eq('telegram_id', currentTid);
-            return { allowed: true, fp: _deviceFp, ip: _userIp };
+            return { allowed: true, fp: _deviceFp, ip: _userIp, verifiedTid: currentTid };
 
         } catch (err) {
             console.error("MegaSecurity Error:", err);
@@ -349,8 +378,10 @@ const MegaSecurity = (function () {
         }
     }
 
+    // 4. فحص قبول الإحالة (يمنع دعوة النفس سواء بنفس الهاتف أو نفس شبكة الـ Wi-Fi/IP)
     async function canAcceptReferral(supabaseClient, myTid, inviterTid) {
-        if (!inviterTid || String(myTid) === String(inviterTid)) {
+        const cleanMyTid = getVerifiedUserId(myTid);
+        if (!inviterTid || String(cleanMyTid) === String(inviterTid)) {
             return { ok: false, msg: "❌ لا يمكنك استخدام كود الدعوة الخاص بك!" };
         }
 
@@ -358,14 +389,14 @@ const MegaSecurity = (function () {
         const netCheck = await detectIpAndVpnMultiLayer();
         const myIp = _userIp || netCheck.ip;
 
-        if (netCheck.isVpn && String(myTid) !== ADMIN_MASTER_ID) {
+        if (netCheck.isVpn && String(cleanMyTid) !== ADMIN_MASTER_ID) {
             showVpnBlockScreen(netCheck.reason, myIp);
             return { ok: false, msg: "🚫 لا يمكنك تفعيل دعوات أثناء تشغيل الـ VPN!" };
         }
 
         const { data: inviter } = await supabaseClient
             .from('users')
-            .select('telegram_id, name, device_fp, last_ip')
+            .select('telegram_id, name, device_fp, last_ip, referred_by')
             .eq('telegram_id', String(inviterTid))
             .maybeSingle();
 
@@ -373,7 +404,12 @@ const MegaSecurity = (function () {
             return { ok: false, msg: "❌ كود الدعوة هذا غير مسجل في النظام!" };
         }
 
-        if (inviter.device_fp && myFp && inviter.device_fp === myFp) {
+        // منع الإحالة العكسية المتبادلة (أ يدعو ب، ثم ب يدعو أ)
+        if (String(inviter.referred_by || "") === String(cleanMyTid)) {
+            return { ok: false, msg: "🚫 لا يمكنك تفعيل كود دعوة لشخص مسجل تحت دعوتك!" };
+        }
+
+        if (inviter.device_fp && myFp && myFp !== "FP_FALLBACK" && inviter.device_fp === myFp) {
             return { ok: false, msg: "🚫 مرفوض! صاحب كود الدعوة يستخدم نفس هذا الهاتف. يُمنع عمل دعوات لنفسك!" };
         }
 
@@ -393,6 +429,7 @@ const MegaSecurity = (function () {
 
     return {
         verifyDeviceAndAccount: verifyDeviceAndAccount,
-        canAcceptReferral: canAcceptReferral
+        canAcceptReferral: canAcceptReferral,
+        getVerifiedUserId: getVerifiedUserId
     };
 })();
