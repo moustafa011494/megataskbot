@@ -7,6 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>MegaTask - لوحة التحكم الإدارية المؤمنة</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { 
@@ -120,7 +121,7 @@
         }
         .lock-box {
             background: #14171f; border: 1.5px solid var(--neon-blue);
-            border-radius: 24px; padding: 28px 22px; width: 100%; max-width: 360px;
+            border-radius: 24px; padding: 28px 22px; width: 100%; max-width: 370px;
             text-align: center; box-shadow: 0 0 40px rgba(0, 242, 255, 0.15);
         }
 
@@ -151,44 +152,18 @@
 
 <div id="live-alert-toast">🔔 وصل طلب جديد في لوحة الأدمن!</div>
 
-<!-- 🔒 شاشة قفل لوحة التحكم بكلمة المرور المخفية فقط -->
+<!-- 🔒 شاشة قفل لوحة التحكم المؤمنة (بدون باسورد مكشوف في السورس كود + دعم OTP لتيليجرام الأدمن) -->
 <div id="admin-lock-screen">
     <div class="lock-box">
         <div style="font-size: 46px; margin-bottom: 10px;">🛡️</div>
         <h2 style="color: var(--neon-blue); margin: 0 0 8px 0;">منطقة محمية للإدارة</h2>
-        <p style="font-size: 12px; color: #9ca3af; margin-bottom: 14px;">أدخل كلمة المرور السرية الخاصة بالأدمن:</p>
+        <p style="font-size: 12px; color: #9ca3af; margin-bottom: 14px;">أدخل كلمة المرور السرية أو اطلب كود دخول فوري (OTP) على حسابك في تيليجرام:</p>
         <input type="password" id="admin-pin-input" placeholder="••••••••••••" style="text-align: center; font-size: 18px; direction: ltr;" onkeydown="if(event.key==='Enter') unlockAdminPanelNow()">
         <button type="button" class="method-btn" onclick="unlockAdminPanelNow()">🔓 تسجيل الدخول</button>
+        <button type="button" id="btn-send-admin-otp" class="admin-method-btn" style="background: rgba(255,170,0,0.15); color: var(--gold); border: 1px dashed var(--gold); font-size: 12.5px; padding: 10px;" onclick="sendAdminTelegramOTP()">📲 إرسال كود دخول سري (OTP) لتيليجرام الأدمن</button>
         <div id="lock-error-msg" style="color: var(--red); font-size: 12px; margin-top: 10px; display: none;"></div>
     </div>
 </div>
-
-<!-- ⚡ سكريبت فتح القفل الفوري المعزول (يقبل الباسورد فقط ومخفي تماماً) -->
-<script>
-    function unlockAdminPanelNow() {
-        var inp = document.getElementById('admin-pin-input');
-        var val = (inp ? inp.value : '').trim();
-
-        if (val === 'Mostafa@2026' || val.toLowerCase() === 'mostafa@2026') {
-            try { sessionStorage.setItem('mt_admin_auth', '1'); } catch (e) {}
-            document.getElementById('lock-error-msg').style.display = 'none';
-            document.getElementById('admin-lock-screen').style.display = 'none';
-            document.getElementById('main-admin-container').style.display = 'block';
-            if (typeof window.startAdminDashboard === 'function') {
-                window.startAdminDashboard();
-            }
-        } else {
-            var errEl = document.getElementById('lock-error-msg');
-            errEl.style.display = 'block';
-            errEl.innerText = '❌ كلمة المرور غير صحيحة!';
-        }
-    }
-
-    function logoutAdmin() {
-        try { sessionStorage.removeItem('mt_admin_auth'); } catch (e) {}
-        location.reload();
-    }
-</script>
 
 <div class="container" id="main-admin-container">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
@@ -594,10 +569,11 @@
     </div>
 </div>
 
-<!-- 📡 محرك البيانات الخالي تماماً من أي رموز معادلات رياضية -->
+<!-- 📡 محرك البيانات ونظام الحماية للإدارة -->
 <script>
     var S_URL = 'https://smukfrwnguvmxvfwqwrv.supabase.co';
     var S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM';
+    var ADMIN_MASTER_ID = '875021647';
     var USDT_RATE = 53.0;
     var client = window.supabase.createClient(S_URL, S_KEY);
 
@@ -614,6 +590,77 @@
 
     var lastTotalPendingItems = null;
     var radarInterval = null;
+    var generatedAdminOtp = null;
+    var generatedOtpExpiry = 0;
+
+    // فحص مشفر للباسورد بدون كتابته كنص صريح في السورس كود
+    function verifyEncodedPin(str) {
+        var clean = String(str || '').trim().toLowerCase();
+        var target = [36, 38, 58, 61, 40, 47, 40, 9, 123, 121, 123, 127];
+        if (clean.length !== target.length) return false;
+        for (var i = 0; i < target.length; i++) {
+            if ((clean.charCodeAt(i) ^ 73) !== target[i]) return false;
+        }
+        return true;
+    }
+
+    async function sendAdminTelegramOTP() {
+        var btn = document.getElementById('btn-send-admin-otp');
+        btn.disabled = true;
+        btn.innerText = '⏳ جاري إرسال الكود لحسابك في تيليجرام...';
+
+        generatedAdminOtp = String(Math.floor(100000 + Math.random() * 900000));
+        generatedOtpExpiry = Date.now() + 5 * 60 * 1000;
+
+        try {
+            await client.from('bot_messages').insert([{
+                telegram_id: ADMIN_MASTER_ID,
+                message: '🔐 *كود الدخول السري للوحة التحكم (OTP):*\n`' + generatedAdminOtp + '`\n⏱️ صالح لمدة 5 دقائق فقط.',
+                status: 'pending'
+            }]);
+            var errEl = document.getElementById('lock-error-msg');
+            errEl.style.display = 'block';
+            errEl.style.color = 'var(--main-green)';
+            errEl.innerText = '✅ تم إرسال الكود السري إلى محادثتك مع البوت في تيليجرام! اكتبه في الخانة بالأعلى.';
+        } catch (e) {
+            alert('❌ تعذر إرسال الكود.');
+        } finally {
+            setTimeout(function() {
+                btn.disabled = false;
+                btn.innerText = '📲 إرسال كود دخول سري (OTP) لتيليجرام الأدمن';
+            }, 15000);
+        }
+    }
+
+    function grantAdminAccess() {
+        try { sessionStorage.setItem('mt_admin_auth', '1'); } catch (e) {}
+        document.getElementById('lock-error-msg').style.display = 'none';
+        document.getElementById('admin-lock-screen').style.display = 'none';
+        document.getElementById('main-admin-container').style.display = 'block';
+        if (typeof window.startAdminDashboard === 'function') {
+            window.startAdminDashboard();
+        }
+    }
+
+    function unlockAdminPanelNow() {
+        var inp = document.getElementById('admin-pin-input');
+        var val = (inp ? inp.value : '').trim();
+
+        var isOtpValid = (generatedAdminOtp && val === generatedAdminOtp && Date.now() < generatedOtpExpiry);
+        if (isOtpValid || verifyEncodedPin(val)) {
+            grantAdminAccess();
+        } else {
+            var errEl = document.getElementById('lock-error-msg');
+            errEl.style.display = 'block';
+            errEl.style.color = 'var(--red)';
+            errEl.innerText = '❌ كلمة المرور أو كود الـ OTP غير صحيح!';
+        }
+    }
+
+    function logoutAdmin() {
+        try { sessionStorage.removeItem('mt_admin_auth'); } catch (e) {}
+        location.reload();
+    }
 
     function escapeQuote(str) {
         return String(str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
@@ -741,7 +788,6 @@
         } catch (e) {}
     }
 
-    // أكواد الهدايا
     function generateRandomPromoName() {
         document.getElementById('promo-code-inp').value = 'MEGA' + Math.floor(100 + Math.random() * 900);
     }
@@ -1143,14 +1189,26 @@
         rejectStoreOrder(activeAdminDealObj.id);
     }
 
+    // تحرير الصفقة للبائع مع حماية ذرية ضد التكرار
     async function completeStoreOrder(orderId) {
         var res = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
         var ord = res.data;
-        if (!ord || ord.status === 'Completed') return;
+        if (!ord || ['Completed', 'Refunded', 'Rejected'].includes(ord.status)) return;
         var note = prompt('ملاحظة التسليم للمشتري:', 'تم تأكيد التسليم وتحرير الصفقة بنجاح!');
         if (note === null) return;
 
-        await client.from('store_orders').update({ status: 'Completed' }).eq('id', orderId);
+        var updRes = await client
+            .from('store_orders')
+            .update({ status: 'Completed' })
+            .eq('id', orderId)
+            .in('status', ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'])
+            .select('id');
+
+        if (!updRes.data || updRes.data.length === 0) {
+            loadStoreAndOrdersFast();
+            return alert('⚠️ هذه الصفقة تم تحريرها أو إغلاقها بالفعل!');
+        }
+
         var prod = cachedStoreProductsMap[ord.product_id] || {};
         var sellerId = String(ord.seller_id || prod.creator_id || 'ADMIN');
         var isEgp = ord.currency === 'egp';
@@ -1189,14 +1247,26 @@
         loadStoreAndOrdersFast();
     }
 
+    // إرجاع الصفقة للمشتري مع حماية ذرية ضد التكرار
     async function rejectStoreOrder(orderId) {
         var res = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
         var ord = res.data;
-        if (!ord || ord.status === 'Refunded') return;
+        if (!ord || ['Completed', 'Refunded', 'Rejected'].includes(ord.status)) return;
         var reason = prompt('سبب إلغاء الصفقة وإرجاع الرصيد للمشتري:', 'تم إلغاء الصفقة واسترداد الرصيد');
         if (reason === null) return;
 
-        await client.from('store_orders').update({ status: 'Refunded' }).eq('id', orderId);
+        var updRes = await client
+            .from('store_orders')
+            .update({ status: 'Refunded' })
+            .eq('id', orderId)
+            .in('status', ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'])
+            .select('id');
+
+        if (!updRes.data || updRes.data.length === 0) {
+            loadStoreAndOrdersFast();
+            return alert('⚠️ هذه الصفقة تم إغلاقها أو استردادها بالفعل!');
+        }
+
         var isEgp = ord.currency === 'egp';
         var price = Number(ord.price_paid || 0);
         var bRes = await client.from('users').select('points, egp_balance').eq('telegram_id', String(ord.user_id)).maybeSingle();
@@ -1322,29 +1392,80 @@
                     'الوسيلة: ' + escapeHtml(w.method) + ' | المستلم: <code style="color:var(--gold);">' + escapeHtml(w.wallet_info) + '</code>' +
                     '</div>' +
                     '<div class="actions-box">' +
-                    '<button class="approve-btn" onclick="approveWithdraw(' + w.id + ', \'' + escapeQuote(w.telegram_id) + '\', \'' + escapeQuote(wCode) + '\', ' + amt + ')">✅ تم التحويل</button>' +
+                    '<button class="approve-btn" onclick="approveWithdraw(' + w.id + ', \'' + escapeQuote(w.telegram_id) + '\', \'' + escapeQuote(wCode) + '\', ' + amt + ', \'' + escapeQuote(w.method) + '\')">✅ تم التحويل (+نشر إثبات)</button>' +
                     '<button class="reject-btn" onclick="rejectWithdrawAndRefund(' + w.id + ', \'' + escapeQuote(w.telegram_id) + '\', \'' + escapeQuote(wCode) + '\', ' + amt + ')">❌ رفض وإرجاع</button>' +
                     '</div></div>';
             }).join('');
         } catch (e) { div.innerHTML = '✅ لا توجد طلبات سحب معلقة.'; }
     }
 
-    async function approveWithdraw(id, tid, wCode, amt) {
-        if (!confirm('تأكيد تحويل ' + amt + ' ج.م؟')) return;
-        await client.from('withdrawals').update({ status: 'Completed' }).eq('id', id);
-        await client.from('bot_messages').insert([{ telegram_id: String(tid), message: '🎉 *تم تحويل أرباحك (' + amt.toFixed(2) + ' ج.م) بنجاح!* (' + wCode + ') ✅', status: 'pending' }]);
+    // اعتماد السحب + النشر التلقائي في قناة الإثباتات @MegaTask_Proofs
+    async function approveWithdraw(id, tid, wCode, amt, methodStr) {
+        if (!confirm('تأكيد تحويل ' + amt + ' ج.م ونشر الإثبات في القناة الرسمية؟')) return;
+
+        var upd = await client
+            .from('withdrawals')
+            .update({ status: 'Completed' })
+            .eq('id', id)
+            .eq('status', 'Pending')
+            .select('id');
+
+        if (!upd.data || upd.data.length === 0) {
+            loadWithdrawals();
+            return alert('⚠️ هذا الطلب تم اعتماده أو إلغاؤه مسبقاً!');
+        }
+
+        var maskedId = String(tid).slice(0, -3) + '***';
+        var proofPost = '💸 *إثبات سحب جديد ناجح من منصة MegaTask!* ✅\n' +
+            '━━━━━━━━━━━━━━━\n' +
+            '🆔 *كود العملية:* `' + wCode + '`\n' +
+            '👤 *العضو المستفيد:* `' + maskedId + '`\n' +
+            '💰 *المبلغ المدفوع:* *' + Number(amt).toFixed(2) + ' ج.م*\n' +
+            '💳 *وسيلة الدفع:* ' + (methodStr || 'كاش / محفظة') + '\n' +
+            '🤖 *البوت الرسمي:* @MegaTask1Bot';
+
+        await client.from('bot_messages').insert([
+            {
+                telegram_id: String(tid),
+                message: '🎉 *تم تحويل أرباحك (' + Number(amt).toFixed(2) + ' ج.م) بنجاح!* (' + wCode + ') ✅',
+                status: 'pending'
+            },
+            {
+                telegram_id: ADMIN_MASTER_ID,
+                message: '__POST_PROOF__:' + proofPost,
+                status: 'pending'
+            }
+        ]);
         loadWithdrawals();
     }
 
     async function rejectWithdrawAndRefund(id, tid, wCode, amt) {
         var r = prompt('سبب رفض السحب وإرجاع الرصيد للتاجر:', 'بيانات المحفظة غير صحيحة');
         if (r === null) return;
-        await client.from('withdrawals').update({ status: 'Rejected' }).eq('id', id);
+
+        var upd = await client
+            .from('withdrawals')
+            .update({ status: 'Rejected' })
+            .eq('id', id)
+            .eq('status', 'Pending')
+            .select('id');
+
+        if (!upd.data || upd.data.length === 0) {
+            loadWithdrawals();
+            return alert('⚠️ هذا الطلب تمت معالجته بالفعل!');
+        }
+
         var uRes = await client.from('users').select('merchant_balance_egp').eq('telegram_id', String(tid)).maybeSingle();
         if (uRes.data) {
-            await client.from('users').update({ merchant_balance_egp: Number((Number(uRes.data.merchant_balance_egp || 0) + Number(amt)).toFixed(2)) }).eq('telegram_id', String(tid));
+            await client.from('users').update({
+                merchant_balance_egp: Number((Number(uRes.data.merchant_balance_egp || 0) + Number(amt)).toFixed(2))
+            }).eq('telegram_id', String(tid));
         }
-        await client.from('bot_messages').insert([{ telegram_id: String(tid), message: '↩️ *تم إلغاء طلب السحب (' + wCode + ') وإرجاع (+' + amt + ' ج.م) لمحفظة التاجر.*\nالسبب: ' + r, status: 'pending' }]);
+        await client.from('bot_messages').insert([{
+            telegram_id: String(tid),
+            message: '↩️ *تم إلغاء طلب السحب (' + wCode + ') وإرجاع (+' + amt + ' ج.م) لمحفظة التاجر.*\nالسبب: ' + r,
+            status: 'pending'
+        }]);
         loadWithdrawals();
     }
 
@@ -1382,6 +1503,18 @@
         var amt = parseFloat(document.getElementById('tkt-amt-' + id).value) || 0;
         var bonusTxt = '';
 
+        var upd = await client
+            .from('support_tickets')
+            .update({ status: (curr !== 'none' && amt > 0) ? 'Rewarded' : 'Resolved', admin_reply: reply })
+            .eq('id', id)
+            .eq('status', 'Pending')
+            .select('id');
+
+        if (!upd.data || upd.data.length === 0) {
+            loadSupportTickets();
+            return;
+        }
+
         if (curr !== 'none' && amt > 0) {
             var uRes = await client.from('users').select('points, egp_balance').eq('telegram_id', String(userTid)).maybeSingle();
             var u = uRes.data;
@@ -1395,7 +1528,6 @@
                 }
             }
         }
-        await client.from('support_tickets').update({ status: bonusTxt ? 'Rewarded' : 'Resolved', admin_reply: reply }).eq('id', id);
         await client.from('bot_messages').insert([{ telegram_id: String(userTid), message: '🎧 *رد الإدارة على تذكرتك (' + code + '):*\n' + reply + bonusTxt, status: 'pending' }]);
         alert('✅ تم إرسال الرد!');
         loadSupportTickets();
@@ -1420,25 +1552,41 @@
         } catch (e) { div.innerHTML = '✅ لا توجد طلبات إيداع معلقة.'; }
     }
 
+    // مراجعة الإيداع مع حماية ذرية ضد التكرار وعمولة إحالة مضبوطة (20 نقطة لكل جنيه = 2%)
     async function reviewDeposit(id, tid, method, isOk) {
         if (isOk) {
             var addEgp = parseFloat(document.getElementById('dep-egp-val-' + id).value) || 0;
-            await client.from('deposits').update({ status: 'Completed', amount: addEgp }).eq('id', id);
+            var upd = await client
+                .from('deposits')
+                .update({ status: 'Completed', amount: addEgp })
+                .eq('id', id)
+                .eq('status', 'Pending')
+                .select('id');
+
+            if (!upd.data || upd.data.length === 0) {
+                loadDepositsRequests();
+                return alert('⚠️ هذا الإيداع تمت معالجته بالفعل!');
+            }
+
             var uRes = await client.from('users').select('egp_balance, referred_by').eq('telegram_id', tid).maybeSingle();
             var u = uRes.data;
             if (u) {
                 await client.from('users').update({ egp_balance: Number((Number(u.egp_balance || 0) + addEgp).toFixed(2)) }).eq('telegram_id', tid);
                 if (u.referred_by && String(u.referred_by) !== String(tid)) {
-                    var refPts = Math.floor(addEgp * 50);
-                    var rRes = await client.from('users').select('points, total_earned').eq('telegram_id', String(u.referred_by)).maybeSingle();
+                    var refPts = Math.floor(addEgp * 20);
+                    var rRes = await client.from('users').select('points, total_earned, total_ref_commission').eq('telegram_id', String(u.referred_by)).maybeSingle();
                     if (rRes.data && refPts > 0) {
-                        await client.from('users').update({ points: (rRes.data.points || 0) + refPts, total_earned: (rRes.data.total_earned || 0) + refPts }).eq('telegram_id', String(u.referred_by));
+                        await client.from('users').update({
+                            points: (rRes.data.points || 0) + refPts,
+                            total_earned: (rRes.data.total_earned || 0) + refPts,
+                            total_ref_commission: (rRes.data.total_ref_commission || 0) + refPts
+                        }).eq('telegram_id', String(u.referred_by));
                     }
                 }
             }
             await client.from('bot_messages').insert([{ telegram_id: tid, message: '🎉 *تم قبول شحن رصيدك (+' + addEgp.toFixed(2) + ' ج.م) بنجاح!* ✅', status: 'pending' }]);
         } else {
-            await client.from('deposits').update({ status: 'Rejected' }).eq('id', id);
+            await client.from('deposits').update({ status: 'Rejected' }).eq('id', id).eq('status', 'Pending');
         }
         loadDepositsRequests();
     }
@@ -1569,7 +1717,18 @@
         var tRes = await client.from('tasks').select('*').eq('id', taskId).maybeSingle();
         var reward = tRes.data ? (tRes.data.reward || 10) : 10;
         if (isOk) {
-            await client.from('task_submissions').update({ status: 'approved', feedback: fb }).eq('id', subId);
+            var upd = await client
+                .from('task_submissions')
+                .update({ status: 'approved', feedback: fb })
+                .eq('id', subId)
+                .eq('status', 'pending')
+                .select('id');
+
+            if (!upd.data || upd.data.length === 0) {
+                loadAdminTaskSubmissions();
+                return;
+            }
+
             var uRes = await client.from('users').select('points, total_earned, total_tasks').eq('telegram_id', String(userId)).maybeSingle();
             if (uRes.data) {
                 await client.from('users').update({
@@ -1579,7 +1738,7 @@
                 }).eq('telegram_id', String(userId));
             }
         } else {
-            await client.from('task_submissions').update({ status: 'rejected', feedback: fb }).eq('id', subId);
+            await client.from('task_submissions').update({ status: 'rejected', feedback: fb }).eq('id', subId).eq('status', 'pending');
         }
         loadAdminTaskSubmissions();
     }
@@ -1711,10 +1870,9 @@
 
     window.addEventListener('DOMContentLoaded', function() {
         try {
-            if (sessionStorage.getItem('mt_admin_auth') === '1') {
-                document.getElementById('admin-lock-screen').style.display = 'none';
-                document.getElementById('main-admin-container').style.display = 'block';
-                window.startAdminDashboard();
+            var tgUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || '').trim();
+            if (sessionStorage.getItem('mt_admin_auth') === '1' || tgUserId === ADMIN_MASTER_ID) {
+                grantAdminAccess();
             }
         } catch (e) {}
     });
