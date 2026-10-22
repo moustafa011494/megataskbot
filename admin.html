@@ -432,7 +432,7 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                     <div>
                         <label style="font-size: 11px; color: #9ca3af;">رقم منتج المورد (External ID):</label>
-                        <input type="number" id="store-external-id" placeholder="فارغ = منتج عادي" oninput="recalculateDynamicSellingPrice()">
+                        <input type="number" id="store-external-id" step="1" placeholder="فارغ = منتج عادي" oninput="recalculateDynamicSellingPrice()">
                     </div>
                     <div>
                         <label style="font-size: 11px; color: #9ca3af;">نوع هامش الربح:</label>
@@ -455,11 +455,11 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
                     <div>
                         <label style="font-size: 11px; color: var(--gold);">التكلفة علينا بالجنيه (Supplier Cost EGP):</label>
-                        <input type="number" id="store-supplier-cost" placeholder="التكلفة بالجنيه" step="0.5" value="0" oninput="recalculateDynamicSellingPrice()">
+                        <input type="number" id="store-supplier-cost" placeholder="التكلفة بالجنيه" step="0.01" value="0" oninput="recalculateDynamicSellingPrice()">
                     </div>
                     <div>
                         <label style="font-size: 11px; color: var(--main-green);">السعر النهائي للمشتري (يُحسب تلقائياً أو عدّله):</label>
-                        <input type="number" id="store-price" placeholder="سعر البيع للمشتري" step="0.5" oninput="calcAdminProductProfit()">
+                        <input type="number" id="store-price" placeholder="سعر البيع للمشتري" step="0.01" oninput="calcAdminProductProfit()">
                     </div>
                 </div>
 
@@ -474,7 +474,7 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="number" id="store-target" value="100" placeholder="الكمية المتاحة (Stock)">
+                <input type="number" id="store-target" step="1" value="100" placeholder="الكمية المتاحة (Stock)">
                 <input type="text" id="store-link" placeholder="رابط عام (اختياري)">
             </div>
             <input type="file" id="store-file" accept="image/*" onchange="previewStoreFile(this)">
@@ -600,7 +600,7 @@
         <div style="background: #0d1520; border: 1px dashed var(--neon-blue); padding: 10px; border-radius: 12px; margin: 8px 0;">
             <label style="font-size: 11.5px; color: var(--neon-blue); font-weight: bold;">🔌 إعدادات ربط Bunny API والتسعير التلقائي:</label>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                <input type="number" id="edit-s-external-id" placeholder="External ID" oninput="recalcEditModalPrice()">
+                <input type="number" id="edit-s-external-id" step="1" placeholder="External ID" oninput="recalcEditModalPrice()">
                 <select id="edit-s-profit-type" onchange="recalcEditModalPrice()">
                     <option value="fixed">💵 ربح ثابت (+ج.م)</option>
                     <option value="percent">📈 نسبة ربح (%)</option>
@@ -619,17 +619,17 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <div>
                 <label style="font-size: 11px; color: var(--gold);">التكلفة بالجنيه:</label>
-                <input type="number" id="edit-s-supplier-cost" step="0.5" placeholder="التكلفة" oninput="recalcEditModalPrice()">
+                <input type="number" id="edit-s-supplier-cost" step="0.01" placeholder="التكلفة" oninput="recalcEditModalPrice()">
             </div>
             <div>
                 <label style="font-size: 11px; color: var(--main-green);">سعر البيع للمشتري:</label>
-                <input type="number" id="edit-s-price" step="0.5" placeholder="سعر البيع">
+                <input type="number" id="edit-s-price" step="0.01" placeholder="سعر البيع">
             </div>
         </div>
         <input type="text" id="edit-s-supplier-name" placeholder="اسم المورد">
         <input type="text" id="edit-s-supplier-notes" placeholder="ملاحظات المورد">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <input type="number" id="edit-s-target" placeholder="الكمية الإجمالية (target_count)">
+            <input type="number" id="edit-s-target" step="1" placeholder="الكمية الإجمالية (target_count)">
             <input type="text" id="edit-s-link" placeholder="الرابط">
         </div>
         <div style="display: flex; gap: 10px; margin-top: 15px;">
@@ -708,6 +708,13 @@
     var radarInterval = null;
     var generatedAdminOtp = null;
     var generatedOtpExpiry = 0;
+
+    function stripSupplierHtmlTags(text) {
+        return String(text || '')
+            .replace(/<\/?tg-emoji[^>]*>/gi, '')
+            .replace(/<[^>]+>/g, '')
+            .trim();
+    }
 
     function verifyEncodedPin(str) {
         var clean = String(str || '').trim().toLowerCase();
@@ -876,7 +883,7 @@
         var raw = document.getElementById('store-auto-stock').value || '';
         var lines = raw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
         if (lines.length > 0) {
-            document.getElementById('store-target').value = lines.length;
+            document.getElementById('store-target').value = parseInt(lines.length, 10);
         }
     }
 
@@ -937,9 +944,12 @@
         filtered.forEach(function(item) {
             var usd = Number(item.base_price_usd || 0);
             var egp = Number(item.base_price_egp || (usd * USDT_RATE));
-            var stock = Number(item.stock_count || 0);
+            var stock = parseInt(item.stock_count, 10) || 0;
+            var cleanWarranty = stripSupplierHtmlTags(item.warranty_info || 'بدون');
+            var cleanName = stripSupplierHtmlTags(item.name || '');
+
             var isPublished = cachedAllProducts.some(function(p) {
-                return Number(p.external_service_id) === Number(item.external_id);
+                return parseInt(p.external_service_id, 10) === parseInt(item.external_id, 10);
             });
 
             var stockBadge = stock > 0
@@ -953,16 +963,16 @@
             html += '<div class="item-row" style="border-right-color:' + (stock > 0 ? 'var(--neon-blue)' : 'var(--red)') + ';">' +
                 '<div style="flex:1;">' +
                 '<div style="margin-bottom:4px;">' +
-                '<span class="code-pill">#' + item.external_id + '</span> ' +
+                '<span class="code-pill">#' + parseInt(item.external_id, 10) + '</span> ' +
                 pubBadge +
-                '<b style="font-size:14px; color:#fff;">' + escapeHtml(item.name) + '</b>' +
+                '<b style="font-size:14px; color:#fff;">' + escapeHtml(cleanName) + '</b>' +
                 '</div>' +
                 '<div style="font-size:12px; color:#ccc;">' +
                 '💲 التكلفة: <b style="color:var(--gold);">$' + usd.toFixed(2) + '</b> (' + egp.toFixed(2) + ' ج.م) | ' +
-                stockBadge + ' | 🛡️ الضمان: ' + escapeHtml(item.warranty_info || 'بدون') +
+                stockBadge + ' | 🛡️ الضمان: ' + escapeHtml(cleanWarranty) +
                 '</div>' +
                 '</div>' +
-                '<button class="method-btn" style="width:auto; margin:0; padding:9px 14px; font-size:12px;" onclick="selectBunnyItemForPricing(' + item.external_id + ')">➕ اختيار وتعديل للتسعير</button>' +
+                '<button class="method-btn" style="width:auto; margin:0; padding:9px 14px; font-size:12px;" onclick="selectBunnyItemForPricing(' + parseInt(item.external_id, 10) + ')">➕ اختيار وتعديل للتسعير</button>' +
                 '</div>';
         });
 
@@ -970,12 +980,13 @@
     }
 
     function selectBunnyItemForPricing(externalId) {
-        var item = cachedBunnyCatalog.find(function(x) { return Number(x.external_id) === Number(externalId); });
+        var item = cachedBunnyCatalog.find(function(x) { return parseInt(x.external_id, 10) === parseInt(externalId, 10); });
         if (!item) return;
 
         var costEgp = Number(item.base_price_egp || (Number(item.base_price_usd || 0) * USDT_RATE)).toFixed(2);
+        var cleanTitle = stripSupplierHtmlTags(item.name || '');
+        var cleanWarranty = stripSupplierHtmlTags(item.warranty_info || '');
 
-        // فتح كارت إضافة المنتج إذا كان مغلقاً والتمرير إليه
         var cardEl = document.getElementById('add-store-product-card');
         var headerEl = document.getElementById('add-store-product-header');
         var bodyEl = headerEl.nextElementSibling;
@@ -985,16 +996,15 @@
 
         document.getElementById('store-cat').value = 'subscriptions';
         document.getElementById('store-currency').value = 'egp';
-        document.getElementById('store-external-id').value = item.external_id;
-        document.getElementById('store-title').value = item.name || '';
-        document.getElementById('store-desc').value = (item.warranty_info ? ('🛡️ ضمان رسمي: ' + item.warranty_info + '\n') : '') + '⚡ تسليم تلقائي فوري للحساب/الكود في نفس الثانية بعد الشراء!';
+        document.getElementById('store-external-id').value = parseInt(item.external_id, 10);
+        document.getElementById('store-title').value = cleanTitle;
+        document.getElementById('store-desc').value = (cleanWarranty ? ('🛡️ ضمان رسمي: ' + cleanWarranty + '\n') : '') + '⚡ تسليم تلقائي فوري للحساب/الكود في نفس الثانية بعد الشراء!';
         document.getElementById('store-supplier-cost').value = costEgp;
         document.getElementById('store-supplier-name').value = 'Bunny Store API';
-        document.getElementById('store-supplier-notes').value = 'External ID: #' + item.external_id + ' | Base USD: $' + Number(item.base_price_usd || 0).toFixed(2) + ' | Warranty: ' + (item.warranty_info || '');
-        document.getElementById('store-target').value = Math.max(0, Number(item.stock_count || 0));
+        document.getElementById('store-supplier-notes').value = 'External ID: #' + parseInt(item.external_id, 10) + ' | Base USD: $' + Number(item.base_price_usd || 0).toFixed(2) + ' | Warranty: ' + cleanWarranty;
+        document.getElementById('store-target').value = Math.max(0, parseInt(item.stock_count, 10) || 100);
         document.getElementById('store-auto-sync').checked = true;
 
-        // وضع ربح افتراضي آمن (30% ليحقق شرط المورد >= 25% تلقائياً)
         if ((parseFloat(document.getElementById('store-profit-value').value) || 0) <= 0) {
             document.getElementById('store-profit-type').value = 'percent';
             document.getElementById('store-profit-value').value = '30';
@@ -1002,7 +1012,7 @@
 
         recalculateDynamicSellingPrice();
         cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        showToastAlert('🔌 تم تعبئة بيانات المنتج (#' + item.external_id + ')! عدّل الاسم والربح ثم اضغط نشر.');
+        showToastAlert('🔌 تم تعبئة بيانات المنتج (#' + parseInt(item.external_id, 10) + ')! عدّل الاسم والربح ثم اضغط نشر.');
     }
 
     function clearBunnyLinkFields() {
@@ -1014,7 +1024,6 @@
         calcAdminProductProfit();
     }
 
-    // حساب السعر النهائي للمشتري تلقائياً بناءً على التكلفة بالجنيه + هامش الربح (fixed أو percent) + العملة
     function recalculateDynamicSellingPrice() {
         var costEgp = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
         var pType = document.getElementById('store-profit-type').value;
@@ -1029,7 +1038,7 @@
             if (curr === 'points') {
                 document.getElementById('store-price').value = Math.ceil(sellEgp * 1000);
             } else {
-                document.getElementById('store-price').value = Number(sellEgp.toFixed(2));
+                document.getElementById('store-price').value = parseFloat(sellEgp.toFixed(2));
             }
         }
         calcAdminProductProfit();
@@ -1047,7 +1056,7 @@
 
         var previewEl = document.getElementById('admin-profit-preview');
         previewEl.innerText = '💰 صافي ربحك في كل بيعة: ' + netEgp.toFixed(2) + ' ج.م (نسبة الربح: ' + marginPct + '%)' +
-            (extId ? ' | 🔌 مربوط بـ Bunny API (#' + extId + ')' : '');
+            (extId ? ' | 🔌 مربوط بـ Bunny API (#' + parseInt(extId, 10) + ')' : '');
     }
 
     function recalcEditModalPrice() {
@@ -1064,7 +1073,7 @@
             if (curr === 'points') {
                 document.getElementById('edit-s-price').value = Math.ceil(sellEgp * 1000);
             } else {
-                document.getElementById('edit-s-price').value = Number(sellEgp.toFixed(2));
+                document.getElementById('edit-s-price').value = parseFloat(sellEgp.toFixed(2));
             }
         }
     }
@@ -1120,7 +1129,7 @@
         var code = (document.getElementById('promo-code-inp').value || '').trim().toUpperCase();
         var rType = document.getElementById('promo-type-inp').value;
         var rAmt = parseFloat(document.getElementById('promo-amount-inp').value);
-        var maxU = parseInt(document.getElementById('promo-max-inp').value) || 100;
+        var maxU = parseInt(document.getElementById('promo-max-inp').value, 10) || 100;
 
         if (!code || isNaN(rAmt) || rAmt <= 0) {
             return alert('⚠️ يرجى كتابة اسم الكود وقيمة المكافأة!');
@@ -1327,10 +1336,10 @@
                     var sold = cachedAllOrders.filter(function(o) { return Number(o.product_id) === Number(p.id); }).length;
                     var unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
                     var pCode = p.product_code || ('PRD-' + p.id);
-                    var remStock = Math.max(0, Number(p.target_count || 0) - Number(p.completed_count || 0));
+                    var remStock = Math.max(0, (parseInt(p.target_count, 10) || 0) - (parseInt(p.completed_count, 10) || 0));
 
                     var apiBadge = p.external_service_id
-                        ? (' <span class="api-pill">🔌 Bunny API #' + p.external_service_id + (p.auto_sync ? ' (مزامنة تلقائية 🔄)' : '') + '</span>')
+                        ? (' <span class="api-pill">🔌 Bunny API #' + parseInt(p.external_service_id, 10) + (p.auto_sync ? ' (مزامنة تلقائية 🔄)' : '') + '</span>')
                         : '';
 
                     var autoLines = String(p.auto_delivery_data || '').split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
@@ -1598,32 +1607,39 @@
         loadStoreAndOrdersFast();
     }
 
-    // نشر منتج جديد (شامل حقول الربط مع Bunny Store API)
+    // 🛠️ دالة إضافة منتج للمتجر بعد تأمين أنواع البيانات (parseInt للأعداد الصحيحة و parseFloat للأسعار العشرية)
     async function addStoreProduct() {
         var category = document.getElementById('store-cat').value;
         var currency = document.getElementById('store-currency').value;
         var productCode = document.getElementById('store-code').value.trim() || ('PRD-' + Math.floor(1000 + Math.random() * 9000));
-        var title = document.getElementById('store-title').value.trim();
-        var description = document.getElementById('store-desc').value.trim();
+        var title = stripSupplierHtmlTags(document.getElementById('store-title').value);
+        var description = stripSupplierHtmlTags(document.getElementById('store-desc').value);
         var autoStockRaw = document.getElementById('store-auto-stock').value.trim();
         var autoLines = autoStockRaw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
 
+        // تحويل حقول INTEGER حصرياً باستخدام parseInt
         var externalIdRaw = document.getElementById('store-external-id').value.trim();
-        var externalServiceId = externalIdRaw ? parseInt(externalIdRaw) : null;
+        var externalServiceId = externalIdRaw !== '' ? (parseInt(externalIdRaw, 10) || null) : null;
+
+        var targetRaw = document.getElementById('store-target').value.trim();
+        var target = autoLines.length > 0 ? parseInt(autoLines.length, 10) : (parseInt(targetRaw, 10) || 100);
+
+        // تحويل حقول الكسور العشرية (NUMERIC / FLOAT) باستخدام parseFloat
         var profitType = document.getElementById('store-profit-type').value;
         var profitValue = parseFloat(document.getElementById('store-profit-value').value) || 0;
         var autoSync = document.getElementById('store-auto-sync').checked;
 
-        var price = parseFloat(document.getElementById('store-price').value);
+        var price = parseFloat(document.getElementById('store-price').value) || 0;
         var supplierCost = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
         var supplierName = document.getElementById('store-supplier-name').value.trim();
         var supplierNotes = document.getElementById('store-supplier-notes').value.trim();
-        var target = autoLines.length > 0 ? autoLines.length : (parseInt(document.getElementById('store-target').value) || 0);
         var link = document.getElementById('store-link').value.trim() || '#';
 
-        if (!title || isNaN(price) || price <= 0) return alert('⚠️ أدخل عنوان المنتج والسعر النهائي للمشتري!');
+        if (!title || price <= 0) {
+            return alert('⚠️ أدخل عنوان المنتج والسعر النهائي للمشتري!');
+        }
 
-        var res = await client.from('store_products').insert([{
+        var payload = {
             creator_id: 'ADMIN',
             product_code: productCode,
             category: category,
@@ -1635,7 +1651,7 @@
             profit_value: profitValue,
             auto_sync: autoSync,
             auto_delivery_data: autoLines.length > 0 ? autoLines.join('\n') : null,
-            price: price,
+            price: currency === 'points' ? Math.round(price) : price,
             supplier_cost: supplierCost,
             supplier_name: supplierName || (externalServiceId ? 'Bunny Store API' : 'ADMIN'),
             supplier_notes: supplierNotes,
@@ -1644,9 +1660,13 @@
             completed_count: 0,
             image_url: storeFileBase64 || null,
             status: 'Approved'
-        }]);
+        };
 
-        if (res.error) return alert('❌ خطأ أثناء نشر المنتج: ' + res.error.message);
+        var res = await client.from('store_products').insert([payload]);
+
+        if (res.error) {
+            return alert('❌ خطأ أثناء نشر المنتج: ' + res.error.message);
+        }
 
         document.getElementById('store-title').value = '';
         document.getElementById('store-desc').value = '';
@@ -1665,45 +1685,51 @@
         document.getElementById('edit-s-code').value = p.product_code || ('PRD-' + p.id);
         document.getElementById('edit-s-title').value = p.title || '';
         document.getElementById('edit-s-desc').value = p.description || '';
-        document.getElementById('edit-s-external-id').value = p.external_service_id || '';
+        document.getElementById('edit-s-external-id').value = p.external_service_id ? parseInt(p.external_service_id, 10) : '';
         document.getElementById('edit-s-profit-type').value = p.profit_type || 'fixed';
-        document.getElementById('edit-s-profit-value').value = p.profit_value || 0;
+        document.getElementById('edit-s-profit-value').value = parseFloat(p.profit_value) || 0;
         document.getElementById('edit-s-auto-sync').checked = p.auto_sync === true;
         document.getElementById('edit-s-auto-stock').value = p.auto_delivery_data || '';
-        document.getElementById('edit-s-price').value = p.price || 0;
-        document.getElementById('edit-s-supplier-cost').value = p.supplier_cost || 0;
+        document.getElementById('edit-s-price').value = parseFloat(p.price) || 0;
+        document.getElementById('edit-s-supplier-cost').value = parseFloat(p.supplier_cost) || 0;
         document.getElementById('edit-s-supplier-name').value = p.supplier_name || '';
         document.getElementById('edit-s-supplier-notes').value = p.supplier_notes || '';
-        document.getElementById('edit-s-target').value = p.target_count !== undefined ? p.target_count : 100;
+        document.getElementById('edit-s-target').value = p.target_count !== undefined ? (parseInt(p.target_count, 10) || 100) : 100;
         document.getElementById('edit-s-link').value = p.link || '';
         document.getElementById('edit-s-currency').value = p.currency || 'egp';
         document.getElementById('edit-store-modal').style.display = 'flex';
     }
 
     async function saveEditedStoreProduct() {
-        var id = document.getElementById('edit-s-id').value;
+        var id = parseInt(document.getElementById('edit-s-id').value, 10);
         var autoRaw = document.getElementById('edit-s-auto-stock').value.trim();
         var autoLines = autoRaw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
-        var extRaw = document.getElementById('edit-s-external-id').value.trim();
-        var extId = extRaw ? parseInt(extRaw) : null;
 
-        await client.from('store_products').update({
+        var extRaw = document.getElementById('edit-s-external-id').value.trim();
+        var extId = extRaw !== '' ? (parseInt(extRaw, 10) || null) : null;
+        var targetCount = parseInt(document.getElementById('edit-s-target').value, 10) || 100;
+        var curr = document.getElementById('edit-s-currency').value;
+        var rawPrice = parseFloat(document.getElementById('edit-s-price').value) || 0;
+
+        var res = await client.from('store_products').update({
             product_code: document.getElementById('edit-s-code').value.trim(),
-            title: document.getElementById('edit-s-title').value.trim(),
-            description: document.getElementById('edit-s-desc').value.trim(),
+            title: stripSupplierHtmlTags(document.getElementById('edit-s-title').value),
+            description: stripSupplierHtmlTags(document.getElementById('edit-s-desc').value),
             external_service_id: extId,
             profit_type: document.getElementById('edit-s-profit-type').value,
             profit_value: parseFloat(document.getElementById('edit-s-profit-value').value) || 0,
             auto_sync: document.getElementById('edit-s-auto-sync').checked,
             auto_delivery_data: autoLines.length > 0 ? autoLines.join('\n') : null,
-            currency: document.getElementById('edit-s-currency').value,
-            price: parseFloat(document.getElementById('edit-s-price').value) || 10,
+            currency: curr,
+            price: curr === 'points' ? Math.round(rawPrice) : rawPrice,
             supplier_cost: parseFloat(document.getElementById('edit-s-supplier-cost').value) || 0,
             supplier_name: document.getElementById('edit-s-supplier-name').value.trim(),
             supplier_notes: document.getElementById('edit-s-supplier-notes').value.trim(),
-            target_count: parseInt(document.getElementById('edit-s-target').value) || 0,
+            target_count: targetCount,
             link: document.getElementById('edit-s-link').value.trim()
         }).eq('id', id);
+
+        if (res.error) return alert('❌ خطأ أثناء حفظ التعديلات: ' + res.error.message);
 
         document.getElementById('edit-store-modal').style.display = 'none';
         await loadStoreAndOrdersFast();
@@ -2009,7 +2035,7 @@
         await client.from('methods').update({
             title: document.getElementById('edit-m-title').value.trim(),
             content: document.getElementById('edit-m-content').value.trim(),
-            unlock_cost: parseFloat(document.getElementById('edit-m-cost').value) || 50
+            unlock_cost: parseInt(document.getElementById('edit-m-cost').value, 10) || 50
         }).eq('id', id);
         document.getElementById('edit-method-modal').style.display = 'none';
         loadPublishedMethods();
@@ -2018,7 +2044,7 @@
     async function addAdminMethod() {
         var title = document.getElementById('admin-method-title').value.trim();
         var content = document.getElementById('admin-method-content').value.trim();
-        var unlock_cost = parseInt(document.getElementById('admin-method-cost').value) || 50;
+        var unlock_cost = parseInt(document.getElementById('admin-method-cost').value, 10) || 50;
         if (!title || !content) return;
         await client.from('methods').insert([{ user_id: 'ADMIN', title: title, content: content, image_url: adminMethodBase64 || null, status: 'Approved', unlock_cost: unlock_cost }]);
         alert('✅ تم نشر الميثود!');
@@ -2145,8 +2171,8 @@
         await client.from('tasks').update({
             title: document.getElementById('edit-t-title').value.trim(),
             link: link, url: link,
-            reward: parseInt(document.getElementById('edit-t-reward').value) || 10,
-            target_count: parseInt(document.getElementById('edit-t-target').value) || 100
+            reward: parseInt(document.getElementById('edit-t-reward').value, 10) || 10,
+            target_count: parseInt(document.getElementById('edit-t-target').value, 10) || 100
         }).eq('id', id);
         document.getElementById('edit-task-modal').style.display = 'none';
         loadTasks();
@@ -2155,7 +2181,7 @@
         var platform = document.getElementById('task-platform').value;
         var title = document.getElementById('task-title').value.trim();
         var link = document.getElementById('task-link').value.trim();
-        var reward = parseInt(document.getElementById('task-reward').value) || 10;
+        var reward = parseInt(document.getElementById('task-reward').value, 10) || 10;
         if (!title || !link) return;
         await client.from('tasks').insert([{ platform: platform, title: title, url: link, link: link, reward: reward, status: 'Approved', target_count: 100, is_active: true }]);
         alert('✅ تم نشر المهمة!');
