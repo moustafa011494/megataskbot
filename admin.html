@@ -76,6 +76,7 @@
         .search-hub-card { border-top: 4px solid var(--gold); background: linear-gradient(145deg, #1b1912, #141414); }
         .dispute-card { border-top: 4px solid var(--red); background: linear-gradient(145deg, #211215, #141414); }
         .promo-card { border-top: 4px solid var(--main-green); background: linear-gradient(145deg, #111f18, #141414); }
+        .bunny-api-card { border-top: 4px solid var(--neon-blue); background: linear-gradient(145deg, #101d24, #141414); }
         .broadcast-card { border-top: 4px solid var(--neon-purple); }
         .merchant-w-card { border-top: 4px solid var(--gold); }
         .tickets-card { border-top: 4px solid var(--neon-blue); }
@@ -114,6 +115,41 @@
         .actions-box { display: flex; gap: 8px; width: 100%; margin-top: 8px; flex-wrap: wrap; }
         
         .code-pill { background: rgba(255, 170, 0, 0.15); color: var(--gold); border: 1px dashed var(--gold); padding: 2px 9px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .api-pill { background: rgba(0, 242, 255, 0.15); color: var(--neon-blue); border: 1px solid var(--neon-blue); padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+
+        .bunny-balance-banner {
+            background: #0b1118;
+            border: 1.5px solid var(--neon-blue);
+            border-radius: 14px;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12.5px;
+            color: var(--main-green);
+            font-weight: bold;
+            cursor: pointer;
+            margin: 8px 0;
+            background: rgba(0, 210, 106, 0.08);
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px dashed var(--main-green);
+        }
+        .checkbox-label input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            accent-color: var(--main-green);
+        }
 
         #admin-lock-screen {
             position: fixed; inset: 0; background: #07080a; z-index: 999999;
@@ -152,7 +188,7 @@
 
 <div id="live-alert-toast">🔔 وصل طلب جديد في لوحة الأدمن!</div>
 
-<!-- 🔒 شاشة قفل لوحة التحكم المؤمنة (بدون باسورد مكشوف في السورس كود + دعم OTP لتيليجرام الأدمن) -->
+<!-- 🔒 شاشة قفل لوحة التحكم المؤمنة -->
 <div id="admin-lock-screen">
     <div class="lock-box">
         <div style="font-size: 46px; margin-bottom: 10px;">🛡️</div>
@@ -214,6 +250,25 @@
                 <button class="admin-method-btn" style="margin: 0; width: 140px; padding: 12px;" onclick="runSmartCodeSearch()">بحث 🔍</button>
             </div>
             <div id="smart-search-results" class="list-container" style="max-height: 420px; display: none;"></div>
+        </div>
+    </div>
+
+    <!-- 🔌 00-A. كتالوج المورد التلقائي (Bunny Store API) -->
+    <div class="card bunny-api-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🔌 كتالوج المورد التلقائي (Bunny Store API) <span class="arrow-icon open">▼</span></h3>
+        <div class="collapsible-body" style="display: block;">
+            <div class="bunny-balance-banner">
+                <div>
+                    <span style="font-size: 12px; color: #9ca3af; display: block;">💳 رصيد محفظتنا الحالي عند المورد (Bunny Store):</span>
+                    <b id="bunny-wallet-usd" style="font-size: 20px; color: var(--main-green);">$0.00 USD</b>
+                    <span id="bunny-wallet-egp" style="font-size: 12px; color: var(--gold); margin-right: 8px;">(≈ 0.00 ج.م)</span>
+                    <div id="bunny-last-sync" style="font-size: 11px; color: #888; margin-top: 3px;">آخر مزامنة: ---</div>
+                </div>
+                <button class="method-btn" style="width: auto; margin: 0; padding: 10px 16px; font-size: 12.5px;" onclick="loadBunnySupplierCatalog(true)">🔄 تحديث الكتالوج</button>
+            </div>
+
+            <input type="text" id="bunny-search-inp" placeholder="🔍 ابحث في منتجات المورد (مثلاً: CapCut, Canva, Netflix)..." oninput="renderBunnyCatalogList()">
+            <div id="bunny-catalog-list" class="list-container" style="max-height: 360px;">⏳ جاري جلب منتجات المورد من supplier_catalog...</div>
         </div>
     </div>
 
@@ -343,50 +398,87 @@
         </div>
     </div>
 
-    <!-- 3. إضافة منتج جديد للمتجر الرسمي -->
-    <div class="card store-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي (عادي أو تسليم تلقائي فوري ⚡) <span class="arrow-icon">▼</span></h3>
-        <div class="collapsible-body">
+    <!-- 3. إضافة منتج جديد للمتجر الرسمي (يدعم ربط Bunny Store API والتسعير التلقائي) -->
+    <div class="card store-card" id="add-store-product-card">
+        <h3 id="add-store-product-header" onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي (عادي / تسليم فوري / ربط Bunny API 🔌) <span class="arrow-icon open">▼</span></h3>
+        <div class="collapsible-body" style="display: block;">
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
                 <select id="store-cat">
+                    <option value="subscriptions">👑 حسابات واشتراكات</option>
                     <option value="recharge">🔋 شحن وألعاب</option>
                     <option value="telegram">📢 تيليجرام</option>
                     <option value="facebook">📘 فيسبوك</option>
                     <option value="youtube">▶️ يوتيوب</option>
                     <option value="tiktok">🎵 تيك توك</option>
                     <option value="instagram">📸 انستجرام</option>
-                    <option value="subscriptions">👑 حسابات واشتراكات</option>
                 </select>
-                <select id="store-currency" onchange="calcAdminProductProfit()">
-                    <option value="points">🪙 بالنقاط</option>
+                <select id="store-currency" onchange="recalculateDynamicSellingPrice()">
                     <option value="egp">💵 بالجنيه (EGP)</option>
+                    <option value="points">🪙 بالنقاط (Points)</option>
                 </select>
                 <input type="text" id="store-code" placeholder="PRD-XXXX" style="border-color: var(--gold); color: var(--gold); font-weight: bold; text-align: center;">
             </div>
-            <input type="text" id="store-title" placeholder="عنوان المنتج">
-            <textarea id="store-desc" rows="2" placeholder="وصف وتفاصيل المنتج للمشتري..."></textarea>
 
-            <div style="background: rgba(0, 242, 255, 0.06); border: 1px dashed var(--neon-blue); border-radius: 12px; padding: 10px; margin: 8px 0;">
-                <label style="font-size: 12px; color: var(--neon-blue); font-weight: bold;">⚡ أكواد / حسابات التسليم التلقائي الفوري (اختياري - كل كود في سطر):</label>
-                <textarea id="store-auto-stock" rows="3" placeholder="إذا وضعت أكواداً هنا، سيقوم البوت بتسليم المشتري كوداً واحداً فوراً في نفس الثانية عند الشراء!" oninput="syncAdminAutoStockTarget()"></textarea>
+            <input type="text" id="store-title" placeholder="عنوان المنتج (عدّله بالعربي كما يظهر للمشتري)">
+            <textarea id="store-desc" rows="2" placeholder="وصف وتفاصيل المنتج والضمان للمشتري..."></textarea>
+
+            <!-- 🔌 صندوق الربط والتسعير التلقائي مع المورد الخارجي (Bunny Store API) -->
+            <div style="background: #0d1520; border: 1.5px dashed var(--neon-blue); border-radius: 14px; padding: 14px; margin: 10px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <b style="font-size: 13px; color: var(--neon-blue);">🔌 إعدادات ربط المورد (Bunny Store API) والتسعير الذكي:</b>
+                    <button type="button" onclick="clearBunnyLinkFields()" style="background: #222; color: #ccc; padding: 4px 10px; font-size: 11px; border: 1px solid #444;">إلغاء ربط الـ API ✖</button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                    <div>
+                        <label style="font-size: 11px; color: #9ca3af;">رقم منتج المورد (External ID):</label>
+                        <input type="number" id="store-external-id" placeholder="فارغ = منتج عادي" oninput="recalculateDynamicSellingPrice()">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #9ca3af;">نوع هامش الربح:</label>
+                        <select id="store-profit-type" onchange="recalculateDynamicSellingPrice()">
+                            <option value="fixed">💵 مبلغ ثابت بالجنيه (+EGP)</option>
+                            <option value="percent">📈 نسبة مئوية (%)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #9ca3af;">قيمة الربح (ج.م أو %):</label>
+                        <input type="number" id="store-profit-value" placeholder="مثلاً: 25" step="0.5" value="0" oninput="recalculateDynamicSellingPrice()">
+                    </div>
+                </div>
+
+                <label class="checkbox-label">
+                    <input type="checkbox" id="store-auto-sync">
+                    <span>🔄 تفعيل المزامنة التلقائية (تحديث السعر والتكلفة والمخزون مع المورد كل 10 دقائق)</span>
+                </label>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
+                    <div>
+                        <label style="font-size: 11px; color: var(--gold);">التكلفة علينا بالجنيه (Supplier Cost EGP):</label>
+                        <input type="number" id="store-supplier-cost" placeholder="التكلفة بالجنيه" step="0.5" value="0" oninput="recalculateDynamicSellingPrice()">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: var(--main-green);">السعر النهائي للمشتري (يُحسب تلقائياً أو عدّله):</label>
+                        <input type="number" id="store-price" placeholder="سعر البيع للمشتري" step="0.5" oninput="calcAdminProductProfit()">
+                    </div>
+                </div>
+
+                <input type="text" id="store-supplier-name" placeholder="اسم المورد / السيرفر (مثلاً: Bunny Store API)">
+                <input type="text" id="store-supplier-notes" placeholder="ملاحظات المورد السرية أو شروط الضمان...">
+                <div id="admin-profit-preview" style="color: var(--main-green); font-size: 12.5px; font-weight: bold; margin-top: 6px;">💰 صافي ربحك: 0</div>
             </div>
 
-            <div style="background: #10131a; border: 1px dashed var(--neon-purple); border-radius: 14px; padding: 12px; margin: 8px 0;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <input type="number" id="store-price" placeholder="سعر البيع للمشتري" step="0.5" oninput="calcAdminProductProfit()">
-                    <input type="number" id="store-supplier-cost" placeholder="التكلفة عليك" step="0.5" value="0" oninput="calcAdminProductProfit()">
-                </div>
-                <input type="text" id="store-supplier-name" placeholder="اسم المورد / السيرفر">
-                <input type="text" id="store-supplier-notes" placeholder="رابط المورد أو ملاحظات الشراء السرية...">
-                <div id="admin-profit-preview" style="color: var(--main-green); font-size: 12px; font-weight: bold; margin-top: 4px;">💰 صافي ربحك: 0</div>
+            <div style="background: rgba(188, 19, 254, 0.06); border: 1px dashed var(--neon-purple); border-radius: 12px; padding: 10px; margin: 8px 0;">
+                <label style="font-size: 12px; color: #e9d5ff; font-weight: bold;">⚡ أكواد التسليم التلقائي المحلي (للمنتجات غير المربوطة بـ API - كل كود في سطر):</label>
+                <textarea id="store-auto-stock" rows="2" placeholder="اتركه فارغاً إذا كان المنتج مربوطاً بـ Bunny API، أو ضع أكواداً محلية هنا..." oninput="syncAdminAutoStockTarget()"></textarea>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="number" id="store-target" value="100" placeholder="الكمية المتاحة">
+                <input type="number" id="store-target" value="100" placeholder="الكمية المتاحة (Stock)">
                 <input type="text" id="store-link" placeholder="رابط عام (اختياري)">
             </div>
             <input type="file" id="store-file" accept="image/*" onchange="previewStoreFile(this)">
-            <button class="main-btn" style="background: var(--neon-blue); color:black;" onclick="addStoreProduct()">نشر المنتج 🚀</button>
+            <button class="main-btn" style="background: var(--neon-blue); color:black;" onclick="addStoreProduct()">نشر المنتج في المتجر الآن 🚀</button>
         </div>
     </div>
 
@@ -490,30 +582,54 @@
     </div>
 </div>
 
-<!-- Modal تعديل منتج المتجر -->
+<!-- Modal تعديل منتج المتجر (شامل إعدادات Bunny Store API) -->
 <div id="edit-store-modal" class="admin-modal">
     <div class="admin-modal-content">
-        <h3 style="color: var(--neon-blue);">✏️ تعديل منتج المتجر ومخزون التسليم الفوري</h3>
+        <h3 style="color: var(--neon-blue);">✏️ تعديل منتج المتجر وإعدادات ربط الـ API</h3>
         <input type="hidden" id="edit-s-id">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
             <input type="text" id="edit-s-code" style="color: var(--gold); font-weight: bold;">
-            <select id="edit-s-currency">
-                <option value="points">🪙 بالنقاط</option>
+            <select id="edit-s-currency" onchange="recalcEditModalPrice()">
                 <option value="egp">💵 بالجنيه (EGP)</option>
+                <option value="points">🪙 بالنقاط</option>
             </select>
         </div>
         <input type="text" id="edit-s-title" placeholder="العنوان">
         <textarea id="edit-s-desc" rows="2" placeholder="الوصف"></textarea>
-        <label style="font-size: 11.5px; color: var(--neon-blue);">⚡ أكواد التسليم التلقائي الفوري (كل كود في سطر):</label>
-        <textarea id="edit-s-auto-stock" rows="3" placeholder="اتركه فارغاً للتسليم اليدوي، أو ضع الأكواد هنا للتسليم الفوري..."></textarea>
+
+        <div style="background: #0d1520; border: 1px dashed var(--neon-blue); padding: 10px; border-radius: 12px; margin: 8px 0;">
+            <label style="font-size: 11.5px; color: var(--neon-blue); font-weight: bold;">🔌 إعدادات ربط Bunny API والتسعير التلقائي:</label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                <input type="number" id="edit-s-external-id" placeholder="External ID" oninput="recalcEditModalPrice()">
+                <select id="edit-s-profit-type" onchange="recalcEditModalPrice()">
+                    <option value="fixed">💵 ربح ثابت (+ج.م)</option>
+                    <option value="percent">📈 نسبة ربح (%)</option>
+                </select>
+                <input type="number" id="edit-s-profit-value" step="0.5" placeholder="قيمة الربح" oninput="recalcEditModalPrice()">
+            </div>
+            <label class="checkbox-label" style="margin: 4px 0; padding: 7px 10px;">
+                <input type="checkbox" id="edit-s-auto-sync">
+                <span>🔄 مزامنة تلقائية للسعر والمخزون مع المورد</span>
+            </label>
+        </div>
+
+        <label style="font-size: 11.5px; color: var(--neon-purple);">⚡ أكواد التسليم المحلي (اتركه فارغاً لمنتجات الـ API):</label>
+        <textarea id="edit-s-auto-stock" rows="2" placeholder="كل كود في سطر..."></textarea>
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <input type="number" id="edit-s-price" step="0.5" placeholder="سعر البيع">
-            <input type="number" id="edit-s-supplier-cost" step="0.5" placeholder="التكلفة">
+            <div>
+                <label style="font-size: 11px; color: var(--gold);">التكلفة بالجنيه:</label>
+                <input type="number" id="edit-s-supplier-cost" step="0.5" placeholder="التكلفة" oninput="recalcEditModalPrice()">
+            </div>
+            <div>
+                <label style="font-size: 11px; color: var(--main-green);">سعر البيع للمشتري:</label>
+                <input type="number" id="edit-s-price" step="0.5" placeholder="سعر البيع">
+            </div>
         </div>
         <input type="text" id="edit-s-supplier-name" placeholder="اسم المورد">
         <input type="text" id="edit-s-supplier-notes" placeholder="ملاحظات المورد">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-            <input type="number" id="edit-s-target" placeholder="الكمية">
+            <input type="number" id="edit-s-target" placeholder="الكمية الإجمالية (target_count)">
             <input type="text" id="edit-s-link" placeholder="الرابط">
         </div>
         <div style="display: flex; gap: 10px; margin-top: 15px;">
@@ -569,7 +685,6 @@
     </div>
 </div>
 
-<!-- 📡 محرك البيانات ونظام الحماية للإدارة -->
 <script>
     var S_URL = 'https://smukfrwnguvmxvfwqwrv.supabase.co';
     var S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM';
@@ -587,13 +702,13 @@
     var cachedStoreProductsMap = {};
     var cachedAllProducts = [];
     var cachedAllOrders = [];
+    var cachedBunnyCatalog = [];
 
     var lastTotalPendingItems = null;
     var radarInterval = null;
     var generatedAdminOtp = null;
     var generatedOtpExpiry = 0;
 
-    // فحص مشفر للباسورد بدون كتابته كنص صريح في السورس كود
     function verifyEncodedPin(str) {
         var clean = String(str || '').trim().toLowerCase();
         var target = [36, 38, 58, 61, 40, 47, 40, 9, 123, 121, 123, 127];
@@ -765,13 +880,193 @@
         }
     }
 
+    // =========================================================================
+    // 🔌 دوال إدارة كتالوج المورد (Bunny Store API) والتسعير الذكي
+    // =========================================================================
+    async function loadBunnySupplierCatalog(manualNotify) {
+        var listDiv = document.getElementById('bunny-catalog-list');
+        if (!listDiv) return;
+        try {
+            var res = await client.from('supplier_catalog').select('*').order('external_id', { ascending: true });
+            if (res.error) {
+                listDiv.innerHTML = '<div style="color:var(--orange); font-size:12px;">⚠️ تأكد من إنشاء جدول supplier_catalog وتشغيل المزامنة في البوت (main.py).</div>';
+                return;
+            }
+            cachedBunnyCatalog = res.data || [];
+
+            if (cachedBunnyCatalog.length > 0) {
+                var firstRow = cachedBunnyCatalog[0];
+                var balUsd = Number(firstRow.merchant_balance_usd || 0);
+                var balEgp = balUsd * USDT_RATE;
+                document.getElementById('bunny-wallet-usd').innerText = '$' + balUsd.toFixed(2) + ' USD';
+                document.getElementById('bunny-wallet-egp').innerText = '(≈ ' + balEgp.toFixed(2) + ' ج.م)';
+                if (firstRow.updated_at) {
+                    document.getElementById('bunny-last-sync').innerText = 'آخر مزامنة مع المورد: ' + new Date(firstRow.updated_at).toLocaleString('ar-EG');
+                }
+            }
+
+            renderBunnyCatalogList();
+            if (manualNotify) showToastAlert('✅ تم تحديث كتالوج المورد بنجاح!');
+        } catch (e) {
+            listDiv.innerHTML = '<div style="color:#888; font-size:12px;">📭 لا توجد بيانات في supplier_catalog حالياً.</div>';
+        }
+    }
+
+    function renderBunnyCatalogList() {
+        var listDiv = document.getElementById('bunny-catalog-list');
+        var q = (document.getElementById('bunny-search-inp').value || '').trim().toLowerCase();
+
+        if (!cachedBunnyCatalog || cachedBunnyCatalog.length === 0) {
+            listDiv.innerHTML = '<div style="color:#888; font-size:12px; padding:10px; text-align:center;">📭 لم يتم سحب منتجات من المورد بعد. شغّل البوت ليقوم بالمزامنة التلقائية.</div>';
+            return;
+        }
+
+        var filtered = cachedBunnyCatalog.filter(function(item) {
+            return !q ||
+                String(item.name || '').toLowerCase().includes(q) ||
+                String(item.external_id || '').includes(q) ||
+                String(item.warranty_info || '').toLowerCase().includes(q);
+        });
+
+        if (filtered.length === 0) {
+            listDiv.innerHTML = '<div style="color:#888; font-size:12px; padding:10px; text-align:center;">لا توجد منتجات مطابقة للبحث.</div>';
+            return;
+        }
+
+        var html = '';
+        filtered.forEach(function(item) {
+            var usd = Number(item.base_price_usd || 0);
+            var egp = Number(item.base_price_egp || (usd * USDT_RATE));
+            var stock = Number(item.stock_count || 0);
+            var isPublished = cachedAllProducts.some(function(p) {
+                return Number(p.external_service_id) === Number(item.external_id);
+            });
+
+            var stockBadge = stock > 0
+                ? '<span style="color:var(--main-green); font-weight:bold;">📦 متوفر: ' + stock + '</span>'
+                : '<span style="color:var(--red); font-weight:bold;">❌ نافد (0)</span>';
+
+            var pubBadge = isPublished
+                ? '<span class="api-pill" style="border-color:var(--main-green); color:var(--main-green);">✅ مضاف بمتجرك</span> '
+                : '';
+
+            html += '<div class="item-row" style="border-right-color:' + (stock > 0 ? 'var(--neon-blue)' : 'var(--red)') + ';">' +
+                '<div style="flex:1;">' +
+                '<div style="margin-bottom:4px;">' +
+                '<span class="code-pill">#' + item.external_id + '</span> ' +
+                pubBadge +
+                '<b style="font-size:14px; color:#fff;">' + escapeHtml(item.name) + '</b>' +
+                '</div>' +
+                '<div style="font-size:12px; color:#ccc;">' +
+                '💲 التكلفة: <b style="color:var(--gold);">$' + usd.toFixed(2) + '</b> (' + egp.toFixed(2) + ' ج.م) | ' +
+                stockBadge + ' | 🛡️ الضمان: ' + escapeHtml(item.warranty_info || 'بدون') +
+                '</div>' +
+                '</div>' +
+                '<button class="method-btn" style="width:auto; margin:0; padding:9px 14px; font-size:12px;" onclick="selectBunnyItemForPricing(' + item.external_id + ')">➕ اختيار وتعديل للتسعير</button>' +
+                '</div>';
+        });
+
+        listDiv.innerHTML = html;
+    }
+
+    function selectBunnyItemForPricing(externalId) {
+        var item = cachedBunnyCatalog.find(function(x) { return Number(x.external_id) === Number(externalId); });
+        if (!item) return;
+
+        var costEgp = Number(item.base_price_egp || (Number(item.base_price_usd || 0) * USDT_RATE)).toFixed(2);
+
+        // فتح كارت إضافة المنتج إذا كان مغلقاً والتمرير إليه
+        var cardEl = document.getElementById('add-store-product-card');
+        var headerEl = document.getElementById('add-store-product-header');
+        var bodyEl = headerEl.nextElementSibling;
+        if (bodyEl.style.display !== 'block') {
+            toggleCard(headerEl);
+        }
+
+        document.getElementById('store-cat').value = 'subscriptions';
+        document.getElementById('store-currency').value = 'egp';
+        document.getElementById('store-external-id').value = item.external_id;
+        document.getElementById('store-title').value = item.name || '';
+        document.getElementById('store-desc').value = (item.warranty_info ? ('🛡️ ضمان رسمي: ' + item.warranty_info + '\n') : '') + '⚡ تسليم تلقائي فوري للحساب/الكود في نفس الثانية بعد الشراء!';
+        document.getElementById('store-supplier-cost').value = costEgp;
+        document.getElementById('store-supplier-name').value = 'Bunny Store API';
+        document.getElementById('store-supplier-notes').value = 'External ID: #' + item.external_id + ' | Base USD: $' + Number(item.base_price_usd || 0).toFixed(2) + ' | Warranty: ' + (item.warranty_info || '');
+        document.getElementById('store-target').value = Math.max(0, Number(item.stock_count || 0));
+        document.getElementById('store-auto-sync').checked = true;
+
+        // وضع ربح افتراضي آمن (30% ليحقق شرط المورد >= 25% تلقائياً)
+        if ((parseFloat(document.getElementById('store-profit-value').value) || 0) <= 0) {
+            document.getElementById('store-profit-type').value = 'percent';
+            document.getElementById('store-profit-value').value = '30';
+        }
+
+        recalculateDynamicSellingPrice();
+        cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        showToastAlert('🔌 تم تعبئة بيانات المنتج (#' + item.external_id + ')! عدّل الاسم والربح ثم اضغط نشر.');
+    }
+
+    function clearBunnyLinkFields() {
+        document.getElementById('store-external-id').value = '';
+        document.getElementById('store-profit-value').value = '0';
+        document.getElementById('store-auto-sync').checked = false;
+        document.getElementById('store-supplier-name').value = '';
+        document.getElementById('store-supplier-notes').value = '';
+        calcAdminProductProfit();
+    }
+
+    // حساب السعر النهائي للمشتري تلقائياً بناءً على التكلفة بالجنيه + هامش الربح (fixed أو percent) + العملة
+    function recalculateDynamicSellingPrice() {
+        var costEgp = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
+        var pType = document.getElementById('store-profit-type').value;
+        var pVal = parseFloat(document.getElementById('store-profit-value').value) || 0;
+        var curr = document.getElementById('store-currency').value;
+
+        if (costEgp > 0 && pVal > 0) {
+            var sellEgp = pType === 'percent'
+                ? (costEgp * (1 + (pVal / 100)))
+                : (costEgp + pVal);
+
+            if (curr === 'points') {
+                document.getElementById('store-price').value = Math.ceil(sellEgp * 1000);
+            } else {
+                document.getElementById('store-price').value = Number(sellEgp.toFixed(2));
+            }
+        }
+        calcAdminProductProfit();
+    }
+
     function calcAdminProductProfit() {
         var curr = document.getElementById('store-currency').value;
-        var unit = curr === 'egp' ? 'ج.م' : 'نقطة';
         var price = parseFloat(document.getElementById('store-price').value) || 0;
-        var cost = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
-        var net = price - cost;
-        document.getElementById('admin-profit-preview').innerText = '💰 صافي ربحك في كل بيعة: ' + net.toFixed(2) + ' ' + unit;
+        var costEgp = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
+        var extId = document.getElementById('store-external-id').value.trim();
+
+        var sellInEgp = curr === 'points' ? (price / 1000) : price;
+        var netEgp = sellInEgp - costEgp;
+        var marginPct = costEgp > 0 ? ((netEgp / costEgp) * 100).toFixed(1) : 0;
+
+        var previewEl = document.getElementById('admin-profit-preview');
+        previewEl.innerText = '💰 صافي ربحك في كل بيعة: ' + netEgp.toFixed(2) + ' ج.م (نسبة الربح: ' + marginPct + '%)' +
+            (extId ? ' | 🔌 مربوط بـ Bunny API (#' + extId + ')' : '');
+    }
+
+    function recalcEditModalPrice() {
+        var costEgp = parseFloat(document.getElementById('edit-s-supplier-cost').value) || 0;
+        var pType = document.getElementById('edit-s-profit-type').value;
+        var pVal = parseFloat(document.getElementById('edit-s-profit-value').value) || 0;
+        var curr = document.getElementById('edit-s-currency').value;
+
+        if (costEgp > 0 && pVal > 0) {
+            var sellEgp = pType === 'percent'
+                ? (costEgp * (1 + (pVal / 100)))
+                : (costEgp + pVal);
+
+            if (curr === 'points') {
+                document.getElementById('edit-s-price').value = Math.ceil(sellEgp * 1000);
+            } else {
+                document.getElementById('edit-s-price').value = Number(sellEgp.toFixed(2));
+            }
+        }
     }
 
     function copyCodeText(txt) {
@@ -927,6 +1222,7 @@
         var matchedProducts = cachedAllProducts.filter(function(p) {
             return (p.product_code && p.product_code.toLowerCase().includes(q)) ||
                 String(p.id) === q ||
+                String(p.external_service_id || '') === q ||
                 (p.title && p.title.toLowerCase().includes(q));
         });
 
@@ -1013,7 +1309,7 @@
 
     async function loadStoreAndOrdersFast() {
         try {
-            var prodRes = await client.from('store_products').select('id, product_code, creator_id, category, currency, title, description, price, supplier_cost, supplier_name, supplier_notes, auto_delivery_data, target_count, completed_count, link, status').order('id', { ascending: false }).limit(80);
+            var prodRes = await client.from('store_products').select('*').order('id', { ascending: false }).limit(80);
             var ordRes = await client.from('store_orders').select('*').order('id', { ascending: false }).limit(80);
 
             cachedAllProducts = prodRes.data || [];
@@ -1031,14 +1327,22 @@
                     var sold = cachedAllOrders.filter(function(o) { return Number(o.product_id) === Number(p.id); }).length;
                     var unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
                     var pCode = p.product_code || ('PRD-' + p.id);
+                    var remStock = Math.max(0, Number(p.target_count || 0) - Number(p.completed_count || 0));
+
+                    var apiBadge = p.external_service_id
+                        ? (' <span class="api-pill">🔌 Bunny API #' + p.external_service_id + (p.auto_sync ? ' (مزامنة تلقائية 🔄)' : '') + '</span>')
+                        : '';
+
                     var autoLines = String(p.auto_delivery_data || '').split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
-                    var autoBadge = autoLines.length > 0 ? ('<span style="color:var(--neon-blue); font-weight:bold;"> | ⚡ مخزون تلقائي: ' + autoLines.length + '</span>') : '';
+                    var autoBadge = autoLines.length > 0 ? ('<span style="color:var(--neon-blue); font-weight:bold;"> | ⚡ مخزون محلي: ' + autoLines.length + '</span>') : '';
+
                     pHtml += '<div class="item-row" style="flex-direction:column; align-items:flex-start;">' +
-                        '<div style="width:100%; display:flex; justify-content:space-between;">' +
-                        '<b>📦 ' + escapeHtml(p.title) + ' (' + p.price + ' ' + unit + ')</b>' +
+                        '<div style="width:100%; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">' +
+                        '<div><b>📦 ' + escapeHtml(p.title) + ' (' + p.price + ' ' + unit + ')</b>' + apiBadge + '</div>' +
                         '<span class="code-pill" onclick="copyCodeText(\'' + escapeQuote(pCode) + '\')">' + pCode + '</span>' +
                         '</div>' +
-                        '<div style="font-size:12px; color:#aaa;">المورد/البائع: ' + escapeHtml(p.supplier_name || p.creator_id || 'ADMIN') + ' | المبيعات: ' + sold + autoBadge + '</div>' +
+                        '<div style="font-size:12px; color:#aaa;">المورد/البائع: ' + escapeHtml(p.supplier_name || p.creator_id || 'ADMIN') +
+                        ' | التكلفة: ' + Number(p.supplier_cost || 0).toFixed(2) + ' ج.م | المتاح: <b>' + remStock + '</b> | المبيعات: ' + sold + autoBadge + '</div>' +
                         '<div class="actions-box">' +
                         '<button class="edit-btn" onclick="openEditStoreModal(' + p.id + ')">تعديل ✏️</button>' +
                         '<button class="del-btn" onclick="deleteStoreProductItem(' + p.id + ')">حذف 🗑️</button>' +
@@ -1091,10 +1395,19 @@
         var sellerId = o.seller_id || prod.creator_id || 'ADMIN';
         var msgCount = Array.isArray(o.chat_messages) ? o.chat_messages.length : 0;
 
+        var apiStatusBadge = '';
+        if (o.api_fulfill_status === 'pending_api') {
+            apiStatusBadge = ' | <span style="color:var(--neon-blue); font-weight:bold;">⏳ جاري السحب من Bunny API...</span>';
+        } else if (o.api_fulfill_status === 'manual_fallback') {
+            apiStatusBadge = ' | <span style="color:var(--red); font-weight:bold;">⚠️ فشل السحب التلقائي (يرجى التسليم يدوياً)</span>';
+        } else if (o.api_fulfill_status === 'fulfilled') {
+            apiStatusBadge = ' | <span style="color:var(--main-green); font-weight:bold;">⚡ تم التسليم عبر Bunny API</span>';
+        }
+
         return '<div class="item-row" style="flex-direction:column; align-items:flex-start; border-right-color:' + (isDispute ? 'var(--red)' : 'var(--main-green)') + ';">' +
-            '<div style="width:100%; display:flex; justify-content:space-between;">' +
+            '<div style="width:100%; display:flex; justify-content:space-between; flex-wrap:wrap;">' +
             '<span class="code-pill" onclick="copyCodeText(\'' + escapeQuote(oCode) + '\')">' + oCode + ' 📋</span>' +
-            '<b style="color:var(--gold);">الحالة: ' + o.status + '</b>' +
+            '<div><b style="color:var(--gold);">الحالة: ' + o.status + '</b>' + apiStatusBadge + '</div>' +
             '</div>' +
             '<div>' +
             '<b>📦 الطلب:</b> ' + escapeHtml(o.product_title) + ' (' + o.price_paid + ' ' + unit + ')<br>' +
@@ -1189,7 +1502,6 @@
         rejectStoreOrder(activeAdminDealObj.id);
     }
 
-    // تحرير الصفقة للبائع مع حماية ذرية ضد التكرار
     async function completeStoreOrder(orderId) {
         var res = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
         var ord = res.data;
@@ -1247,7 +1559,6 @@
         loadStoreAndOrdersFast();
     }
 
-    // إرجاع الصفقة للمشتري مع حماية ذرية ضد التكرار
     async function rejectStoreOrder(orderId) {
         var res = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
         var ord = res.data;
@@ -1287,6 +1598,7 @@
         loadStoreAndOrdersFast();
     }
 
+    // نشر منتج جديد (شامل حقول الربط مع Bunny Store API)
     async function addStoreProduct() {
         var category = document.getElementById('store-cat').value;
         var currency = document.getElementById('store-currency').value;
@@ -1295,26 +1607,55 @@
         var description = document.getElementById('store-desc').value.trim();
         var autoStockRaw = document.getElementById('store-auto-stock').value.trim();
         var autoLines = autoStockRaw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+
+        var externalIdRaw = document.getElementById('store-external-id').value.trim();
+        var externalServiceId = externalIdRaw ? parseInt(externalIdRaw) : null;
+        var profitType = document.getElementById('store-profit-type').value;
+        var profitValue = parseFloat(document.getElementById('store-profit-value').value) || 0;
+        var autoSync = document.getElementById('store-auto-sync').checked;
+
         var price = parseFloat(document.getElementById('store-price').value);
         var supplierCost = parseFloat(document.getElementById('store-supplier-cost').value) || 0;
         var supplierName = document.getElementById('store-supplier-name').value.trim();
         var supplierNotes = document.getElementById('store-supplier-notes').value.trim();
-        var target = autoLines.length > 0 ? autoLines.length : (parseInt(document.getElementById('store-target').value) || 100);
+        var target = autoLines.length > 0 ? autoLines.length : (parseInt(document.getElementById('store-target').value) || 0);
         var link = document.getElementById('store-link').value.trim() || '#';
 
-        if (!title || isNaN(price) || price <= 0) return alert('أدخل العنوان والسعر!');
-        await client.from('store_products').insert([{
-            creator_id: 'ADMIN', product_code: productCode, category: category, currency: currency, title: title, description: description,
+        if (!title || isNaN(price) || price <= 0) return alert('⚠️ أدخل عنوان المنتج والسعر النهائي للمشتري!');
+
+        var res = await client.from('store_products').insert([{
+            creator_id: 'ADMIN',
+            product_code: productCode,
+            category: category,
+            currency: currency,
+            title: title,
+            description: description,
+            external_service_id: externalServiceId,
+            profit_type: profitType,
+            profit_value: profitValue,
+            auto_sync: autoSync,
             auto_delivery_data: autoLines.length > 0 ? autoLines.join('\n') : null,
-            price: price, supplier_cost: supplierCost, supplier_name: supplierName, supplier_notes: supplierNotes,
-            link: link, target_count: target, image_url: storeFileBase64 || null, status: 'Approved'
+            price: price,
+            supplier_cost: supplierCost,
+            supplier_name: supplierName || (externalServiceId ? 'Bunny Store API' : 'ADMIN'),
+            supplier_notes: supplierNotes,
+            link: link,
+            target_count: target,
+            completed_count: 0,
+            image_url: storeFileBase64 || null,
+            status: 'Approved'
         }]);
+
+        if (res.error) return alert('❌ خطأ أثناء نشر المنتج: ' + res.error.message);
+
         document.getElementById('store-title').value = '';
         document.getElementById('store-desc').value = '';
         document.getElementById('store-auto-stock').value = '';
+        clearBunnyLinkFields();
         generateNewProductCode();
-        alert('✅ تم نشر المنتج!');
-        loadStoreAndOrdersFast();
+        alert('✅ تم نشر المنتج بنجاح في المتجر!');
+        await loadStoreAndOrdersFast();
+        renderBunnyCatalogList();
     }
 
     function openEditStoreModal(id) {
@@ -1324,14 +1665,18 @@
         document.getElementById('edit-s-code').value = p.product_code || ('PRD-' + p.id);
         document.getElementById('edit-s-title').value = p.title || '';
         document.getElementById('edit-s-desc').value = p.description || '';
+        document.getElementById('edit-s-external-id').value = p.external_service_id || '';
+        document.getElementById('edit-s-profit-type').value = p.profit_type || 'fixed';
+        document.getElementById('edit-s-profit-value').value = p.profit_value || 0;
+        document.getElementById('edit-s-auto-sync').checked = p.auto_sync === true;
         document.getElementById('edit-s-auto-stock').value = p.auto_delivery_data || '';
         document.getElementById('edit-s-price').value = p.price || 0;
         document.getElementById('edit-s-supplier-cost').value = p.supplier_cost || 0;
         document.getElementById('edit-s-supplier-name').value = p.supplier_name || '';
         document.getElementById('edit-s-supplier-notes').value = p.supplier_notes || '';
-        document.getElementById('edit-s-target').value = p.target_count || 100;
+        document.getElementById('edit-s-target').value = p.target_count !== undefined ? p.target_count : 100;
         document.getElementById('edit-s-link').value = p.link || '';
-        document.getElementById('edit-s-currency').value = p.currency || 'points';
+        document.getElementById('edit-s-currency').value = p.currency || 'egp';
         document.getElementById('edit-store-modal').style.display = 'flex';
     }
 
@@ -1339,27 +1684,37 @@
         var id = document.getElementById('edit-s-id').value;
         var autoRaw = document.getElementById('edit-s-auto-stock').value.trim();
         var autoLines = autoRaw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
+        var extRaw = document.getElementById('edit-s-external-id').value.trim();
+        var extId = extRaw ? parseInt(extRaw) : null;
+
         await client.from('store_products').update({
             product_code: document.getElementById('edit-s-code').value.trim(),
             title: document.getElementById('edit-s-title').value.trim(),
             description: document.getElementById('edit-s-desc').value.trim(),
+            external_service_id: extId,
+            profit_type: document.getElementById('edit-s-profit-type').value,
+            profit_value: parseFloat(document.getElementById('edit-s-profit-value').value) || 0,
+            auto_sync: document.getElementById('edit-s-auto-sync').checked,
             auto_delivery_data: autoLines.length > 0 ? autoLines.join('\n') : null,
             currency: document.getElementById('edit-s-currency').value,
             price: parseFloat(document.getElementById('edit-s-price').value) || 10,
             supplier_cost: parseFloat(document.getElementById('edit-s-supplier-cost').value) || 0,
             supplier_name: document.getElementById('edit-s-supplier-name').value.trim(),
             supplier_notes: document.getElementById('edit-s-supplier-notes').value.trim(),
-            target_count: parseInt(document.getElementById('edit-s-target').value) || 100,
+            target_count: parseInt(document.getElementById('edit-s-target').value) || 0,
             link: document.getElementById('edit-s-link').value.trim()
         }).eq('id', id);
+
         document.getElementById('edit-store-modal').style.display = 'none';
-        loadStoreAndOrdersFast();
+        await loadStoreAndOrdersFast();
+        renderBunnyCatalogList();
     }
 
     async function deleteStoreProductItem(id) {
         if (!confirm('حذف المنتج؟')) return;
         await client.from('store_products').delete().eq('id', id);
-        loadStoreAndOrdersFast();
+        await loadStoreAndOrdersFast();
+        renderBunnyCatalogList();
     }
 
     async function reviewStoreProduct(id, creatorId, title, pCode, isApproved) {
@@ -1399,7 +1754,6 @@
         } catch (e) { div.innerHTML = '✅ لا توجد طلبات سحب معلقة.'; }
     }
 
-    // اعتماد السحب + النشر التلقائي في قناة الإثباتات @MegaTask_Proofs
     async function approveWithdraw(id, tid, wCode, amt, methodStr) {
         if (!confirm('تأكيد تحويل ' + amt + ' ج.م ونشر الإثبات في القناة الرسمية؟')) return;
 
@@ -1552,7 +1906,6 @@
         } catch (e) { div.innerHTML = '✅ لا توجد طلبات إيداع معلقة.'; }
     }
 
-    // مراجعة الإيداع مع حماية ذرية ضد التكرار وعمولة إحالة مضبوطة (20 نقطة لكل جنيه = 2%)
     async function reviewDeposit(id, tid, method, isOk) {
         if (isOk) {
             var addEgp = parseFloat(document.getElementById('dep-egp-val-' + id).value) || 0;
@@ -1848,6 +2201,7 @@
         ]);
 
         await Promise.all([
+            loadBunnySupplierCatalog(false),
             loadPromoCodesList(),
             loadDepositMethods(),
             loadMethods(),
