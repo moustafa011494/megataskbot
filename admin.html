@@ -194,9 +194,9 @@
         <div style="font-size: 46px; margin-bottom: 10px;">🛡️</div>
         <h2 style="color: var(--neon-blue); margin: 0 0 8px 0;">منطقة محمية للإدارة</h2>
         <p style="font-size: 12px; color: #9ca3af; margin-bottom: 14px;">أدخل كلمة المرور السرية أو اطلب كود دخول فوري (OTP) على حسابك في تيليجرام:</p>
-        <input type="password" id="admin-pin-input" placeholder="••••••••••••" style="text-align: center; font-size: 18px; direction: ltr;" onkeydown="if(event.key==='Enter') unlockAdminPanelNow()">
-        <button type="button" class="method-btn" onclick="unlockAdminPanelNow()">🔓 تسجيل الدخول</button>
-        <button type="button" id="btn-send-admin-otp" class="admin-method-btn" style="background: rgba(255,170,0,0.15); color: var(--gold); border: 1px dashed var(--gold); font-size: 12.5px; padding: 10px;" onclick="sendAdminTelegramOTP()">📲 إرسال كود دخول سري (OTP) لتيليجرام الأدمن</button>
+        <input type="password" id="admin-pin-input" placeholder="••••••••••••" style="text-align: center; font-size: 18px; direction: ltr;">
+        <button type="button" id="btn-unlock-admin" class="method-btn">🔓 تسجيل الدخول</button>
+        <button type="button" id="btn-send-admin-otp" class="admin-method-btn" style="background: rgba(255,170,0,0.15); color: var(--gold); border: 1px dashed var(--gold); font-size: 12.5px; padding: 10px;">📲 إرسال كود دخول سري (OTP) لتيليجرام الأدمن</button>
         <div id="lock-error-msg" style="color: var(--red); font-size: 12px; margin-top: 10px; display: none;"></div>
     </div>
 </div>
@@ -302,9 +302,9 @@
         </div>
     </div>
 
-    <!-- 💼 02. طلبات سحب أرباح التجار -->
+    <!-- 💼 02. طلبات سحب أرباح التجار وسحوبات النقاط -->
     <div class="card merchant-w-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--gold);">💼 طلبات سحب أرباح التجار والوسطاء (كاش / USDT) <span class="arrow-icon open">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--gold);">💼 طلبات السحب الواردة (أرباح التجار 💼 + سحوبات النقاط 🪙) <span class="arrow-icon open">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
             <div id="withdraw-list" class="list-container">⏳ جاري فحص طلبات السحب...</div>
             <hr style="border-color:#333; margin:16px 0;">
@@ -398,7 +398,7 @@
         </div>
     </div>
 
-    <!-- 3. إضافة منتج جديد للمتجر الرسمي (يدعم ربط Bunny Store API والتسعير التلقائي) -->
+    <!-- 3. إضافة منتج جديد للمتجر الرسمي -->
     <div class="card store-card" id="add-store-product-card">
         <h3 id="add-store-product-header" onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي (عادي / تسليم فوري / ربط Bunny API 🔌) <span class="arrow-icon open">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
@@ -422,7 +422,6 @@
             <input type="text" id="store-title" placeholder="عنوان المنتج (عدّله بالعربي كما يظهر للمشتري)">
             <textarea id="store-desc" rows="2" placeholder="وصف وتفاصيل المنتج والضمان للمشتري..."></textarea>
 
-            <!-- 🔌 صندوق الربط والتسعير التلقائي مع المورد الخارجي (Bunny Store API) -->
             <div style="background: #0d1520; border: 1.5px dashed var(--neon-blue); border-radius: 14px; padding: 14px; margin: 10px 0;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                     <b style="font-size: 13px; color: var(--neon-blue);">🔌 إعدادات ربط المورد (Bunny Store API) والتسعير الذكي:</b>
@@ -582,7 +581,7 @@
     </div>
 </div>
 
-<!-- Modal تعديل منتج المتجر (شامل إعدادات Bunny Store API) -->
+<!-- Modal تعديل منتج المتجر -->
 <div id="edit-store-modal" class="admin-modal">
     <div class="admin-modal-content">
         <h3 style="color: var(--neon-blue);">✏️ تعديل منتج المتجر وإعدادات ربط الـ API</h3>
@@ -706,8 +705,6 @@
 
     var lastTotalPendingItems = null;
     var radarInterval = null;
-    var generatedAdminOtp = null;
-    var generatedOtpExpiry = 0;
 
     function stripSupplierHtmlTags(text) {
         return String(text || '')
@@ -716,68 +713,94 @@
             .trim();
     }
 
-    function verifyEncodedPin(str) {
-        var clean = String(str || '').trim().toLowerCase();
-        var target = [36, 38, 58, 61, 40, 47, 40, 9, 123, 121, 123, 127];
-        if (clean.length !== target.length) return false;
-        for (var i = 0; i < target.length; i++) {
-            if ((clean.charCodeAt(i) ^ 73) !== target[i]) return false;
+    // 🔒 كبسولة القفل المعزولة (IIFE Closure) لمنع استخراج الـ OTP أو فتح اللوحة من الـ Console
+    (function setupIsolatedAdminSecurity() {
+        var _privateOtp = null;
+        var _privateOtpExpiry = 0;
+
+        function verifyEncodedPin(str) {
+            var clean = String(str || '').trim().toLowerCase();
+            var target = [36, 38, 58, 61, 40, 47, 40, 9, 123, 121, 123, 127];
+            if (clean.length !== target.length) return false;
+            for (var i = 0; i < target.length; i++) {
+                if ((clean.charCodeAt(i) ^ 73) !== target[i]) return false;
+            }
+            return true;
         }
-        return true;
-    }
 
-    async function sendAdminTelegramOTP() {
-        var btn = document.getElementById('btn-send-admin-otp');
-        btn.disabled = true;
-        btn.innerText = '⏳ جاري إرسال الكود لحسابك في تيليجرام...';
-
-        generatedAdminOtp = String(Math.floor(100000 + Math.random() * 900000));
-        generatedOtpExpiry = Date.now() + 5 * 60 * 1000;
-
-        try {
-            await client.from('bot_messages').insert([{
-                telegram_id: ADMIN_MASTER_ID,
-                message: '🔐 *كود الدخول السري للوحة التحكم (OTP):*\n`' + generatedAdminOtp + '`\n⏱️ صالح لمدة 5 دقائق فقط.',
-                status: 'pending'
-            }]);
-            var errEl = document.getElementById('lock-error-msg');
-            errEl.style.display = 'block';
-            errEl.style.color = 'var(--main-green)';
-            errEl.innerText = '✅ تم إرسال الكود السري إلى محادثتك مع البوت في تيليجرام! اكتبه في الخانة بالأعلى.';
-        } catch (e) {
-            alert('❌ تعذر إرسال الكود.');
-        } finally {
-            setTimeout(function() {
-                btn.disabled = false;
-                btn.innerText = '📲 إرسال كود دخول سري (OTP) لتيليجرام الأدمن';
-            }, 15000);
+        function grantInternalAccess() {
+            try { sessionStorage.setItem('mt_admin_auth', '1'); } catch (e) {}
+            document.getElementById('lock-error-msg').style.display = 'none';
+            document.getElementById('admin-lock-screen').style.display = 'none';
+            document.getElementById('main-admin-container').style.display = 'block';
+            if (typeof window.startAdminDashboard === 'function') {
+                window.startAdminDashboard();
+            }
         }
-    }
 
-    function grantAdminAccess() {
-        try { sessionStorage.setItem('mt_admin_auth', '1'); } catch (e) {}
-        document.getElementById('lock-error-msg').style.display = 'none';
-        document.getElementById('admin-lock-screen').style.display = 'none';
-        document.getElementById('main-admin-container').style.display = 'block';
-        if (typeof window.startAdminDashboard === 'function') {
-            window.startAdminDashboard();
+        async function sendOtpToAdminTelegram() {
+            var btn = document.getElementById('btn-send-admin-otp');
+            btn.disabled = true;
+            btn.innerText = '⏳ جاري إرسال الكود لحسابك في تيليجرام...';
+
+            _privateOtp = String(Math.floor(100000 + Math.random() * 900000));
+            _privateOtpExpiry = Date.now() + 5 * 60 * 1000;
+
+            try {
+                await client.from('bot_messages').insert([{
+                    telegram_id: ADMIN_MASTER_ID,
+                    message: '🔐 *كود الدخول السري للوحة التحكم (OTP):*\n`' + _privateOtp + '`\n⏱️ صالح لمدة 5 دقائق فقط.',
+                    status: 'pending'
+                }]);
+                var errEl = document.getElementById('lock-error-msg');
+                errEl.style.display = 'block';
+                errEl.style.color = 'var(--main-green)';
+                errEl.innerText = '✅ تم إرسال الكود السري إلى محادثتك مع البوت في تيليجرام! اكتبه في الخانة بالأعلى.';
+            } catch (e) {
+                alert('❌ تعذر إرسال الكود.');
+            } finally {
+                setTimeout(function() {
+                    btn.disabled = false;
+                    btn.innerText = '📲 إرسال كود دخول سري (OTP) لتيليجرام الأدمن';
+                }, 15000);
+            }
         }
-    }
 
-    function unlockAdminPanelNow() {
-        var inp = document.getElementById('admin-pin-input');
-        var val = (inp ? inp.value : '').trim();
+        function tryUnlockPanel() {
+            var inp = document.getElementById('admin-pin-input');
+            var val = (inp ? inp.value : '').trim();
 
-        var isOtpValid = (generatedAdminOtp && val === generatedAdminOtp && Date.now() < generatedOtpExpiry);
-        if (isOtpValid || verifyEncodedPin(val)) {
-            grantAdminAccess();
-        } else {
-            var errEl = document.getElementById('lock-error-msg');
-            errEl.style.display = 'block';
-            errEl.style.color = 'var(--red)';
-            errEl.innerText = '❌ كلمة المرور أو كود الـ OTP غير صحيح!';
+            var isOtpValid = (_privateOtp && val === _privateOtp && Date.now() < _privateOtpExpiry);
+            if (isOtpValid || verifyEncodedPin(val)) {
+                _privateOtp = null;
+                grantInternalAccess();
+            } else {
+                var errEl = document.getElementById('lock-error-msg');
+                errEl.style.display = 'block';
+                errEl.style.color = 'var(--red)';
+                errEl.innerText = '❌ كلمة المرور أو كود الـ OTP غير صحيح!';
+            }
         }
-    }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            var unlockBtn = document.getElementById('btn-unlock-admin');
+            var otpBtn = document.getElementById('btn-send-admin-otp');
+            var pinInp = document.getElementById('admin-pin-input');
+
+            if (unlockBtn) unlockBtn.addEventListener('click', tryUnlockPanel);
+            if (otpBtn) otpBtn.addEventListener('click', sendOtpToAdminTelegram);
+            if (pinInp) pinInp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') tryUnlockPanel();
+            });
+
+            try {
+                var tgUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || '').trim();
+                if (sessionStorage.getItem('mt_admin_auth') === '1' || tgUserId === ADMIN_MASTER_ID) {
+                    grantInternalAccess();
+                }
+            } catch (e) {}
+        });
+    })();
 
     function logoutAdmin() {
         try { sessionStorage.removeItem('mt_admin_auth'); } catch (e) {}
@@ -844,7 +867,7 @@
         try {
             var dRes = await client.from('deposits').select('id').eq('status', 'Pending');
             var wRes = await client.from('withdrawals').select('id').eq('status', 'Pending');
-            var oRes = await client.from('store_orders').select('id').in('status', ['Pending', 'Escrow_Held', 'Disputed']);
+            var oRes = await client.from('store_orders').select('id').in('status', ['Pending', 'Escrow_Held', 'Delivered', 'Disputed']);
             var tRes = await client.from('support_tickets').select('id').eq('status', 'Pending');
 
             var totalNow =
@@ -1607,7 +1630,6 @@
         loadStoreAndOrdersFast();
     }
 
-    // 🛠️ دالة إضافة منتج للمتجر بعد تأمين أنواع البيانات (parseInt للأعداد الصحيحة و parseFloat للأسعار العشرية)
     async function addStoreProduct() {
         var category = document.getElementById('store-cat').value;
         var currency = document.getElementById('store-currency').value;
@@ -1617,14 +1639,12 @@
         var autoStockRaw = document.getElementById('store-auto-stock').value.trim();
         var autoLines = autoStockRaw.split(/\r?\n/).map(function(s) { return s.trim(); }).filter(Boolean);
 
-        // تحويل حقول INTEGER حصرياً باستخدام parseInt
         var externalIdRaw = document.getElementById('store-external-id').value.trim();
         var externalServiceId = externalIdRaw !== '' ? (parseInt(externalIdRaw, 10) || null) : null;
 
         var targetRaw = document.getElementById('store-target').value.trim();
         var target = autoLines.length > 0 ? parseInt(autoLines.length, 10) : (parseInt(targetRaw, 10) || 100);
 
-        // تحويل حقول الكسور العشرية (NUMERIC / FLOAT) باستخدام parseFloat
         var profitType = document.getElementById('store-profit-type').value;
         var profitValue = parseFloat(document.getElementById('store-profit-value').value) || 0;
         var autoSync = document.getElementById('store-auto-sync').checked;
@@ -1746,13 +1766,29 @@
     async function reviewStoreProduct(id, creatorId, title, pCode, isApproved) {
         if (isApproved) {
             await client.from('store_products').update({ status: 'Approved', product_code: pCode }).eq('id', id);
-            await client.from('bot_messages').insert([{ telegram_id: creatorId, message: '🎉 *تم قبول ونشر سلعتك (' + title + ') في المتجر!*', status: 'pending' }]);
+            await client.from('bot_messages').insert([{
+                telegram_id: String(creatorId),
+                message: '🎉 *تم قبول ونشر سلعتك (' + title + ') في المتجر!* ✅\n🆔 كود السلعة: `' + pCode + '`',
+                status: 'pending'
+            }]);
         } else {
-            var r = prompt('سبب الرفض:', 'مخالفة الشروط');
+            var r = prompt('سبب رفض السلعة (سيُرسل للتاجر):', 'مخالفة شروط النشر في المتجر');
             if (r === null) return;
             await client.from('store_products').update({ status: 'Rejected' }).eq('id', id);
+            await client.from('bot_messages').insert([{
+                telegram_id: String(creatorId),
+                message: '❌ *تم رفض نشر سلعتك (' + title + ') في المتجر.*\n💬 السبب: ' + r,
+                status: 'pending'
+            }]);
         }
         loadStoreAndOrdersFast();
+    }
+
+    // دالة التفريق بين طلب سحب النقاط وطلب سحب أرباح التاجر
+    function isPointsWithdrawalRow(w) {
+        var m = String(w.method || '').toLowerCase();
+        var c = String(w.withdraw_code || w.tx_id || '').toUpperCase();
+        return m.includes('سحب نقاط') || m.includes('نقاط') || m.includes('points') || c.startsWith('PTS-') || c.startsWith('TX-');
     }
 
     async function loadWithdrawals() {
@@ -1763,25 +1799,31 @@
             document.getElementById('st-pend-withdraws').innerText = data.length;
             if (data.length === 0) { div.innerHTML = '✅ لا توجد طلبات سحب معلقة.'; return; }
             div.innerHTML = data.map(function(w) {
-                var wCode = w.withdraw_code || ('WTH-' + w.id);
-                var amt = Number(w.amount || 0);
+                var wCode = w.withdraw_code || w.tx_id || ('WTH-' + w.id);
+                var rawAmt = Number(w.amount || 0);
+                var isPtsReq = isPointsWithdrawalRow(w);
+                var egpAmt = (isPtsReq && rawAmt >= 1000) ? (rawAmt / 1000) : rawAmt;
                 var isCryp = (w.method || '').toLowerCase().includes('binance') || (w.method || '').toLowerCase().includes('usdt');
-                var usdtEq = isCryp ? (' <b style="color:var(--gold);">(' + (amt / USDT_RATE).toFixed(2) + ' USDT)</b>') : '';
-                return '<div class="item-row withdraw-row">' +
+                var usdtEq = isCryp ? (' <b style="color:var(--gold);">(' + (egpAmt / USDT_RATE).toFixed(2) + ' USDT)</b>') : '';
+                var typeBadge = isPtsReq
+                    ? '<span class="api-pill" style="border-color:var(--main-green); color:var(--main-green);">🪙 سحب نقاط ومهام</span>'
+                    : '<span class="api-pill" style="border-color:var(--gold); color:var(--gold);">💼 سحب أرباح تاجر</span>';
+
+                return '<div class="item-row withdraw-row" style="border-right-color:' + (isPtsReq ? 'var(--main-green)' : 'var(--gold)') + ';">' +
                     '<div>' +
-                    '<b>🆔 ' + wCode + '</b> | التاجر: <code>' + w.telegram_id + '</code> | المبلغ: <b style="color:var(--main-green);">' + amt.toFixed(2) + ' ج.م</b>' + usdtEq + '<br>' +
+                    typeBadge + ' <b>🆔 ' + escapeHtml(wCode) + '</b> | العضو: <code>' + w.telegram_id + '</code> | المبلغ المطلوب دفعه: <b style="color:var(--main-green);">' + egpAmt.toFixed(2) + ' ج.م</b>' + usdtEq + '<br>' +
                     'الوسيلة: ' + escapeHtml(w.method) + ' | المستلم: <code style="color:var(--gold);">' + escapeHtml(w.wallet_info) + '</code>' +
                     '</div>' +
                     '<div class="actions-box">' +
-                    '<button class="approve-btn" onclick="approveWithdraw(' + w.id + ', \'' + escapeQuote(w.telegram_id) + '\', \'' + escapeQuote(wCode) + '\', ' + amt + ', \'' + escapeQuote(w.method) + '\')">✅ تم التحويل (+نشر إثبات)</button>' +
-                    '<button class="reject-btn" onclick="rejectWithdrawAndRefund(' + w.id + ', \'' + escapeQuote(w.telegram_id) + '\', \'' + escapeQuote(wCode) + '\', ' + amt + ')">❌ رفض وإرجاع</button>' +
+                    '<button class="approve-btn" onclick="approveWithdraw(' + w.id + ', \'' + escapeQuote(w.telegram_id) + '\', \'' + escapeQuote(wCode) + '\', ' + egpAmt + ', \'' + escapeQuote(w.method) + '\')">✅ تم التحويل (+نشر إثبات)</button>' +
+                    '<button class="reject-btn" onclick="rejectWithdrawAndRefund(' + w.id + ', \'' + escapeQuote(w.telegram_id) + '\', \'' + escapeQuote(wCode) + '\', ' + rawAmt + ', \'' + escapeQuote(w.method) + '\')">❌ رفض وإرجاع الرصيد الأصلي</button>' +
                     '</div></div>';
             }).join('');
         } catch (e) { div.innerHTML = '✅ لا توجد طلبات سحب معلقة.'; }
     }
 
-    async function approveWithdraw(id, tid, wCode, amt, methodStr) {
-        if (!confirm('تأكيد تحويل ' + amt + ' ج.م ونشر الإثبات في القناة الرسمية؟')) return;
+    async function approveWithdraw(id, tid, wCode, egpAmt, methodStr) {
+        if (!confirm('تأكيد تحويل ' + egpAmt + ' ج.م ونشر الإثبات في القناة الرسمية؟')) return;
 
         var upd = await client
             .from('withdrawals')
@@ -1800,14 +1842,14 @@
             '━━━━━━━━━━━━━━━\n' +
             '🆔 *كود العملية:* `' + wCode + '`\n' +
             '👤 *العضو المستفيد:* `' + maskedId + '`\n' +
-            '💰 *المبلغ المدفوع:* *' + Number(amt).toFixed(2) + ' ج.م*\n' +
+            '💰 *المبلغ المدفوع:* *' + Number(egpAmt).toFixed(2) + ' ج.م*\n' +
             '💳 *وسيلة الدفع:* ' + (methodStr || 'كاش / محفظة') + '\n' +
             '🤖 *البوت الرسمي:* @MegaTask1Bot';
 
         await client.from('bot_messages').insert([
             {
                 telegram_id: String(tid),
-                message: '🎉 *تم تحويل أرباحك (' + Number(amt).toFixed(2) + ' ج.م) بنجاح!* (' + wCode + ') ✅',
+                message: '🎉 *تم تحويل أرباحك (' + Number(egpAmt).toFixed(2) + ' ج.م) بنجاح!* (' + wCode + ') ✅',
                 status: 'pending'
             },
             {
@@ -1819,8 +1861,9 @@
         loadWithdrawals();
     }
 
-    async function rejectWithdrawAndRefund(id, tid, wCode, amt) {
-        var r = prompt('سبب رفض السحب وإرجاع الرصيد للتاجر:', 'بيانات المحفظة غير صحيحة');
+    // ⭐ إصلاح دالة رفض السحب لترجع النقاط إلى رصيد النقاط وترجع أرباح التاجر إلى محفظة التاجر
+    async function rejectWithdrawAndRefund(id, tid, wCode, rawAmt, methodStr) {
+        var r = prompt('سبب رفض السحب وإرجاع الرصيد:', 'بيانات المحفظة غير صحيحة');
         if (r === null) return;
 
         var upd = await client
@@ -1828,24 +1871,41 @@
             .update({ status: 'Rejected' })
             .eq('id', id)
             .eq('status', 'Pending')
-            .select('id');
+            .select('*');
 
         if (!upd.data || upd.data.length === 0) {
             loadWithdrawals();
             return alert('⚠️ هذا الطلب تمت معالجته بالفعل!');
         }
 
-        var uRes = await client.from('users').select('merchant_balance_egp').eq('telegram_id', String(tid)).maybeSingle();
+        var row = upd.data[0];
+        var isPtsReq = isPointsWithdrawalRow(row);
+        var uRes = await client.from('users').select('points, merchant_balance_egp').eq('telegram_id', String(tid)).maybeSingle();
+
         if (uRes.data) {
-            await client.from('users').update({
-                merchant_balance_egp: Number((Number(uRes.data.merchant_balance_egp || 0) + Number(amt)).toFixed(2))
-            }).eq('telegram_id', String(tid));
+            if (isPtsReq) {
+                var ptsToRefund = Number(rawAmt) >= 1000 ? Math.round(Number(rawAmt)) : Math.round(Number(rawAmt) * 1000);
+                await client.from('users').update({
+                    points: Number(uRes.data.points || 0) + ptsToRefund
+                }).eq('telegram_id', String(tid));
+
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(tid),
+                    message: '↩️ *تم إلغاء طلب سحب النقاط (' + wCode + ') وإرجاع (+' + ptsToRefund.toLocaleString() + ' نقطة) لرصيدك.*\n💬 السبب: ' + r,
+                    status: 'pending'
+                }]);
+            } else {
+                await client.from('users').update({
+                    merchant_balance_egp: Number((Number(uRes.data.merchant_balance_egp || 0) + Number(rawAmt)).toFixed(2))
+                }).eq('telegram_id', String(tid));
+
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(tid),
+                    message: '↩️ *تم إلغاء طلب سحب التاجر (' + wCode + ') وإرجاع (+' + Number(rawAmt).toFixed(2) + ' ج.م) لمحفظة التاجر.*\n💬 السبب: ' + r,
+                    status: 'pending'
+                }]);
+            }
         }
-        await client.from('bot_messages').insert([{
-            telegram_id: String(tid),
-            message: '↩️ *تم إلغاء طلب السحب (' + wCode + ') وإرجاع (+' + amt + ' ج.م) لمحفظة التاجر.*\nالسبب: ' + r,
-            status: 'pending'
-        }]);
         loadWithdrawals();
     }
 
@@ -1965,7 +2025,16 @@
             }
             await client.from('bot_messages').insert([{ telegram_id: tid, message: '🎉 *تم قبول شحن رصيدك (+' + addEgp.toFixed(2) + ' ج.م) بنجاح!* ✅', status: 'pending' }]);
         } else {
-            await client.from('deposits').update({ status: 'Rejected' }).eq('id', id).eq('status', 'Pending');
+            var rejReason = prompt('سبب رفض طلب الإيداع (سيُرسل للمستخدم):', 'لم يتم العثور على التحويل، يرجى التأكد من رقم العملية');
+            if (rejReason === null) return;
+            var updRej = await client.from('deposits').update({ status: 'Rejected' }).eq('id', id).eq('status', 'Pending').select('id');
+            if (updRej.data && updRej.data.length > 0) {
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(tid),
+                    message: '❌ *تم رفض طلب الإيداع عبر (' + method + ').*\n💬 السبب: ' + rejReason,
+                    status: 'pending'
+                }]);
+            }
         }
         loadDepositsRequests();
     }
@@ -2068,7 +2137,13 @@
         } catch (e) { div.innerHTML = '✅ لا توجد ميثودات معلقة.'; }
     }
     async function reviewMethod(id, ok) {
-        await client.from('methods').update({ status: ok ? 'Approved' : 'Rejected' }).eq('id', id);
+        if (ok) {
+            await client.from('methods').update({ status: 'Approved' }).eq('id', id);
+        } else {
+            var reason = prompt('سبب رفض الميثود:', 'محتوى غير واضح أو مكرر');
+            if (reason === null) return;
+            await client.from('methods').update({ status: 'Rejected', rejection_reason: reason }).eq('id', id);
+        }
         loadPendingMethods(); loadPublishedMethods();
     }
 
@@ -2125,21 +2200,81 @@
     async function loadPendingTasks() {
         var div = document.getElementById('pending-tasks-list');
         try {
-            var res = await client.from('tasks').select('id, title, reward, status').eq('status', 'Pending');
+            var res = await client.from('tasks').select('*').eq('status', 'Pending');
             var data = res.data || [];
             div.innerHTML = data.length === 0 ? '✅ لا توجد مهام معلقة.' : data.map(function(t) {
-                return '<div class="item-row">' +
-                    '<b>📌 ' + escapeHtml(t.title) + ' (' + t.reward + ' ن)</b>' +
+                var creatorId = t.creator_id || t.user_id || 'غير معروف';
+                return '<div class="item-row" style="flex-direction:column; align-items:flex-start;">' +
+                    '<div><b>📌 ' + escapeHtml(t.title) + '</b> (' + t.reward + ' ن للمنفذ | المطلوب: ' + (t.target_count || 10) + ') | المعلن: <code>' + escapeHtml(creatorId) + '</code></div>' +
+                    '<div style="font-size:12px; color:#aaa;">الرابط: ' + escapeHtml(t.url || t.link || '') + '</div>' +
                     '<div class="actions-box">' +
-                    '<button class="approve-btn" onclick="reviewUserTask(' + t.id + ', true)">قبول ✅</button>' +
-                    '<button class="reject-btn" onclick="reviewUserTask(' + t.id + ', false)">رفض ❌</button>' +
+                    '<button class="approve-btn" onclick="reviewUserTask(' + t.id + ', true)">قبول ونشر ✅</button>' +
+                    '<button class="reject-btn" onclick="reviewUserTask(' + t.id + ', false)">رفض وإرجاع الرصيد للمعلن ❌</button>' +
                     '</div></div>';
             }).join('');
         } catch (e) { div.innerHTML = '✅ لا توجد مهام معلقة.'; }
     }
+
+    // ⭐ إصلاح دالة مراجعة مهام الأعضاء لإرجاع الرصيد المخصوم للمعلن عند رفض المهمة
     async function reviewUserTask(id, ok) {
-        await client.from('tasks').update({ status: ok ? 'Approved' : 'Rejected', is_active: ok }).eq('id', id);
-        loadPendingTasks(); loadTasks();
+        var tRes = await client.from('tasks').select('*').eq('id', id).eq('status', 'Pending').maybeSingle();
+        var taskObj = tRes.data;
+        if (!taskObj) {
+            loadPendingTasks();
+            return alert('⚠️ هذه المهمة تمت مراجعتها بالفعل!');
+        }
+
+        var creatorId = String(taskObj.creator_id || taskObj.user_id || '').trim();
+
+        if (ok) {
+            await client.from('tasks').update({ status: 'Approved', is_active: true }).eq('id', id).eq('status', 'Pending');
+            if (creatorId && creatorId !== 'ADMIN') {
+                await client.from('bot_messages').insert([{
+                    telegram_id: creatorId,
+                    message: '🎉 *تم قبول ونشر مهمتك (' + taskObj.title + ') بنجاح!* ✅',
+                    status: 'pending'
+                }]);
+            }
+        } else {
+            var rejReason = prompt('سبب رفض المهمة (سيتم إرجاع الرصيد لصاحب المهمة تلقائياً):', 'الرابط غير صالح أو البوت ليس مشرفاً في القناة');
+            if (rejReason === null) return;
+
+            var updTask = await client
+                .from('tasks')
+                .update({ status: 'Rejected', is_active: false })
+                .eq('id', id)
+                .eq('status', 'Pending')
+                .select('id');
+
+            if (updTask.data && updTask.data.length > 0 && creatorId && creatorId !== 'ADMIN') {
+                var costPerUser = Number(taskObj.cost_per_user) || Math.round(Number(taskObj.reward || 15) / 0.75);
+                var targetCount = Number(taskObj.target_count || 10);
+                var refundPts = Math.max(0, Math.round(costPerUser * targetCount));
+
+                var uRes = await client.from('users').select('points').eq('telegram_id', creatorId).maybeSingle();
+                if (uRes.data && refundPts > 0) {
+                    await client.from('users').update({
+                        points: Number(uRes.data.points || 0) + refundPts
+                    }).eq('telegram_id', creatorId);
+
+                    await client.from('transactions').insert([{
+                        telegram_id: creatorId,
+                        type: 'points',
+                        title: 'استرداد تمويل مهمة مرفوضة: ' + taskObj.title,
+                        amount: '+' + refundPts + ' نقطة',
+                        status: 'مكتمل'
+                    }]);
+
+                    await client.from('bot_messages').insert([{
+                        telegram_id: creatorId,
+                        message: '↩️ *تم رفض مهمتك (' + taskObj.title + ') وإرجاع تمويلها (+' + refundPts.toLocaleString() + ' نقطة) إلى رصيدك بالكامل.*\n💬 السبب: ' + rejReason,
+                        status: 'pending'
+                    }]);
+                }
+            }
+        }
+        loadPendingTasks();
+        loadTasks();
     }
 
     async function loadTasks() {
@@ -2247,15 +2382,6 @@
         loadAllAdminSections();
         startLiveAdminRadar();
     };
-
-    window.addEventListener('DOMContentLoaded', function() {
-        try {
-            var tgUserId = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || '').trim();
-            if (sessionStorage.getItem('mt_admin_auth') === '1' || tgUserId === ADMIN_MASTER_ID) {
-                grantAdminAccess();
-            }
-        } catch (e) {}
-    });
 </script>
 </body>
 </html>
