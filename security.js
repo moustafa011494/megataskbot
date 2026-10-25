@@ -1,29 +1,30 @@
 /**
- * MegaTask - Ultimate Anti-VPN, Anti-Proxy, Anti-Spoofing & Anti-Multi-Account Shield v5.0 (security.js)
+ * MegaTask - Ultimate Anti-VPN, Anti-Proxy, Anti-Spoofing & Anti-Multi-Account Shield v6.0 (security.js)
  */
 const MegaSecurity = (function () {
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
     const ADMIN_MASTER_ID = "875021647"; // حساب الأدمن المستثنى من حظر الـ VPN والحظر الدائم
+    const NET_CACHE_KEY = "megatask_net_check_v6";
+    const NET_CACHE_TTL_MS = 15 * 60 * 1000; // حفظ فحص الـ IP لمدة 15 دقيقة لمنع استهلاك الـ Rate Limit
 
+    let _hardwareFp = null;
     let _deviceFp = null;
     let _userIp = null;
     let _alreadyChecked = false;
 
     const VPN_ISP_BLACKLIST = [
-        "cloudflare", "warp", "m247", "datacamp", "digitalocean", "amazon", "aws",
-        "google cloud", "microsoft", "azure", "hetzner", "ovh", "linode", "akamai",
+        "m247", "datacamp", "digitalocean", "hetzner", "ovh", "linode",
         "choopa", "vultr", "contabo", "leaseweb", "cdn77", "tzulo", "quadranet",
         "sharktech", "privax", "nord", "expressvpn", "proton", "surfshark", "cyberghost",
-        "windscribe", "mullvad", "opera", "zenmate", "psiphon", "hotspot shield", "anchorfree",
-        "kaspersky", "avast", "bitdefender", "pia", "private internet access", "vyprvpn",
-        "tunnelbear", "hide.me", "ipvanish", "strongvpn", "astrill", "purevpn", "torguard",
-        "airvpn", "ivpn", "perfect privacy", "goose vpn", "ultrasurf", "lantern",
-        "packethub", "worldstream", "g-core", "gcore", "scaleway", "kamatera", "ionos",
+        "windscribe", "mullvad", "zenmate", "psiphon", "hotspot shield", "anchorfree",
+        "pia", "private internet access", "vyprvpn", "tunnelbear", "hide.me",
+        "ipvanish", "strongvpn", "astrill", "purevpn", "torguard", "airvpn", "ivpn",
+        "perfect privacy", "goose vpn", "ultrasurf", "lantern", "packethub",
+        "worldstream", "g-core", "gcore", "scaleway", "kamatera", "ionos",
         "upcloud", "hostinger", "hostwinds", "frantech", "buyvm", "ramnode", "time4vps",
         "melbicom", "aeza", "pq.hosting", "stark industries", "tefincom", "netprotect",
-        "hosting", "datacenter", "data center", "vpn", "proxy", "vps", "colocation",
-        "tor exit", "relay", "anonymizer"
+        "tor exit", "anonymizer"
     ];
 
     const TIMEZONE_TO_COUNTRY = {
@@ -48,8 +49,8 @@ const MegaSecurity = (function () {
         "africa/khartoum": "SD"
     };
 
-    // 1. توليد بصمة العتاد الفريدة للجهاز (Hardware Fingerprint)
-    function generateHardwareFingerprint() {
+    // 1. توليد بصمة العتاد (Hardware Model Signature)
+    function generateHardwareSignature() {
         try {
             const components = [];
             components.push(`${screen.width}x${screen.height}x${screen.colorDepth}`);
@@ -92,23 +93,58 @@ const MegaSecurity = (function () {
                 hash = ((hash << 5) - hash) + chr;
                 hash |= 0;
             }
-            return "FP_" + Math.abs(hash).toString(36).toUpperCase();
+            return "HW_" + Math.abs(hash).toString(36).toUpperCase();
         } catch (err) {
-            return "FP_FALLBACK";
+            return "HW_FALLBACK";
         }
     }
 
-    // 2. فحص متعدد الطبقات لكشف الـ VPN والـ Proxy
+    // توليد بصمة جهاز فريدة تدمج العتاد مع معرف الجهاز المحلي لمنع حظر الهواتف المتشابهة لدى أشخاص مختلفين
+    function getOrCreateDeviceFingerprint() {
+        const hw = generateHardwareSignature();
+        _hardwareFp = hw;
+        try {
+            let localInstanceId = localStorage.getItem("megatask_device_instance_id");
+            if (!localInstanceId) {
+                localInstanceId = Math.random().toString(36).substring(2, 10).toUpperCase() + Date.now().toString(36).slice(-4).toUpperCase();
+                localStorage.setItem("megatask_device_instance_id", localInstanceId);
+            }
+            return `${hw}_${localInstanceId}`;
+        } catch (e) {
+            return hw;
+        }
+    }
+
+    // 2. فحص متعدد الطبقات لكشف الـ VPN والـ Proxy مع Caching لمدة 15 دقيقة
     async function detectIpAndVpnMultiLayer() {
+        try {
+            const cachedRaw = sessionStorage.getItem(NET_CACHE_KEY);
+            if (cachedRaw) {
+                const parsed = JSON.parse(cachedRaw);
+                if (parsed && parsed.ts && (Date.now() - parsed.ts) < NET_CACHE_TTL_MS && !parsed.isVpn) {
+                    return parsed;
+                }
+            }
+        } catch (e) {}
+
         const deviceTz = (Intl.DateTimeFormat().resolvedOptions().timeZone || "").toLowerCase().trim();
         let detectedIp = null;
         let isVpn = false;
         let vpnReason = "";
 
         try {
+            const fetchWithTimeout = (url, ms = 4500) => {
+                const ctrl = new AbortController();
+                const id = setTimeout(() => ctrl.abort(), ms);
+                return fetch(url, { signal: ctrl.signal }).then(r => {
+                    clearTimeout(id);
+                    return r.json();
+                });
+            };
+
             const [whoRes, freeApiRes] = await Promise.allSettled([
-                fetch("https://ipwho.is/").then(r => r.json()),
-                fetch("https://freeipapi.com/api/json").then(r => r.json())
+                fetchWithTimeout("https://ipwho.is/"),
+                fetchWithTimeout("https://freeipapi.com/api/json")
             ]);
 
             let ipCountry = "";
@@ -122,7 +158,7 @@ const MegaSecurity = (function () {
                 ipTz = (d.timezone?.id || "").toLowerCase().trim();
                 ispOrgText = `${d.connection?.isp || ""} ${d.connection?.org || ""} ${d.connection?.domain || ""}`.toLowerCase();
 
-                if (d.security?.vpn || d.security?.proxy || d.security?.tor || d.security?.hosting) {
+                if (d.security?.vpn || d.security?.proxy || d.security?.tor) {
                     isVpn = true;
                     vpnReason = `خادم VPN مباشر (${ipCountry})`;
                 }
@@ -132,7 +168,7 @@ const MegaSecurity = (function () {
                 const f = freeApiRes.value;
                 if (!detectedIp && f.ipAddress) detectedIp = f.ipAddress;
                 if (!ipCountry && f.countryCode) ipCountry = String(f.countryCode).toUpperCase();
-                if (f.isProxy === true) {
+                if (f.isProxy === true && !ispOrgText.includes("icloud")) {
                     isVpn = true;
                     vpnReason = `اتصال Proxy / VPN مكتشف (${ipCountry || f.countryName})`;
                 }
@@ -163,13 +199,18 @@ const MegaSecurity = (function () {
                 }
             }
 
-            return { ip: detectedIp, isVpn: isVpn, reason: vpnReason };
+            const resultObj = { ip: detectedIp, isVpn: isVpn, reason: vpnReason, ts: Date.now() };
+            try {
+                sessionStorage.setItem(NET_CACHE_KEY, JSON.stringify(resultObj));
+            } catch (e) {}
+            return resultObj;
         } catch (err) {
             return { ip: detectedIp, isVpn: false, reason: "" };
         }
     }
 
     function showVpnBlockScreen(reasonDetail, ipAddr) {
+        try { sessionStorage.removeItem(NET_CACHE_KEY); } catch (e) {}
         const stopAll = () => {
             document.body.innerHTML = `
                 <div style="position:fixed; inset:0; background:#08090d; z-index:2147483647; display:flex; align-items:center; justify-content:center; padding:22px; text-align:center; font-family:'Segoe UI',Tahoma,sans-serif; direction:rtl; user-select:none;">
@@ -177,7 +218,7 @@ const MegaSecurity = (function () {
                         <div style="font-size:56px; margin-bottom:10px;">🛡️</div>
                         <h2 style="color:#ffaa00; margin:0 0 10px 0; font-size:20px;">تم اكتشاف اتصال VPN / Proxy!</h2>
                         <p style="color:#d1d5db; font-size:13px; line-height:1.7; margin-bottom:14px;">
-                            عذراً، استخدام برامج الـ VPN أو تغيير الموقع الجغرافي أو تطبيقات البروكسي (مثل WARP) محظور تماماً على منصة MegaTask.
+                            عذراً، استخدام برامج الـ VPN أو تغيير الموقع الجغرافي أو تطبيقات البروكسي محظور تماماً على منصة MegaTask.
                         </p>
                         <div style="background:#0c0e13; border:1px dashed #ffaa00; border-radius:12px; padding:12px; font-size:11.5px; color:#9ca3af; margin-bottom:16px; line-height:1.8;">
                             🔍 <b style="color:#ffaa00;">تفاصيل الفحص الأمني:</b><br>
@@ -187,7 +228,7 @@ const MegaSecurity = (function () {
                         <p style="font-size:12px; color:#00d26a; font-weight:bold; margin:0 0 14px 0;">
                             💡 أوقف تشغيل الـ VPN من هاتفك ثم اضغط إعادة الفحص:
                         </p>
-                        <button onclick="location.reload()" style="width:100%; background:#ffaa00; color:#000; border:none; padding:12px; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer;">
+                        <button onclick="sessionStorage.removeItem('${NET_CACHE_KEY}'); location.reload();" style="width:100%; background:#ffaa00; color:#000; border:none; padding:12px; border-radius:12px; font-weight:bold; font-size:14px; cursor:pointer;">
                             🔄 أوقفت الـ VPN - إعادة الفحص الآن
                         </button>
                     </div>
@@ -247,36 +288,40 @@ const MegaSecurity = (function () {
         return pool[0];
     }
 
-    // 3. استخراج والتحقق من هوية المستخدم الحقيقية (منع التلاعب بـ ?id= في الرابط)
+    // 3. استخراج والتحقق الصارم من هوية المستخدم الحقيقية (منع التلاعب بـ ?id= في الرابط)
     function getVerifiedUserId(passedTid) {
         const tgUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
         const urlId = new URLSearchParams(window.location.search).get('id');
 
         if (tgUserId) {
             const realIdStr = String(tgUserId).trim();
-            // إذا حاول شخص تمرير ID مختلف في الرابط عن حساب تيليجرام المفتوح فعلياً، نعتمد حساب تيليجرام الحقيقي فقط
             if (urlId && String(urlId).trim() !== realIdStr && realIdStr !== ADMIN_MASTER_ID) {
-                const newUrl = new URL(window.location.href);
-                newUrl.searchParams.set('id', realIdStr);
-                window.history.replaceState({}, '', newUrl.toString());
+                try {
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.set('id', realIdStr);
+                    window.history.replaceState({}, '', newUrl.toString());
+                } catch (e) {}
             }
-            localStorage.setItem('telegram_id', realIdStr);
-            localStorage.setItem('megatask_uid', realIdStr);
+            try {
+                localStorage.setItem('telegram_id', realIdStr);
+                localStorage.setItem('megatask_uid', realIdStr);
+            } catch (e) {}
             return realIdStr;
         }
 
-        return String(passedTid || urlId || localStorage.getItem('telegram_id') || "").trim();
+        const rawFallback = String(passedTid || urlId || localStorage.getItem('telegram_id') || localStorage.getItem('megatask_uid') || "").trim();
+        const cleanDigits = rawFallback.replace(/[^\d]/g, "");
+        return cleanDigits;
     }
 
     async function verifyDeviceAndAccount(supabaseClient, passedTid) {
         try {
             const currentTid = getVerifiedUserId(passedTid);
 
-            _deviceFp = generateHardwareFingerprint();
+            _deviceFp = getOrCreateDeviceFingerprint();
             const netCheck = await detectIpAndVpnMultiLayer();
             _userIp = netCheck.ip;
 
-            // إيقاف الـ VPN على جميع المستخدمين مع استثناء حساب الأدمن الأساسي فقط
             if (netCheck.isVpn && currentTid !== ADMIN_MASTER_ID) {
                 showVpnBlockScreen(netCheck.reason, _userIp);
                 return { allowed: false, reason: "vpn_detected" };
@@ -286,7 +331,7 @@ const MegaSecurity = (function () {
                 return { allowed: true };
             }
 
-            // فحص الحماية المحلية السريعة: هل هذا المتصفح مربوط مسبقاً بحساب آخر؟
+            // 1. فحص الحماية المحلية السريعة: هل هذا المتصفح/الهاتف مربوط مسبقاً بحساب آخر؟
             const boundMasterId = localStorage.getItem("megatask_master_owner_id");
             if (boundMasterId && boundMasterId !== currentTid && currentTid !== ADMIN_MASTER_ID && boundMasterId !== "123456789") {
                 showPermanentBanScreen(boundMasterId, currentTid, "هذا الهاتف مسجل ومربوط مسبقاً بحساب أساسي آخر. لا يُسمح بفتح حسابات متعددة على نفس الجهاز!");
@@ -305,14 +350,14 @@ const MegaSecurity = (function () {
             if (!myUser) return { allowed: true };
 
             if (myUser.is_banned === true && currentTid !== ADMIN_MASTER_ID) {
-                showPermanentBanScreen(myUser.referred_by || boundMasterId || "حساب آخر على نفس الهاتف", currentTid);
+                showPermanentBanScreen(myUser.referred_by || boundMasterId || "حساب آخر على نفس الهاتف", currentTid, "تم إيقاف هذا الحساب من قِبل نظام الحماية أو الإدارة.");
                 return { allowed: false, reason: "already_banned" };
             }
 
-            // ⭐ الاعتماد في حظر تعدد الحسابات على بصمة العتاد (device_fp) فقط
-            // لمنع الحظر الخاطئ لمستخدمي شبكات المحمول في مصر (CGNAT Shared IP)
+            // 2. فحص قاعدة البيانات: نشترط تطابق البصمة الفريدة (_deviceFp) أو تطابق (بصمة العتاد + نفس الـ IP مع وجود علاقة إحالة)
+            // وبذلك نمنع تماماً حظر أي مستخدمين أبرياء يمتلكون نفس نوع الهاتف في مدن أو شبكات مختلفة!
             let matchedUsers = [];
-            if (_deviceFp && _deviceFp !== "FP_FALLBACK") {
+            if (_deviceFp && !_deviceFp.startsWith("HW_FALLBACK")) {
                 const { data: fpMatches } = await db
                     .from('users')
                     .select('telegram_id, name, points, total_tasks, device_fp, last_ip, is_banned, referred_by')
@@ -336,8 +381,7 @@ const MegaSecurity = (function () {
                         device_fp: _deviceFp,
                         last_ip: _userIp || myUser.last_ip,
                         is_banned: true,
-                        referred_by: null,
-                        points: 0
+                        referred_by: null
                     }).eq('telegram_id', currentTid);
 
                     if (hadRef) {
@@ -351,17 +395,6 @@ const MegaSecurity = (function () {
                     localStorage.setItem("megatask_master_owner_id", masterId);
                     showPermanentBanScreen(masterId, currentTid);
                     return { allowed: false, reason: "multi_account_detected" };
-                }
-
-                for (const other of allSameDeviceUsers) {
-                    const otherId = String(other.telegram_id);
-                    if (otherId !== masterId && otherId !== ADMIN_MASTER_ID && (other.is_banned !== true || other.referred_by)) {
-                        await db.from('users').update({
-                            is_banned: true,
-                            referred_by: null,
-                            points: 0
-                        }).eq('telegram_id', otherId);
-                    }
                 }
             }
 
@@ -385,7 +418,8 @@ const MegaSecurity = (function () {
             return { ok: false, msg: "❌ لا يمكنك استخدام كود الدعوة الخاص بك!" };
         }
 
-        const myFp = _deviceFp || generateHardwareFingerprint();
+        const myFp = _deviceFp || getOrCreateDeviceFingerprint();
+        const myHwPrefix = myFp.split('_').slice(0, 2).join('_');
         const netCheck = await detectIpAndVpnMultiLayer();
         const myIp = _userIp || netCheck.ip;
 
@@ -404,17 +438,21 @@ const MegaSecurity = (function () {
             return { ok: false, msg: "❌ كود الدعوة هذا غير مسجل في النظام!" };
         }
 
-        // منع الإحالة العكسية المتبادلة (أ يدعو ب، ثم ب يدعو أ)
         if (String(inviter.referred_by || "") === String(cleanMyTid)) {
             return { ok: false, msg: "🚫 لا يمكنك تفعيل كود دعوة لشخص مسجل تحت دعوتك!" };
         }
 
-        if (inviter.device_fp && myFp && myFp !== "FP_FALLBACK" && inviter.device_fp === myFp) {
+        if (inviter.device_fp && myFp && inviter.device_fp === myFp) {
             return { ok: false, msg: "🚫 مرفوض! صاحب كود الدعوة يستخدم نفس هذا الهاتف. يُمنع عمل دعوات لنفسك!" };
         }
 
         if (inviter.last_ip && myIp && inviter.last_ip === myIp) {
             return { ok: false, msg: "🚫 مرفوض! لا يمكن تفعيل كود دعوة لحساب متصل من نفس شبكة الإنترنت!" };
+        }
+
+        // إذا تطابق موديل العتاد مع نفس الشبكة نمنع الإحالة الوهمية
+        if (inviter.device_fp && myHwPrefix && inviter.device_fp.startsWith(myHwPrefix) && inviter.last_ip === myIp) {
+            return { ok: false, msg: "🚫 مرفوض! تم اكتشاف محاولة إحالة ذاتية من نفس الجهاز." };
         }
 
         return { ok: true, inviter: inviter };
