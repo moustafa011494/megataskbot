@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>Deposit - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -13,12 +14,13 @@
             --main-green: #00d26a; 
             --main-cyan: #00f2ff;
             --binance-yellow: #FCD535;
+            --stars-gold: #ffae00;
             --dark-bg: #0d0f12; 
             --card-bg: #1a1d23; 
             --text-gray: #9ca3af; 
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 18px 15px 115px; overflow-x: hidden; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 18px 15px 115px; overflow-x: hidden; }
         
         .page-title { text-align: right; font-size: 20px; margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; }
 
@@ -29,7 +31,7 @@
             border-radius: 20px; 
             border: 1px solid rgba(0, 242, 255, 0.3); 
             text-align: center; 
-            margin-bottom: 22px; 
+            margin-bottom: 18px; 
             box-shadow: 0 8px 20px rgba(0,0,0,0.45); 
         }
         .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
@@ -40,6 +42,107 @@
         .bal-pts b { color: var(--main-green); }
 
         .info-box { background: rgba(0, 210, 106, 0.08); border: 1px dashed rgba(0, 210, 106, 0.5); padding: 9px; border-radius: 10px; font-size: 12px; color: var(--main-green); text-align: center; }
+
+        /* ⭐ بطاقة الشحن اللحظي بنجوم تليجرام (Telegram Stars) */
+        .stars-instant-card {
+            background: linear-gradient(145deg, #241d0f, #14171f);
+            border: 2px solid var(--stars-gold);
+            border-radius: 20px;
+            padding: 16px 14px;
+            margin-bottom: 22px;
+            box-shadow: 0 6px 25px rgba(255, 174, 0, 0.18);
+            position: relative;
+        }
+        .stars-badge-top {
+            position: absolute;
+            top: -10px;
+            left: 14px;
+            background: linear-gradient(135deg, #ffd000, #ff8800);
+            color: #000;
+            font-size: 10.5px;
+            font-weight: 900;
+            padding: 3px 10px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(255, 174, 0, 0.4);
+        }
+        .stars-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .stars-icon-box {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(255, 174, 0, 0.15);
+            border: 1px solid var(--stars-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        .stars-header-text b {
+            display: block;
+            font-size: 14.5px;
+            color: #fff;
+            margin-bottom: 2px;
+        }
+        .stars-header-text span {
+            font-size: 11.5px;
+            color: #fcd34d;
+        }
+        .stars-presets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 7px;
+            margin-bottom: 10px;
+        }
+        .star-preset-btn {
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 174, 0, 0.4);
+            color: #fde68a;
+            padding: 8px 4px;
+            border-radius: 10px;
+            font-size: 11.5px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .star-preset-btn:active, .star-preset-btn.active {
+            background: var(--stars-gold);
+            color: #000;
+            border-color: #fff;
+        }
+        .stars-calc-preview {
+            background: rgba(0, 210, 106, 0.1);
+            border: 1px dashed var(--main-green);
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin: 10px 0 12px;
+            font-size: 13px;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+        }
+        .btn-pay-stars {
+            background: linear-gradient(135deg, #ffd000, #ff8800);
+            color: #000;
+            border: none;
+            width: 100%;
+            padding: 14px;
+            border-radius: 14px;
+            font-weight: 900;
+            font-size: 14.5px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 174, 0, 0.3);
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .btn-pay-stars:active { transform: scale(0.98); }
+        .btn-pay-stars:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .input-group { margin-bottom: 18px; text-align: right; }
         .input-group label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: bold; color: #e5e7eb; }
@@ -144,7 +247,6 @@
         }
         .btn-copy:active { transform: scale(0.95); }
 
-        /* حاسبة وملاحظة باينانس التلقائية */
         #binance-extra-box {
             display: none;
             background: rgba(252, 213, 53, 0.06);
@@ -188,7 +290,6 @@
         .deposit-btn:active { transform: scale(0.98); }
         .deposit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
-        /* سجل طلبات الشحن أسفل الصفحة */
         .history-section { margin-top: 25px; }
         .history-card {
             background: var(--card-bg);
@@ -222,12 +323,41 @@
                 <b id="current-points">0</b>
             </div>
         </div>
-        <div class="info-box">شحن آمن وفوري لرصيد الجنيه لشراء خدمات المتجر أو تحويلها لنقاط بونص ⚡</div>
+        <div class="info-box">شحن آمن وفوري لرصيد الجنيه لشراء خدمات المتجر أو تمويل مهامك ⚡</div>
     </div>
 
-    <!-- اختيار وسيلة الإيداع باللوجو -->
+    <!-- ⭐ بطاقة الشحن اللحظي بنجوم تليجرام (Telegram Stars - XTR) -->
+    <div class="stars-instant-card">
+        <span class="stars-badge-top">يُضاف في ثانية ⚡</span>
+        <div class="stars-header">
+            <div class="stars-icon-box">⭐</div>
+            <div class="stars-header-text">
+                <b>الشحن اللحظي بنجوم تليجرام (Telegram Stars)</b>
+                <span>ادفع بالنجوم داخل البوت مباشرة بدون انتظار (50 نجمة = 35.00 ج.م)</span>
+            </div>
+        </div>
+
+        <div class="stars-presets">
+            <div class="star-preset-btn" onclick="selectStarsPreset(10, this)">⭐ 10<br><small>7 ج.م</small></div>
+            <div class="star-preset-btn active" onclick="selectStarsPreset(50, this)">⭐ 50<br><small>35 ج.م</small></div>
+            <div class="star-preset-btn" onclick="selectStarsPreset(100, this)">⭐ 100<br><small>70 ج.م</small></div>
+            <div class="star-preset-btn" onclick="selectStarsPreset(250, this)">⭐ 250<br><small>175 ج.م</small></div>
+        </div>
+
+        <input type="number" id="stars-amount-input" value="50" min="10" step="1" placeholder="أدخل عدد النجوم (الحد الأدنى 10 نجوم)" oninput="updateStarsCalcPreview()" style="border-color: var(--stars-gold); text-align: center; font-weight: bold;">
+
+        <div class="stars-calc-preview" id="stars-egp-preview">
+            💰 سيضاف لرصيدك فوراً: <span style="color: var(--main-green); font-size: 16px;">35.00 ج.م</span>
+        </div>
+
+        <button type="button" id="btn-pay-stars" class="btn-pay-stars" onclick="payWithTelegramStars()">
+            ⚡ ادفع بالنجوم الآن
+        </button>
+    </div>
+
+    <!-- اختيار وسيلة الإيداع الأخرى باللوجو -->
     <div class="input-group">
-        <label>1️⃣ اختر وسيلة الإيداع:</label>
+        <label>1️⃣ أو اختر وسيلة إيداع أخرى (كاش / انستاباي / باينانس):</label>
         <div id="methods-grid" class="methods-grid">
             <div style="grid-column: span 2; text-align: center; color: var(--text-gray); padding: 15px;">
                 جاري تحميل وسائل الإيداع...
@@ -252,7 +382,7 @@
             <button type="button" class="btn-copy" onclick="copyTargetAccount()">📋 نسخ</button>
         </div>
 
-        <!-- 🟡 إضافات Binance Pay التلقائية (تظهر فقط عند اختيار باينانس) -->
+        <!-- 🟡 إضافات Binance Pay التلقائية -->
         <div id="binance-extra-box">
             <label style="font-size: 11px; color: var(--binance-yellow); display: block; margin-bottom: 5px; font-weight: bold;">
                 ⚡ لشحن فوري بدون انتظار: ضع هذا الكود في خانة الملاحظة (Note) داخل تطبيق باينانس أثناء الإرسال:
@@ -263,14 +393,12 @@
             </div>
 
             <label style="font-size: 11px; color: #cbd5e1; display: block; margin-bottom: 5px;">
-                💲 حاسبة الـ USDT السريعة (1 USDT = <span id="usdt-rate-lbl">50</span> ج.م):
+                💲 حاسبة الـ USDT السريعة (1 USDT = <span id="usdt-rate-lbl">53</span> ج.م):
             </label>
             <input type="number" id="usdt-calc-input" placeholder="أدخل المبلغ بالـ USDT (مثلاً: 1 أو 0.5)" step="0.1" min="0.1" oninput="syncUsdtToEgp()" style="padding: 10px 12px; font-size: 13px; border-color: var(--binance-yellow);">
         </div>
 
-        <ol class="inst-steps" id="inst-steps-list">
-            <!-- يتم ملء الخطوات تلقائياً حسب الوسيلة -->
-        </ol>
+        <ol class="inst-steps" id="inst-steps-list"></ol>
     </div>
 
     <!-- إدخال المبلغ بالجنيه فقط -->
@@ -313,17 +441,25 @@
         tg.expand();
 
         // =========================================================================
-        // 🟡 إعدادات بوابة Binance Pay التلقائية (ضع الـ Binance ID الخاص بك هنا)
+        // ⭐ إعدادات الدفع بنجوم تليجرام (Telegram Stars) وبوابة باينانس
         // =========================================================================
+        const STAR_TO_EGP_RATE = 0.70;     // 1 نجمة = 0.70 ج.م (50 نجمة = 35.00 ج.م)
+        const MIN_STARS_DEPOSIT = 10;      // أقل شحن 10 نجوم
+        const BOT_USERNAME = "MegaTask1Bot";
+        // ضع رابط سيرفر البايثون الخاص بك (PythonAnywhere أو Render) إن وجد لفتح الفاتورة المنبثقة داخل الميني أب مباشرة
+        const FLASK_API_BASE = "https://moustafa011494.pythonanywhere.com";
+
         const MY_BINANCE_PAY_ID = "494159809";
-        const USDT_TO_EGP_RATE = 53.0; // نفس السعر المحدد في main1.py
+        const USDT_TO_EGP_RATE = 53.0;
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
+        const tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(tg.initDataUnsafe?.user?.id || params.get('id') || localStorage.getItem('telegram_id') || "").trim();
 
         let depositMethodsList = [];
         let selectedMethodObj = null;
@@ -332,6 +468,7 @@
         async function init() {
             document.getElementById('binance-note-id').innerText = tid || "ID";
             document.getElementById('usdt-rate-lbl').innerText = USDT_TO_EGP_RATE;
+            updateStarsCalcPreview();
 
             if (tid && typeof MegaSecurity !== 'undefined') {
                 MegaSecurity.verifyDeviceAndAccount(client, tid).catch(() => {});
@@ -341,7 +478,7 @@
             await refreshUserBalances();
             await loadMyDepositsHistory();
 
-            // رادار حي يفحص كل 5 ثوانٍ إذا قام البوت باعتماد دفعة باينانس التلقائية
+            // رادار حي يفحص كل 5 ثوانٍ إذا تم اعتماد دفعة النجوم أو باينانس التلقائية
             setInterval(async () => {
                 await refreshUserBalances();
                 await loadMyDepositsHistory();
@@ -359,6 +496,97 @@
             }
         }
 
+        // =========================================================================
+        // ⭐ دوال الشحن اللحظي بنجوم تليجرام (Telegram Stars - XTR)
+        // =========================================================================
+        function selectStarsPreset(starsCount, btnEl) {
+            document.querySelectorAll('.star-preset-btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            document.getElementById('stars-amount-input').value = starsCount;
+            updateStarsCalcPreview();
+        }
+
+        function updateStarsCalcPreview() {
+            const rawVal = parseInt(document.getElementById('stars-amount-input').value, 10) || 0;
+            const previewEl = document.getElementById('stars-egp-preview');
+            if (rawVal < MIN_STARS_DEPOSIT) {
+                previewEl.innerHTML = `⚠️ الحد الأدنى للشحن هو <span style="color: var(--stars-gold);">${MIN_STARS_DEPOSIT} نجوم</span> (${(MIN_STARS_DEPOSIT * STAR_TO_EGP_RATE).toFixed(2)} ج.م)`;
+                return;
+            }
+            const egpVal = (rawVal * STAR_TO_EGP_RATE).toFixed(2);
+            previewEl.innerHTML = `💰 سيضاف لرصيدك فوراً: <span style="color: var(--main-green); font-size: 16px;">${egpVal} ج.م</span>`;
+        }
+
+        async function payWithTelegramStars() {
+            if (!tid) return tg.showAlert("❌ يرجى فتح الصفحة من داخل بوت تيليجرام الرسمي.");
+
+            const stars = parseInt(document.getElementById('stars-amount-input').value, 10) || 0;
+            if (stars < MIN_STARS_DEPOSIT) {
+                return tg.showAlert(`⚠️ الحد الأدنى للشحن بنجوم تليجرام هو ${MIN_STARS_DEPOSIT} نجوم!`);
+            }
+
+            const btn = document.getElementById('btn-pay-stars');
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري تجهيز فاتورة النجوم...";
+
+            try {
+                // 1. محاولة إنشاء رابط الفاتورة عبر Flask API لفتح نافذة الدفع المنبثقة (tg.openInvoice) مباشرة
+                const ctrl = new AbortController();
+                const timeoutId = setTimeout(() => ctrl.abort(), 4500);
+
+                const res = await fetch(`${FLASK_API_BASE}/api/create_stars_invoice`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegram_id: tid, stars: stars }),
+                    signal: ctrl.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.status === 'ok' && data.invoice_url && typeof tg.openInvoice === 'function') {
+                        tg.openInvoice(data.invoice_url, async (status) => {
+                            btn.disabled = false;
+                            btn.innerText = "⚡ ادفع بالنجوم الآن";
+                            if (status === 'paid') {
+                                const egpAdded = (stars * STAR_TO_EGP_RATE).toFixed(2);
+                                tg.showAlert(`🎉 تم الدفع بنجاح! تمت إضافة +${egpAdded} ج.م إلى رصيدك الأساسي فوراً.`);
+                                setTimeout(async () => {
+                                    await refreshUserBalances();
+                                    await loadMyDepositsHistory();
+                                }, 1500);
+                            } else if (status === 'cancelled') {
+                                tg.showAlert("ℹ️ تم إلغاء عملية الدفع.");
+                            }
+                        });
+                        return;
+                    }
+                }
+            } catch (apiErr) {
+                console.warn("Direct invoice API unreachable, using instant bot chat fallback:", apiErr);
+            }
+
+            // 2. البديل المضمون 100% إذا كان السيرفر يعمل محلياً بدون HTTPS:
+            // إرسال أمر فوري لطابور البوت لإرسال الفاتورة في الشات + توجيه المستخدم للشات لدفعها بضغطة واحدة
+            try {
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(tid),
+                    message: `__STARS_INVOICE__:${stars}`,
+                    status: 'pending'
+                }]);
+            } catch (e) {}
+
+            btn.disabled = false;
+            btn.innerText = "⚡ ادفع بالنجوم الآن";
+
+            const deepLink = `https://t.me/${BOT_USERNAME}?start=paystars_${stars}`;
+            if (typeof tg.openTelegramLink === 'function') {
+                tg.openTelegramLink(deepLink);
+            } else {
+                window.location.href = deepLink;
+            }
+        }
+
         // حاسبة تحويل USDT إلى جنيه مصري تلقائياً
         function syncUsdtToEgp() {
             const usdtVal = parseFloat(document.getElementById('usdt-calc-input').value) || 0;
@@ -371,21 +599,20 @@
             updateConversionHint();
         }
 
-        // تحديث التوضيح التلقائي للمبلغ بالجنيه فقط
+        // تحديث التوضيح التلقائي للمبلغ بالجنيه (1 جنيه = 1000 نقطة)
         function updateConversionHint() {
             const val = parseFloat(document.getElementById('deposit-amount').value) || 0;
             const hint = document.getElementById('conversion-hint');
             if (val > 0) {
-                const bonusPoints = Math.floor(val * 1200);
+                const eqPoints = Math.floor(val * 1000);
                 hint.style.display = 'block';
-                hint.innerHTML = `💵 سيتم إضافة <b style="color: var(--main-cyan);">${val.toFixed(2)} ج.م</b> إلى رصيدك الأساسي.<br>🔥 <span style="font-size:11px; color: var(--main-green);">وإذا رغبت لاحقاً بتحويلها لنقاط ستحصل على <b>${bonusPoints.toLocaleString()} نقطة</b> (شامل +20% بونص مجاني).</span>`;
+                hint.innerHTML = `💵 سيتم إضافة <b style="color: var(--main-cyan);">${val.toFixed(2)} ج.م</b> إلى رصيدك الأساسي.<br>🔥 <span style="font-size:11px; color: var(--main-green);">وإذا رغبت لاحقاً بتحويلها لنقاط ستحصل على <b>${eqPoints.toLocaleString()} نقطة</b> فوراً.</span>`;
             } else {
                 hint.style.display = 'none';
                 hint.innerHTML = "";
             }
         }
 
-        // جلب وسائل الإيداع من قاعدة البيانات + دمج بوابة Binance Pay التلقائية في المقدمة
         async function loadDepositMethods() {
             const grid = document.getElementById('methods-grid');
             const { data } = await client.from('deposit_methods').select('*').order('id', { ascending: true });
@@ -430,7 +657,6 @@
             }
         }
 
-        // تحديد وسيلة الإيداع وعرض اللوجو والرقم وشرح الخطوات الخاصة بها
         function selectDepositMethod(index) {
             selectedMethodObj = depositMethodsList[index];
             if (!selectedMethodObj) return;
@@ -528,6 +754,7 @@
         }
 
         async function processDeposit() {
+            if (!tid) return tg.showAlert("❌ يرجى فتح الصفحة من داخل البوت أولاً.");
             const amount = parseFloat(document.getElementById('deposit-amount').value);
             const wallet = document.getElementById('deposit-wallet').value.trim();
             const email = document.getElementById('deposit-email').value.trim();
@@ -539,7 +766,6 @@
 
             const isBinance = Boolean(selectedMethodObj.isBinanceAuto);
 
-            // التحقق من عدم تكرار رقم عملية باينانس
             if (isBinance) {
                 const { data: existTx } = await client
                     .from('deposits')
