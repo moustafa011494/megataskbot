@@ -1,5 +1,5 @@
 /**
- * MegaTask - Streak & Lucky Wheel Module (Updated Economy & Auto-Reset to 0)
+ * MegaTask - Streak & Lucky Wheel Module (Updated Economy, Referral Sync & Anti-Race Lock)
  * Zone ID: 10959333
  */
 const StreakManager = (function() {
@@ -9,9 +9,10 @@ const StreakManager = (function() {
     let _userData = null;
     let _timerInterval = null;
     let _pendingAction = null;
-    let _wasBrokenBeforeClaim = false; // لتتبع ما إذا كان المستخدم قد فوّت أياماً
+    let _wasBrokenBeforeClaim = false;
+    let _isBusyClaiming = false;
 
-    // ⭐ جوائز عجلة الحظ المخفضة (الحد الأقصى 10 نقاط لضمان ربح البوت من الإعلان)
+    // ⭐ جوائز عجلة الحظ (الحد الأقصى 10 نقاط لضمان ربح البوت من الإعلان)
     const WHEEL_SECTORS = [
         { label: "2 نقطة", value: 2, color: "#161920", text: "#00d26a" },
         { label: "5 نقاط", value: 5, color: "#1e232d", text: "#00d26a" },
@@ -90,7 +91,6 @@ const StreakManager = (function() {
     }
 
     function getStreakTierData(streak, gender) {
-        // إذا كان الستريك 0 لا يأخذ لقباً بعد
         if (!streak || streak <= 0) {
             return {
                 title: "مبتدئ (ابدأ الستريك اليوم!)",
@@ -105,7 +105,7 @@ const StreakManager = (function() {
         const index = Math.max(0, Math.min(streak - 1, list.length - 1));
         const title = list[index];
 
-        const tier = Math.floor((streak - 1) / 15); // ترقية لون النار كل 15 يوم
+        const tier = Math.floor((streak - 1) / 15);
         const level = tier + 1;
         let flameColor = "#ffaa00"; 
         let glowShadow = "0 0 15px rgba(255, 170, 0, 0.35)";
@@ -231,7 +231,6 @@ const StreakManager = (function() {
         });
     }
 
-    // ⭐ فحص وتصفير الستريك فوراً إلى (0) إذا فوّت المستخدم يوم أمس
     async function checkAndResetBrokenStreak(userObj) {
         if (!userObj) return userObj;
         const rawClaimDate = userObj.last_claim || userObj.last_daily_claim;
@@ -240,7 +239,6 @@ const StreakManager = (function() {
         const now = new Date();
         const lastDate = new Date(rawClaimDate);
 
-        // إذا لم يكن اليوم ولم يكن أمس -> المستخدم فوّت يوماً كاملاً على الأقل!
         if (!isSameDay(lastDate, now) && !isYesterday(lastDate, now)) {
             if ((userObj.streak || 0) > 0) {
                 _wasBrokenBeforeClaim = true;
@@ -262,8 +260,11 @@ const StreakManager = (function() {
     }
 
     async function getOrCreateUser() {
-        if (!_tid || _tid === "test_user") {
-            _tid = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || "123456789");
+        if (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId) {
+            _tid = MegaSecurity.getVerifiedUserId(_tid);
+        }
+        if (!_tid || _tid === "undefined" || _tid === "null") {
+            return null;
         }
 
         let { data: userCurrent } = await _client
@@ -282,7 +283,7 @@ const StreakManager = (function() {
                     points: 0, 
                     egp_balance: 0,
                     total_earned: 0,
-                    streak: 0, // يبدأ من صفر دائماً
+                    streak: 0,
                     gender: genderChoice 
                 }])
                 .select()
@@ -302,12 +303,11 @@ const StreakManager = (function() {
             if (updatedG) userCurrent = updatedG;
         }
 
-        // فحص ما إذا كان قد فوّت أياماً لتصفير العداد فوراً
         userCurrent = await checkAndResetBrokenStreak(userCurrent);
         return userCurrent;
     }
 
-    // ⭐ إضافة النقاط + تحديث total_earned + تسجيل الهيستوري + 10% عمولة إحالة للداعي
+    // ⭐ إضافة النقاط + تحديث total_earned + تسجيل الهيستوري + 10% عمولة إحالة للداعي شاملة total_ref_commission
     async function addPointsAndLog(pointsChange, titleText) {
         try {
             let { data: uInfo } = await _client
@@ -326,7 +326,6 @@ const StreakManager = (function() {
                 total_earned: newTotalEarned
             }).eq('telegram_id', String(_tid));
 
-            // 1. تسجيل في جدول transactions
             await _client.from('transactions').insert([{
                 telegram_id: String(_tid),
                 type: 'points',
@@ -335,19 +334,19 @@ const StreakManager = (function() {
                 status: 'مكتمل'
             }]);
 
-            // 2. إضافة 10% عمولة إحالة للداعي (إن وجد)
             if (uInfo && uInfo.referred_by && String(uInfo.referred_by) !== String(_tid)) {
                 const refBonus = Math.max(1, Math.round(pointsChange * 0.10));
                 const { data: refUser } = await _client
                     .from('users')
-                    .select('points, total_earned')
+                    .select('points, total_earned, total_ref_commission')
                     .eq('telegram_id', String(uInfo.referred_by))
                     .maybeSingle();
 
                 if (refUser) {
                     await _client.from('users').update({
                         points: (refUser.points || 0) + refBonus,
-                        total_earned: (refUser.total_earned || 0) + refBonus
+                        total_earned: (refUser.total_earned || 0) + refBonus,
+                        total_ref_commission: (refUser.total_ref_commission || 0) + refBonus
                     }).eq('telegram_id', String(uInfo.referred_by));
                 }
             }
@@ -360,6 +359,7 @@ const StreakManager = (function() {
     }
 
     function triggerAdFlow(actionType, domElements) {
+        if (_isBusyClaiming || isSpinning) return;
         _pendingAction = actionType;
 
         if (typeof show_10959333 !== 'function') {
@@ -367,6 +367,7 @@ const StreakManager = (function() {
             return;
         }
 
+        _isBusyClaiming = true;
         show_10959333().then(async () => {
             if (_pendingAction === 'streak') {
                 await executeStreakClaim(domElements);
@@ -374,7 +375,9 @@ const StreakManager = (function() {
                 openWheelModalUI();
             }
             _pendingAction = null;
+            _isBusyClaiming = false;
         }).catch((err) => {
+            _isBusyClaiming = false;
             console.error("Monetag Ad Error:", err);
             window.Telegram?.WebApp?.showAlert("❌ لم تكتمل مشاهدة الإعلان، يجب مشاهدته بالكامل للحصول على المكافأة!");
         });
@@ -402,12 +405,10 @@ const StreakManager = (function() {
                 if (isYesterday(last, now) && !_wasBrokenBeforeClaim) {
                     newStreak = (userCurrent.streak || 0) + 1;
                 } else {
-                    // إذا فوّت أياماً يرجع العداد إلى 0 في يوم العودة ثم يبدأ بـ 1 من الغد
                     newStreak = 0;
                     _wasBrokenBeforeClaim = false;
                 }
             } else {
-                // أول استلام لمستخدم جديد
                 newStreak = 1;
             }
 
@@ -437,6 +438,13 @@ const StreakManager = (function() {
                 if (typeof _onUpdate === 'function') _onUpdate(saved);
 
                 renderUI(domElements);
+
+                const cardBox = document.getElementById('streak-card-box');
+                if (cardBox) {
+                    cardBox.classList.add('streak-glow-effect');
+                    setTimeout(() => cardBox.classList.remove('streak-glow-effect'), 1000);
+                }
+
                 if (newStreak === 0) {
                     window.Telegram?.WebApp?.showAlert(`🎁 استلمت مكافأة اليوم (+${STREAK_DAILY_REWARD} نقاط)!\n⚠️ لأنك فوّت أياماً سابقة، تم تصفير عداد الستريك إلى (0 يوم). استلم غداً ليبدأ العداد في الزيادة!`);
                 } else {
@@ -550,7 +558,14 @@ const StreakManager = (function() {
                 return;
             }
 
-            const nowIso = new Date().toISOString();
+            const now = new Date();
+            if (userCurrent.last_wheel_spin && isSameDay(new Date(userCurrent.last_wheel_spin), now)) {
+                renderUI(domElements);
+                window.Telegram?.WebApp?.showAlert("⛔ لقد قمت بتدوير عجلة الحظ اليوم بالفعل!");
+                return;
+            }
+
+            const nowIso = now.toISOString();
 
             const { data: updated, error: updateErr } = await _client
                 .from('users')
