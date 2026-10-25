@@ -1,12 +1,12 @@
 /**
- * MegaTask - Ultimate Anti-VPN, Anti-Proxy, Anti-Spoofing & Anti-Multi-Account Shield v6.0 (security.js)
+ * MegaTask - Ultimate Anti-VPN, Anti-Proxy, Anti-Spoofing & Anti-Multi-Account Shield v7.0 (security.js)
  */
 const MegaSecurity = (function () {
     const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
     const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
-    const ADMIN_MASTER_ID = "875021647"; // حساب الأدمن المستثنى من حظر الـ VPN والحظر الدائم
-    const NET_CACHE_KEY = "megatask_net_check_v6";
-    const NET_CACHE_TTL_MS = 15 * 60 * 1000; // حفظ فحص الـ IP لمدة 15 دقيقة لمنع استهلاك الـ Rate Limit
+    const ADMIN_MASTER_ID = "875021647";
+    const NET_CACHE_KEY = "megatask_net_check_v7";
+    const NET_CACHE_TTL_MS = 15 * 60 * 1000;
 
     let _hardwareFp = null;
     let _deviceFp = null;
@@ -49,7 +49,10 @@ const MegaSecurity = (function () {
         "africa/khartoum": "SD"
     };
 
-    // 1. توليد بصمة العتاد (Hardware Model Signature)
+    function isAdminPage() {
+        return window.location.pathname.toLowerCase().includes("admin.html");
+    }
+
     function generateHardwareSignature() {
         try {
             const components = [];
@@ -99,7 +102,6 @@ const MegaSecurity = (function () {
         }
     }
 
-    // توليد بصمة جهاز فريدة تدمج العتاد مع معرف الجهاز المحلي لمنع حظر الهواتف المتشابهة لدى أشخاص مختلفين
     function getOrCreateDeviceFingerprint() {
         const hw = generateHardwareSignature();
         _hardwareFp = hw;
@@ -115,7 +117,6 @@ const MegaSecurity = (function () {
         }
     }
 
-    // 2. فحص متعدد الطبقات لكشف الـ VPN والـ Proxy مع Caching لمدة 15 دقيقة
     async function detectIpAndVpnMultiLayer() {
         try {
             const cachedRaw = sessionStorage.getItem(NET_CACHE_KEY);
@@ -209,6 +210,27 @@ const MegaSecurity = (function () {
         }
     }
 
+    function showOutsideTelegramBlockScreen() {
+        const stopAll = () => {
+            document.body.innerHTML = `
+                <div style="position:fixed; inset:0; background:#08090d; z-index:2147483647; display:flex; align-items:center; justify-content:center; padding:22px; text-align:center; font-family:'Segoe UI',Tahoma,sans-serif; direction:rtl; user-select:none;">
+                    <div style="background:#151821; border:2px solid #00f2ff; border-radius:24px; padding:28px 20px; max-width:365px; width:100%; box-shadow:0 0 50px rgba(0,242,255,0.25);">
+                        <div style="font-size:54px; margin-bottom:10px;">🔒</div>
+                        <h2 style="color:#00f2ff; margin:0 0 10px 0; font-size:19px;">منطقة محمية بتشفير تيليجرام</h2>
+                        <p style="color:#d1d5db; font-size:13px; line-height:1.7; margin-bottom:18px;">
+                            لحماية أرصدة المستخدمين ومنع انتحال الهوية، لا يُسمح بفتح المنصة من متصفح خارجي. يرجى فتحها من داخل البوت الرسمي فقط.
+                        </p>
+                        <a href="https://t.me/MegaTask1Bot" style="display:block; width:100%; background:linear-gradient(135deg,#00d26a,#009e4f); color:#000; text-decoration:none; padding:13px; border-radius:12px; font-weight:900; font-size:14px;">
+                            🤖 فتح بوت MegaTask الرسمي
+                        </a>
+                    </div>
+                </div>
+            `;
+        };
+        stopAll();
+        setTimeout(stopAll, 300);
+    }
+
     function showVpnBlockScreen(reasonDetail, ipAddr) {
         try { sessionStorage.removeItem(NET_CACHE_KEY); } catch (e) {}
         const stopAll = () => {
@@ -288,14 +310,16 @@ const MegaSecurity = (function () {
         return pool[0];
     }
 
-    // 3. استخراج والتحقق الصارم من هوية المستخدم الحقيقية (منع التلاعب بـ ?id= في الرابط)
+    // استخراج صارم لهوية المستخدم من جلسة تليجرام الموقعة ومنع التزوير عبر الرابط (?id=)
     function getVerifiedUserId(passedTid) {
-        const tgUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+        const tgApp = window.Telegram?.WebApp;
+        const tgUserId = tgApp?.initDataUnsafe?.user?.id;
+        const tgInitData = tgApp?.initData || "";
         const urlId = new URLSearchParams(window.location.search).get('id');
 
         if (tgUserId) {
             const realIdStr = String(tgUserId).trim();
-            if (urlId && String(urlId).trim() !== realIdStr && realIdStr !== ADMIN_MASTER_ID) {
+            if (urlId && String(urlId).trim() !== realIdStr) {
                 try {
                     const newUrl = new URL(window.location.href);
                     newUrl.searchParams.set('id', realIdStr);
@@ -305,18 +329,41 @@ const MegaSecurity = (function () {
             try {
                 localStorage.setItem('telegram_id', realIdStr);
                 localStorage.setItem('megatask_uid', realIdStr);
+                if (tgInitData) {
+                    sessionStorage.setItem('megatask_tg_init_data', tgInitData);
+                }
             } catch (e) {}
             return realIdStr;
         }
 
-        const rawFallback = String(passedTid || urlId || localStorage.getItem('telegram_id') || localStorage.getItem('megatask_uid') || "").trim();
-        const cleanDigits = rawFallback.replace(/[^\d]/g, "");
-        return cleanDigits;
+        // السماح بالتنقل الداخلي بين الصفحات إذا كانت جلسة تليجرام موثقة في نفس الجلسة (sessionStorage)
+        const cachedSessionInitData = sessionStorage.getItem('megatask_tg_init_data');
+        const savedTid = localStorage.getItem('telegram_id') || localStorage.getItem('megatask_uid');
+        if (cachedSessionInitData && savedTid) {
+            return String(savedTid).replace(/[^\d]/g, "");
+        }
+
+        // إذا لم تكن صفحة الأدمن وتم فتحها من متصفح عادي خارج تليجرام، نمنع انتحال الـ ID
+        if (!isAdminPage()) {
+            return "";
+        }
+
+        const rawFallback = String(passedTid || urlId || savedTid || "").trim();
+        return rawFallback.replace(/[^\d]/g, "");
+    }
+
+    function getTelegramInitData() {
+        return window.Telegram?.WebApp?.initData || sessionStorage.getItem('megatask_tg_init_data') || "";
     }
 
     async function verifyDeviceAndAccount(supabaseClient, passedTid) {
         try {
             const currentTid = getVerifiedUserId(passedTid);
+
+            if (!currentTid && !isAdminPage()) {
+                showOutsideTelegramBlockScreen();
+                return { allowed: false, reason: "outside_telegram" };
+            }
 
             _deviceFp = getOrCreateDeviceFingerprint();
             const netCheck = await detectIpAndVpnMultiLayer();
@@ -331,7 +378,6 @@ const MegaSecurity = (function () {
                 return { allowed: true };
             }
 
-            // 1. فحص الحماية المحلية السريعة: هل هذا المتصفح/الهاتف مربوط مسبقاً بحساب آخر؟
             const boundMasterId = localStorage.getItem("megatask_master_owner_id");
             if (boundMasterId && boundMasterId !== currentTid && currentTid !== ADMIN_MASTER_ID && boundMasterId !== "123456789") {
                 showPermanentBanScreen(boundMasterId, currentTid, "هذا الهاتف مسجل ومربوط مسبقاً بحساب أساسي آخر. لا يُسمح بفتح حسابات متعددة على نفس الجهاز!");
@@ -354,8 +400,6 @@ const MegaSecurity = (function () {
                 return { allowed: false, reason: "already_banned" };
             }
 
-            // 2. فحص قاعدة البيانات: نشترط تطابق البصمة الفريدة (_deviceFp) أو تطابق (بصمة العتاد + نفس الـ IP مع وجود علاقة إحالة)
-            // وبذلك نمنع تماماً حظر أي مستخدمين أبرياء يمتلكون نفس نوع الهاتف في مدن أو شبكات مختلفة!
             let matchedUsers = [];
             if (_deviceFp && !_deviceFp.startsWith("HW_FALLBACK")) {
                 const { data: fpMatches } = await db
@@ -411,7 +455,6 @@ const MegaSecurity = (function () {
         }
     }
 
-    // 4. فحص قبول الإحالة (يمنع دعوة النفس سواء بنفس الهاتف أو نفس شبكة الـ Wi-Fi/IP)
     async function canAcceptReferral(supabaseClient, myTid, inviterTid) {
         const cleanMyTid = getVerifiedUserId(myTid);
         if (!inviterTid || String(cleanMyTid) === String(inviterTid)) {
@@ -450,7 +493,6 @@ const MegaSecurity = (function () {
             return { ok: false, msg: "🚫 مرفوض! لا يمكن تفعيل كود دعوة لحساب متصل من نفس شبكة الإنترنت!" };
         }
 
-        // إذا تطابق موديل العتاد مع نفس الشبكة نمنع الإحالة الوهمية
         if (inviter.device_fp && myHwPrefix && inviter.device_fp.startsWith(myHwPrefix) && inviter.last_ip === myIp) {
             return { ok: false, msg: "🚫 مرفوض! تم اكتشاف محاولة إحالة ذاتية من نفس الجهاز." };
         }
@@ -468,6 +510,7 @@ const MegaSecurity = (function () {
     return {
         verifyDeviceAndAccount: verifyDeviceAndAccount,
         canAcceptReferral: canAcceptReferral,
-        getVerifiedUserId: getVerifiedUserId
+        getVerifiedUserId: getVerifiedUserId,
+        getTelegramInitData: getTelegramInitData
     };
 })();
