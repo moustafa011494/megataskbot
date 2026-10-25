@@ -405,9 +405,9 @@
         </button>
     </div>
 
-    <!-- 5. سجل طلبات السحب السابقة -->
+    <!-- 5. سجل طلبات السحب الخاصة بالتاجر فقط -->
     <div class="section-title">
-        <span>📂 سجل طلبات السحب الخاصة بي:</span>
+        <span>📂 سجل سحوبات أرباحي كتاجر:</span>
         <button onclick="loadMyWithdrawalsHistory()" style="background:none; border:1px solid var(--cyan); color:var(--cyan); border-radius:8px; padding:4px 10px; font-size:11px; font-weight:bold; cursor:pointer;">🔄 تحديث</button>
     </div>
     <div id="my-withdrawals-list"></div>
@@ -426,8 +426,8 @@
         if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
 
         const ADMIN_MASTER_ID = "875021647";
-        const USDT_EXCHANGE_RATE = 53.0; // موحد مع باقي المنصة (53.0 ج.م لكل 1 USDT)
-        const MIN_WITHDRAW_EGP = 20;     // الحد الأدنى للسحب بالجنيه
+        const USDT_EXCHANGE_RATE = 53.0;
+        const MIN_WITHDRAW_EGP = 20;
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
@@ -458,6 +458,13 @@
 
         function escapeHtml(str) {
             return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // دالة للتفريق الصارم بين سحب أرباح التاجر وسحب نقاط المهام
+        function isPointsWithdrawalRecord(w) {
+            const m = String(w.method || "").toLowerCase();
+            const c = String(w.withdraw_code || w.tx_id || "").toUpperCase();
+            return m.includes("سحب نقاط") || m.includes("نقاط") || m.includes("points") || c.startsWith("PTS-") || c.startsWith("TX-");
         }
 
         async function initMerchantWithdrawPage() {
@@ -584,7 +591,7 @@
         }
 
         // =========================================================================
-        // 🔥 ميزة تحويل أرباح التاجر لرصيد شراء بالبوت (+2%) أو نقاط (+10%) فوراً (مؤمنة)
+        // 🔥 ميزة تحويل أرباح التاجر لرصيد شراء بالبوت (+2%) أو نقاط (+10%) فوراً
         // =========================================================================
         async function convertMerchantBalance(targetType) {
             if (!tid || !userData || isBusyAction) return;
@@ -604,7 +611,6 @@
 
             isBusyAction = true;
             try {
-                // جلب أحدث رصيد من قاعدة البيانات لحظة التنفيذ لمنع التكرار
                 const { data: freshU, error: fErr } = await client
                     .from('users')
                     .select('points, egp_balance, merchant_balance_egp, is_banned')
@@ -677,7 +683,7 @@
         }
 
         // =========================================================================
-        // 💸 إرسال طلب سحب الأرباح الخارجي وخصم المبلغ وتنبيه الأدمن فوراً
+        // 💸 إرسال طلب سحب أرباح التاجر الخارجي
         // =========================================================================
         async function submitMerchantWithdrawal() {
             if (!tid || !userData || !selectedWithdrawMethod || isBusyAction) return;
@@ -704,7 +710,6 @@
             btn.innerText = "⏳ جاري التحقق وتسجيل طلب السحب...";
 
             try {
-                // جلب أحدث رصيد للتاجر من قاعدة البيانات قبل الخصم مباشرة لمنع السحب المزدوج
                 const { data: freshU, error: fErr } = await client
                     .from('users')
                     .select('name, merchant_balance_egp, is_banned')
@@ -720,29 +725,26 @@
                     return notifyUser(`❌ رصيد أرباح مبيعاتك غير كافٍ!\nالمطلوب: ${amt.toFixed(2)} ج.م\nالمتاح الفعلي: ${realMerchAvail.toFixed(2)} ج.م`);
                 }
 
-                const wCode = "WTH-" + Math.floor(100000 + Math.random() * 900000);
+                const wCode = "MWTH-" + Math.floor(100000 + Math.random() * 900000);
                 const newMerchBal = Number((realMerchAvail - amt).toFixed(2));
                 const fullWalletDetails = note ? `${wallet} (${note})` : wallet;
 
-                // 1. خصم المبلغ من رصيد التاجر المتاح
                 const { error: uErr } = await client
                     .from('users')
                     .update({ merchant_balance_egp: newMerchBal })
                     .eq('telegram_id', tid);
                 if (uErr) throw uErr;
 
-                // 2. إدراج الطلب في جدول withdrawals
                 const { error: wErr } = await client.from('withdrawals').insert([{
                     withdraw_code: wCode,
                     telegram_id: String(tid),
                     amount: amt,
-                    method: selectedWithdrawMethod.name,
+                    method: `${selectedWithdrawMethod.name} (أرباح تاجر)`,
                     wallet_info: fullWalletDetails,
                     status: 'Pending'
                 }]);
                 if (wErr) throw wErr;
 
-                // 3. تسجيل في سجل المعاملات
                 await client.from('transactions').insert([{
                     telegram_id: String(tid),
                     type: 'withdraw',
@@ -751,7 +753,6 @@
                     status: 'قيد المراجعة'
                 }]);
 
-                // 4. إشعار فوري للأدمن في شات البوت
                 const cryptoNote = selectedWithdrawMethod.isCrypto
                     ? `\n💲 *المعادل بالـ USDT:* \`${(amt / USDT_EXCHANGE_RATE).toFixed(2)} USDT\``
                     : "";
@@ -769,7 +770,6 @@
                     status: 'pending'
                 }]);
 
-                // 5. إشعار تأكيد للتاجر في شات البوت
                 await client.from('bot_messages').insert([{
                     telegram_id: String(tid),
                     message:
@@ -801,7 +801,7 @@
         }
 
         // =========================================================================
-        // 📂 عرض سجل السحوبات + إمكانية إلغاء الطلب المعلق واسترجاع الرصيد (محمي ضد التكرار)
+        // 📂 عرض سجل سحوبات التاجر فقط (مع عزل سحوبات نقاط البوت والمهام تماماً)
         // =========================================================================
         async function loadMyWithdrawalsHistory() {
             const box = document.getElementById('my-withdrawals-list');
@@ -812,14 +812,17 @@
                 .select('*')
                 .eq('telegram_id', String(tid))
                 .order('id', { ascending: false })
-                .limit(10);
+                .limit(20);
 
-            if (!data || data.length === 0) {
-                box.innerHTML = `<div style="text-align:center; padding:18px; background:var(--card-bg); border-radius:14px; color:var(--text-muted); font-size:12px;">لا توجد طلبات سحب سابقة حتى الآن.</div>`;
+            // فلترة السجل ليظهر سحوبات أرباح التاجر فقط ويستبعد سحوبات النقاط والمهام
+            const merchantOnlyList = (data || []).filter(w => !isPointsWithdrawalRecord(w));
+
+            if (merchantOnlyList.length === 0) {
+                box.innerHTML = `<div style="text-align:center; padding:18px; background:var(--card-bg); border-radius:14px; color:var(--text-muted); font-size:12px;">لا توجد طلبات سحب أرباح تاجر سابقة حتى الآن.</div>`;
                 return;
             }
 
-            box.innerHTML = data.map(w => {
+            box.innerHTML = merchantOnlyList.map(w => {
                 let stHtml = `<span style="color:var(--gold);">⏳ قيد التنفيذ</span>`;
                 if (w.status === 'Completed' || w.status === 'Approved') stHtml = `<span style="color:var(--emerald);">✅ تم التحويل</span>`;
                 if (w.status === 'Rejected' || w.status === 'Cancelled') stHtml = `<span style="color:var(--crimson);">↩️ ملغي / مسترد</span>`;
@@ -845,18 +848,36 @@
 
         async function cancelPendingWithdrawal(wId, amount) {
             if (isBusyAction) return;
-            if (!confirm(`هل تريد إلغاء طلب السحب هذا وإرجاع مبلغ (${Number(amount).toFixed(2)} ج.م) إلى محفظة أرباحك فوراً؟`)) return;
+            if (!confirm(`هل تريد إلغاء طلب سحب التاجر هذا وإرجاع مبلغ (${Number(amount).toFixed(2)} ج.م) إلى محفظة أرباحك فوراً؟`)) return;
 
             isBusyAction = true;
             try {
-                // تحديث ذري مشروط بأن تكون الحالة Pending فقط لمنع الضغط المزدوج واسترداد المبلغ مرتين
+                // 1. فحص الطلب من قاعدة البيانات أولاً للتأكد من أنه طلب سحب تاجر وليس طلب سحب نقاط
+                const { data: checkW, error: chkErr } = await client
+                    .from('withdrawals')
+                    .select('*')
+                    .eq('id', wId)
+                    .eq('telegram_id', String(tid))
+                    .eq('status', 'Pending')
+                    .maybeSingle();
+
+                if (chkErr || !checkW) {
+                    await loadMyWithdrawalsHistory();
+                    return notifyUser("⚠️ لا يمكن إلغاء هذا الطلب لأنه تم تنفيذه أو إلغاؤه بالفعل.");
+                }
+
+                if (isPointsWithdrawalRecord(checkW)) {
+                    return notifyUser("🚫 هذا الطلب خاص بسحب نقاط المهام وليس أرباح التاجر، لا يمكن استرداده إلى محفظة التاجر!");
+                }
+
+                // 2. تحديث ذري مشروط بأن تكون الحالة Pending
                 const { data: updatedW, error: wErr } = await client
                     .from('withdrawals')
                     .update({ status: 'Cancelled' })
                     .eq('id', wId)
                     .eq('telegram_id', String(tid))
                     .eq('status', 'Pending')
-                    .select('id, amount');
+                    .select('id, amount, method, withdraw_code');
 
                 if (wErr || !updatedW || updatedW.length === 0) {
                     await loadMyWithdrawalsHistory();
