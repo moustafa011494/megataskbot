@@ -21,7 +21,7 @@
             --gold: #ffaa00; 
         }
         * { box-sizing: border-box; }
-        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 16px; margin: 0; padding-bottom: 60px; }
+        body { background: var(--bg-dark); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; padding: 16px; margin: 0; padding-bottom: 60px; scroll-behavior: smooth; }
         h1 { color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); margin: 0; font-size: 20px; }
         h3 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; font-size: 15px; }
         
@@ -68,7 +68,10 @@
             border-radius: 16px;
             padding: 12px 10px;
             text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
         }
+        .stat-box:hover { border-color: var(--neon-blue); transform: translateY(-2px); }
         .stat-box span { font-size: 11.5px; color: #9ca3af; display: block; margin-bottom: 4px; }
         .stat-box b { font-size: 20px; font-weight: 900; color: var(--neon-blue); }
 
@@ -88,6 +91,16 @@
         .methods-review-card { border-top: 4px solid var(--neon-purple); }
         .admin-method-card { border-top: 4px solid #ffaa00; }
         .user-wallet-card { border-top: 4px solid var(--neon-blue); }
+
+        .section-badge {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
 
         input, textarea, select { width: 100%; padding: 11px 12px; margin: 7px 0; background: #000; border: 1px solid #444; color: white; border-radius: 10px; outline: none; font-family: inherit; }
         input:focus, textarea:focus, select:focus { border-color: var(--neon-blue); }
@@ -213,35 +226,35 @@
 
     <div id="db-status-bar">⏳ جاري الاتصال بقاعدة البيانات وسحب الأقسام...</div>
 
-    <!-- 📊 شريط الإحصائيات السريعة العلوي -->
+    <!-- 📊 شريط الإحصائيات السريعة العلوي (مع خاصية التمرير التلقائي للأقسام) -->
     <div class="top-stats-grid">
-        <div class="stat-box">
+        <div class="stat-box" onclick="scrollToSection('user-wallet-card-sec')">
             <span>👥 إجمالي الأعضاء</span>
             <b id="st-total-users">0</b>
         </div>
-        <div class="stat-box">
+        <div class="stat-box" onclick="scrollToSection('orders-card-sec')">
             <span>🤝 صفقات جارية</span>
             <b id="st-active-deals" style="color: var(--gold);">0</b>
         </div>
-        <div class="stat-box">
+        <div class="stat-box" onclick="scrollToSection('dispute-card-sec')">
             <span>🚨 نزاعات مفتوحة</span>
             <b id="st-open-disputes" style="color: var(--red);">0</b>
         </div>
-        <div class="stat-box">
+        <div class="stat-box" onclick="scrollToSection('deposit-card-sec')">
             <span>📥 إيداعات معلقة</span>
             <b id="st-pend-deposits" style="color: var(--main-green);">0</b>
         </div>
-        <div class="stat-box">
+        <div class="stat-box" onclick="scrollToSection('merchant-w-card-sec')">
             <span>💸 سحوبات معلقة</span>
             <b id="st-pend-withdraws" style="color: var(--orange);">0</b>
         </div>
-        <div class="stat-box">
+        <div class="stat-box" onclick="scrollToSection('tickets-card-sec')">
             <span>🎧 تذاكر الدعم</span>
             <b id="st-pend-tickets" style="color: var(--neon-purple);">0</b>
         </div>
     </div>
 
-    <!-- 🔍 00. رادار البحث الذكي بالأكواد -->
+    <!-- 🔍 01. رادار البحث الذكي بالأكواد -->
     <div class="card search-hub-card">
         <h3 onclick="toggleCard(this)" style="color: var(--gold);">🔍 رادار البحث بالأكواد (ESC / ORD / PRD / WTH / TKT) <span class="arrow-icon open">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
@@ -253,58 +266,37 @@
         </div>
     </div>
 
-    <!-- 🔌 00-A. كتالوج المورد التلقائي (Bunny Store API) -->
-    <div class="card bunny-api-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🔌 كتالوج المورد التلقائي (Bunny Store API) <span class="arrow-icon open">▼</span></h3>
-        <div class="collapsible-body" style="display: block;">
-            <div class="bunny-balance-banner">
-                <div>
-                    <span style="font-size: 12px; color: #9ca3af; display: block;">💳 رصيد محفظتنا الحالي عند المورد (Bunny Store):</span>
-                    <b id="bunny-wallet-usd" style="font-size: 20px; color: var(--main-green);">$0.00 USD</b>
-                    <span id="bunny-wallet-egp" style="font-size: 12px; color: var(--gold); margin-right: 8px;">(≈ 0.00 ج.م)</span>
-                    <div id="bunny-last-sync" style="font-size: 11px; color: #888; margin-top: 3px;">آخر مزامنة: ---</div>
-                </div>
-                <button class="method-btn" style="width: auto; margin: 0; padding: 10px 16px; font-size: 12.5px;" onclick="loadBunnySupplierCatalog(true)">🔄 تحديث الكتالوج</button>
-            </div>
-
-            <input type="text" id="bunny-search-inp" placeholder="🔍 ابحث في منتجات المورد (مثلاً: CapCut, Canva, Netflix)..." oninput="renderBunnyCatalogList()">
-            <div id="bunny-catalog-list" class="list-container" style="max-height: 360px;">⏳ جاري جلب منتجات المورد من supplier_catalog...</div>
-        </div>
-    </div>
-
-    <!-- 🎁 00-B. إدارة وإنشاء أكواد الهدايا والمسابقات (Promo Codes) -->
-    <div class="card promo-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🎁 إنشاء وإدارة أكواد الهدايا والمسابقات (Promo Codes) <span class="arrow-icon open">▼</span></h3>
-        <div class="collapsible-body" style="display: block;">
-            <div style="display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 8px;">
-                <input type="text" id="promo-code-inp" placeholder="الكود (مثلاً: MEGA50)" style="text-transform: uppercase; font-weight: bold; color: var(--gold);">
-                <select id="promo-type-inp">
-                    <option value="points">🪙 هدية نقاط</option>
-                    <option value="egp">💵 هدية جنيه (EGP)</option>
-                </select>
-                <input type="number" id="promo-amount-inp" placeholder="القيمة (مثلاً: 50)" step="0.5">
-                <input type="number" id="promo-max-inp" placeholder="لأول كام عضو؟" value="100">
-            </div>
-            <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
-                <button class="deposit-btn" style="margin-top: 0; flex: 2;" onclick="createAdminPromoCode(false)">➕ إنشاء الكود فقط</button>
-                <button class="method-btn" style="margin-top: 0; flex: 2;" onclick="createAdminPromoCode(true)">🚀 إنشاء وإرسال إشعار جماعي للكل</button>
-                <button class="edit-btn" style="flex: 1;" onclick="generateRandomPromoName()">🎲 كود عشوائي</button>
-            </div>
-            <div id="promo-codes-list" class="list-container" style="max-height: 240px;">⏳ جاري جلب الأكواد...</div>
-        </div>
-    </div>
-
-    <!-- 🚨 01. غرفة فض النزاعات العاجلة في الوساطة المالية -->
-    <div class="card dispute-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--red);">🚨 نزاعات الوساطة المالية المفتوحة (Disputes) <span class="arrow-icon open">▼</span></h3>
+    <!-- 🚨 02. غرفة فض النزاعات العاجلة (مع عداد الأقسام) -->
+    <div class="card dispute-card" id="dispute-card-sec">
+        <h3 onclick="toggleCard(this)" style="color: var(--red);">
+            <span>🚨 نزاعات الوساطة المالية المفتوحة (Disputes)</span>
+            <span id="badge-disputes" class="section-badge">0 جديد</span>
+            <span class="arrow-icon open">▼</span>
+        </h3>
         <div class="collapsible-body" style="display: block;">
             <div id="escrow-disputes-list" class="list-container">⏳ جاري فحص النزاعات...</div>
         </div>
     </div>
 
-    <!-- 💼 02. طلبات سحب أرباح التجار وسحوبات النقاط -->
-    <div class="card merchant-w-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--gold);">💼 طلبات السحب الواردة (أرباح التجار 💼 + سحوبات النقاط 🪙) <span class="arrow-icon open">▼</span></h3>
+    <!-- 📥 03. طلبات شحن الجنيه (مع عداد الأقسام) -->
+    <div class="card deposit-card" id="deposit-card-sec">
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">
+            <span>📥 طلبات شحن الجنيه الواردة</span>
+            <span id="badge-deposits" class="section-badge">0 جديد</span>
+            <span class="arrow-icon">▼</span>
+        </h3>
+        <div class="collapsible-body" style="display: block;">
+            <div id="deposits-requests-list" class="list-container">⏳ جاري فحص طلبات الإيداع...</div>
+        </div>
+    </div>
+
+    <!-- 💼 04. طلبات سحب أرباح التجار وسحوبات النقاط (مع عداد الأقسام) -->
+    <div class="card merchant-w-card" id="merchant-w-card-sec">
+        <h3 onclick="toggleCard(this)" style="color: var(--gold);">
+            <span>💼 طلبات السحب الواردة (أرباح التجار 💼 + سحوبات النقاط 🪙)</span>
+            <span id="badge-withdraws" class="section-badge">0 جديد</span>
+            <span class="arrow-icon open">▼</span>
+        </h3>
         <div class="collapsible-body" style="display: block;">
             <div id="withdraw-list" class="list-container">⏳ جاري فحص طلبات السحب...</div>
             <hr style="border-color:#333; margin:16px 0;">
@@ -317,88 +309,27 @@
         </div>
     </div>
 
-    <!-- 🎧 03. تذاكر الدعم الفني وبلاغات الثغرات -->
-    <div class="card tickets-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">🎧 تذاكر الدعم وبلاغات الثغرات (Bug Bounty) <span class="arrow-icon open">▼</span></h3>
+    <!-- 🎧 05. تذاكر الدعم وبلاغات الثغرات (مع عداد الأقسام) -->
+    <div class="card tickets-card" id="tickets-card-sec">
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">
+            <span>🎧 تذاكر الدعم وبلاغات الثغرات (Bug Bounty)</span>
+            <span id="badge-tickets" class="section-badge">0 جديد</span>
+            <span class="arrow-icon open">▼</span>
+        </h3>
         <div class="collapsible-body" style="display: block;">
             <div id="support-tickets-list" class="list-container">⏳ جاري فحص التذاكر...</div>
         </div>
     </div>
 
-    <!-- 📥 2. طلبات الإيداع الواردة -->
-    <div class="card deposit-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">📥 طلبات شحن الجنيه الواردة <span class="arrow-icon open">▼</span></h3>
-        <div class="collapsible-body" style="display: block;">
-            <div id="deposits-requests-list" class="list-container">⏳ جاري فحص طلبات الإيداع...</div>
-        </div>
-    </div>
-
-    <!-- 🛒 6. طلبات الشراء وصفقات الضمان الجارية -->
-    <div class="card orders-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 الطلبات وصفقات الضمان الجارية (Escrow Orders) <span class="arrow-icon open">▼</span></h3>
+    <!-- 🛒 06. الطلبات وصفقات الضمان الجارية -->
+    <div class="card orders-card" id="orders-card-sec">
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 الطلبات وصفقات الضمان الجارية (Escrow Orders) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
             <div id="store-orders-list" class="list-container">⏳ جاري فحص الطلبات...</div>
         </div>
     </div>
 
-    <!-- ⏳ 5. منتجات الأعضاء المعلقة -->
-    <div class="card pending-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ سلع التجار المعلقة للمراجعة <span class="arrow-icon">▼</span></h3>
-        <div class="collapsible-body">
-            <div id="pending-store-list" class="list-container">⏳ جاري الفحص...</div>
-        </div>
-    </div>
-
-    <!-- 📢 04. إرسال إشعار وإذاعة جماعية لكل المستخدمين -->
-    <div class="card broadcast-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-purple);">📢 إرسال إشعار جماعي لكل مستخدمي البوت (Broadcast) <span class="arrow-icon">▼</span></h3>
-        <div class="collapsible-body">
-            <input type="text" id="bc-title-inp" placeholder="عنوان الإشعار (مثلاً: 🔥 تحديث جديد وعروض نارية في المتجر!)">
-            <textarea id="bc-msg-inp" rows="3" placeholder="اكتب نص الرسالة الجماعية هنا... ستصل لكل المستخدمين في محادثة البوت وداخل المنصة!"></textarea>
-            <button id="btn-send-bc" class="main-btn" onclick="sendCustomBroadcast()">🚀 إرسال الإشعار لجميع الأعضاء الآن</button>
-        </div>
-    </div>
-
-    <!-- 👤 0. إدارة أرصدة المستخدمين وفك الحظر يدوياً -->
-    <div class="card user-wallet-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">👤 إدارة حسابات وأرصدة المستخدمين وفك الحظر <span class="arrow-icon">▼</span></h3>
-        <div class="collapsible-body">
-            <div style="display: flex; gap: 10px;">
-                <input type="text" id="search-user-id" placeholder="أدخل Telegram ID للمستخدم..." style="margin: 0;">
-                <button class="method-btn" style="margin: 0; width: 160px; padding: 12px;" onclick="searchUserWallet()">بحث 🔍</button>
-            </div>
-            <div id="user-wallet-result" style="display:none; background:#111; padding:15px; border-radius:12px; margin-top:15px; border:1px solid #333;">
-                <div id="user-wallet-info" style="font-size:13.5px; line-height:1.8; margin-bottom:12px;"></div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <select id="wallet-adjust-currency">
-                        <option value="egp">💵 رصيد الشراء الأساسي (EGP)</option>
-                        <option value="merchant_egp">💼 رصيد أرباح التاجر (EGP)</option>
-                        <option value="points">🪙 رصيد النقاط (Points)</option>
-                    </select>
-                    <input type="number" id="wallet-adjust-amount" placeholder="المبلغ (+ للإضافة / - للخصم)" step="0.5">
-                </div>
-                <input type="text" id="wallet-adjust-reason" placeholder="سبب التعديل (اختياري)">
-                <div style="display: flex; gap: 10px; margin-top: 8px;">
-                    <button class="deposit-btn" style="flex: 2; margin-top: 0;" onclick="applyUserWalletAdjustment()">تنفيذ التعديل ✅</button>
-                    <button id="btn-toggle-ban" class="del-btn" style="flex: 1;" onclick="toggleUserBanStatus()">حظر / فك حظر 🚫</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 1. إدارة وسائل الإيداع -->
-    <div class="card deposit-card">
-        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">💰 إدارة وسائل الشحن والإيداع <span class="arrow-icon">▼</span></h3>
-        <div class="collapsible-body">
-            <input type="text" id="deposit-name" placeholder="اسم وسيلة الإيداع (مثلاً: فودافون كاش / InstaPay)">
-            <input type="text" id="deposit-desc" placeholder="تفاصيل التحويل أو الرقم">
-            <input type="file" id="deposit-logo-file" accept="image/*" onchange="previewDepositLogo(this)">
-            <button class="deposit-btn" onclick="addDepositMethod()">إضافة وسيلة إيداع جديدة 🚀</button>
-            <div id="deposit-methods-list" class="list-container" style="max-height: 220px;">⏳ جاري التحميل...</div>
-        </div>
-    </div>
-
-    <!-- 3. إضافة منتج جديد للمتجر الرسمي -->
+    <!-- 🛍️ 07. إضافة منتج جديد للمتجر الرسمي -->
     <div class="card store-card" id="add-store-product-card">
         <h3 id="add-store-product-header" onclick="toggleCard(this)" style="color: var(--neon-blue);">🛍️ إضافة منتج جديد للمتجر الرسمي (عادي / تسليم فوري / ربط Bunny API 🔌) <span class="arrow-icon open">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
@@ -467,6 +398,25 @@
                 <div id="admin-profit-preview" style="color: var(--main-green); font-size: 12.5px; font-weight: bold; margin-top: 6px;">💰 صافي ربحك: 0</div>
             </div>
 
+            <!-- 🔌 08. كتالوج المورد التلقائي (Bunny Store API) تم نقله هنا تحت قسم إضافة منتج كما طلبت -->
+            <div class="card bunny-api-card" style="margin: 10px 0 0 0; padding: 14px;">
+                <h3 onclick="toggleCard(this)" style="color: var(--neon-blue); font-size: 14px; margin-bottom: 0;">🔌 كتالوج المورد التلقائي (Bunny Store API) <span class="arrow-icon open">▼</span></h3>
+                <div class="collapsible-body" style="display: block;">
+                    <div class="bunny-balance-banner">
+                        <div>
+                            <span style="font-size: 12px; color: #9ca3af; display: block;">💳 رصيد محفظتنا الحالي عند المورد (Bunny Store):</span>
+                            <b id="bunny-wallet-usd" style="font-size: 18px; color: var(--main-green);">$0.00 USD</b>
+                            <span id="bunny-wallet-egp" style="font-size: 11.5px; color: var(--gold); margin-right: 6px;">(≈ 0.00 ج.م)</span>
+                            <div id="bunny-last-sync" style="font-size: 10.5px; color: #888; margin-top: 2px;">آخر مزامنة: ---</div>
+                        </div>
+                        <button class="method-btn" style="width: auto; margin: 0; padding: 8px 12px; font-size: 11.5px;" onclick="loadBunnySupplierCatalog(true)">🔄 تحديث الكتالوج</button>
+                    </div>
+
+                    <input type="text" id="bunny-search-inp" placeholder="🔍 ابحث في منتجات المورد..." oninput="renderBunnyCatalogList()">
+                    <div id="bunny-catalog-list" class="list-container" style="max-height: 300px;">⏳ جاري جلب منتجات المورد...</div>
+                </div>
+            </div>
+
             <div style="background: rgba(188, 19, 254, 0.06); border: 1px dashed var(--neon-purple); border-radius: 12px; padding: 10px; margin: 8px 0;">
                 <label style="font-size: 12px; color: #e9d5ff; font-weight: bold;">⚡ أكواد التسليم التلقائي المحلي (للمنتجات غير المربوطة بـ API - كل كود في سطر):</label>
                 <textarea id="store-auto-stock" rows="2" placeholder="اتركه فارغاً إذا كان المنتج مربوطاً بـ Bunny API، أو ضع أكواداً محلية هنا..." oninput="syncAdminAutoStockTarget()"></textarea>
@@ -481,7 +431,7 @@
         </div>
     </div>
 
-    <!-- 4. قائمة وتعديل منتجات المتجر الرسمية -->
+    <!-- 📦 09. إحصائيات وإدارة منتجات المتجر -->
     <div class="card store-card">
         <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">📦 إحصائيات وإدارة منتجات المتجر <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -489,7 +439,78 @@
         </div>
     </div>
 
-    <!-- 7. إضافة ميثود رسمية جديدة -->
+    <!-- 🎁 10. إنشاء وإدارة أكواد الهدايا (Promo Codes) -->
+    <div class="card promo-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🎁 إنشاء وإدارة أكواد الهدايا والمسابقات (Promo Codes) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body" style="display: block;">
+            <div style="display: grid; grid-template-columns: 1.3fr 1fr 1fr 1fr; gap: 8px;">
+                <input type="text" id="promo-code-inp" placeholder="الكود (مثلاً: MEGA50)" style="text-transform: uppercase; font-weight: bold; color: var(--gold);">
+                <select id="promo-type-inp">
+                    <option value="points">🪙 هدية نقاط</option>
+                    <option value="egp">💵 هدية جنيه (EGP)</option>
+                </select>
+                <input type="number" id="promo-amount-inp" placeholder="القيمة (مثلاً: 50)" step="0.5">
+                <input type="number" id="promo-max-inp" placeholder="لأول كام عضو؟" value="100">
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
+                <button class="deposit-btn" style="margin-top: 0; flex: 2;" onclick="createAdminPromoCode(false)">➕ إنشاء الكود فقط</button>
+                <button class="method-btn" style="margin-top: 0; flex: 2;" onclick="createAdminPromoCode(true)">🚀 إنشاء وإرسال إشعار جماعي للكل</button>
+                <button class="edit-btn" style="flex: 1;" onclick="generateRandomPromoName()">🎲 كود عشوائي</button>
+            </div>
+            <div id="promo-codes-list" class="list-container" style="max-height: 240px;">⏳ جاري جلب الأكواد...</div>
+        </div>
+    </div>
+
+    <!-- 📢 11. إرسال إشعار جماعي (Broadcast) -->
+    <div class="card broadcast-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-purple);">📢 إرسال إشعار جماعي لكل مستخدمي البوت (Broadcast) <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <input type="text" id="bc-title-inp" placeholder="عنوان الإشعار (مثلاً: 🔥 تحديث جديد وعروض نارية في المتجر!)">
+            <textarea id="bc-msg-inp" rows="3" placeholder="اكتب نص الرسالة الجماعية هنا... ستصل لكل المستخدمين في محادثة البوت وداخل المنصة!"></textarea>
+            <button id="btn-send-bc" class="main-btn" onclick="sendCustomBroadcast()">🚀 إرسال الإشعار لجميع الأعضاء الآن</button>
+        </div>
+    </div>
+
+    <!-- 👤 12. إدارة أرصدة المستخدمين وفك الحظر -->
+    <div class="card user-wallet-card" id="user-wallet-card-sec">
+        <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">👤 إدارة حسابات وأرصدة المستخدمين وفك الحظر <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="search-user-id" placeholder="أدخل Telegram ID للمستخدم..." style="margin: 0;">
+                <button class="method-btn" style="margin: 0; width: 160px; padding: 12px;" onclick="searchUserWallet()">بحث 🔍</button>
+            </div>
+            <div id="user-wallet-result" style="display:none; background:#111; padding:15px; border-radius:12px; margin-top:15px; border:1px solid #333;">
+                <div id="user-wallet-info" style="font-size:13.5px; line-height:1.8; margin-bottom:12px;"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <select id="wallet-adjust-currency">
+                        <option value="egp">💵 رصيد الشراء الأساسي (EGP)</option>
+                        <option value="merchant_egp">💼 رصيد أرباح التاجر (EGP)</option>
+                        <option value="points">🪙 رصيد النقاط (Points)</option>
+                    </select>
+                    <input type="number" id="wallet-adjust-amount" placeholder="المبلغ (+ للإضافة / - للخصم)" step="0.5">
+                </div>
+                <input type="text" id="wallet-adjust-reason" placeholder="سبب التعديل (اختياري)">
+                <div style="display: flex; gap: 10px; margin-top: 8px;">
+                    <button class="deposit-btn" style="flex: 2; margin-top: 0;" onclick="applyUserWalletAdjustment()">تنفيذ التعديل ✅</button>
+                    <button id="btn-toggle-ban" class="del-btn" style="flex: 1;" onclick="toggleUserBanStatus()">حظر / فك حظر 🚫</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 💰 13. إدارة وسائل الشحن والإيداع -->
+    <div class="card deposit-card">
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">💰 إدارة وسائل الشحن والإيداع <span class="arrow-icon">▼</span></h3>
+        <div class="collapsible-body">
+            <input type="text" id="deposit-name" placeholder="اسم وسيلة الإيداع (مثلاً: فودافون كاش / InstaPay)">
+            <input type="text" id="deposit-desc" placeholder="تفاصيل التحويل أو الرقم">
+            <input type="file" id="deposit-logo-file" accept="image/*" onchange="previewDepositLogo(this)">
+            <button class="deposit-btn" onclick="addDepositMethod()">إضافة وسيلة إيداع جديدة 🚀</button>
+            <div id="deposit-methods-list" class="list-container" style="max-height: 220px;">⏳ جاري التحميل...</div>
+        </div>
+    </div>
+
+    <!-- 💡 14. الميثودات والمهام الإدارية -->
     <div class="card admin-method-card">
         <h3 onclick="toggleCard(this)" style="color: #ffaa00;">💡 إضافة ميثود رسمية جديدة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -501,7 +522,6 @@
         </div>
     </div>
 
-    <!-- 8. قائمة وتعديل الميثودات المنشورة -->
     <div class="card">
         <h3 onclick="toggleCard(this)">🔓 إدارة وتعديل الميثودات المنشورة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -509,7 +529,6 @@
         </div>
     </div>
 
-    <!-- 9. مراجعة ميثودات الأعضاء الجديدة -->
     <div class="card methods-review-card">
         <h3 onclick="toggleCard(this)" style="color: var(--neon-purple);">💡 ميثودات الأعضاء (قيد المراجعة) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -517,7 +536,6 @@
         </div>
     </div>
 
-    <!-- 10. إضافة مهمة إدارية مباشرة -->
     <div class="card task-card">
         <h3 onclick="toggleCard(this)">➕ إضافة مهمة جديدة مباشرة <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -536,7 +554,6 @@
         </div>
     </div>
 
-    <!-- 11. مراجعة إثباتات مهام الأدمن -->
     <div class="card pending-card">
         <h3 onclick="toggleCard(this)" style="color: var(--orange);">🔍 مراجعة إثباتات وتنفيذات المهام <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -544,7 +561,6 @@
         </div>
     </div>
 
-    <!-- 12. مهام المستخدمين (قيد المراجعة) -->
     <div class="card pending-card">
         <h3 onclick="toggleCard(this)" style="color: var(--orange);">⏳ مهام المستخدمين (قيد المراجعة) <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -552,7 +568,6 @@
         </div>
     </div>
 
-    <!-- 13. المهام النشطة الحالية -->
     <div class="card">
         <h3 onclick="toggleCard(this)">📋 المهام النشطة الحالية <span class="arrow-icon">▼</span></h3>
         <div class="collapsible-body">
@@ -713,7 +728,21 @@
             .trim();
     }
 
-    // 🔒 كبسولة القفل المعزولة (IIFE Closure) لمنع استخراج الـ OTP أو فتح اللوحة من الـ Console
+    // دالة الانتقال السلس للأقسام عند الضغط على الكروت العلوية
+    function scrollToSection(secId) {
+        var el = document.getElementById(secId);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // فتح الكارت تلقائياً إذا كان مغلقاً
+            var body = el.querySelector('.collapsible-body');
+            var arrow = el.querySelector('.arrow-icon');
+            if (body && body.style.display !== 'block') {
+                body.style.display = 'block';
+                if (arrow) arrow.classList.add('open');
+            }
+        }
+    }
+
     (function setupIsolatedAdminSecurity() {
         var _privateOtp = null;
         var _privateOtpExpiry = 0;
@@ -867,7 +896,7 @@
         try {
             var dRes = await client.from('deposits').select('id').eq('status', 'Pending');
             var wRes = await client.from('withdrawals').select('id').eq('status', 'Pending');
-            var oRes = await client.from('store_orders').select('id').in('status', ['Pending', 'Escrow_Held', 'Delivered', 'Disputed']);
+            var oRes = await client.from('store_orders').select('id').in('status', ['Pending', 'Escrow_Held', 'Disputed']);
             var tRes = await client.from('support_tickets').select('id').eq('status', 'Pending');
 
             var totalNow =
@@ -875,6 +904,17 @@
                 ((wRes.data && wRes.data.length) || 0) +
                 ((oRes.data && oRes.data.length) || 0) +
                 ((tRes.data && tRes.data.length) || 0);
+
+            // تحديث شارات العدادات الجديدة في الأقسام
+            var dCount = (dRes.data && dRes.data.length) || 0;
+            var wCount = (wRes.data && wRes.data.length) || 0;
+            var dispCount = (oRes.data && oRes.data.length) || 0;
+            var tCount = (tRes.data && tRes.data.length) || 0;
+
+            document.getElementById('badge-deposits').innerText = dCount + ' جديد';
+            document.getElementById('badge-withdraws').innerText = wCount + ' جديد';
+            document.getElementById('badge-disputes').innerText = dispCount + ' جديد';
+            document.getElementById('badge-tickets').innerText = tCount + ' جديد';
 
             if (lastTotalPendingItems !== null && totalNow > lastTotalPendingItems) {
                 var diff = totalNow - lastTotalPendingItems;
@@ -910,9 +950,6 @@
         }
     }
 
-    // =========================================================================
-    // 🔌 دوال إدارة كتالوج المورد (Bunny Store API) والتسعير الذكي
-    // =========================================================================
     async function loadBunnySupplierCatalog(manualNotify) {
         var listDiv = document.getElementById('bunny-catalog-list');
         if (!listDiv) return;
@@ -931,7 +968,7 @@
                 document.getElementById('bunny-wallet-usd').innerText = '$' + balUsd.toFixed(2) + ' USD';
                 document.getElementById('bunny-wallet-egp').innerText = '(≈ ' + balEgp.toFixed(2) + ' ج.م)';
                 if (firstRow.updated_at) {
-                    document.getElementById('bunny-last-sync').innerText = 'آخر مزامنة مع المورد: ' + new Date(firstRow.updated_at).toLocaleString('ar-EG');
+                    document.getElementById('bunny-last-sync').innerText = 'آخر مزامنة: ' + new Date(firstRow.updated_at).toLocaleString('ar-EG');
                 }
             }
 
@@ -988,14 +1025,14 @@
                 '<div style="margin-bottom:4px;">' +
                 '<span class="code-pill">#' + parseInt(item.external_id, 10) + '</span> ' +
                 pubBadge +
-                '<b style="font-size:14px; color:#fff;">' + escapeHtml(cleanName) + '</b>' +
+                '<b style="font-size:13.5px; color:#fff;">' + escapeHtml(cleanName) + '</b>' +
                 '</div>' +
-                '<div style="font-size:12px; color:#ccc;">' +
+                '<div style="font-size:11.5px; color:#ccc;">' +
                 '💲 التكلفة: <b style="color:var(--gold);">$' + usd.toFixed(2) + '</b> (' + egp.toFixed(2) + ' ج.م) | ' +
                 stockBadge + ' | 🛡️ الضمان: ' + escapeHtml(cleanWarranty) +
                 '</div>' +
                 '</div>' +
-                '<button class="method-btn" style="width:auto; margin:0; padding:9px 14px; font-size:12px;" onclick="selectBunnyItemForPricing(' + parseInt(item.external_id, 10) + ')">➕ اختيار وتعديل للتسعير</button>' +
+                '<button class="method-btn" style="width:auto; margin:0; padding:8px 12px; font-size:11.5px;" onclick="selectBunnyItemForPricing(' + parseInt(item.external_id, 10) + ')">➕ اختيار وتسعير</button>' +
                 '</div>';
         });
 
@@ -1035,7 +1072,7 @@
 
         recalculateDynamicSellingPrice();
         cardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        showToastAlert('🔌 تم تعبئة بيانات المنتج (#' + parseInt(item.external_id, 10) + ')! عدّل الاسم والربح ثم اضغط نشر.');
+        showToastAlert('🔌 تم تعبئة بيانات المنتج (#' + parseInt(item.external_id, 10) + ') في قسم إضافة منتج بالأعلى!');
     }
 
     function clearBunnyLinkFields() {
@@ -1173,7 +1210,7 @@
         if (withBroadcast) {
             await broadcastToAllUsers(
                 '🎁 كود هدية مجاني جديد!',
-                'تم طرح كود هدية جديد لأول *' + maxU + ' عضو* فقط!\n\n🎟️ *الكود:* `' + code + '`\n💰 *الهدية:* *+' + rAmt + ' ' + unit + '*\n\nادخل الآن واضغط (🎁 كود هدية) في الصفحة الرئيسية أو أرسل الكود للبوت لاستلام هديتك فوراً!'
+                'تم طرح كود هدية جديد لأول *' + maxU + ' عضو* فقط!\n\n🎟️ *الكود:* `' + code + '`\n💰 *الهدية:* *+' + rAmt + ' ' + unit + '*\n\nادخل الآن واضغط (🎁 كود هدية) في الصفحة الرئيسية أو أرسل الكود لاستلام هديتك فوراً!'
             );
         }
 
@@ -1784,7 +1821,6 @@
         loadStoreAndOrdersFast();
     }
 
-    // دالة التفريق بين طلب سحب النقاط وطلب سحب أرباح التاجر
     function isPointsWithdrawalRow(w) {
         var m = String(w.method || '').toLowerCase();
         var c = String(w.withdraw_code || w.tx_id || '').toUpperCase();
@@ -1861,7 +1897,6 @@
         loadWithdrawals();
     }
 
-    // ⭐ إصلاح دالة رفض السحب لترجع النقاط إلى رصيد النقاط وترجع أرباح التاجر إلى محفظة التاجر
     async function rejectWithdrawAndRefund(id, tid, wCode, rawAmt, methodStr) {
         var r = prompt('سبب رفض السحب وإرجاع الرصيد:', 'بيانات المحفظة غير صحيحة');
         if (r === null) return;
@@ -2215,7 +2250,6 @@
         } catch (e) { div.innerHTML = '✅ لا توجد مهام معلقة.'; }
     }
 
-    // ⭐ إصلاح دالة مراجعة مهام الأعضاء لإرجاع الرصيد المخصوم للمعلن عند رفض المهمة
     async function reviewUserTask(id, ok) {
         var tRes = await client.from('tasks').select('*').eq('id', id).eq('status', 'Pending').maybeSingle();
         var taskObj = tRes.data;
@@ -2330,7 +2364,7 @@
     }
     function previewDepositLogo(input) {
         if (!input.files || !input.files[0]) return;
-        var r = new FileReader(); r.onload = function(e) { depositLogoBase64 = e.target.result; }; r.readAsDataURL(input.files[0]);
+        var r = new FileReader(); r.onload = function(e) { depositLogoBaseH64 = e.target.result; }; r.readAsDataURL(input.files[0]);
     }
     function previewStoreFile(input) {
         if (!input.files || !input.files[0]) return;
