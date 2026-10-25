@@ -188,6 +188,7 @@
 
         .btn-unlock { width: 100%; border: none; padding: 12px 16px; border-radius: 12px; font-weight: bold; font-size: 13px; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-unlock:active { transform: scale(0.97); }
+        .btn-unlock:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-unlock-pts { background: linear-gradient(135deg, var(--main-green), #009e4f); color: black; box-shadow: 0 4px 12px rgba(0, 210, 106, 0.2); }
         .btn-unlock-egp { background: linear-gradient(135deg, #00f2ff, #0077ff); color: black; box-shadow: 0 4px 12px rgba(0, 242, 255, 0.2); }
 
@@ -401,8 +402,8 @@
         let methodBase64Image = "";
         let methodBase64Video = "";
         let currentZoom = 1;
+        let isBusyMethodAction = false;
 
-        // القائمة العامة الآمنة: لا تسحب المحتوى السري أو المرفقات لمنع التسريب من تبويب Network
         const SAFE_PUBLIC_METHOD_COLS = "id, user_id, title, teaser, currency, unlock_cost, sales_count, status, created_at";
 
         function setupAntiPiracyProtection() {
@@ -431,7 +432,7 @@
                 document.body.style.filter = 'none';
             });
 
-            document.addEventListener('keydown', (e) => {
+            window.addEventListener('keydown', (e) => {
                 if (e.key === 'PrintScreen' || ((e.ctrlKey || e.metaKey) && ['c', 's', 'u', 'p', 'a'].includes(e.key.toLowerCase()))) {
                     e.preventDefault();
                     tg.showAlert("🛡️ المحتوى محمي بحقوق الملكية ولا يُسمح بنسخه أو حفظه!");
@@ -477,6 +478,11 @@
         async function init() {
             setupAntiPiracyProtection();
             if (tid) {
+                if (typeof MegaSecurity !== 'undefined') {
+                    const sec = await MegaSecurity.verifyDeviceAndAccount(client, tid);
+                    if (!sec.allowed) return;
+                }
+
                 try {
                     const { data: uData } = await client.from('users').select('name, points, egp_balance').eq('telegram_id', tid).maybeSingle();
                     if (uData) {
@@ -500,7 +506,6 @@
             document.getElementById('user-egp').innerText = userEgp.toFixed(2) + " ج.م";
         }
 
-        // جلب العناوين العامة الآمنة فقط لمنع سرقة المحتوى من الـ Inspect
         async function loadApprovedMethods() {
             const container = document.getElementById('methods-list');
             try {
@@ -577,13 +582,11 @@
                 let bodyHtml = "";
 
                 if (isUnlocked) {
-                    // إذا كانت الميثود مفتوحة، نقوم بسحب محتواها ومرفقاتها السرية لحظياً من قاعدة البيانات عبر دالة فك القفل
                     bodyHtml = `
                         <div id="secret-box-${mId}" class="protected-content-wrapper">
                             <div class="status-box" style="padding:15px; font-size:12px;">⏳ جاري جلب الشرح والمرفقات المحمية...</div>
                         </div>
                     `;
-                    // سحب المحتوى السري في الخلفية وعرضه
                     fetchSecretMethodContent(mId);
                 } else {
                     const teaserHtml = m.teaser ? `<div class="teaser-box">💡 <b>نبذة:</b> ${escapeHtml(m.teaser)}</div>` : '';
@@ -600,7 +603,7 @@
                                 <span class="media-pill">📸 صور/فيديو مرفقة</span>
                                 <span class="media-pill">🔗 روابط مباشرة</span>
                             </div>
-                            <button class="btn-unlock ${btnClass}" onclick="unlockMethod(${m.id})">
+                            <button id="btn-unl-${m.id}" class="btn-unlock ${btnClass}" onclick="unlockMethod(${m.id})">
                                 🔓 شراء وفك القفل الآن (${cost.toLocaleString()} ${unitTxt})
                             </button>
                         </div>
@@ -631,9 +634,13 @@
             });
         }
 
-        // سحب محتوى الميثود السري عند الطلب فقط (لمنع التسريب العام)
         async function fetchSecretMethodContent(methodId) {
-            const wrapper = document.getElementById(`secret-box-${methodId}`);
+            const mIdStr = String(methodId);
+            const mObj = allMethodsList.find(x => String(x.id) === mIdStr);
+            const isOwner = mObj && String(mObj.user_id) === String(tid);
+            if (!unlockedMethodsSet.has(mIdStr) && !isOwner) return;
+
+            const wrapper = document.getElementById(`secret-box-${mIdStr}`);
             if (!wrapper) return;
 
             try {
@@ -684,40 +691,79 @@
             }
         }
 
-        // ⭐ شراء وفك قفل الميثود + تحويل 75% لصاحب الميثود تلقائياً
+        // ⭐ شراء وفك قفل الميثود مؤمن بقفل تزامن وفحص الرصيد اللحظي من قاعدة البيانات
         async function unlockMethod(methodId) {
+            if (!tid || isBusyMethodAction) return;
             const m = allMethodsList.find(item => item.id === methodId);
             if (!m) return;
+
+            if (unlockedMethodsSet.has(String(methodId))) {
+                renderMethods();
+                return;
+            }
 
             const isEgp = m.currency === 'egp';
             const cost = Number(m.unlock_cost || 50);
             const unitTxt = isEgp ? 'ج.م' : 'نقطة';
 
-            if (isEgp) {
-                if (userEgp < cost) {
-                    if (confirm(`❌ رصيدك بالجنيه غير كافٍ!\nالمطلوب: ${cost.toFixed(2)} ج.م\nرصيدك: ${userEgp.toFixed(2)} ج.م\n\nهل تريد الانتقال لصفحة شحن الجنيه الآن؟`)) {
-                        goDeposit();
-                    }
-                    return;
-                }
-            } else {
-                if (userPoints < cost) {
-                    return tg.showAlert(`❌ رصيد نقاطك غير كافٍ!\nمطلوب ${cost.toLocaleString()} نقطة لفتح هذه الميثود.`);
-                }
-            }
-
             if (!confirm(`تأكيد شراء وفك قفل ميثود (${m.title}) مقابل ${cost.toLocaleString()} ${unitTxt}؟`)) return;
 
+            const btnEl = document.getElementById(`btn-unl-${methodId}`);
+            isBusyMethodAction = true;
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerText = "⏳ جاري التحقق وفك القفل...";
+            }
+
             try {
+                // 1. التأكد من عدم شراء الميثود مسبقاً في قاعدة البيانات
+                const { data: existUnl } = await client
+                    .from('method_unlocks')
+                    .select('id')
+                    .eq('user_id', tid)
+                    .eq('method_id', parseInt(methodId))
+                    .maybeSingle();
+
+                if (existUnl) {
+                    unlockedMethodsSet.add(String(methodId));
+                    renderMethods();
+                    return tg.showAlert("✅ هذه الميثود مفتوحة لك بالفعل!");
+                }
+
+                // 2. جلب الرصيد الفعلي اللحظي من قاعدة البيانات قبل الخصم
+                const { data: freshU, error: uErr } = await client
+                    .from('users')
+                    .select('points, egp_balance, is_banned')
+                    .eq('telegram_id', tid)
+                    .single();
+
+                if (uErr || !freshU || freshU.is_banned) {
+                    throw new Error("تعذر التحقق من رصيد حسابك");
+                }
+
+                userPoints = Number(freshU.points || 0);
+                userEgp = Number(freshU.egp_balance || 0);
+                updateWalletUI();
+
                 let buyerUpdate = {};
                 if (isEgp) {
+                    if (userEgp < cost) {
+                        if (confirm(`❌ رصيدك بالجنيه غير كافٍ!\nالمطلوب: ${cost.toFixed(2)} ج.م\nرصيدك: ${userEgp.toFixed(2)} ج.م\n\nهل تريد الانتقال لصفحة شحن الجنيه الآن؟`)) {
+                            goDeposit();
+                        }
+                        return;
+                    }
                     userEgp = Number((userEgp - cost).toFixed(2));
                     buyerUpdate.egp_balance = userEgp;
                 } else {
+                    if (userPoints < cost) {
+                        return tg.showAlert(`❌ رصيد نقاطك غير كافٍ!\nمطلوب ${cost.toLocaleString()} نقطة لفتح هذه الميثود.`);
+                    }
                     userPoints = userPoints - cost;
                     buyerUpdate.points = userPoints;
                 }
 
+                // 3. خصم الرصيد وتسجيل فك القفل
                 const { error: buyerErr } = await client.from('users').update(buyerUpdate).eq('telegram_id', tid);
                 if (buyerErr) throw buyerErr;
 
@@ -739,6 +785,7 @@
                     status: 'مكتمل'
                 }]);
 
+                // 4. إضافة نسبة الـ 75% لصاحب الميثود
                 if (m.user_id && m.user_id !== 'ADMIN' && String(m.user_id) !== String(tid)) {
                     const creatorId = String(m.user_id);
                     const { data: creatorUser } = await client.from('users').select('points, egp_balance, total_earned').eq('telegram_id', creatorId).maybeSingle();
@@ -781,6 +828,12 @@
             } catch (e) {
                 console.error(e);
                 tg.showAlert("❌ حدث خطأ أثناء إتمام عملية الشراء.");
+            } finally {
+                isBusyMethodAction = false;
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerText = `🔓 شراء وفك القفل الآن (${cost.toLocaleString()} ${unitTxt})`;
+                }
             }
         }
 
@@ -874,6 +927,7 @@
         }
 
         async function submitNewMethod() {
+            if (isBusyMethodAction) return;
             const btn = document.getElementById('btn-submit-m');
             const title = document.getElementById('m-title').value.trim();
             const teaser = document.getElementById('m-teaser').value.trim();
@@ -894,6 +948,7 @@
 
             const finalVideoUrl = methodBase64Video || videoLink || null;
 
+            isBusyMethodAction = true;
             btn.disabled = true;
             btn.innerText = "⏳ جاري الرفع والإرسال...";
 
@@ -921,6 +976,7 @@
             } catch (e) {
                 tg.showAlert("❌ حدث خطأ غير متوقع.");
             } finally {
+                isBusyMethodAction = false;
                 btn.disabled = false;
                 btn.innerText = "إرسال للمراجعة والنشر 🚀";
             }
