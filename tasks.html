@@ -77,7 +77,7 @@
         }
         .ad-interaction-alert b { color: var(--gold); display: block; margin-bottom: 2px; }
 
-        /* شبكة الإعلانات المحدثة (SDK المؤكد + الزيارة برادار التركيز الحقيقي) */
+        /* شبكة الإعلانات المحدثة */
         .ads-section { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
         .ad-box {
             background: linear-gradient(145deg, #1d222b, #13161c);
@@ -525,9 +525,6 @@
         const BOT_ID = "8487785406";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        // ==========================================
-        // إعدادات الإعلانات ورادار منع الغش
-        // ==========================================
         const AD_COOLDOWN_SECONDS = 300; // 5 دقائق بين كل إعلان
         const REQUIRED_AWAY_SECONDS = 15; // 15 ثانية بقاء فعلي خارج البوت داخل صفحة الإعلان
         const MAX_DAILY_ADS = 5; 
@@ -557,6 +554,7 @@
         let accumulatedAwaySeconds = 0;
         let awayMonitorInterval = null;
         let isDailyQuestClaimedInDB = false;
+        let isBusyTaskAction = false;
 
         const PLATFORM_CONFIG = {
             telegram: { title: "📢 ترويج قناة / جروب تيليجرام", icon: "📢", lblLink: "معرف القناة أو الرابط:", phLink: "@MyChannel أو https://t.me/...", showAdminAlert: true },
@@ -585,14 +583,11 @@
             return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
         }
 
-        // =========================================================================
-        // 🛡️ دالة فحص اشتراك القنوات السحابية عبر السيرفر (بدون وضع التوكن في المتصفح!)
-        // =========================================================================
         async function verifyChannelViaServer(channelId, mode, targetUserId) {
             try {
                 const payload = JSON.stringify({
                     channel_id: channelId,
-                    mode: mode, // 'admin' أو 'member'
+                    mode: mode,
                     user_id: String(targetUserId)
                 });
 
@@ -611,7 +606,6 @@
                 const checkId = reqRow.id;
                 let finalStatus = "TIMEOUT";
 
-                // انتظار رد السيرفر (يفحص كل 700 ملي ثانية لمدة 6 ثوانٍ كحد أقصى)
                 for (let i = 0; i < 9; i++) {
                     await new Promise(r => setTimeout(r, 700));
                     const { data: pollRow } = await client
@@ -627,7 +621,6 @@
                     }
                 }
 
-                // تنظيف الصف بعد انتهاء الفحص
                 await client.from('bot_messages').delete().eq('id', checkId);
                 return finalStatus;
             } catch (err) {
@@ -669,15 +662,11 @@
             document.getElementById('user-egp').innerText = Number(userData.egp_balance || 0).toFixed(2);
         }
 
-        // =========================================================================
-        // 🏆 نظام تحدي الإنجاز اليومي المؤمن بقاعدة البيانات (ضد مسح الـ Cache)
-        // =========================================================================
         async function syncDailyQuestWithDB() {
             try {
                 const startOfToday = new Date();
                 startOfToday.setHours(0, 0, 0, 0);
 
-                // فحص ما إذا كان قد استلم مكافأة التحدي اليومي اليوم في جدول transactions
                 const { data: txToday } = await client
                     .from('transactions')
                     .select('id, created_at')
@@ -733,14 +722,14 @@
 
         async function claimDailyQuestBonus() {
             const claimedKey = `mt_daily_quest_claimed_${tid}_${getTodayStr()}`;
-            if (isDailyQuestClaimedInDB || localStorage.getItem(claimedKey) === "1") return;
+            if (isBusyTaskAction || isDailyQuestClaimedInDB || localStorage.getItem(claimedKey) === "1") return;
 
             const btn = document.getElementById('btn-claim-quest');
+            isBusyTaskAction = true;
             btn.disabled = true;
             btn.innerText = "⏳ جاري التحقق وعرض إعلان المكافأة...";
 
             try {
-                // فحص أمني من قاعدة البيانات قبل الصرف لمنع التكرار عبر مسح المتصفح
                 const startOfToday = new Date();
                 startOfToday.setHours(0, 0, 0, 0);
                 const { data: checkClaim } = await client
@@ -762,8 +751,9 @@
                     await show_10959333();
                 }
 
-                const newPts = (userData.points || 0) + 10;
-                const newTot = (userData.total_earned || 0) + 10;
+                const { data: freshU } = await client.from('users').select('points, total_earned').eq('telegram_id', tid).single();
+                const newPts = Number(freshU?.points || 0) + 10;
+                const newTot = Number(freshU?.total_earned || 0) + 10;
                 await client.from('users').update({ points: newPts, total_earned: newTot }).eq('telegram_id', tid);
                 await client.from('transactions').insert([{
                     telegram_id: String(tid),
@@ -784,12 +774,11 @@
                 btn.disabled = false;
                 btn.innerText = "🎁 استلام بونص التحدي اليومي (+10 نقاط) الآن!";
                 tg.showAlert("⚠️ يجب إكمال مشاهدة الإعلان لاستلام بونص التحدي اليومي!");
+            } finally {
+                isBusyTaskAction = false;
             }
         }
 
-        // =========================================================================
-        // 📺 1. فحص حالة الإعلانات اليومية والمؤقت
-        // =========================================================================
         function checkAdsStatus() {
             if (!userData) return;
             const now = new Date();
@@ -881,10 +870,8 @@
             else onclickTimerInterval = setInterval(tick, 1000);
         }
 
-        // =========================================================================
-        // ⚡ الطريقة الأولى: إعلان الـ SDK المدمج المؤكد 100%
-        // =========================================================================
         async function triggerVerifiedSdkAd() {
+            if (isBusyTaskAction) return;
             if (typeof MegaSecurity !== 'undefined') {
                 const secCheck = await MegaSecurity.verifyDeviceAndAccount(client, tid);
                 if (!secCheck.allowed) return;
@@ -897,6 +884,7 @@
                 return triggerRealWebVisitAd('watch');
             }
 
+            isBusyTaskAction = true;
             btn.disabled = true;
             btn.innerText = "⏳ جاري تحميل وعرض الإعلان...";
 
@@ -907,12 +895,11 @@
                 btn.disabled = false;
                 btn.innerText = "📺 تشغيل الإعلان المدمج الآن (+2 نقطة)";
                 tg.showAlert("❌ لم تكتمل مشاهدة الإعلان! يجب بقاء الإعلان مفتوحاً حتى النهاية للحصول على النقاط.");
+            } finally {
+                isBusyTaskAction = false;
             }
         }
 
-        // =========================================================================
-        // 📡 الطريقة الثانية: رادار حساب وقت البقاء الفعلي خارج البوت
-        // =========================================================================
         function triggerRealWebVisitAd(forcedType = 'onclick') {
             currentAdType = forcedType;
             isTrackingWebVisit = false;
@@ -1018,13 +1005,18 @@
         }
 
         async function claimVerifiedAdReward() {
+            if (isBusyTaskAction) return;
             const claimBtn = document.getElementById('btn-claim-ad');
+            isBusyTaskAction = true;
             claimBtn.disabled = true;
             claimBtn.innerText = "⏳ جاري التأكيد وإضافة النقاط...";
-            await saveAdRewardToDatabase(currentAdType);
+            try {
+                await saveAdRewardToDatabase(currentAdType);
+            } finally {
+                isBusyTaskAction = false;
+            }
         }
 
-        // دالة موحدة لإعطاء الداعي عمولة الـ 10% وتحديث سجل عمولاته في قاعدة البيانات مرة واحدة فقط
         async function awardReferrerCommission(referredByTid, earnedPoints) {
             if (!referredByTid || String(referredByTid) === String(tid)) return;
             const refBonus = Math.max(1, Math.floor(earnedPoints * 0.10));
@@ -1129,7 +1121,7 @@
         }
 
         // =========================================================================
-        // ➕ إنشاء المهام (بالنقاط أو بالجنيه مع خصم 10% للجنيه لضمان ربح البوت)
+        // ➕ إنشاء المهام (مع فحص الرصيد اللحظي واسترداد تلقائي لو فشل الحفظ)
         // =========================================================================
         function selectTaskPayCurrency(curr) {
             selectedPayCurrency = curr;
@@ -1145,7 +1137,6 @@
             const box = document.getElementById('task-cost-summary-box');
 
             if (selectedPayCurrency === 'egp') {
-                // كل 1000 نقطة = 1 جنيه مع خصم 10% للدفع بالجنيه
                 const egpCost = Math.max(1, Number(((totalPts / 1000) * 0.90).toFixed(2)));
                 box.innerHTML = `💵 التكلفة بالجنيه (شامل خصم 10%): <span style="color:var(--main-cyan);">${egpCost.toFixed(2)} ج.م</span> (يحصل كل منفذ على ${Math.floor(cost * 0.75)} نقطة)`;
             } else {
@@ -1215,6 +1206,7 @@
         }
 
         async function submitCreateTask() {
+            if (isBusyTaskAction) return;
             const btn = document.getElementById('btn-submit-task');
             const title = document.getElementById('t-title').value.trim();
             const linkRaw = document.getElementById('t-link').value.trim();
@@ -1238,91 +1230,110 @@
                 finalUrl = `https://t.me/${channelId.replace('@', '')}`;
             }
 
+            isBusyTaskAction = true;
             btn.disabled = true;
             btn.innerText = "⏳ جاري الفحص...";
 
-            // فحص رتبة البوت في القناة عبر السيرفر بدون كشف التوكن
-            if (selectedPlatform === "telegram") {
-                btn.innerText = "⏳ فحص رتبة البوت في القناة...";
-                const checkStatus = await verifyChannelViaServer(channelId, 'admin', BOT_ID);
+            try {
+                // 1. جلب الرصيد الفعلي اللحظي من قاعدة البيانات قبل الخصم
+                const { data: freshU, error: uFetchErr } = await client
+                    .from('users')
+                    .select('points, egp_balance, is_banned')
+                    .eq('telegram_id', tid)
+                    .single();
 
-                if (checkStatus !== "VERIFIED_ADMIN") {
-                    btn.disabled = false;
-                    btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
-                    return tg.showAlert("⛔ تعذر نشر المهمة!\n\nبوت المنصة (@MegaTask1Bot) ليس مشرفاً في هذه القناة حتى الآن (أو أن البوت غير متصل).\n\nأضف البوت مشرفاً أولاً ثم اضغط تأكيد النشر.");
+                if (uFetchErr || !freshU || freshU.is_banned) {
+                    throw new Error("تعذر التحقق من رصيد حسابك");
                 }
-            }
 
-            const totalPointsCost = cost * target;
-            const totalEgpCost = Math.max(1, Number(((totalPointsCost / 1000) * 0.90).toFixed(2)));
-            let userUpdateObj = {};
+                const totalPointsCost = cost * target;
+                const totalEgpCost = Math.max(1, Number(((totalPointsCost / 1000) * 0.90).toFixed(2)));
+                let userUpdateObj = {};
 
-            if (selectedPayCurrency === 'egp') {
-                const myEgp = Number(userData?.egp_balance || 0);
-                if (myEgp < totalEgpCost) {
-                    btn.disabled = false;
-                    btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
-                    return tg.showAlert(`❌ رصيدك بالجنيه غير كافٍ!\nالمطلوب: ${totalEgpCost.toFixed(2)} ج.م\nرصيدك: ${myEgp.toFixed(2)} ج.م`);
+                if (selectedPayCurrency === 'egp') {
+                    const myEgp = Number(freshU.egp_balance || 0);
+                    if (myEgp < totalEgpCost) {
+                        userData.egp_balance = myEgp;
+                        updateUI();
+                        return tg.showAlert(`❌ رصيدك بالجنيه غير كافٍ!\nالمطلوب: ${totalEgpCost.toFixed(2)} ج.م\nرصيدك: ${myEgp.toFixed(2)} ج.م`);
+                    }
+                    userUpdateObj.egp_balance = Number((myEgp - totalEgpCost).toFixed(2));
+                } else {
+                    const myPts = Number(freshU.points || 0);
+                    if (myPts < totalPointsCost) {
+                        userData.points = myPts;
+                        updateUI();
+                        return tg.showAlert(`❌ رصيد نقاطك غير كافٍ!\nالمطلوب: ${totalPointsCost.toLocaleString()} نقطة\nرصيدك: ${myPts.toLocaleString()} نقطة.`);
+                    }
+                    userUpdateObj.points = myPts - totalPointsCost;
                 }
-                userUpdateObj.egp_balance = Number((myEgp - totalEgpCost).toFixed(2));
-            } else {
-                const myPts = userData?.points || 0;
-                if (myPts < totalPointsCost) {
-                    btn.disabled = false;
-                    btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
-                    return tg.showAlert(`❌ رصيد نقاطك غير كافٍ!\nالمطلوب: ${totalPointsCost.toLocaleString()} نقطة\nرصيدك: ${myPts.toLocaleString()} نقطة.`);
+
+                // 2. فحص رتبة البوت في القناة عبر السيرفر
+                if (selectedPlatform === "telegram") {
+                    btn.innerText = "⏳ فحص رتبة البوت في القناة...";
+                    const checkStatus = await verifyChannelViaServer(channelId, 'admin', BOT_ID);
+
+                    if (checkStatus !== "VERIFIED_ADMIN") {
+                        return tg.showAlert("⛔ تعذر نشر المهمة!\n\nبوت المنصة (@MegaTask1Bot) ليس مشرفاً في هذه القناة حتى الآن (أو أن البوت غير متصل).\n\nأضف البوت مشرفاً أولاً ثم اضغط تأكيد النشر.");
+                    }
                 }
-                userUpdateObj.points = myPts - totalPointsCost;
-            }
 
-            const rewardForExecutor = Math.floor(cost * 0.75);
+                const rewardForExecutor = Math.floor(cost * 0.75);
 
-            const { error: userErr } = await client.from('users').update(userUpdateObj).eq('telegram_id', tid);
-            if (userErr) {
-                btn.disabled = false;
-                btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
-                return tg.showAlert("❌ خطأ أثناء خصم الرصيد.");
-            }
+                const { error: userErr } = await client.from('users').update(userUpdateObj).eq('telegram_id', tid);
+                if (userErr) {
+                    return tg.showAlert("❌ خطأ أثناء خصم الرصيد.");
+                }
 
-            const { error: taskErr } = await client.from('tasks').insert([{
-                creator_id: tid,
-                user_id: tid,
-                platform: selectedPlatform,
-                title: title,
-                description: desc,
-                image_url: taskLogoBase64 || null,
-                channel_id: channelId || linkRaw,
-                url: finalUrl,
-                link: finalUrl,
-                cost_per_user: cost,
-                reward: rewardForExecutor,
-                target_count: target,
-                completed_count: 0,
-                status: 'Pending',
-                is_active: false
-            }]);
-
-            btn.disabled = false;
-            btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
-
-            if (!taskErr) {
-                await client.from('transactions').insert([{
-                    telegram_id: String(tid),
-                    type: selectedPayCurrency === 'egp' ? 'egp' : 'points',
-                    title: `تمويل مهمة: ${title}`,
-                    amount: selectedPayCurrency === 'egp' ? `-${totalEgpCost} ج.م` : `-${totalPointsCost} نقطة`,
-                    status: 'مكتمل'
+                const { error: taskErr } = await client.from('tasks').insert([{
+                    creator_id: tid,
+                    user_id: tid,
+                    platform: selectedPlatform,
+                    title: title,
+                    description: desc,
+                    image_url: taskLogoBase64 || null,
+                    channel_id: channelId || linkRaw,
+                    url: finalUrl,
+                    link: finalUrl,
+                    cost_per_user: cost,
+                    reward: rewardForExecutor,
+                    target_count: target,
+                    completed_count: 0,
+                    status: 'Pending',
+                    is_active: false
                 }]);
 
-                if (selectedPayCurrency === 'egp') userData.egp_balance = userUpdateObj.egp_balance;
-                else userData.points = userUpdateObj.points;
+                if (!taskErr) {
+                    await client.from('transactions').insert([{
+                        telegram_id: String(tid),
+                        type: selectedPayCurrency === 'egp' ? 'egp' : 'points',
+                        title: `تمويل مهمة: ${title}`,
+                        amount: selectedPayCurrency === 'egp' ? `-${totalEgpCost} ج.م` : `-${totalPointsCost} نقطة`,
+                        status: 'مكتمل'
+                    }]);
 
-                updateUI();
-                closeModal('create-modal');
-                tg.showAlert(`✅ تم إرسال مهمتك بنجاح وهي قيد مراجعة الإدارة الآن!`);
-                loadTasks();
-            } else {
-                tg.showAlert(`❌ تعذر حفظ المهمة: ${taskErr.message}`);
+                    if (selectedPayCurrency === 'egp') userData.egp_balance = userUpdateObj.egp_balance;
+                    else userData.points = userUpdateObj.points;
+
+                    updateUI();
+                    closeModal('create-modal');
+                    tg.showAlert(`✅ تم إرسال مهمتك بنجاح وهي قيد مراجعة الإدارة الآن!`);
+                    loadTasks();
+                } else {
+                    // استرداد الرصيد المخصوم تلقائياً لو فشل إدراج المهمة في قاعدة البيانات
+                    if (selectedPayCurrency === 'egp') {
+                        await client.from('users').update({ egp_balance: Number(freshU.egp_balance || 0) }).eq('telegram_id', tid);
+                    } else {
+                        await client.from('users').update({ points: Number(freshU.points || 0) }).eq('telegram_id', tid);
+                    }
+                    tg.showAlert(`❌ تعذر حفظ المهمة وتم إرجاع رصيدك: ${taskErr.message}`);
+                }
+            } catch (e) {
+                tg.showAlert("❌ حدث خطأ: " + (e.message || ""));
+            } finally {
+                isBusyTaskAction = false;
+                btn.disabled = false;
+                btn.innerText = "تأكيد وإرسال للمراجعة 🚀";
             }
         }
 
@@ -1518,8 +1529,9 @@
             }
         }
 
-        // فحص اشتراك العضو في القناة عبر بوابة السيرفر الآمنة بدون كشف التوكن
         async function verifyTelegramSubscription(taskId, channelId, reward, btn) {
+            if (isBusyTaskAction) return;
+            isBusyTaskAction = true;
             btn.disabled = true;
             btn.innerText = "⏳ جاري الفحص...";
 
@@ -1541,6 +1553,8 @@
                 btn.disabled = false;
                 btn.innerText = "فحص الاشتراك 🔍";
                 tg.showAlert("⚠️ تعذر الاتصال حالياً، يرجى المحاولة لاحقاً.");
+            } finally {
+                isBusyTaskAction = false;
             }
         }
 
@@ -1575,12 +1589,13 @@
         }
 
         async function submitTaskProof() {
-            if (!activeExecutionTask) return;
+            if (!activeExecutionTask || isBusyTaskAction) return;
             if (!proofBase64Image) {
                 return tg.showAlert("❌ يرجى اختيار لقطة الشاشة أولاً لإثبات تنفيذ المهمة!");
             }
 
             const btn = document.getElementById('btn-send-proof');
+            isBusyTaskAction = true;
             btn.disabled = true;
             btn.innerText = "⏳ جاري الإرسال...";
 
@@ -1603,6 +1618,7 @@
             } catch (err) {
                 tg.showAlert("❌ حدث خطأ في الاتصال أثناء الإرسال.");
             } finally {
+                isBusyTaskAction = false;
                 btn.disabled = false;
                 btn.innerText = "📤 إرسال الإثبات للمراجعة";
             }
@@ -1681,18 +1697,32 @@
             document.getElementById('lightbox-modal').style.display = 'none';
         }
 
+        // تأمين قبول الإثبات بتحديث مشروط لمنع الصرف المزدوج
         async function acceptSubmission(subId, taskId, executorId) {
-            const feedbackVal = (document.getElementById(`feedback-input-${subId}`)?.value || "").trim();
+            if (isBusyTaskAction) return;
+            const feedbackVal = (document.getElementById(`feedback-input-${s_id = subId}`)?.value || "").trim();
             if (!confirm("هل أنت متأكد من صحة لقطة الشاشة وقبول إضافة النقاط للمنفذ؟")) return;
 
+            isBusyTaskAction = true;
             try {
                 const { data: taskData } = await client.from('tasks').select('*').eq('id', parseInt(taskId)).single();
                 if (!taskData) return tg.showAlert("المهمة غير موجودة!");
 
-                await client.from('task_submissions').update({
-                    status: 'approved',
-                    feedback: feedbackVal || null
-                }).eq('id', subId);
+                const { data: updSub, error: subErr } = await client
+                    .from('task_submissions')
+                    .update({
+                        status: 'approved',
+                        feedback: feedbackVal || null
+                    })
+                    .eq('id', subId)
+                    .eq('status', 'pending')
+                    .select('id');
+
+                if (subErr || !updSub || updSub.length === 0) {
+                    const card = document.getElementById(`sub-card-${subId}`);
+                    if (card) card.remove();
+                    return tg.showAlert("⚠️ هذا الإثبات تمت مراجعته بالفعل!");
+                }
 
                 await claimTaskSuccess(taskId, taskData.reward, executorId);
 
@@ -1709,21 +1739,36 @@
                 loadTasks();
             } catch (err) {
                 tg.showAlert("❌ حدث خطأ أثناء قبول الإثبات.");
+            } finally {
+                isBusyTaskAction = false;
             }
         }
 
         async function rejectSubmission(subId, executorId, taskId) {
+            if (isBusyTaskAction) return;
             const reason = (document.getElementById(`feedback-input-${subId}`)?.value || "").trim();
             if (!reason) {
                 return tg.showAlert("⚠️ يجب كتابة سبب رفض الإثبات في الخانة المخصصة (إجباري)!");
             }
             if (!confirm(`هل أنت متأكد من رفض هذا الإثبات بالسبب التالي:\n"${reason}"؟`)) return;
 
+            isBusyTaskAction = true;
             try {
-                await client.from('task_submissions').update({
-                    status: 'rejected',
-                    feedback: reason
-                }).eq('id', subId);
+                const { data: updRej } = await client
+                    .from('task_submissions')
+                    .update({
+                        status: 'rejected',
+                        feedback: reason
+                    })
+                    .eq('id', subId)
+                    .eq('status', 'pending')
+                    .select('id');
+
+                if (!updRej || updRej.length === 0) {
+                    const card = document.getElementById(`sub-card-${subId}`);
+                    if (card) card.remove();
+                    return;
+                }
 
                 let taskTitle = "المهمة الخاصة بك";
                 try {
@@ -1743,13 +1788,13 @@
                 loadTasks();
             } catch (e) {
                 tg.showAlert("❌ تعذر رفض الطلب.");
+            } finally {
+                isBusyTaskAction = false;
             }
         }
 
-        // صرف مكافأة المهمة مع حماية كاملة ضد التكرار وتحديث أرباح الإحالة تلقائياً
         async function claimTaskSuccess(taskId, reward, targetUserId, btn = null) {
             try {
-                // 1. فحص عدم استلام نفس المهمة مسبقاً
                 const { data: existingComp } = await client
                     .from('task_completions')
                     .select('id')
@@ -1766,10 +1811,11 @@
                     return;
                 }
 
-                await client.from('task_completions').insert([{ 
+                const { error: compInsErr } = await client.from('task_completions').insert([{ 
                     task_id: parseInt(taskId), 
                     user_id: String(targetUserId) 
                 }]);
+                if (compInsErr) return;
 
                 const { data: execUser } = await client.from('users').select('*').eq('telegram_id', String(targetUserId)).single();
                 if (execUser) {
@@ -1794,7 +1840,6 @@
                         status: 'مكتمل'
                     }]);
 
-                    // إضافة عمولة الإحالة (10%) وتوثيقها في total_ref_commission و invited_count
                     if (execUser.referred_by && String(execUser.referred_by) !== String(targetUserId)) {
                         const refBonus = Math.max(1, Math.floor(reward * 0.10));
                         const { data: refUser } = await client
