@@ -2,61 +2,165 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Withdraw - MegaTask</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>سحب النقاط والمهام - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="security.js"></script>
     <style>
-        :root { --main-green: #00d26a; --dark-bg: #0d0f12; --card-bg: #1a1d23; --text-gray: #9ca3af; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; padding-bottom: 100px; }
-        .balance-card { background: var(--card-bg); padding: 20px; border-radius: 20px; border: 1px solid #2d333d; text-align: center; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        .balance-card h2 { color: var(--main-green); font-size: 32px; margin: 10px 0; }
-        .input-group { margin-bottom: 20px; text-align: right; }
-        .input-group label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--text-gray); }
-        select, input { width: 100%; background: #000; border: 1px solid #2d333d; padding: 15px; border-radius: 12px; color: white; box-sizing: border-box; outline: none; transition: 0.3s; }
+        :root { 
+            --main-green: #00d26a; 
+            --main-cyan: #00f2ff;
+            --gold: #ffaa00;
+            --crimson: #ff3d57;
+            --dark-bg: #0d0f12; 
+            --card-bg: #1a1d23; 
+            --text-gray: #9ca3af; 
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 16px; padding-bottom: 110px; overflow-x: hidden; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .btn-back { background: var(--card-bg); border: 1.5px solid #2d333d; color: #fff; padding: 8px 14px; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer; }
+
+        .balance-card { 
+            background: linear-gradient(145deg, #1a2029, #12151b); 
+            padding: 20px 15px; 
+            border-radius: 22px; 
+            border: 1px solid rgba(0, 210, 106, 0.35); 
+            text-align: center; 
+            margin-bottom: 18px; 
+            box-shadow: 0 6px 20px rgba(0, 210, 106, 0.08); 
+        }
+        .balance-card span { font-size: 12px; color: var(--text-gray); }
+        .balance-card h2 { color: var(--main-green); font-size: 30px; margin: 8px 0; text-shadow: 0 0 10px rgba(0, 210, 106, 0.25); }
+        
+        .info-box { background: rgba(0, 210, 106, 0.08); border: 1px dashed rgba(0, 210, 106, 0.4); padding: 10px; border-radius: 12px; font-size: 12px; color: #a7f3d0; text-align: center; margin-top: 10px; line-height: 1.6; }
+
+        /* شروط سحب النقاط */
+        .req-card {
+            background: var(--card-bg);
+            border: 1.5px solid #2d333d;
+            border-radius: 18px;
+            padding: 15px;
+            margin-bottom: 16px;
+        }
+        .req-prog-box {
+            background: #0d1016;
+            border: 1px solid #262e3d;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            text-align: right;
+            font-size: 12px;
+        }
+        .req-bar-bg { width: 100%; height: 7px; background: #1a202c; border-radius: 8px; overflow: hidden; margin-top: 6px; }
+        .req-bar-fill { height: 100%; background: var(--main-green); width: 0%; transition: width 0.3s; }
+
+        .withdraw-form-card {
+            background: var(--card-bg);
+            border: 1.5px solid #2d333d;
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 0 #05070b;
+        }
+        .input-group { margin-bottom: 14px; text-align: right; }
+        .input-group label { display: block; margin-bottom: 6px; font-size: 12.5px; font-weight: bold; color: #d1d5db; }
+        select, input { width: 100%; background: #07090e; border: 1.5px solid #263147; padding: 13px 12px; border-radius: 12px; color: white; outline: none; font-size: 13.5px; font-family: inherit; }
         select:focus, input:focus { border-color: var(--main-green); }
-        .withdraw-btn { background: var(--main-green); color: black; border: none; width: 100%; padding: 18px; border-radius: 15px; font-weight: bold; cursor: pointer; font-size: 16px; box-shadow: 0 5px 15px rgba(0, 210, 106, 0.3); }
-        .withdraw-btn:disabled { background: #333; color: #666; box-shadow: none; }
-        .info-box { background: rgba(0, 210, 106, 0.1); border: 1px dashed var(--main-green); padding: 10px; border-radius: 10px; font-size: 12px; margin-bottom: 20px; color: #00d26a; text-align: center; }
-        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.95); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
+
+        .withdraw-btn { 
+            background: linear-gradient(135deg, var(--main-green), #009e4f); 
+            color: black; 
+            border: none; 
+            width: 100%; 
+            padding: 15px; 
+            border-radius: 14px; 
+            font-weight: 900; 
+            cursor: pointer; 
+            font-size: 14px; 
+            box-shadow: 0 4px 15px rgba(0, 210, 106, 0.25); 
+            font-family: inherit;
+        }
+        .withdraw-btn:disabled { background: #222; color: #666; box-shadow: none; cursor: not-allowed; }
+
+        .section-title { font-size: 14px; font-weight: bold; color: var(--main-cyan); margin: 20px 4px 10px; }
+        .w-history-card { background: var(--card-bg); border: 1px solid #2d333d; border-right: 4px solid var(--main-green); border-radius: 14px; padding: 12px 14px; margin-bottom: 9px; font-size: 12px; }
+        .w-hist-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .btn-cancel-req { background: rgba(255, 61, 87, 0.15); border: 1px solid var(--crimson); color: var(--crimson); padding: 4px 10px; border-radius: 7px; font-size: 11px; font-weight: bold; cursor: pointer; }
+
+        .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
+        .nav-item.active { color: var(--main-green); }
     </style>
 </head>
 <body>
 
-    <h2 style="text-align: right;">💰 سحب الأرباح</h2>
+    <div class="top-bar">
+        <button class="btn-back" onclick="goHome()">↩️ الرئيسية</button>
+        <div style="font-size: 12px; font-weight: bold; color: var(--main-green);">🪙 سحب نقاط المهام المجانية</div>
+    </div>
 
+    <!-- بطاقة رصيد النقاط -->
     <div class="balance-card">
-        <span>رصيدك الحالي</span>
-        <h2 id="current-points">جاري التحميل...</h2>
-        <div class="info-box">سحب سريع وآمن لأرباحك 💳</div>
-        <small style="color: var(--text-gray);">الحد الأدنى للسحب: 1,000 نقطة</small>
+        <span>رصيد نقاطك الحالي</span>
+        <h2 id="current-points">0 نقطة</h2>
+        <div class="info-box">🪙 50,000 نقطة = 50.00 ج.م كاش فودافون كاش أو إنستا باي!</div>
     </div>
 
-    <div class="input-group">
-        <label>وسيلة السحب</label>
-        <select id="method">
-            <option value="">جاري تحميل وسائل السحب...</option>
-        </select>
+    <!-- بطاقة شروط السحب (50 ألف نقطة + 50 مهمة) -->
+    <div class="req-card">
+        <div style="font-size: 13px; font-weight: bold; color: var(--main-cyan); margin-bottom: 10px;">📋 شروط فتح السحب المباشر:</div>
+        
+        <div class="req-prog-box">
+            <div style="display: flex; justify-content: space-between;">
+                <span>1️⃣ رصيد النقاط المطلوب:</span>
+                <b id="req-pts-txt" style="color: var(--main-green);">0 / 50,000</b>
+            </div>
+            <div class="req-bar-bg"><div id="req-pts-bar" class="req-bar-fill"></div></div>
+        </div>
+
+        <div class="req-prog-box">
+            <div style="display: flex; justify-content: space-between;">
+                <span>2️⃣ المهام المنفذة المطلوبة:</span>
+                <b id="req-tasks-txt" style="color: var(--gold);">0 / 50 مهمة</b>
+            </div>
+            <div class="req-bar-bg"><div id="req-tasks-bar" class="req-bar-fill" style="background: var(--gold);"></div></div>
+        </div>
     </div>
 
-    <div class="input-group">
-        <label>المبلغ المطلوب سحبه (بالنقاط أو بالجنيه)</label>
-        <input type="number" id="amount" placeholder="مثلاً: 1000 أو 10" oninput="convertCurrency()">
-        <small id="conversion-hint" style="color: var(--main-green); display: block; margin-top: 5px; font-size: 11px;"></small>
+    <!-- نموذج سحب النقاط -->
+    <div id="withdraw-form-container" class="withdraw-form-card" style="display: none;">
+        <h3 style="color: var(--main-green); margin-top: 0; margin-bottom: 12px; font-size: 15px;">🚀 إرسال طلب سحب الـ 50 ج.م</h3>
+        
+        <div class="input-group">
+            <label>وسيلة الاستلام:</label>
+            <select id="method">
+                <option value="فودافون كاش">🔴 فودافون كاش</option>
+                <option value="إنستا باي">🟣 إنستا باي (InstaPay)</option>
+                <option value="Binance Pay USDT">🟡 Binance Pay (USDT)</option>
+            </select>
+        </div>
+
+        <div class="input-group">
+            <label>رقم المحفظة أو الحساب المستلم:</label>
+            <input type="text" id="wallet" placeholder="010xxxxxxxx أو رقم الحساب المستلم...">
+        </div>
+
+        <button class="withdraw-btn" id="withdrawBtn" onclick="processPointsWithdraw()">تأكيد وإرسال طلب السحب (50,000 ن) ↗</button>
     </div>
 
-    <div class="input-group">
-        <label>بيانات الاستلام (رقم الهاتف أو الـ ID)</label>
-        <input type="text" id="wallet" placeholder="010xxxxxxx / ID">
+    <div id="locked-hint-box" style="text-align: center; padding: 20px; background: var(--card-bg); border-radius: 18px; border: 1px dashed #333; color: var(--text-gray); font-size: 12.5px; line-height: 1.7; margin-bottom: 20px;">
+        🔒 <b>شروط السحب غير مكتملة بعد!</b><br>
+        أكمل الحد الأدنى من النقاط (50,000 ن) والمهام (50 مهمة) لفتح نموذج السحب المباشر هنا.<br>
+        <span style="color: var(--main-green);">💡 يمكنك استخدام نقاطك الحالية في أي وقت للشراء من المتجر أو تمويل مهامك فوراً!</span>
     </div>
 
-    <div class="input-group">
-        <label>البريد الإلكتروني (لإيصال الفاتورة)</label>
-        <input type="email" id="userEmail" placeholder="example@gmail.com">
-    </div>
-
-    <button class="withdraw-btn" id="withdrawBtn" onclick="processWithdraw()">تأكيد طلب السحب ↗</button>
+    <!-- سجل سحوبات النقاط الخاصة بالبوت فقط -->
+    <div class="section-title">📂 سجل سحوبات النقاط والمهام الخاصة بي:</div>
+    <div id="my-points-withdrawals-list"></div>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
@@ -69,141 +173,255 @@
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+
+        const ADMIN_MASTER_ID = "875021647";
+        const REQ_WITHDRAW_POINTS = 50000;    // 50,000 نقطة = 50 ج.م
+        const REQ_WITHDRAW_TASKS = 50;        // 50 مهمة منفذة
+
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
-        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
+        const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2In0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        const params = new URLSearchParams(window.location.search);
-        const tid = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
-        let userBalance = 0;
+        const tid = String(new URLSearchParams(window.location.search).get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
+        let userPoints = 0;
+        let userTasksDone = 0;
+        let isBusyAction = false;
 
-        // جلب وسائل السحب تلقائياً من سوبابيز وعرضها في القائمة المنسدلة
-        async function loadMethodsDropdown() {
-            const select = document.getElementById('method');
-            try {
-                const { data, error } = await client.from('withdraw_methods').select('*');
-                if (!error && data && data.length > 0) {
-                    select.innerHTML = "";
-                    data.forEach(m => {
-                        const opt = document.createElement('option');
-                        opt.value = m.name;
-                        opt.textContent = `${m.name} ${m.description || ''}`;
-                        select.appendChild(opt);
-                    });
-                } else {
-                    select.innerHTML = '<option value="Vodafone Cash">فودافون كاش (مصر) 🇪🇬</option>';
-                }
-            } catch (err) {
-                select.innerHTML = '<option value="Vodafone Cash">فودافون كاش (مصر) 🇪🇬</option>';
-            }
+        function notifyUser(txt) {
+            if (tg && tg.showAlert) tg.showAlert(txt);
+            else alert(txt);
         }
 
-        // دالة الإرسال المؤكدة لشات البوت مباشرة
-        function sendTelegramMessage(chatId, text) {
-            client.from('user_notifications').insert([{
-                user_id: chatId,
-                title: '🧾 فاتورة سحب الأرباح',
-                message: text,
-                is_read: false
-            }]).then(() => {
-                console.log("Notification queued successfully");
-            });
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function isPointsWithdrawalRecord(w) {
+            const m = String(w.method || "").toLowerCase();
+            const c = String(w.withdraw_code || w.tx_id || "").toUpperCase();
+            return m.includes("سحب نقاط") || m.includes("نقاط") || m.includes("points") || c.startsWith("PTS-") || c.startsWith("TX-");
         }
 
         async function init() {
-            // تحميل وسائل السحب أولاً
-            await loadMethodsDropdown();
+            if (tid && typeof MegaSecurity !== 'undefined') {
+                const sec = await MegaSecurity.verifyDeviceAndAccount(client, tid);
+                if (!sec.allowed) return;
+            }
 
-            if(!tid) { document.getElementById('current-points').innerText = "0 نقطة"; return; }
-            
-            const { data } = await client.from('users').select('points').eq('telegram_id', tid).maybeSingle();
-            if (data) {
-                userBalance = data.points || 0;
-                document.getElementById('current-points').innerText = userBalance.toLocaleString() + " نقطة";
-            } else {
+            if (!tid) {
                 document.getElementById('current-points').innerText = "0 نقطة";
-                userBalance = 0;
+                return;
             }
+
+            const { data } = await client.from('users').select('points, total_tasks').eq('telegram_id', tid).maybeSingle();
+            if (data) {
+                userPoints = Number(data.points || 0);
+                userTasksDone = Number(data.total_tasks || 0);
+                document.getElementById('current-points').innerText = userPoints.toLocaleString() + " نقطة";
+
+                document.getElementById('req-pts-txt').innerText = `${userPoints.toLocaleString()} / ${REQ_WITHDRAW_POINTS.toLocaleString()}`;
+                document.getElementById('req-pts-bar').style.width = `${Math.min(100, (userPoints / REQ_WITHDRAW_POINTS) * 100)}%`;
+
+                document.getElementById('req-tasks-txt').innerText = `${userTasksDone} / ${REQ_WITHDRAW_TASKS} مهمة`;
+                document.getElementById('req-tasks-bar').style.width = `${Math.min(100, (userTasksDone / REQ_WITHDRAW_TASKS) * 100)}%`;
+
+                const unlocked = (userPoints >= REQ_WITHDRAW_POINTS && userTasksDone >= REQ_WITHDRAW_TASKS);
+                document.getElementById('withdraw-form-container').style.display = unlocked ? 'block' : 'none';
+                document.getElementById('locked-hint-box').style.display = unlocked ? 'none' : 'block';
+            }
+
+            await loadMyPointsWithdrawalsHistory();
         }
 
-        function convertCurrency() {
-            const val = parseFloat(document.getElementById('amount').value);
-            const hint = document.getElementById('conversion-hint');
-            if (isNaN(val) || val <= 0) { hint.innerText = ""; return; }
+        async function processPointsWithdraw() {
+            if (!tid || isBusyAction) return;
 
-            if (val < 100) {
-                hint.innerText = `💡 يعادل بالنقاط: ${(val * 100).toLocaleString()} نقطة`;
-            } else {
-                hint.innerText = `💡 يعادل بالمصري: ${(val / 100).toFixed(2)} جنيه`;
-            }
-        }
-
-        async function processWithdraw() {
-            let inputVal = parseFloat(document.getElementById('amount').value);
             const method = document.getElementById('method').value;
-            const wallet = document.getElementById('wallet').value;
-            const email = document.getElementById('userEmail').value.trim();
+            const wallet = document.getElementById('wallet').value.trim();
             const btn = document.getElementById('withdrawBtn');
 
-            if (isNaN(inputVal) || inputVal <= 0) return tg.showAlert("❌ يرجى إدخال مبلغ صحيح للسحب");
+            if (!wallet || wallet.length < 4) {
+                return notifyUser("⚠️ يرجى إدخال رقم المحفظة أو الحساب المستلم بشكل صحيح!");
+            }
 
-            let finalPoints = inputVal < 100 ? inputVal * 100 : inputVal;
+            if (userPoints < REQ_WITHDRAW_POINTS || userTasksDone < REQ_WITHDRAW_TASKS) {
+                return notifyUser(`⚠️ يجب إكمال شروط السحب أولاً (${REQ_WITHDRAW_POINTS.toLocaleString()} نقطة + ${REQ_WITHDRAW_TASKS} مهمة)!`);
+            }
 
-            if (finalPoints < 1000) return tg.showAlert("❌ الحد الأدنى للسحب هو 1,000 نقطة");
-            if (finalPoints > userBalance) return tg.showAlert("❌ عذراً، رصيدك غير كافٍ لهذا المبلغ");
-            if (!wallet) return tg.showAlert("⚠️ يرجى إدخال بيانات الاستلام (رقم الهاتف أو الـ ID)");
+            if (!confirm(`💸 تأكيد إرسال طلب سحب 50,000 نقطة (مقابل 50 ج.م) عبر (${method}) إلى الحساب:\n${wallet}`)) {
+                return;
+            }
 
+            isBusyAction = true;
             btn.disabled = true;
-            btn.innerText = "جاري المعالجة وإرسال الفاتورة...";
+            btn.innerText = "⏳ جاري التحقق وتسجيل طلب السحب...";
 
-            const txId = "TX-" + Math.floor(100000 + Math.random() * 900000);
-            const now = new Date();
-            const timeString = now.toLocaleString('ar-EG', { hour12: true });
+            try {
+                const { data: freshU, error: fErr } = await client
+                    .from('users')
+                    .select('points, total_tasks, is_banned')
+                    .eq('telegram_id', tid)
+                    .single();
 
-            const withdrawData = {
-                telegram_id: tid,
-                tx_id: txId,
-                amount: finalPoints,
-                amount_egp: finalPoints / 100,
-                method: method,
-                wallet_info: wallet,
-                email: email || "غير مسجل",
-                created_at: now.toISOString(),
-                status: 'Pending'
-            };
+                if (fErr || !freshU || freshU.is_banned) throw new Error("تعذر التحقق من الحساب");
 
-            const { error: err1 } = await client.from('withdrawals').insert([withdrawData]);
+                const realPts = Number(freshU.points || 0);
+                const realTasks = Number(freshU.total_tasks || 0);
 
-            if (!err1) {
-                await client.from('users').update({ points: userBalance - finalPoints }).eq('telegram_id', tid);
+                if (realPts < REQ_WITHDRAW_POINTS || realTasks < REQ_WITHDRAW_TASKS) {
+                    return notifyUser("⚠️ لم تعد شروط السحب مكتملة بعد!");
+                }
 
-                const invoiceText = 
-                    `📄 *فاتورة طلب سحب أرباح*\n` +
-                    `━━━━━━━━━━━━━━━\n` +
-                    `🆔 *رقم المعاملة:* \`${txId}\`\n` +
-                    `💰 *المبلغ بالنقاط:* ${finalPoints.toLocaleString()} نقطة\n` +
-                    `💵 *المبلغ بالجنيه:* ${(finalPoints/100).toFixed(2)} جنيه\n` +
-                    `💳 *طريقة السحب:* ${method}\n` +
-                    `📱 *رقم/حساب الاستلام:* \`${wallet}\`\n` +
-                    `📧 *البريد الإلكتروني:* ${email || 'غير مسجل'}\n` +
-                    `⏰ *التاريخ والوقت:* ${timeString}\n` +
-                    `📌 *الحالة:* قيد المراجعة والدفع خلال 24 ساعة`;
+                const wCode = "PTS-" + Math.floor(100000 + Math.random() * 900000);
+                const newPts = realPts - REQ_WITHDRAW_POINTS;
+
+                const { error: uErr } = await client.from('users').update({ points: newPts }).eq('telegram_id', tid);
+                if (uErr) throw uErr;
+
+                await client.from('withdrawals').insert([{
+                    withdraw_code: wCode,
+                    telegram_id: String(tid),
+                    amount: 50,
+                    method: `${method} (سحب نقاط)`,
+                    wallet_info: wallet,
+                    status: 'Pending'
+                }]);
+
+                await client.from('transactions').insert([{
+                    telegram_id: String(tid),
+                    type: 'withdraw',
+                    title: `طلب سحب 50,000 نقطة (${method})`,
+                    amount: '-50,000 نقطة (50 ج.م)',
+                    status: 'قيد المراجعة'
+                }]);
 
                 await client.from('bot_messages').insert([{
-                    telegram_id: tid,
-                    message: invoiceText,
+                    telegram_id: ADMIN_MASTER_ID,
+                    message: `💸 *طلب سحب نقاط ومهام جديد!* 🔔\n━━━━━━━━━━━━━━━\n🆔 *الكود:* \`${wCode}\`\n👤 *العضو:* \`${tid}\`\n💵 *القيمة:* 50.00 ج.م (50,000 نقطة)\n💳 *الوسيلة:* ${method}\n📥 *المستلم:* \`${wallet}\``,
                     status: 'pending'
                 }]);
 
-                tg.showAlert(`✅ تم تسجيل طلب السحب بنجاح!\nرقم المعاملة: ${txId}\nتم إرسال الفاتورة لشات البوت في رسالة خاصة.`);
-                goHome();
-            } else {
-                tg.showAlert("❌ فشل الطلب: " + err1.message);
+                await client.from('bot_messages').insert([{
+                    telegram_id: String(tid),
+                    message: `✅ *تم استلام طلب سحب النقاط بنجاح!*\n━━━━━━━━━━━━━━━\n🆔 *رقم الطلب:* \`${wCode}\`\n💵 *المبلغ:* 50.00 ج.م (50,000 نقطة)\n💳 *الوسيلة:* ${method}\n📥 *المستلم:* \`${wallet}\`\n\n⏳ جاري مراجعة الطلب وتحويل أرباحك قريباً.`,
+                    status: 'pending'
+                }]);
+
+                document.getElementById('wallet').value = "";
+                userPoints = newPts;
+                document.getElementById('current-points').innerText = userPoints.toLocaleString() + " نقطة";
+
+                await loadMyPointsWithdrawalsHistory();
+                notifyUser(`🎉 تم إرسال طلب سحب النقاط (${wCode}) بنجاح!`);
+            } catch (e) {
+                notifyUser("❌ حدث خطأ أثناء إرسال الطلب: " + e.message);
+            } finally {
+                isBusyAction = false;
                 btn.disabled = false;
-                btn.innerText = "تأكيد طلب السحب ↗";
+                btn.innerText = "تأكيد وإرسال طلب السحب (50,000 ن) ↗";
             }
         }
-        
+
+        async function loadMyPointsWithdrawalsHistory() {
+            const box = document.getElementById('my-points-withdrawals-list');
+            if (!tid) return;
+
+            const { data } = await client
+                .from('withdrawals')
+                .select('*')
+                .eq('telegram_id', String(tid))
+                .order('id', { ascending: false })
+                .limit(20);
+
+            // فلترة السجل ليظهر سحوبات النقاط والمهام الخاصة بالبوت فقط
+            const pointsOnlyList = (data || []).filter(w => isPointsWithdrawalRecord(w));
+
+            if (pointsOnlyList.length === 0) {
+                box.innerHTML = `<div style="text-align:center; padding:18px; background:var(--card-bg); border-radius:14px; color:var(--text-gray); font-size:12px;">لا توجد طلبات سحب نقاط سابقة حتى الآن.</div>`;
+                return;
+            }
+
+            box.innerHTML = pointsOnlyList.map(w => {
+                let stHtml = `<span style="color:var(--gold);">⏳ قيد التنفيذ</span>`;
+                if (w.status === 'Completed' || w.status === 'Approved') stHtml = `<span style="color:var(--main-green);">✅ تم التحويل</span>`;
+                if (w.status === 'Rejected' || w.status === 'Cancelled') stHtml = `<span style="color:var(--crimson);">↩️ ملغي / مسترد</span>`;
+
+                const cancelBtn = w.status === 'Pending'
+                    ? `<button class="btn-cancel-req" onclick="cancelPointsWithdrawal(${w.id})">✖ إلغاء واسترداد النقاط</button>`
+                    : '';
+
+                return `
+                    <div class="w-history-card">
+                        <div class="w-hist-top">
+                            <b>💳 ${escapeHtml(w.method)} (50,000 نقطة)</b>
+                            <b>${stHtml}</b>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; color:var(--text-gray); font-size:11px; margin-top:4px;">
+                            <span>الحساب: <code>${escapeHtml(w.wallet_info || '')}</code></span>
+                            ${cancelBtn}
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        async function cancelPointsWithdrawal(wId) {
+            if (isBusyAction) return;
+            if (!confirm("هل تريد إلغاء طلب سحب النقاط هذا وإرجاع مبلغ (50,000 نقطة) إلى رصيدك فوراً؟")) return;
+
+            isBusyAction = true;
+            try {
+                const { data: checkW, error: chkErr } = await client
+                    .from('withdrawals')
+                    .select('*')
+                    .eq('id', wId)
+                    .eq('telegram_id', String(tid))
+                    .eq('status', 'Pending')
+                    .maybeSingle();
+
+                if (chkErr || !checkW) {
+                    await loadMyPointsWithdrawalsHistory();
+                    return notifyUser("⚠️ لا يمكن إلغاء هذا الطلب لأنه تم تنفيذه أو إلغاؤه بالفعل.");
+                }
+
+                if (!isPointsWithdrawalRecord(checkW)) {
+                    return notifyUser("🚫 هذا الطلب خاص بأرباح التجار وليس نقاط المهام، لا يمكن استرداده هنا!");
+                }
+
+                const { data: updatedW, error: wErr } = await client
+                    .from('withdrawals')
+                    .update({ status: 'Cancelled' })
+                    .eq('id', wId)
+                    .eq('telegram_id', String(tid))
+                    .eq('status', 'Pending')
+                    .select('id');
+
+                if (wErr || !updatedW || updatedW.length === 0) {
+                    await loadMyPointsWithdrawalsHistory();
+                    return notifyUser("⚠️ لا يمكن إلغاء هذا الطلب لأنه تم تنفيذه أو إلغاؤه بالفعل.");
+                }
+
+                const { data: freshU } = await client
+                    .from('users')
+                    .select('points')
+                    .eq('telegram_id', tid)
+                    .single();
+
+                const newPts = Number(freshU?.points || 0) + REQ_WITHDRAW_POINTS;
+                await client.from('users').update({ points: newPts }).eq('telegram_id', tid);
+
+                userPoints = newPts;
+                document.getElementById('current-points').innerText = userPoints.toLocaleString() + " نقطة";
+
+                await init();
+                notifyUser(`✅ تم إلغاء الطلب وإرجاع (50,000 نقطة) إلى رصيدك بنجاح!`);
+            } catch (e) {
+                notifyUser("❌ حدث خطأ أثناء إلغاء الطلب.");
+            } finally {
+                isBusyAction = false;
+            }
+        }
+
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
         function goGames() { window.location.href = `games.html?id=${tid}&t=${Date.now()}`; }
