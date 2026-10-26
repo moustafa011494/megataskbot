@@ -7,7 +7,6 @@
     <title>Deposit - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <!-- درع الحماية ضد تعدد الحسابات والـ VPN -->
     <script src="security.js"></script>
     <style>
         :root { 
@@ -15,6 +14,7 @@
             --main-cyan: #00f2ff;
             --binance-yellow: #FCD535;
             --stars-gold: #ffae00;
+            --crimson: #ff3d57;
             --dark-bg: #0d0f12; 
             --card-bg: #1a1d23; 
             --text-gray: #9ca3af; 
@@ -24,7 +24,6 @@
         
         .page-title { text-align: right; font-size: 20px; margin: 0 0 15px 0; display: flex; align-items: center; gap: 8px; }
 
-        /* بطاقة الأرصدة العلوية */
         .balance-card { 
             background: linear-gradient(145deg, #1a1e26, #12151a); 
             padding: 18px 15px; 
@@ -43,7 +42,6 @@
 
         .info-box { background: rgba(0, 210, 106, 0.08); border: 1px dashed rgba(0, 210, 106, 0.5); padding: 9px; border-radius: 10px; font-size: 12px; color: var(--main-green); text-align: center; }
 
-        /* ⭐ بطاقة الشحن اللحظي بنجوم تليجرام (Telegram Stars) */
         .stars-instant-card {
             background: linear-gradient(145deg, #241d0f, #14171f);
             border: 2px solid var(--stars-gold);
@@ -65,81 +63,34 @@
             border-radius: 20px;
             box-shadow: 0 2px 10px rgba(255, 174, 0, 0.4);
         }
-        .stars-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
+        .stars-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         .stars-icon-box {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            background: rgba(255, 174, 0, 0.15);
-            border: 1px solid var(--stars-gold);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            flex-shrink: 0;
+            width: 44px; height: 44px; border-radius: 12px;
+            background: rgba(255, 174, 0, 0.15); border: 1px solid var(--stars-gold);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; flex-shrink: 0;
         }
-        .stars-header-text b {
-            display: block;
-            font-size: 14.5px;
-            color: #fff;
-            margin-bottom: 2px;
-        }
-        .stars-header-text span {
-            font-size: 11.5px;
-            color: #fcd34d;
-        }
-        .stars-presets {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 7px;
-            margin-bottom: 10px;
-        }
+        .stars-header-text b { display: block; font-size: 14.5px; color: #fff; margin-bottom: 2px; }
+        .stars-header-text span { font-size: 11.5px; color: #fcd34d; }
+        .stars-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 10px; }
         .star-preset-btn {
-            background: rgba(0, 0, 0, 0.45);
-            border: 1px solid rgba(255, 174, 0, 0.4);
-            color: #fde68a;
-            padding: 8px 4px;
-            border-radius: 10px;
-            font-size: 11.5px;
-            font-weight: bold;
-            cursor: pointer;
-            text-align: center;
-            transition: 0.2s;
+            background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 174, 0, 0.4);
+            color: #fde68a; padding: 8px 4px; border-radius: 10px;
+            font-size: 11.5px; font-weight: bold; cursor: pointer; text-align: center; transition: 0.2s;
         }
         .star-preset-btn:active, .star-preset-btn.active {
-            background: var(--stars-gold);
-            color: #000;
-            border-color: #fff;
+            background: var(--stars-gold); color: #000; border-color: #fff;
         }
         .stars-calc-preview {
-            background: rgba(0, 210, 106, 0.1);
-            border: 1px dashed var(--main-green);
-            border-radius: 12px;
-            padding: 10px 12px;
-            margin: 10px 0 12px;
-            font-size: 13px;
-            color: #fff;
-            text-align: center;
-            font-weight: bold;
+            background: rgba(0, 210, 106, 0.1); border: 1px dashed var(--main-green);
+            border-radius: 12px; padding: 10px 12px; margin: 10px 0 12px;
+            font-size: 13px; color: #fff; text-align: center; font-weight: bold;
         }
         .btn-pay-stars {
-            background: linear-gradient(135deg, #ffd000, #ff8800);
-            color: #000;
-            border: none;
-            width: 100%;
-            padding: 14px;
-            border-radius: 14px;
-            font-weight: 900;
-            font-size: 14.5px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 174, 0, 0.3);
-            transition: 0.2s;
-            font-family: inherit;
+            background: linear-gradient(135deg, #ffd000, #ff8800); color: #000;
+            border: none; width: 100%; padding: 14px; border-radius: 14px;
+            font-weight: 900; font-size: 14.5px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 174, 0, 0.3); transition: 0.2s; font-family: inherit;
         }
         .btn-pay-stars:active { transform: scale(0.98); }
         .btn-pay-stars:disabled { opacity: 0.6; cursor: not-allowed; }
@@ -147,23 +98,15 @@
         .input-group { margin-bottom: 18px; text-align: right; }
         .input-group label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: bold; color: #e5e7eb; }
         
-        /* شبكة وسائل الإيداع باللوجو */
         .methods-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .method-card {
-            background: var(--card-bg);
-            border: 1.5px solid #2d333d;
-            border-radius: 14px;
-            padding: 12px 10px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            position: relative;
+            background: var(--card-bg); border: 1.5px solid #2d333d;
+            border-radius: 14px; padding: 12px 10px;
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer; transition: all 0.25s ease; position: relative;
         }
         .method-card.active {
-            border-color: var(--main-cyan);
-            background: rgba(0, 242, 255, 0.08);
+            border-color: var(--main-cyan); background: rgba(0, 242, 255, 0.08);
             box-shadow: 0 0 12px rgba(0, 242, 255, 0.2);
         }
         .method-card.binance-special {
@@ -175,85 +118,43 @@
             box-shadow: 0 0 15px rgba(252, 213, 53, 0.3);
         }
         .auto-tag {
-            position: absolute;
-            top: -8px;
-            left: 8px;
-            background: var(--binance-yellow);
-            color: #000;
-            font-size: 9.5px;
-            font-weight: 900;
-            padding: 2px 7px;
-            border-radius: 6px;
+            position: absolute; top: -8px; left: 8px;
+            background: var(--binance-yellow); color: #000;
+            font-size: 9.5px; font-weight: 900; padding: 2px 7px; border-radius: 6px;
         }
         .method-logo {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            object-fit: cover;
-            background: #0d0f12;
-            border: 1px solid #333;
-            flex-shrink: 0;
-        }
-        .method-fallback-icon {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            background: rgba(0, 242, 255, 0.12);
-            border: 1px solid rgba(0, 242, 255, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            flex-shrink: 0;
+            width: 38px; height: 38px; border-radius: 10px;
+            object-fit: cover; background: #0d0f12; border: 1px solid #333; flex-shrink: 0;
         }
         .method-title { font-size: 13px; font-weight: bold; color: white; line-height: 1.3; }
 
-        /* صندوق شرح طريقة الإيداع ورقم التحويل */
         .method-instructions-card {
-            background: #14171d;
-            border: 1px solid #2d3545;
-            border-right: 4px solid var(--main-cyan);
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: none;
+            background: #14171d; border: 1px solid #2d3545;
+            border-right: 4px solid var(--main-cyan); border-radius: 15px;
+            padding: 15px; margin-bottom: 20px; display: none;
         }
         .inst-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #232832; }
-        .inst-header img { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; }
+        .inst-header img { width: 36px; height: 36px; border-radius: 9px; object-fit: cover; border: 1px solid #333; }
         .inst-header b { font-size: 14px; color: var(--main-cyan); }
         
         .transfer-target-box {
-            background: #090b0e;
-            border: 1px dashed #3a4454;
-            border-radius: 12px;
-            padding: 10px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            gap: 10px;
+            background: #090b0e; border: 1px dashed #3a4454;
+            border-radius: 12px; padding: 10px 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px; gap: 10px;
         }
         .transfer-number { font-size: 14px; font-weight: bold; color: var(--main-green); word-break: break-all; font-family: monospace; }
         .btn-copy {
-            background: rgba(0, 210, 106, 0.15);
-            color: var(--main-green);
-            border: 1px solid var(--main-green);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: bold;
-            cursor: pointer;
-            flex-shrink: 0;
+            background: rgba(0, 210, 106, 0.15); color: var(--main-green);
+            border: 1px solid var(--main-green); padding: 6px 12px;
+            border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;
         }
         .btn-copy:active { transform: scale(0.95); }
 
         #binance-extra-box {
-            display: none;
-            background: rgba(252, 213, 53, 0.06);
-            border: 1px dashed rgba(252, 213, 53, 0.45);
-            border-radius: 12px;
-            padding: 12px;
-            margin-bottom: 12px;
+            display: none; background: rgba(252, 213, 53, 0.06);
+            border: 1px dashed rgba(252, 213, 53, 0.45); border-radius: 12px;
+            padding: 12px; margin-bottom: 12px;
         }
 
         .inst-steps { margin: 0; padding-right: 18px; font-size: 12px; color: #cbd5e1; line-height: 1.8; }
@@ -263,44 +164,31 @@
         input:focus { border-color: var(--main-cyan); box-shadow: 0 0 8px rgba(0, 242, 255, 0.2); }
         
         .conversion-hint-box {
-            background: rgba(0, 242, 255, 0.06);
-            border: 1px solid rgba(0, 242, 255, 0.2);
-            padding: 10px 12px;
-            border-radius: 10px;
-            margin-top: 8px;
-            font-size: 12px;
-            color: #d1d5db;
-            display: none;
-            line-height: 1.6;
+            background: rgba(0, 242, 255, 0.06); border: 1px solid rgba(0, 242, 255, 0.2);
+            padding: 10px 12px; border-radius: 10px; margin-top: 8px;
+            font-size: 12px; color: #d1d5db; display: none; line-height: 1.6;
         }
 
         .deposit-btn { 
-            background: linear-gradient(135deg, #00f2ff, #0077ff); 
-            color: black; 
-            border: none; 
-            width: 100%; 
-            padding: 16px; 
-            border-radius: 15px; 
-            font-weight: bold; 
-            cursor: pointer; 
-            font-size: 15px; 
-            box-shadow: 0 5px 15px rgba(0, 242, 255, 0.25); 
-            transition: 0.2s;
+            background: linear-gradient(135deg, #00f2ff, #0077ff); color: black; 
+            border: none; width: 100%; padding: 16px; border-radius: 15px; 
+            font-weight: 900; cursor: pointer; font-size: 15px; 
+            box-shadow: 0 5px 15px rgba(0, 242, 255, 0.25); transition: 0.2s; font-family: inherit;
         }
         .deposit-btn:active { transform: scale(0.98); }
         .deposit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
         .history-section { margin-top: 25px; }
         .history-card {
-            background: var(--card-bg);
-            border: 1px solid #282e38;
-            border-radius: 13px;
-            padding: 11px 13px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 12px;
+            background: var(--card-bg); border: 1px solid #282e38;
+            border-right: 4px solid var(--main-cyan); border-radius: 13px;
+            padding: 12px 13px; margin-bottom: 9px;
+            display: flex; justify-content: space-between; align-items: center; font-size: 12px; gap: 10px;
+        }
+        .btn-cancel-dep {
+            background: rgba(255, 61, 87, 0.15); border: 1px solid var(--crimson);
+            color: var(--crimson); padding: 4px 10px; border-radius: 7px;
+            font-size: 11px; font-weight: bold; cursor: pointer; margin-top: 5px; display: inline-block;
         }
 
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
@@ -311,7 +199,6 @@
 
     <h2 class="page-title">💳 شحن وإيداع رصيد (بالجنيه)</h2>
 
-    <!-- بطاقة عرض الرصيد الحالي بالجنيه والنقاط -->
     <div class="balance-card">
         <div class="balance-grid">
             <div class="bal-item bal-egp">
@@ -326,7 +213,7 @@
         <div class="info-box">شحن آمن وفوري لرصيد الجنيه لشراء خدمات المتجر أو تمويل مهامك ⚡</div>
     </div>
 
-    <!-- ⭐ بطاقة الشحن اللحظي بنجوم تليجرام (Telegram Stars - XTR) -->
+    <!-- بطاقة الشحن اللحظي بنجوم تليجرام -->
     <div class="stars-instant-card">
         <span class="stars-badge-top">يُضاف في ثانية ⚡</span>
         <div class="stars-header">
@@ -355,12 +242,12 @@
         </button>
     </div>
 
-    <!-- اختيار وسيلة الإيداع الأخرى باللوجو -->
+    <!-- اختيار وسيلة الإيداع باللوجو -->
     <div class="input-group">
         <label>1️⃣ أو اختر وسيلة إيداع أخرى (كاش / انستاباي / باينانس):</label>
         <div id="methods-grid" class="methods-grid">
             <div style="grid-column: span 2; text-align: center; color: var(--text-gray); padding: 15px;">
-                جاري تحميل وسائل الإيداع...
+                ⏳ جاري تحميل وسائل الإيداع...
             </div>
         </div>
     </div>
@@ -368,8 +255,7 @@
     <!-- صندوق شرح طريقة الإيداع وبيانات الحساب المختار -->
     <div id="method-instructions" class="method-instructions-card">
         <div class="inst-header">
-            <img id="inst-logo" src="" alt="Logo" style="display: none;">
-            <div id="inst-fallback-icon" class="method-fallback-icon" style="width:32px; height:32px; font-size:16px;">💳</div>
+            <img id="inst-logo" src="" alt="Logo">
             <div>
                 <b id="inst-method-name">وسيلة الإيداع</b>
                 <div style="font-size: 11px; color: var(--text-gray);">اتبع التعليمات التالية لإتمام الشحن بنجاح</div>
@@ -382,7 +268,6 @@
             <button type="button" class="btn-copy" onclick="copyTargetAccount()">📋 نسخ</button>
         </div>
 
-        <!-- 🟡 إضافات Binance Pay التلقائية -->
         <div id="binance-extra-box">
             <label style="font-size: 11px; color: var(--binance-yellow); display: block; margin-bottom: 5px; font-weight: bold;">
                 ⚡ لشحن فوري بدون انتظار: ضع هذا الكود في خانة الملاحظة (Note) داخل تطبيق باينانس أثناء الإرسال:
@@ -401,20 +286,17 @@
         <ol class="inst-steps" id="inst-steps-list"></ol>
     </div>
 
-    <!-- إدخال المبلغ بالجنيه فقط -->
     <div class="input-group">
         <label id="lbl-amount-field">2️⃣ المبلغ المراد إيداعه (بالجنيه المصري فقط)</label>
         <input type="number" id="deposit-amount" placeholder="مثلاً: 50 جنيه" min="1" step="0.5" oninput="updateConversionHint()">
         <div id="conversion-hint" class="conversion-hint-box"></div>
     </div>
 
-    <!-- رقم المحول منه أو رقم العملية -->
     <div class="input-group">
         <label id="lbl-wallet-field">3️⃣ رقم الحساب المحول منه / رقم العملية (Order ID / TX ID)</label>
         <input type="text" id="deposit-wallet" placeholder="أدخل الرقم الذي حولت منه أو رقم العملية">
     </div>
 
-    <!-- البريد الإلكتروني أو ملاحظة -->
     <div class="input-group">
         <label>4️⃣ البريد الإلكتروني أو ملاحظة (اختياري)</label>
         <input type="email" id="deposit-email" placeholder="example@gmail.com">
@@ -422,7 +304,6 @@
 
     <button id="submit-deposit-btn" class="deposit-btn" onclick="processDeposit()">تأكيد وإرسال طلب الإيداع ↗</button>
 
-    <!-- سجل عمليات الشحن الأخيرة -->
     <div class="history-section">
         <label style="display: block; margin-bottom: 10px; font-size: 13.5px; font-weight: bold; color: var(--main-cyan);">📂 آخر عمليات الشحن الخاصة بي:</label>
         <div id="my-deposits-history"></div>
@@ -440,13 +321,10 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // =========================================================================
-        // ⭐ إعدادات الدفع بنجوم تليجرام (Telegram Stars) وبوابة باينانس
-        // =========================================================================
-        const STAR_TO_EGP_RATE = 0.70;     // 1 نجمة = 0.70 ج.م (50 نجمة = 35.00 ج.م)
-        const MIN_STARS_DEPOSIT = 10;      // أقل شحن 10 نجوم
+        const ADMIN_MASTER_ID = "875021647";
+        const STAR_TO_EGP_RATE = 0.70;
+        const MIN_STARS_DEPOSIT = 10;
         const BOT_USERNAME = "MegaTask1Bot";
-        // ضع رابط سيرفر البايثون الخاص بك (PythonAnywhere أو Render) إن وجد لفتح الفاتورة المنبثقة داخل الميني أب مباشرة
         const FLASK_API_BASE = "https://moustafa011494.pythonanywhere.com";
 
         const MY_BINANCE_PAY_ID = "494159809";
@@ -463,7 +341,27 @@
 
         let depositMethodsList = [];
         let selectedMethodObj = null;
-        let lastKnownEgp = 0;
+        let isSubmittingDeposit = false;
+
+        const BUILTIN_LOGOS = {
+            binance: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#181A20"/><path fill="#FCD535" d="M50 20L62 32L54 40L50 36L46 40L38 32L50 20ZM32 38L40 46L36 50L40 54L32 62L20 50L32 38ZM68 38L80 50L68 62L60 54L64 50L60 46L68 38ZM50 42L58 50L50 58L42 50L50 42ZM50 64L54 60L62 68L50 80L38 68L46 60L50 64Z"/></svg>`),
+            vodafone: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#E60000"/><circle cx="50" cy="50" r="30" fill="#ffffff"/><path fill="#E60000" d="M53 26C40 28 33 38 33 50C33 61 41 70 52 70C62 70 69 62 69 53C69 43 61 38 53 38C49 38 46 40 46 40C46 33 52 28 58 27L53 26Z"/></svg>`),
+            instapay: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="ip" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6B11B4"/><stop offset="100%" stop-color="#FF5100"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#ip)"/><path fill="#fff" d="M30 32H58L48 48H68L36 74L44 52H26L30 32Z"/></svg>`),
+            wallets: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#0c2233"/><rect x="20" y="28" width="60" height="44" rx="10" fill="#00f2ff"/><circle cx="66" cy="50" r="6" fill="#0c2233"/></svg>`)
+        };
+
+        function resolveMethodLogo(name, customLogo) {
+            if (customLogo) return customLogo;
+            const n = String(name || "").toLowerCase();
+            if (n.includes("binance") || n.includes("بينانس") || n.includes("باينانس") || n.includes("usdt")) return BUILTIN_LOGOS.binance;
+            if (n.includes("فودافون") || n.includes("vodafone")) return BUILTIN_LOGOS.vodafone;
+            if (n.includes("انستا") || n.includes("إنستا") || n.includes("instapay")) return BUILTIN_LOGOS.instapay;
+            return BUILTIN_LOGOS.wallets;
+        }
+
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
 
         async function init() {
             document.getElementById('binance-note-id').innerText = tid || "ID";
@@ -471,18 +369,18 @@
             updateStarsCalcPreview();
 
             if (tid && typeof MegaSecurity !== 'undefined') {
-                MegaSecurity.verifyDeviceAndAccount(client, tid).catch(() => {});
+                const sec = await MegaSecurity.verifyDeviceAndAccount(client, tid);
+                if (!sec.allowed) return;
             }
 
             await loadDepositMethods();
             await refreshUserBalances();
             await loadMyDepositsHistory();
 
-            // رادار حي يفحص كل 5 ثوانٍ إذا تم اعتماد دفعة النجوم أو باينانس التلقائية
             setInterval(async () => {
                 await refreshUserBalances();
                 await loadMyDepositsHistory();
-            }, 5000);
+            }, 6000);
         }
 
         async function refreshUserBalances() {
@@ -492,13 +390,9 @@
                 const newEgp = Number(data.egp_balance || 0);
                 document.getElementById('current-egp').innerText = newEgp.toFixed(2) + " ج.م";
                 document.getElementById('current-points').innerText = (data.points || 0).toLocaleString() + " نقطة";
-                lastKnownEgp = newEgp;
             }
         }
 
-        // =========================================================================
-        // ⭐ دوال الشحن اللحظي بنجوم تليجرام (Telegram Stars - XTR)
-        // =========================================================================
         function selectStarsPreset(starsCount, btnEl) {
             document.querySelectorAll('.star-preset-btn').forEach(b => b.classList.remove('active'));
             if (btnEl) btnEl.classList.add('active');
@@ -530,7 +424,6 @@
             btn.innerText = "⏳ جاري تجهيز فاتورة النجوم...";
 
             try {
-                // 1. محاولة إنشاء رابط الفاتورة عبر Flask API لفتح نافذة الدفع المنبثقة (tg.openInvoice) مباشرة
                 const ctrl = new AbortController();
                 const timeoutId = setTimeout(() => ctrl.abort(), 4500);
 
@@ -563,11 +456,9 @@
                     }
                 }
             } catch (apiErr) {
-                console.warn("Direct invoice API unreachable, using instant bot chat fallback:", apiErr);
+                console.warn("Direct invoice API unreachable, using bot chat fallback:", apiErr);
             }
 
-            // 2. البديل المضمون 100% إذا كان السيرفر يعمل محلياً بدون HTTPS:
-            // إرسال أمر فوري لطابور البوت لإرسال الفاتورة في الشات + توجيه المستخدم للشات لدفعها بضغطة واحدة
             try {
                 await client.from('bot_messages').insert([{
                     telegram_id: String(tid),
@@ -587,7 +478,6 @@
             }
         }
 
-        // حاسبة تحويل USDT إلى جنيه مصري تلقائياً
         function syncUsdtToEgp() {
             const usdtVal = parseFloat(document.getElementById('usdt-calc-input').value) || 0;
             const egpField = document.getElementById('deposit-amount');
@@ -599,7 +489,6 @@
             updateConversionHint();
         }
 
-        // تحديث التوضيح التلقائي للمبلغ بالجنيه (1 جنيه = 1000 نقطة)
         function updateConversionHint() {
             const val = parseFloat(document.getElementById('deposit-amount').value) || 0;
             const hint = document.getElementById('conversion-hint');
@@ -621,14 +510,18 @@
                 id: "binance_auto",
                 name: "Binance Pay ⚡",
                 description: MY_BINANCE_PAY_ID,
-                logo: null,
+                logo: BUILTIN_LOGOS.binance,
                 isBinanceAuto: true
             };
 
             const dbMethods = (data || []).filter(m => {
                 const n = (m.name || "").toLowerCase();
                 return !n.includes("binance") && !n.includes("بينانس") && !n.includes("باينانس");
-            });
+            }).map(m => ({
+                ...m,
+                logo: resolveMethodLogo(m.name, m.logo),
+                isBinanceAuto: false
+            }));
 
             depositMethodsList = [autoBinanceMethod, ...dbMethods];
 
@@ -640,14 +533,11 @@
                 card.onclick = () => selectDepositMethod(index);
 
                 const badgeHtml = m.isBinanceAuto ? `<span class="auto-tag">تلقائي فوري ⚡</span>` : '';
-                const logoHtml = m.logo 
-                    ? `<img src="${m.logo}" class="method-logo" alt="${m.name}">`
-                    : `<div class="method-fallback-icon" style="${m.isBinanceAuto ? 'border-color:#FCD535; color:#FCD535; background:rgba(252,213,53,0.12);' : ''}">${m.isBinanceAuto ? '🟡' : '💳'}</div>`;
 
                 card.innerHTML = `
                     ${badgeHtml}
-                    ${logoHtml}
-                    <div class="method-title">${m.name}</div>
+                    <img src="${m.logo}" class="method-logo" alt="${escapeHtml(m.name)}">
+                    <div class="method-title">${escapeHtml(m.name)}</div>
                 `;
                 grid.appendChild(card);
             });
@@ -667,7 +557,6 @@
 
             const instBox = document.getElementById('method-instructions');
             const instLogo = document.getElementById('inst-logo');
-            const instFallback = document.getElementById('inst-fallback-icon');
             const instName = document.getElementById('inst-method-name');
             const instTarget = document.getElementById('inst-target-account');
             const instSteps = document.getElementById('inst-steps-list');
@@ -680,16 +569,7 @@
             instBox.style.display = 'block';
             instName.innerText = `طريقة الإيداع عبر ${selectedMethodObj.name}`;
             instTarget.innerText = selectedMethodObj.description || "تواصل مع الإدارة";
-
-            if (selectedMethodObj.logo) {
-                instLogo.src = selectedMethodObj.logo;
-                instLogo.style.display = 'block';
-                instFallback.style.display = 'none';
-            } else {
-                instLogo.style.display = 'none';
-                instFallback.style.display = 'flex';
-                instFallback.innerText = selectedMethodObj.isBinanceAuto ? "🟡" : "💳";
-            }
+            instLogo.src = resolveMethodLogo(selectedMethodObj.name, selectedMethodObj.logo);
 
             const lowerName = (selectedMethodObj.name || "").toLowerCase();
 
@@ -721,7 +601,7 @@
                         <li>اكتب <b>المبلغ بالجنيه</b> الذي قمت بتحويله في الخانة بالأسفل.</li>
                         <li>اكتب <b>رقم هاتفك الذي قمت بالتحويل منه</b> في خانة رقم الحساب لتأكيد العملية فوراً.</li>
                     `;
-                } else if (lowerName.includes("انستا") || lowerName.includes("instapay")) {
+                } else if (lowerName.includes("انستا") || lowerName.includes("إنستا") || lowerName.includes("instapay")) {
                     instSteps.innerHTML = `
                         <li>انسخ عنوان الدفع (IPA) أو الرقم الموضح بالأعلى.</li>
                         <li>افتح تطبيق <b>InstaPay</b> وحوّل المبلغ المطلوب بالجنيه المصري.</li>
@@ -731,7 +611,7 @@
                 } else {
                     instSteps.innerHTML = `
                         <li>انسخ بيانات الحساب أو الرقم الموضح في الصندوق بالأعلى.</li>
-                        <li>قم بتحويل المبلغ المطلوب عبر <b>${selectedMethodObj.name}</b>.</li>
+                        <li>قم بتحويل المبلغ المطلوب عبر <b>${escapeHtml(selectedMethodObj.name)}</b>.</li>
                         <li>أدخل <b>المبلغ بالجنيه المصري</b> في الخانة المخصصة بالأسفل.</li>
                         <li>أدخل <b>رقم الحساب المحول منه أو رقم الإيصال</b> ثم اضغط تأكيد الإيداع.</li>
                     `;
@@ -754,7 +634,7 @@
         }
 
         async function processDeposit() {
-            if (!tid) return tg.showAlert("❌ يرجى فتح الصفحة من داخل البوت أولاً.");
+            if (!tid || isSubmittingDeposit) return;
             const amount = parseFloat(document.getElementById('deposit-amount').value);
             const wallet = document.getElementById('deposit-wallet').value.trim();
             const email = document.getElementById('deposit-email').value.trim();
@@ -765,62 +645,126 @@
             if (!wallet) return tg.showAlert("❌ يرجى إدخال رقم المحفظة المحول منها أو رقم العملية (Order ID / TX ID)!");
 
             const isBinance = Boolean(selectedMethodObj.isBinanceAuto);
+            isSubmittingDeposit = true;
+            btn.disabled = true;
+            btn.innerText = "⏳ جاري التحقق من الطلبات السابقة...";
 
-            if (isBinance) {
+            try {
+                // 1. شرط عدم وجود أي طلب إيداع معلق (طلب واحد فقط مسموح به في نفس الوقت)
+                const { data: myPendingDeps } = await client
+                    .from('deposits')
+                    .select('id, tx_id, amount, method')
+                    .eq('telegram_id', String(tid))
+                    .eq('status', 'Pending')
+                    .limit(1);
+
+                if (myPendingDeps && myPendingDeps.length > 0) {
+                    const p = myPendingDeps[0];
+                    return tg.showAlert(
+                        `⚠️ لديك طلب إيداع معلق قيد المراجعة بالفعل!\n\n` +
+                        `🆔 رقم الطلب: ${p.tx_id || p.id}\n` +
+                        `💵 المبلغ: ${Number(p.amount).toFixed(2)} ج.م (${p.method})\n\n` +
+                        `لا يمكن إرسال أكثر من طلب إيداع معلق في نفس الوقت. انتظر مراجعته أو قم بإلغائه من سجل العمليات بالأسفل إذا كنت قد أخطأت في البيانات.`
+                    );
+                }
+
+                // 2. فحص عدم تكرار رقم العملية في قاعدة البيانات
                 const { data: existTx } = await client
                     .from('deposits')
                     .select('id, status')
                     .or(`tx_id.eq.${wallet},wallet_info.eq.${wallet}`)
                     .maybeSingle();
 
-                if (existTx) {
+                if (existTx && (isBinance || existTx.status === 'Pending')) {
                     return tg.showAlert(existTx.status === 'Completed'
-                        ? "✅ رقم عملية باينانس هذا تم اعتماده وإضافة رصيده لحسابك بالفعل!"
-                        : "⏳ رقم هذه العملية قيد الفحص التلقائي حالياً، سيتم إضافة الرصيد خلال ثوانٍ!");
-                }
-            }
-
-            btn.disabled = true;
-            btn.innerText = isBinance ? "⏳ جاري مطابقة العملية مع سيرفر Binance..." : "⏳ جاري إرسال الطلب...";
-
-            const method = selectedMethodObj.name;
-            const txId = isBinance ? wallet : ("DEP-" + Math.floor(100000 + Math.random() * 900000));
-            
-            const { error } = await client.from('deposits').insert([{
-                telegram_id: tid,
-                tx_id: txId,
-                amount: amount,
-                method: method,
-                wallet_info: wallet,
-                email: email || "غير مسجل",
-                status: 'Pending'
-            }]);
-
-            if (!error) {
-                if (!isBinance) {
-                    await client.from('transactions').insert([{
-                        telegram_id: String(tid),
-                        type: 'deposit',
-                        title: `طلب شحن رصيد (${method})`,
-                        amount: `+${amount.toFixed(2)} ج.م`,
-                        status: 'قيد المراجعة'
-                    }]);
+                        ? "✅ رقم هذه العملية تم اعتماده وإضافة رصيده مسبقاً!"
+                        : "⏳ رقم هذه العملية مسجل وقيد المراجعة حالياً!");
                 }
 
-                document.getElementById('deposit-wallet').value = "";
-                await loadMyDepositsHistory();
+                btn.innerText = isBinance ? "⏳ جاري مطابقة العملية مع سيرفر Binance..." : "⏳ جاري إرسال الطلب...";
 
-                if (isBinance) {
-                    tg.showAlert(`⚡ تم إرسال رقم العملية (${wallet}) للرادار التلقائي!\n\nيقوم البوت الآن بمطابقة الدفعة مع محفظة Binance وسيُضاف الرصيد لحسابك تلقائياً خلال 10 ثوانٍ!`);
+                const method = selectedMethodObj.name;
+                const txId = isBinance ? wallet : ("DEP-" + Math.floor(100000 + Math.random() * 900000));
+                
+                const { error } = await client.from('deposits').insert([{
+                    telegram_id: String(tid),
+                    tx_id: txId,
+                    amount: amount,
+                    method: method,
+                    wallet_info: wallet,
+                    email: email || "غير مسجل",
+                    status: 'Pending'
+                }]);
+
+                if (!error) {
+                    if (!isBinance) {
+                        await client.from('transactions').insert([{
+                            telegram_id: String(tid),
+                            type: 'deposit',
+                            title: `طلب شحن رصيد (${method})`,
+                            amount: `+${amount.toFixed(2)} ج.م`,
+                            status: 'قيد المراجعة'
+                        }]);
+
+                        // إرسال إشعار فوري للأدمن في تيليجرام عند إرسال طلب إيداع يدوي
+                        await client.from('bot_messages').insert([{
+                            telegram_id: ADMIN_MASTER_ID,
+                            message:
+                                `📥 *طلب إيداع وشحن رصيد جديد!* 🔔\n` +
+                                `━━━━━━━━━━━━━━━\n` +
+                                `🆔 *كود العملية:* \`${txId}\`\n` +
+                                `👤 *المستخدم:* \`${tid}\`\n` +
+                                `💵 *المبلغ:* *${amount.toFixed(2)} ج.م*\n` +
+                                `💳 *الوسيلة:* ${method}\n` +
+                                `📱 *المحول منه / المرجع:* \`${wallet}\``,
+                            status: 'pending'
+                        }]);
+                    }
+
+                    document.getElementById('deposit-wallet').value = "";
+                    await loadMyDepositsHistory();
+
+                    if (isBinance) {
+                        tg.showAlert(`⚡ تم إرسال رقم العملية (${wallet}) للرادار التلقائي!\n\nيقوم البوت الآن بمطابقة الدفعة مع محفظة Binance وسيُضاف الرصيد لحسابك تلقائياً خلال ثوانٍ!`);
+                    } else {
+                        tg.showAlert(`✅ تم إرسال طلب الإيداع بنجاح!\n\n🆔 رقم المعاملة: ${txId}\n💵 المبلغ: ${amount.toFixed(2)} ج.م\n\nسيتم مراجعة التحويل وإضافة الجنيهات لرصيدك قريباً.`);
+                    }
                 } else {
-                    tg.showAlert(`✅ تم إرسال طلب الإيداع بنجاح!\n\n🆔 رقم المعاملة: ${txId}\n💵 المبلغ: ${amount.toFixed(2)} ج.م\n\nسيتم مراجعة التحويل وإضافة الجنيهات لرصيدك قريباً.`);
+                    tg.showAlert("❌ خطأ أثناء إرسال الطلب: " + error.message);
                 }
-            } else {
-                tg.showAlert("❌ خطأ أثناء إرسال الطلب: " + error.message);
+            } finally {
+                isSubmittingDeposit = false;
+                btn.disabled = false;
+                btn.innerText = isBinance ? "⚡ فحص العملية وإضافة الرصيد تلقائياً الآن" : "تأكيد وإرسال طلب الإيداع ↗";
             }
+        }
 
-            btn.disabled = false;
-            btn.innerText = isBinance ? "⚡ فحص العملية وإضافة الرصيد تلقائياً الآن" : "تأكيد وإرسال طلب الإيداع ↗";
+        async function cancelPendingDeposit(depId, txCode) {
+            if (isSubmittingDeposit) return;
+            if (!confirm(`هل تريد إلغاء طلب الإيداع المعلق (${txCode}) لتتمكن من إرسال طلب جديد ببيانات صحيحة؟`)) return;
+
+            isSubmittingDeposit = true;
+            try {
+                const { data: delRows, error } = await client
+                    .from('deposits')
+                    .delete()
+                    .eq('id', depId)
+                    .eq('telegram_id', String(tid))
+                    .eq('status', 'Pending')
+                    .select('id');
+
+                if (error || !delRows || delRows.length === 0) {
+                    await loadMyDepositsHistory();
+                    return tg.showAlert("⚠️ لا يمكن إلغاء هذا الطلب لأنه تمت مراجعته بالفعل.");
+                }
+
+                await loadMyDepositsHistory();
+                tg.showAlert("✅ تم إلغاء طلب الإيداع المعلق بنجاح! يمكنك الآن إرسال طلب جديد.");
+            } catch (e) {
+                tg.showAlert("❌ تعذر إلغاء الطلب.");
+            } finally {
+                isSubmittingDeposit = false;
+            }
         }
 
         async function loadMyDepositsHistory() {
@@ -839,27 +783,33 @@
             }
 
             box.innerHTML = data.map(d => {
+                const txCode = d.tx_id || ('DEP-' + d.id);
                 let stHtml = `<span style="color:#ffaa00;">⏳ قيد الفحص</span>`;
                 if (d.status === 'Completed') stHtml = `<span style="color:var(--main-green);">✅ تم الإيداع</span>`;
                 if (d.status === 'Rejected') stHtml = `<span style="color:#ff4d4d;">❌ مرفوض</span>`;
 
+                const cancelBtn = d.status === 'Pending'
+                    ? `<button class="btn-cancel-dep" onclick="cancelPendingDeposit(${d.id}, '${escapeHtml(txCode)}')">✖ إلغاء الطلب</button>`
+                    : '';
+
                 return `
                     <div class="history-card">
                         <div>
-                            <b>${d.method} (${Number(d.amount).toFixed(2)} ج.م)</b>
-                            <div style="font-size:10.5px; color:var(--text-gray); font-family:monospace;">ID: ${d.tx_id || d.id}</div>
+                            <b>${escapeHtml(d.method)} (${Number(d.amount).toFixed(2)} ج.م)</b>
+                            <div style="font-size:10.5px; color:var(--text-gray); font-family:monospace;">ID: ${escapeHtml(txCode)} | من: ${escapeHtml(d.wallet_info || '')}</div>
+                            ${cancelBtn}
                         </div>
-                        <b>${stHtml}</b>
+                        <b style="white-space:nowrap;">${stHtml}</b>
                     </div>
                 `;
             }).join("");
         }
 
-        function goHome() { window.location.href = `index.html?id=${tid}`; }
-        function goStore() { window.location.href = `store.html?id=${tid}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${tid}`; }
-        function goInvite() { window.location.href = `invite.html?id=${tid}`; }
-        function goProfile() { window.location.href = `profile.html?id=${tid}`; }
+        function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
+        function goStore() { window.location.href = `store.html?id=${tid}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
 
         init();
     </script>
