@@ -4,92 +4,279 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>سحب النقاط والمهام - MegaTask</title>
+    <title>Withdraw Points - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- درع الحماية ضد تعدد الحسابات والـ VPN -->
     <script src="security.js"></script>
     <style>
         :root { 
             --main-green: #00d26a; 
             --main-cyan: #00f2ff;
+            --binance-yellow: #FCD535;
             --gold: #ffaa00;
             --crimson: #ff3d57;
+            --violet: #9d4edd;
             --dark-bg: #0d0f12; 
             --card-bg: #1a1d23; 
             --text-gray: #9ca3af; 
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 16px; padding-bottom: 110px; overflow-x: hidden; }
+        body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 18px 15px 115px; overflow-x: hidden; }
+        
+        .top-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 8px; }
+        .page-title { text-align: right; font-size: 19px; margin: 0; display: flex; align-items: center; gap: 8px; }
+        .btn-merchant-switch {
+            background: rgba(157, 78, 221, 0.16);
+            border: 1px solid var(--violet);
+            color: #e9d5ff;
+            padding: 7px 11px;
+            border-radius: 11px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+        }
 
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .btn-back { background: var(--card-bg); border: 1.5px solid #2d333d; color: #fff; padding: 8px 14px; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer; }
-
+        /* بطاقة الأرصدة العلوية (نفس تصميم صفحة الإيداع) */
         .balance-card { 
-            background: linear-gradient(145deg, #1a2029, #12151b); 
-            padding: 20px 15px; 
-            border-radius: 22px; 
+            background: linear-gradient(145deg, #1a1e26, #12151a); 
+            padding: 18px 15px; 
+            border-radius: 20px; 
             border: 1px solid rgba(0, 210, 106, 0.35); 
             text-align: center; 
             margin-bottom: 18px; 
-            box-shadow: 0 6px 20px rgba(0, 210, 106, 0.08); 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.45); 
         }
-        .balance-card span { font-size: 12px; color: var(--text-gray); }
-        .balance-card h2 { color: var(--main-green); font-size: 30px; margin: 8px 0; text-shadow: 0 0 10px rgba(0, 210, 106, 0.25); }
-        
-        .info-box { background: rgba(0, 210, 106, 0.08); border: 1px dashed rgba(0, 210, 106, 0.4); padding: 10px; border-radius: 12px; font-size: 12px; color: #a7f3d0; text-align: center; margin-top: 10px; line-height: 1.6; }
+        .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+        .bal-item { background: rgba(0,0,0,0.35); padding: 12px 8px; border-radius: 14px; border: 1px solid #262b36; }
+        .bal-item span { font-size: 11px; color: var(--text-gray); display: block; margin-bottom: 4px; }
+        .bal-item b { font-size: 20px; }
+        .bal-pts b { color: var(--main-green); text-shadow: 0 0 8px rgba(0, 210, 106, 0.25); }
+        .bal-egp b { color: var(--main-cyan); }
 
-        /* شروط سحب النقاط */
+        .info-box { background: rgba(0, 210, 106, 0.08); border: 1px dashed rgba(0, 210, 106, 0.5); padding: 9px; border-radius: 10px; font-size: 12px; color: var(--main-green); text-align: center; }
+
+        /* بطاقة شروط فتح سحب النقاط */
         .req-card {
-            background: var(--card-bg);
-            border: 1.5px solid #2d333d;
+            background: linear-gradient(145deg, #161920, #111318);
+            border: 1.5px solid #28303e;
             border-radius: 18px;
-            padding: 15px;
-            margin-bottom: 16px;
+            padding: 14px;
+            margin-bottom: 20px;
         }
-        .req-prog-box {
-            background: #0d1016;
-            border: 1px solid #262e3d;
-            border-radius: 12px;
-            padding: 10px 12px;
+        .req-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 10px;
-            text-align: right;
-            font-size: 12px;
+            font-size: 12.5px;
+            font-weight: bold;
         }
-        .req-bar-bg { width: 100%; height: 7px; background: #1a202c; border-radius: 8px; overflow: hidden; margin-top: 6px; }
-        .req-bar-fill { height: 100%; background: var(--main-green); width: 0%; transition: width 0.3s; }
+        .req-status-pill {
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 10.5px;
+            font-weight: bold;
+        }
+        .req-status-pill.locked { background: rgba(255, 170, 0, 0.14); color: var(--gold); border: 1px solid rgba(255, 170, 0, 0.4); }
+        .req-status-pill.unlocked { background: rgba(0, 210, 106, 0.16); color: var(--main-green); border: 1px solid var(--main-green); }
 
-        .withdraw-form-card {
+        .req-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .req-prog-box {
+            background: #090b0e;
+            border: 1px solid #222936;
+            border-radius: 12px;
+            padding: 9px 10px;
+            text-align: right;
+            font-size: 11.5px;
+        }
+        .req-bar-bg { width: 100%; height: 6px; background: #1a202c; border-radius: 8px; overflow: hidden; margin-top: 6px; }
+        .req-bar-fill { height: 100%; background: var(--main-green); width: 0%; transition: width 0.35s ease; }
+
+        .input-group { margin-bottom: 18px; text-align: right; }
+        .input-group label { display: block; margin-bottom: 8px; font-size: 13px; font-weight: bold; color: #e5e7eb; }
+        
+        /* شبكة وسائل السحب باللوجو (مطابقة لصفحة الإيداع) */
+        .methods-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .method-card {
             background: var(--card-bg);
             border: 1.5px solid #2d333d;
-            border-radius: 20px;
-            padding: 18px;
-            margin-bottom: 20px;
-            box-shadow: 0 6px 0 #05070b;
+            border-radius: 14px;
+            padding: 12px 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
         }
-        .input-group { margin-bottom: 14px; text-align: right; }
-        .input-group label { display: block; margin-bottom: 6px; font-size: 12.5px; font-weight: bold; color: #d1d5db; }
-        select, input { width: 100%; background: #07090e; border: 1.5px solid #263147; padding: 13px 12px; border-radius: 12px; color: white; outline: none; font-size: 13.5px; font-family: inherit; }
-        select:focus, input:focus { border-color: var(--main-green); }
+        .method-card.active {
+            border-color: var(--main-green);
+            background: rgba(0, 210, 106, 0.08);
+            box-shadow: 0 0 12px rgba(0, 210, 106, 0.2);
+        }
+        .method-card.binance-special {
+            border-color: rgba(252, 213, 53, 0.5);
+            background: linear-gradient(145deg, #211e12, #171a20);
+        }
+        .method-card.binance-special.active {
+            border-color: var(--binance-yellow);
+            box-shadow: 0 0 15px rgba(252, 213, 53, 0.3);
+        }
+        .auto-tag {
+            position: absolute;
+            top: -8px;
+            left: 8px;
+            background: var(--main-green);
+            color: #000;
+            font-size: 9.5px;
+            font-weight: 900;
+            padding: 2px 7px;
+            border-radius: 6px;
+        }
+        .method-card.binance-special .auto-tag {
+            background: var(--binance-yellow);
+        }
+        .method-logo {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: #0d0f12;
+            border: 1px solid #333;
+            flex-shrink: 0;
+        }
+        .method-fallback-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: rgba(0, 210, 106, 0.12);
+            border: 1px solid rgba(0, 210, 106, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .method-title { font-size: 13px; font-weight: bold; color: white; line-height: 1.3; }
+        .method-sub { font-size: 10px; color: var(--text-gray); display: block; margin-top: 2px; }
+
+        /* صندوق شرح وتفاصيل وسيلة السحب المختارة */
+        .method-instructions-card {
+            background: #14171d;
+            border: 1px solid #2d3545;
+            border-right: 4px solid var(--main-green);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .inst-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #232832; }
+        .inst-header img { width: 36px; height: 36px; border-radius: 9px; object-fit: cover; border: 1px solid #333; }
+        .inst-header b { font-size: 14px; color: var(--main-green); }
+        
+        .payout-summary-box {
+            background: #090b0e;
+            border: 1px dashed #3a4454;
+            border-radius: 12px;
+            padding: 11px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            gap: 10px;
+        }
+        .payout-val { font-size: 14px; font-weight: 900; color: var(--main-cyan); }
+        .payout-pts-badge {
+            background: rgba(0, 210, 106, 0.14);
+            color: var(--main-green);
+            border: 1px solid rgba(0, 210, 106, 0.4);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11.5px;
+            font-weight: bold;
+        }
+
+        .inst-steps { margin: 0; padding-right: 18px; font-size: 12px; color: #cbd5e1; line-height: 1.8; }
+        .inst-steps li { margin-bottom: 4px; }
+
+        /* أزرار باقات السحب */
+        .packages-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .pkg-btn {
+            background: #090b0e;
+            border: 1.5px solid #2d333d;
+            border-radius: 12px;
+            padding: 10px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .pkg-btn b { display: block; font-size: 13px; color: var(--main-green); margin-bottom: 2px; }
+        .pkg-btn small { font-size: 10.5px; color: var(--text-gray); }
+        .pkg-btn.active {
+            border-color: var(--main-cyan);
+            background: rgba(0, 242, 255, 0.08);
+            box-shadow: 0 0 10px rgba(0, 242, 255, 0.15);
+        }
+        .pkg-btn.active b { color: var(--main-cyan); }
+
+        input { width: 100%; background: #090b0e; border: 1px solid #2d333d; padding: 14px; border-radius: 12px; color: white; outline: none; transition: 0.3s; font-size: 14px; font-family: inherit; }
+        input:focus { border-color: var(--main-green); box-shadow: 0 0 8px rgba(0, 210, 106, 0.2); }
 
         .withdraw-btn { 
             background: linear-gradient(135deg, var(--main-green), #009e4f); 
             color: black; 
             border: none; 
             width: 100%; 
-            padding: 15px; 
-            border-radius: 14px; 
+            padding: 16px; 
+            border-radius: 15px; 
             font-weight: 900; 
             cursor: pointer; 
-            font-size: 14px; 
-            box-shadow: 0 4px 15px rgba(0, 210, 106, 0.25); 
+            font-size: 15px; 
+            box-shadow: 0 5px 15px rgba(0, 210, 106, 0.25); 
+            transition: 0.2s;
             font-family: inherit;
         }
-        .withdraw-btn:disabled { background: #222; color: #666; box-shadow: none; cursor: not-allowed; }
+        .withdraw-btn:active:not(:disabled) { transform: scale(0.98); }
+        .withdraw-btn.locked-btn {
+            background: linear-gradient(135deg, #252a34, #1b1f27);
+            color: #9ca3af;
+            border: 1px dashed #3d4659;
+            box-shadow: none;
+        }
 
-        .section-title { font-size: 14px; font-weight: bold; color: var(--main-cyan); margin: 20px 4px 10px; }
-        .w-history-card { background: var(--card-bg); border: 1px solid #2d333d; border-right: 4px solid var(--main-green); border-radius: 14px; padding: 12px 14px; margin-bottom: 9px; font-size: 12px; }
-        .w-hist-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-        .btn-cancel-req { background: rgba(255, 61, 87, 0.15); border: 1px solid var(--crimson); color: var(--crimson); padding: 4px 10px; border-radius: 7px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .history-section { margin-top: 25px; }
+        .history-card {
+            background: var(--card-bg);
+            border: 1px solid #282e38;
+            border-right: 4px solid var(--main-green);
+            border-radius: 13px;
+            padding: 12px 13px;
+            margin-bottom: 9px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            gap: 10px;
+        }
+        .btn-cancel-req {
+            background: rgba(255, 61, 87, 0.15);
+            border: 1px solid var(--crimson);
+            color: var(--crimson);
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 5px;
+            display: inline-block;
+        }
 
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
@@ -98,76 +285,130 @@
 </head>
 <body>
 
-    <div class="top-bar">
-        <button class="btn-back" onclick="goHome()">↩️ الرئيسية</button>
-        <div style="font-size: 12px; font-weight: bold; color: var(--main-green);">🪙 سحب نقاط المهام المجانية</div>
+    <div class="top-header-row">
+        <h2 class="page-title">💸 سحب أرباح النقاط والمهام</h2>
+        <button class="btn-merchant-switch" onclick="goMerchantWithdraw()">💼 سحب التجار ⬅</button>
     </div>
 
-    <!-- بطاقة رصيد النقاط -->
+    <!-- بطاقة عرض الرصيد الحالي بالنقاط والمعادل بالجنيه (نفس تنظيم صفحة الإيداع) -->
     <div class="balance-card">
-        <span>رصيد نقاطك الحالي</span>
-        <h2 id="current-points">0 نقطة</h2>
-        <div class="info-box">🪙 50,000 نقطة = 50.00 ج.م كاش فودافون كاش أو إنستا باي!</div>
+        <div class="balance-grid">
+            <div class="bal-item bal-pts">
+                <span>🪙 رصيد النقاط الحالي</span>
+                <b id="current-points">0</b>
+            </div>
+            <div class="bal-item bal-egp">
+                <span>💵 القيمة المعادلة بالجنيه</span>
+                <b id="current-egp-eq">0.00 ج.م</b>
+            </div>
+        </div>
+        <div class="info-box">كل 50,000 نقطة = 50.00 ج.م كاش فوري على محفظتك أو حسابك في باينانس ⚡</div>
     </div>
 
-    <!-- بطاقة شروط السحب (50 ألف نقطة + 50 مهمة) -->
+    <!-- بطاقة شروط فتح السحب المباشر للنقاط المجانية -->
     <div class="req-card">
-        <div style="font-size: 13px; font-weight: bold; color: var(--main-cyan); margin-bottom: 10px;">📋 شروط فتح السحب المباشر:</div>
-        
-        <div class="req-prog-box">
-            <div style="display: flex; justify-content: space-between;">
-                <span>1️⃣ رصيد النقاط المطلوب:</span>
-                <b id="req-pts-txt" style="color: var(--main-green);">0 / 50,000</b>
+        <div class="req-header">
+            <span style="color: var(--main-cyan);">📋 شروط تفعيل سحب النقاط المجانية:</span>
+            <span id="req-badge-status" class="req-status-pill locked">🔒 قيد الإنجاز</span>
+        </div>
+        <div class="req-grid">
+            <div class="req-prog-box">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>1️⃣ النقاط:</span>
+                    <b id="req-pts-txt" style="color: var(--main-green);">0 / 50K</b>
+                </div>
+                <div class="req-bar-bg"><div id="req-pts-bar" class="req-bar-fill"></div></div>
             </div>
-            <div class="req-bar-bg"><div id="req-pts-bar" class="req-bar-fill"></div></div>
-        </div>
 
-        <div class="req-prog-box">
-            <div style="display: flex; justify-content: space-between;">
-                <span>2️⃣ المهام المنفذة المطلوبة:</span>
-                <b id="req-tasks-txt" style="color: var(--gold);">0 / 50 مهمة</b>
+            <div class="req-prog-box">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>2️⃣ المهام:</span>
+                    <b id="req-tasks-txt" style="color: var(--gold);">0 / 50 مهمة</b>
+                </div>
+                <div class="req-bar-bg"><div id="req-tasks-bar" class="req-bar-fill" style="background: var(--gold);"></div></div>
             </div>
-            <div class="req-bar-bg"><div id="req-tasks-bar" class="req-bar-fill" style="background: var(--gold);"></div></div>
         </div>
     </div>
 
-    <!-- نموذج سحب النقاط -->
-    <div id="withdraw-form-container" class="withdraw-form-card" style="display: none;">
-        <h3 style="color: var(--main-green); margin-top: 0; margin-bottom: 12px; font-size: 15px;">🚀 إرسال طلب سحب الـ 50 ج.م</h3>
-        
-        <div class="input-group">
-            <label>وسيلة الاستلام:</label>
-            <select id="method">
-                <option value="فودافون كاش">🔴 فودافون كاش</option>
-                <option value="إنستا باي">🟣 إنستا باي (InstaPay)</option>
-                <option value="Binance Pay USDT">🟡 Binance Pay (USDT)</option>
-            </select>
+    <!-- 1️⃣ اختيار وسيلة السحب باللوجو (نفس تصميم صفحة الإيداع) -->
+    <div class="input-group">
+        <label>1️⃣ اختر وسيلة استلام الأرباح:</label>
+        <div id="methods-grid" class="methods-grid">
+            <div style="grid-column: span 2; text-align: center; color: var(--text-gray); padding: 15px;">
+                ⏳ جاري تحميل وسائل السحب...
+            </div>
         </div>
-
-        <div class="input-group">
-            <label>رقم المحفظة أو الحساب المستلم:</label>
-            <input type="text" id="wallet" placeholder="010xxxxxxxx أو رقم الحساب المستلم...">
-        </div>
-
-        <button class="withdraw-btn" id="withdrawBtn" onclick="processPointsWithdraw()">تأكيد وإرسال طلب السحب (50,000 ن) ↗</button>
     </div>
 
-    <div id="locked-hint-box" style="text-align: center; padding: 20px; background: var(--card-bg); border-radius: 18px; border: 1px dashed #333; color: var(--text-gray); font-size: 12.5px; line-height: 1.7; margin-bottom: 20px;">
-        🔒 <b>شروط السحب غير مكتملة بعد!</b><br>
-        أكمل الحد الأدنى من النقاط (50,000 ن) والمهام (50 مهمة) لفتح نموذج السحب المباشر هنا.<br>
-        <span style="color: var(--main-green);">💡 يمكنك استخدام نقاطك الحالية في أي وقت للشراء من المتجر أو تمويل مهامك فوراً!</span>
+    <!-- صندوق شرح طريقة السحب ومعاينة المبلغ للوسيلة المختارة -->
+    <div id="method-instructions" class="method-instructions-card">
+        <div class="inst-header">
+            <img id="inst-logo" src="" alt="Logo" style="display: none;">
+            <div id="inst-fallback-icon" class="method-fallback-icon" style="width:34px; height:34px; font-size:17px;">💸</div>
+            <div>
+                <b id="inst-method-name">وسيلة السحب</b>
+                <div style="font-size: 11px; color: var(--text-gray);" id="inst-method-sub">تأكد من كتابة بيانات الاستلام بشكل صحيح</div>
+            </div>
+        </div>
+
+        <div class="payout-summary-box">
+            <div>
+                <span style="font-size: 11px; color: var(--text-gray); display: block;">💰 صافي المبلغ المستلم:</span>
+                <span class="payout-val" id="inst-payout-amount">50.00 ج.م</span>
+            </div>
+            <span class="payout-pts-badge" id="inst-pts-deducted">خصم 50,000 نقطة</span>
+        </div>
+
+        <ol class="inst-steps" id="inst-steps-list"></ol>
     </div>
 
-    <!-- سجل سحوبات النقاط الخاصة بالبوت فقط -->
-    <div class="section-title">📂 سجل سحوبات النقاط والمهام الخاصة بي:</div>
-    <div id="my-points-withdrawals-list"></div>
+    <!-- 2️⃣ اختيار باقة/كمية النقاط المراد سحبها -->
+    <div class="input-group">
+        <label>2️⃣ حدد فئة السحب المطلوبة:</label>
+        <div class="packages-grid">
+            <div class="pkg-btn active" onclick="selectWithdrawPackage(50000, 50, this)">
+                <b>50.00 ج.م</b>
+                <small>50,000 نقطة</small>
+            </div>
+            <div class="pkg-btn" onclick="selectWithdrawPackage(100000, 100, this)">
+                <b>100.00 ج.م</b>
+                <small>100,000 نقطة</small>
+            </div>
+            <div class="pkg-btn" onclick="selectWithdrawPackage(200000, 200, this)">
+                <b>200.00 ج.م</b>
+                <small>200,000 نقطة</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3️⃣ رقم المحفظة أو الحساب المستلم -->
+    <div class="input-group">
+        <label id="lbl-wallet-field">3️⃣ رقم المحفظة الإلكترونية أو الحساب المستلم:</label>
+        <input type="text" id="wallet" placeholder="أدخل الرقم أو المعرف الذي ستستلم عليه الأرباح">
+    </div>
+
+    <!-- 4️⃣ اسم صاحب الحساب أو ملاحظة -->
+    <div class="input-group">
+        <label>4️⃣ اسم المستلم أو ملاحظة تأكيدية (اختياري):</label>
+        <input type="text" id="withdraw-note" placeholder="مثلاً: اسم صاحب المحفظة أو الحساب للتأكيد">
+    </div>
+
+    <button id="withdrawBtn" class="withdraw-btn" onclick="processPointsWithdraw()">
+        تأكيد وإرسال طلب السحب (50.00 ج.م) ↗
+    </button>
+
+    <!-- سجل عمليات سحب النقاط الأخيرة -->
+    <div class="history-section">
+        <label style="display: block; margin-bottom: 10px; font-size: 13.5px; font-weight: bold; color: var(--main-cyan);">📂 سجل طلبات سحب النقاط الخاصة بي:</label>
+        <div id="my-points-withdrawals-list"></div>
+    </div>
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
-        <div onclick="goTasks()" class="nav-item">📋<br>الربح من المهام</div>
-        <div onclick="goGames()" class="nav-item" style="background: var(--main-green); width: 40px; height: 40px; border-radius: 50%; color: black; line-height: 40px; margin-top: -20px; font-size: 20px; text-align: center; cursor: pointer;">🎮</div>
-        <div onclick="goInvite()" class="nav-item">👥<br>الدعوات</div>
-        <div onclick="goProfile()" class="nav-item">👤<br>الملف الشخصي</div>
+        <div onclick="goStore()" class="nav-item">🛍️<br>المتجر</div>
+        <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
+        <div onclick="goInvite()" class="nav-item">👥<br>أصدقاء</div>
+        <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
     </nav>
 
     <script>
@@ -175,17 +416,35 @@
         tg.expand();
 
         const ADMIN_MASTER_ID = "875021647";
-        const REQ_WITHDRAW_POINTS = 50000;    // 50,000 نقطة = 50 ج.م
+        const REQ_WITHDRAW_POINTS = 50000;    // الحد الأدنى 50,000 نقطة = 50 ج.م
         const REQ_WITHDRAW_TASKS = 50;        // 50 مهمة منفذة
+        const USDT_TO_EGP_RATE = 53.0;
 
+        // المفتاح الكامل والصحيح لـ Supabase (تم إصلاح مشكلة المفتاح المبتور)
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        const tid = String(new URLSearchParams(window.location.search).get('id') || tg.initDataUnsafe.user?.id || localStorage.getItem('telegram_id') || "").trim();
+        const params = new URLSearchParams(window.location.search);
+        const tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(tg.initDataUnsafe?.user?.id || params.get('id') || localStorage.getItem('telegram_id') || "").trim();
+
         let userPoints = 0;
         let userTasksDone = 0;
+        let selectedPackagePts = 50000;
+        let selectedPackageEgp = 50;
+        let withdrawMethodsList = [];
+        let selectedMethodObj = null;
         let isBusyAction = false;
+
+        // شعارات SVG احترافية مدمجة لكل وسيلة سحب لضمان ظهور لوجو فخم حتى لو لم يُرفع لوجو يدوي
+        const BUILTIN_LOGOS = {
+            binance: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#181A20"/><path fill="#FCD535" d="M50 20L62 32L54 40L50 36L46 40L38 32L50 20ZM32 38L40 46L36 50L40 54L32 62L20 50L32 38ZM68 38L80 50L68 62L60 54L64 50L60 46L68 38ZM50 42L58 50L50 58L42 50L50 42ZM50 64L54 60L62 68L50 80L38 68L46 60L50 64Z"/></svg>`),
+            vodafone: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#E60000"/><circle cx="50" cy="50" r="30" fill="#ffffff"/><path fill="#E60000" d="M53 26C40 28 33 38 33 50C33 61 41 70 52 70C62 70 69 62 69 53C69 43 61 38 53 38C49 38 46 40 46 40C46 33 52 28 58 27L53 26Z"/></svg>`),
+            instapay: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="ip" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6B11B4"/><stop offset="100%" stop-color="#FF5100"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#ip)"/><path fill="#fff" d="M30 32H58L48 48H68L36 74L44 52H26L30 32Z"/></svg>`),
+            wallets: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#0d261a"/><rect x="20" y="28" width="60" height="44" rx="10" fill="#00d26a"/><circle cx="66" cy="50" r="6" fill="#0d261a"/></svg>`)
+        };
 
         function notifyUser(txt) {
             if (tg && tg.showAlert) tg.showAlert(txt);
@@ -202,22 +461,35 @@
             return m.includes("سحب نقاط") || m.includes("نقاط") || m.includes("points") || c.startsWith("PTS-") || c.startsWith("TX-");
         }
 
+        function detectLogoForMethod(name, customLogo) {
+            if (customLogo) return customLogo;
+            const n = String(name || "").toLowerCase();
+            if (n.includes("binance") || n.includes("بينانس") || n.includes("باينانس") || n.includes("usdt")) return BUILTIN_LOGOS.binance;
+            if (n.includes("فودافون") || n.includes("vodafone")) return BUILTIN_LOGOS.vodafone;
+            if (n.includes("انستا") || n.includes("إنستا") || n.includes("instapay")) return BUILTIN_LOGOS.instapay;
+            return BUILTIN_LOGOS.wallets;
+        }
+
         async function init() {
             if (tid && typeof MegaSecurity !== 'undefined') {
                 const sec = await MegaSecurity.verifyDeviceAndAccount(client, tid);
                 if (!sec.allowed) return;
             }
 
-            if (!tid) {
-                document.getElementById('current-points').innerText = "0 نقطة";
-                return;
-            }
+            await loadWithdrawMethodsWithLogos();
+            await refreshUserStats();
+            await loadMyPointsWithdrawalsHistory();
+        }
 
+        async function refreshUserStats() {
+            if (!tid) return;
             const { data } = await client.from('users').select('points, total_tasks').eq('telegram_id', tid).maybeSingle();
             if (data) {
                 userPoints = Number(data.points || 0);
                 userTasksDone = Number(data.total_tasks || 0);
+
                 document.getElementById('current-points').innerText = userPoints.toLocaleString() + " نقطة";
+                document.getElementById('current-egp-eq').innerText = (userPoints / 1000).toFixed(2) + " ج.م";
 
                 document.getElementById('req-pts-txt').innerText = `${userPoints.toLocaleString()} / ${REQ_WITHDRAW_POINTS.toLocaleString()}`;
                 document.getElementById('req-pts-bar').style.width = `${Math.min(100, (userPoints / REQ_WITHDRAW_POINTS) * 100)}%`;
@@ -225,30 +497,211 @@
                 document.getElementById('req-tasks-txt').innerText = `${userTasksDone} / ${REQ_WITHDRAW_TASKS} مهمة`;
                 document.getElementById('req-tasks-bar').style.width = `${Math.min(100, (userTasksDone / REQ_WITHDRAW_TASKS) * 100)}%`;
 
-                const unlocked = (userPoints >= REQ_WITHDRAW_POINTS && userTasksDone >= REQ_WITHDRAW_TASKS);
-                document.getElementById('withdraw-form-container').style.display = unlocked ? 'block' : 'none';
-                document.getElementById('locked-hint-box').style.display = unlocked ? 'none' : 'block';
+                updateActionLockUI();
+            }
+        }
+
+        function updateActionLockUI() {
+            const unlocked = (userPoints >= selectedPackagePts && userTasksDone >= REQ_WITHDRAW_TASKS);
+            const badge = document.getElementById('req-badge-status');
+            const btn = document.getElementById('withdrawBtn');
+
+            if (userPoints >= REQ_WITHDRAW_POINTS && userTasksDone >= REQ_WITHDRAW_TASKS) {
+                badge.className = "req-status-pill unlocked";
+                badge.innerText = "✅ مؤهل للسحب الآن";
+            } else {
+                badge.className = "req-status-pill locked";
+                badge.innerText = "🔒 أكمل الشريطين لتفعيل السحب";
             }
 
-            await loadMyPointsWithdrawalsHistory();
+            if (unlocked) {
+                btn.className = "withdraw-btn";
+                btn.innerText = `تأكيد وإرسال طلب السحب (${selectedPackageEgp.toFixed(2)} ج.م) ↗`;
+            } else {
+                btn.className = "withdraw-btn locked-btn";
+                const remPts = Math.max(0, selectedPackagePts - userPoints);
+                const remTasks = Math.max(0, REQ_WITHDRAW_TASKS - userTasksDone);
+                btn.innerText = `🔒 متبقي (${remPts.toLocaleString()} ن و ${remTasks} مهمة) لفتح السحب`;
+            }
+        }
+
+        async function loadWithdrawMethodsWithLogos() {
+            const grid = document.getElementById('methods-grid');
+
+            // سحب وسائل السحب ووسائل الإيداع للاستفادة من أي لوجو مرفوع في لوحة الأدمن
+            const [wRes, dRes] = await Promise.all([
+                client.from('withdraw_methods').select('*').order('id', { ascending: true }),
+                client.from('deposit_methods').select('name, logo')
+            ]);
+
+            const depositLogosMap = {};
+            if (dRes.data) {
+                dRes.data.forEach(d => {
+                    if (d.name && d.logo) depositLogosMap[d.name.trim().toLowerCase()] = d.logo;
+                });
+            }
+
+            const defaultMethods = [
+                { name: "Binance Pay ⚡", description: "استلام فوري بعملة USDT على معرف باينانس", isBinance: true, tag: "دولي فوري ⚡" },
+                { name: "فودافون كاش", description: "تحويل فوري على محفظة فودافون كاش (11 رقم)", isBinance: false, tag: "كاش 🇪🇬" },
+                { name: "إنستا باي (InstaPay)", description: "تحويل لحظي عبر عنوان الدفع IPA أو رقم الهاتف", isBinance: false, tag: "لحظي ⚡" },
+                { name: "اتصالات / أورنج / WE كاش", description: "تحويل على جميع المحافظ الإلكترونية المصرية", isBinance: false, tag: "محافظ 💳" }
+            ];
+
+            let rawList = (wRes.data && wRes.data.length > 0) ? wRes.data : defaultMethods;
+
+            // التأكد من وجود خيار Binance Pay في المقدمة دائماً مثل صفحة الإيداع
+            const hasBinance = rawList.some(m => {
+                const n = (m.name || "").toLowerCase();
+                return n.includes("binance") || n.includes("بينانس") || n.includes("باينانس");
+            });
+            if (!hasBinance) {
+                rawList = [defaultMethods[0], ...rawList];
+            }
+
+            withdrawMethodsList = rawList.map(m => {
+                const lower = (m.name || "").toLowerCase();
+                const isBin = Boolean(m.isBinance || lower.includes("binance") || lower.includes("بينانس") || lower.includes("باينانس") || lower.includes("usdt"));
+                const matchedDepLogo = depositLogosMap[lower];
+                return {
+                    name: m.name,
+                    description: m.description || "تحويل مباشر ومضمون من MegaTask",
+                    logo: detectLogoForMethod(m.name, m.logo || matchedDepLogo),
+                    isBinance: isBin,
+                    tag: m.tag || (isBin ? "USDT ⚡" : "كاش 💳")
+                };
+            });
+
+            grid.innerHTML = "";
+            withdrawMethodsList.forEach((m, index) => {
+                const card = document.createElement('div');
+                card.className = "method-card" + (m.isBinance ? " binance-special" : "");
+                card.id = `w-method-card-${index}`;
+                card.onclick = () => selectWithdrawMethod(index);
+
+                card.innerHTML = `
+                    <span class="auto-tag">${escapeHtml(m.tag)}</span>
+                    <img src="${m.logo}" class="method-logo" alt="${escapeHtml(m.name)}">
+                    <div>
+                        <div class="method-title">${escapeHtml(m.name)}</div>
+                        <span class="method-sub">${m.isBinance ? 'استلام USDT' : 'استلام بالجنيه'}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            if (withdrawMethodsList.length > 0) {
+                selectWithdrawMethod(0);
+            }
+        }
+
+        function selectWithdrawMethod(index) {
+            selectedMethodObj = withdrawMethodsList[index];
+            if (!selectedMethodObj) return;
+
+            document.querySelectorAll('.method-card').forEach(el => el.classList.remove('active'));
+            const activeCard = document.getElementById(`w-method-card-${index}`);
+            if (activeCard) activeCard.classList.add('active');
+
+            const instBox = document.getElementById('method-instructions');
+            const instLogo = document.getElementById('inst-logo');
+            const instFallback = document.getElementById('inst-fallback-icon');
+            const instName = document.getElementById('inst-method-name');
+            const instSub = document.getElementById('inst-method-sub');
+            const instSteps = document.getElementById('inst-steps-list');
+            const lblWallet = document.getElementById('lbl-wallet-field');
+            const walletInput = document.getElementById('wallet');
+
+            instBox.style.display = 'block';
+            instName.innerText = `السحب عبر ${selectedMethodObj.name}`;
+            instSub.innerText = selectedMethodObj.description;
+
+            if (selectedMethodObj.logo) {
+                instLogo.src = selectedMethodObj.logo;
+                instLogo.style.display = 'block';
+                instFallback.style.display = 'none';
+            } else {
+                instLogo.style.display = 'none';
+                instFallback.style.display = 'flex';
+            }
+
+            updatePayoutSummaryBox();
+
+            const lowerName = (selectedMethodObj.name || "").toLowerCase();
+            if (selectedMethodObj.isBinance) {
+                lblWallet.innerText = "3️⃣ معرف حساب باينانس المستلم (Binance ID / UID):";
+                walletInput.placeholder = "أدخل Binance Pay ID الخاص بك لاستلام USDT...";
+                instSteps.innerHTML = `
+                    <li>افتح تطبيق <b>Binance</b> وانسخ معرف الدفع الخاص بك <b>(Binance ID / UID)</b>.</li>
+                    <li>ضع المعرف في الخانة رقم (3) بالأسفل وتأكد من صحته.</li>
+                    <li>سيتم تحويل المبلغ بعملة <b>USDT</b> بدون أي رسوم اقتطاع فور مراجعة طلبك!</li>
+                `;
+            } else if (lowerName.includes("انستا") || lowerName.includes("إنستا") || lowerName.includes("instapay")) {
+                lblWallet.innerText = "3️⃣ عنوان الدفع (IPA) أو رقم الهاتف المرتبط بإنستا باي:";
+                walletInput.placeholder = "username@instapay أو رقم الهاتف...";
+                instSteps.innerHTML = `
+                    <li>اكتب <b>عنوان الدفع اللحظي (IPA)</b> أو رقم الهاتف المربوط بحسابك في تطبيق <b>InstaPay</b>.</li>
+                    <li>اكتب اسم صاحب الحساب في خانة الملاحظة لتأكيد التحويل اللحظي.</li>
+                    <li>يصلك إشعار على البوت فور إتمام التحويل ونشر الإثبات في القناة الرسمية.</li>
+                `;
+            } else {
+                lblWallet.innerText = `3️⃣ رقم المحفظة الإلكترونية (${selectedMethodObj.name}):`;
+                walletInput.placeholder = "010xxxxxxxx / 011xxxxxxxx / 012xxxxxxxx";
+                instSteps.innerHTML = `
+                    <li>تأكد من أن الرقم المُدخل <b>مفعل عليه محفظة كاش إلكترونية</b> (11 رقماً).</li>
+                    <li>اختر فئة السحب المطلوبة بالأعلى واكتب رقم محفظتك في الخانة (3).</li>
+                    <li>يتم تنفيذ السحب وإرسال إشعار فوري لك في محادثة البوت مع نشر الإثبات.</li>
+                `;
+            }
+        }
+
+        function selectWithdrawPackage(pts, egp, btnEl) {
+            selectedPackagePts = pts;
+            selectedPackageEgp = egp;
+            document.querySelectorAll('.pkg-btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            updatePayoutSummaryBox();
+            updateActionLockUI();
+        }
+
+        function updatePayoutSummaryBox() {
+            const payoutEl = document.getElementById('inst-payout-amount');
+            const ptsBadge = document.getElementById('inst-pts-deducted');
+            ptsBadge.innerText = `خصم ${selectedPackagePts.toLocaleString()} نقطة`;
+
+            if (selectedMethodObj && selectedMethodObj.isBinance) {
+                const usdtEq = (selectedPackageEgp / USDT_TO_EGP_RATE).toFixed(2);
+                payoutEl.innerHTML = `${selectedPackageEgp.toFixed(2)} ج.م <span style="color:var(--binance-yellow);">(${usdtEq} USDT)</span>`;
+            } else {
+                payoutEl.innerText = `${selectedPackageEgp.toFixed(2)} ج.م صافي`;
+            }
         }
 
         async function processPointsWithdraw() {
             if (!tid || isBusyAction) return;
+            if (!selectedMethodObj) return notifyUser("⚠️ يرجى اختيار وسيلة السحب أولاً!");
 
-            const method = document.getElementById('method').value;
+            if (userPoints < selectedPackagePts || userTasksDone < REQ_WITHDRAW_TASKS) {
+                const remPts = Math.max(0, selectedPackagePts - userPoints);
+                const remTasks = Math.max(0, REQ_WITHDRAW_TASKS - userTasksDone);
+                return notifyUser(
+                    `🔒 شروط سحب هذه الباقة غير مكتملة بعد!\n\n` +
+                    `• النقاط المتبقية: ${remPts.toLocaleString()} نقطة\n` +
+                    `• المهام المتبقية: ${remTasks} مهمة\n\n` +
+                    `💡 يمكنك استخدام نقاطك الحالية في أي وقت للشراء من المتجر أو تمويل مهامك فوراً!`
+                );
+            }
+
             const wallet = document.getElementById('wallet').value.trim();
+            const note = document.getElementById('withdraw-note').value.trim();
             const btn = document.getElementById('withdrawBtn');
 
             if (!wallet || wallet.length < 4) {
                 return notifyUser("⚠️ يرجى إدخال رقم المحفظة أو الحساب المستلم بشكل صحيح!");
             }
 
-            if (userPoints < REQ_WITHDRAW_POINTS || userTasksDone < REQ_WITHDRAW_TASKS) {
-                return notifyUser(`⚠️ يجب إكمال شروط السحب أولاً (${REQ_WITHDRAW_POINTS.toLocaleString()} نقطة + ${REQ_WITHDRAW_TASKS} مهمة)!`);
-            }
-
-            if (!confirm(`💸 تأكيد إرسال طلب سحب 50,000 نقطة (مقابل 50 ج.م) عبر (${method}) إلى الحساب:\n${wallet}`)) {
+            const methodLabel = selectedMethodObj.name;
+            if (!confirm(`💸 تأكيد إرسال طلب سحب (${selectedPackagePts.toLocaleString()} نقطة = ${selectedPackageEgp.toFixed(2)} ج.م) عبر (${methodLabel}) إلى الحساب:\n${wallet}`)) {
                 return;
             }
 
@@ -268,63 +721,74 @@
                 const realPts = Number(freshU.points || 0);
                 const realTasks = Number(freshU.total_tasks || 0);
 
-                if (realPts < REQ_WITHDRAW_POINTS || realTasks < REQ_WITHDRAW_TASKS) {
-                    return notifyUser("⚠️ لم تعد شروط السحب مكتملة بعد!");
+                if (realPts < selectedPackagePts || realTasks < REQ_WITHDRAW_TASKS) {
+                    await refreshUserStats();
+                    return notifyUser("⚠️ رصيد نقاطك الفعلي أو عدد المهام لم يعد كافياً لهذه الباقة!");
                 }
 
                 const wCode = "PTS-" + Math.floor(100000 + Math.random() * 900000);
-                const newPts = realPts - REQ_WITHDRAW_POINTS;
+                const newPts = realPts - selectedPackagePts;
+                const fullWalletInfo = note ? `${wallet} (${note})` : wallet;
 
-                const { error: uErr } = await client.from('users').update({ points: newPts }).eq('telegram_id', tid);
-                if (uErr) throw uErr;
+                // خصم ذري مشروط بالرصيد الحالي لمنع تكرار السحب بالضغط المزدوج
+                const { data: updRows, error: uErr } = await client
+                    .from('users')
+                    .update({ points: newPts })
+                    .eq('telegram_id', tid)
+                    .eq('points', realPts)
+                    .select('points');
+
+                if (uErr || !updRows || updRows.length === 0) {
+                    throw new Error("حدث تزامن في العملية، يرجى المحاولة مرة أخرى");
+                }
 
                 await client.from('withdrawals').insert([{
                     withdraw_code: wCode,
                     telegram_id: String(tid),
-                    amount: 50,
-                    method: `${method} (سحب نقاط)`,
-                    wallet_info: wallet,
+                    amount: selectedPackageEgp,
+                    method: `${methodLabel} (سحب نقاط)`,
+                    wallet_info: fullWalletInfo,
                     status: 'Pending'
                 }]);
 
                 await client.from('transactions').insert([{
                     telegram_id: String(tid),
                     type: 'withdraw',
-                    title: `طلب سحب 50,000 نقطة (${method})`,
-                    amount: '-50,000 نقطة (50 ج.م)',
+                    title: `طلب سحب ${selectedPackagePts.toLocaleString()} نقطة (${methodLabel})`,
+                    amount: `-${selectedPackagePts.toLocaleString()} نقطة (${selectedPackageEgp} ج.م)`,
                     status: 'قيد المراجعة'
                 }]);
 
-                await client.from('bot_messages').insert([{
-                    telegram_id: ADMIN_MASTER_ID,
-                    message: `💸 *طلب سحب نقاط ومهام جديد!* 🔔\n━━━━━━━━━━━━━━━\n🆔 *الكود:* \`${wCode}\`\n👤 *العضو:* \`${tid}\`\n💵 *القيمة:* 50.00 ج.م (50,000 نقطة)\n💳 *الوسيلة:* ${method}\n📥 *المستلم:* \`${wallet}\``,
-                    status: 'pending'
-                }]);
-
-                await client.from('bot_messages').insert([{
-                    telegram_id: String(tid),
-                    message: `✅ *تم استلام طلب سحب النقاط بنجاح!*\n━━━━━━━━━━━━━━━\n🆔 *رقم الطلب:* \`${wCode}\`\n💵 *المبلغ:* 50.00 ج.م (50,000 نقطة)\n💳 *الوسيلة:* ${method}\n📥 *المستلم:* \`${wallet}\`\n\n⏳ جاري مراجعة الطلب وتحويل أرباحك قريباً.`,
-                    status: 'pending'
-                }]);
+                await client.from('bot_messages').insert([
+                    {
+                        telegram_id: ADMIN_MASTER_ID,
+                        message: `💸 *طلب سحب نقاط ومهام جديد!* 🔔\n━━━━━━━━━━━━━━━\n🆔 *الكود:* \`${wCode}\`\n👤 *العضو:* \`${tid}\`\n💵 *القيمة:* ${selectedPackageEgp.toFixed(2)} ج.م (${selectedPackagePts.toLocaleString()} نقطة)\n💳 *الوسيلة:* ${methodLabel}\n📥 *المستلم:* \`${fullWalletInfo}\``,
+                        status: 'pending'
+                    },
+                    {
+                        telegram_id: String(tid),
+                        message: `✅ *تم استلام طلب سحب النقاط بنجاح!*\n━━━━━━━━━━━━━━━\n🆔 *رقم الطلب:* \`${wCode}\`\n💵 *المبلغ:* ${selectedPackageEgp.toFixed(2)} ج.م (${selectedPackagePts.toLocaleString()} نقطة)\n💳 *الوسيلة:* ${methodLabel}\n📥 *المستلم:* \`${fullWalletInfo}\`\n\n⏳ جاري مراجعة الطلب وتحويل أرباحك قريباً.`,
+                        status: 'pending'
+                    }
+                ]);
 
                 document.getElementById('wallet').value = "";
-                userPoints = newPts;
-                document.getElementById('current-points').innerText = userPoints.toLocaleString() + " نقطة";
-
+                document.getElementById('withdraw-note').value = "";
+                await refreshUserStats();
                 await loadMyPointsWithdrawalsHistory();
-                notifyUser(`🎉 تم إرسال طلب سحب النقاط (${wCode}) بنجاح!`);
+                notifyUser(`🎉 تم إرسال طلب سحب النقاط (${wCode}) بقيمة ${selectedPackageEgp.toFixed(2)} ج.م بنجاح!`);
             } catch (e) {
                 notifyUser("❌ حدث خطأ أثناء إرسال الطلب: " + e.message);
             } finally {
                 isBusyAction = false;
                 btn.disabled = false;
-                btn.innerText = "تأكيد وإرسال طلب السحب (50,000 ن) ↗";
+                updateActionLockUI();
             }
         }
 
         async function loadMyPointsWithdrawalsHistory() {
             const box = document.getElementById('my-points-withdrawals-list');
-            if (!tid) return;
+            if (!tid || !box) return;
 
             const { data } = await client
                 .from('withdrawals')
@@ -333,41 +797,46 @@
                 .order('id', { ascending: false })
                 .limit(20);
 
-            // فلترة السجل ليظهر سحوبات النقاط والمهام الخاصة بالبوت فقط
             const pointsOnlyList = (data || []).filter(w => isPointsWithdrawalRecord(w));
 
             if (pointsOnlyList.length === 0) {
-                box.innerHTML = `<div style="text-align:center; padding:18px; background:var(--card-bg); border-radius:14px; color:var(--text-gray); font-size:12px;">لا توجد طلبات سحب نقاط سابقة حتى الآن.</div>`;
+                box.innerHTML = `<div style="text-align:center; padding:16px; background:var(--card-bg); border-radius:14px; color:var(--text-gray); font-size:12px;">لا توجد طلبات سحب نقاط سابقة حتى الآن.</div>`;
                 return;
             }
 
             box.innerHTML = pointsOnlyList.map(w => {
-                let stHtml = `<span style="color:var(--gold);">⏳ قيد التنفيذ</span>`;
+                const rawAmt = Number(w.amount || 50);
+                const egpVal = rawAmt >= 1000 ? (rawAmt / 1000) : rawAmt;
+                const ptsVal = rawAmt >= 1000 ? rawAmt : Math.round(rawAmt * 1000);
+                const wCode = w.withdraw_code || w.tx_id || ('PTS-' + w.id);
+
+                let stHtml = `<span style="color:var(--gold);">⏳ قيد المراجعة</span>`;
                 if (w.status === 'Completed' || w.status === 'Approved') stHtml = `<span style="color:var(--main-green);">✅ تم التحويل</span>`;
-                if (w.status === 'Rejected' || w.status === 'Cancelled') stHtml = `<span style="color:var(--crimson);">↩️ ملغي / مسترد</span>`;
+                if (w.status === 'Rejected' || w.status === 'Cancelled') stHtml = `<span style="color:var(--crimson);">↩️ ملغي ومسترد</span>`;
 
                 const cancelBtn = w.status === 'Pending'
-                    ? `<button class="btn-cancel-req" onclick="cancelPointsWithdrawal(${w.id})">✖ إلغاء واسترداد النقاط</button>`
+                    ? `<button class="btn-cancel-req" onclick="cancelPointsWithdrawal(${w.id}, ${ptsVal})">✖ إلغاء واسترداد (${ptsVal.toLocaleString()} ن)</button>`
                     : '';
 
                 return `
-                    <div class="w-history-card">
-                        <div class="w-hist-top">
-                            <b>💳 ${escapeHtml(w.method)} (50,000 نقطة)</b>
-                            <b>${stHtml}</b>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; color:var(--text-gray); font-size:11px; margin-top:4px;">
-                            <span>الحساب: <code>${escapeHtml(w.wallet_info || '')}</code></span>
+                    <div class="history-card">
+                        <div>
+                            <b>${escapeHtml(w.method)} (${egpVal.toFixed(2)} ج.م)</b>
+                            <div style="font-size:10.5px; color:var(--text-gray); margin-top:2px;">
+                                المستلم: <code>${escapeHtml(w.wallet_info || '')}</code> • ID: <code>${escapeHtml(wCode)}</code>
+                            </div>
                             ${cancelBtn}
                         </div>
+                        <b style="white-space:nowrap;">${stHtml}</b>
                     </div>
                 `;
             }).join("");
         }
 
-        async function cancelPointsWithdrawal(wId) {
+        async function cancelPointsWithdrawal(wId, ptsToRefund) {
             if (isBusyAction) return;
-            if (!confirm("هل تريد إلغاء طلب سحب النقاط هذا وإرجاع مبلغ (50,000 نقطة) إلى رصيدك فوراً؟")) return;
+            const refundPts = Number(ptsToRefund) || REQ_WITHDRAW_POINTS;
+            if (!confirm(`هل تريد إلغاء طلب سحب النقاط هذا وإرجاع (${refundPts.toLocaleString()} نقطة) إلى رصيدك فوراً؟`)) return;
 
             isBusyAction = true;
             try {
@@ -385,7 +854,7 @@
                 }
 
                 if (!isPointsWithdrawalRecord(checkW)) {
-                    return notifyUser("🚫 هذا الطلب خاص بأرباح التجار وليس نقاط المهام، لا يمكن استرداده هنا!");
+                    return notifyUser("🚫 هذا الطلب خاص بأرباح التجار وليس نقاط المهام!");
                 }
 
                 const { data: updatedW, error: wErr } = await client
@@ -394,7 +863,7 @@
                     .eq('id', wId)
                     .eq('telegram_id', String(tid))
                     .eq('status', 'Pending')
-                    .select('id');
+                    .select('id, amount');
 
                 if (wErr || !updatedW || updatedW.length === 0) {
                     await loadMyPointsWithdrawalsHistory();
@@ -407,14 +876,12 @@
                     .eq('telegram_id', tid)
                     .single();
 
-                const newPts = Number(freshU?.points || 0) + REQ_WITHDRAW_POINTS;
+                const newPts = Number(freshU?.points || 0) + refundPts;
                 await client.from('users').update({ points: newPts }).eq('telegram_id', tid);
 
-                userPoints = newPts;
-                document.getElementById('current-points').innerText = userPoints.toLocaleString() + " نقطة";
-
-                await init();
-                notifyUser(`✅ تم إلغاء الطلب وإرجاع (50,000 نقطة) إلى رصيدك بنجاح!`);
+                await refreshUserStats();
+                await loadMyPointsWithdrawalsHistory();
+                notifyUser(`✅ تم إلغاء الطلب وإرجاع (${refundPts.toLocaleString()} نقطة) إلى رصيدك بنجاح!`);
             } catch (e) {
                 notifyUser("❌ حدث خطأ أثناء إلغاء الطلب.");
             } finally {
@@ -422,11 +889,12 @@
             }
         }
 
+        function goMerchantWithdraw() { window.location.href = `merchant_withdraw.html?id=${tid}&t=${Date.now()}`; }
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
+        function goStore() { window.location.href = `store.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
-        function goGames() { window.location.href = `games.html?id=${tid}&t=${Date.now()}`; }
-        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
         function goInvite() { window.location.href = `invite.html?id=${tid}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${tid}&t=${Date.now()}`; }
 
         init();
     </script>
