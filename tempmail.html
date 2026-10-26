@@ -188,7 +188,7 @@
             box-shadow: 0 4px 0 #090c12;
         }
 
-        /* شريط الإيميلات المحفوظة (التبديل السريع) + الهوية المساعدة */
+        /* شريط الإيميلات المحفوظة + الهوية المساعدة */
         .tools-strip {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -342,7 +342,7 @@
             line-height: 1.7;
         }
 
-        /* النوافذ المنبثقة (قراءة الرسالة / تخصيص الإيميل / المحفوظات) */
+        /* النوافذ المنبثقة */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -368,20 +368,25 @@
         .modal-title { font-size: 15.5px; color: var(--emerald); margin: 0 0 6px; font-weight: bold; }
         .modal-meta { font-size: 11px; color: var(--text-muted); border-bottom: 1px solid #252f42; padding-bottom: 10px; margin-bottom: 12px; line-height: 1.6; }
         
-        /* قارئ الرسائل المعزول والآمن */
+        /* قارئ الرسائل المعزول والآمن تماماً ضد XSS */
         .mail-reader-box {
             background: #ffffff;
             color: #111827;
             border-radius: 12px;
-            padding: 12px;
+            padding: 0;
             font-size: 13px;
             line-height: 1.65;
-            max-height: 45vh;
-            overflow-y: auto;
-            word-break: break-word;
-            direction: auto;
+            height: 280px;
+            overflow: hidden;
+            border: 1px solid #2d3850;
         }
-        .mail-reader-box a { color: #0284c7; font-weight: bold; word-break: break-all; }
+        .mail-reader-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #ffffff;
+            display: block;
+        }
 
         .input-field {
             width: 100%;
@@ -498,19 +503,21 @@
         </div>
     </div>
 
-    <!-- 1. نافذة قراءة الرسالة الكاملة + إرسالها لشات البوت -->
+    <!-- 1. نافذة قراءة الرسالة الكاملة (معزولة داخل Sandboxed Iframe ضد XSS) -->
     <div id="mail-modal" class="modal-overlay">
         <div class="modal-body">
             <h4 class="modal-title" id="m-subject">الموضوع</h4>
             <div class="modal-meta" id="m-meta">من: ...</div>
 
-            <!-- شريط الكود المستخرج داخل النافذة إن وجد -->
             <div id="modal-otp-box" class="otp-detected-bar" style="display: none; margin-bottom: 12px;">
                 <span>🔑 كود التفعيل المستخرج: <b class="otp-code-num" id="modal-otp-val">----</b></span>
                 <button class="btn-copy-otp" onclick="copyOtpCode(document.getElementById('modal-otp-val').innerText)">نسخ الكود 📋</button>
             </div>
 
-            <div class="mail-reader-box" id="m-body">المحتوى...</div>
+            <div class="mail-reader-box">
+                <!-- sandbox بدون allow-scripts يمنع تشغيل أي كود JavaScript خبيث داخل الرسالة نهائياً -->
+                <iframe id="m-body-frame" class="mail-reader-iframe" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
+            </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px;">
                 <button class="btn btn-cyan" onclick="forwardCurrentMailToBot()">📲 حفظ في شات البوت</button>
@@ -575,13 +582,9 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        let tid = String(
-            tg?.initDataUnsafe?.user?.id ||
-            params.get('id') ||
-            localStorage.getItem('telegram_id') ||
-            localStorage.getItem('megatask_uid') ||
-            ""
-        ).trim();
+        let tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(tg?.initDataUnsafe?.user?.id || params.get('id') || localStorage.getItem('telegram_id') || "").trim();
         if (tid === "undefined" || tid === "null") tid = "";
 
         let userData = null;
@@ -590,6 +593,7 @@
         let availableDomains = [];
         let pollTimer = null;
         let isFetching = false;
+        let isBusyMailAction = false;
         let storedMessages = {};
         let currentlyOpenedMsg = null;
 
@@ -614,12 +618,24 @@
             return until > Date.now();
         }
 
-        // =========================================================================
-        // 🔑 الرادار الذكي لاستخراج أكواد التفعيل (OTP 4-8 Digits) من نص الرسالة
-        // =========================================================================
+        function renderSafeEmailContentInIframe(htmlContent, plainText) {
+            const frame = document.getElementById('m-body-frame');
+            if (!frame) return;
+
+            let safeInner = "";
+            if (htmlContent && String(htmlContent).trim().length > 0) {
+                safeInner = String(htmlContent)
+                    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+                    .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+            } else {
+                safeInner = `<pre style="white-space:pre-wrap; word-break:break-word; font-family:'Segoe UI',Tahoma,sans-serif; font-size:13px; color:#111827; margin:0;">${escapeHtml(plainText || "الرسالة فارغة.")}</pre>`;
+            }
+
+            frame.srcdoc = `<!DOCTYPE html><html dir="auto"><head><meta charset="UTF-8"><base target="_blank"><style>body{font-family:'Segoe UI',Tahoma,sans-serif;font-size:13px;line-height:1.6;color:#111827;padding:12px;margin:0;word-break:break-word;}a{color:#0284c7;font-weight:bold;}img{max-width:100%;height:auto;}</style></head><body>${safeInner}</body></html>`;
+        }
+
         function extractOtpFromText(subject, textBody) {
             const combined = `${subject || ""} ${textBody || ""}`.replace(/<[^>]*>/g, " ");
-            // البحث عن كلمات مفتاحية متبوعة بكود أو رقم منفصل من 4 إلى 8 أرقام (مع استبعاد السنوات مثل 2025/2026)
             const matches = combined.match(/\b(\d{4,8})\b/g);
             if (!matches) return null;
             for (const m of matches) {
@@ -630,14 +646,10 @@
             return matches[0];
         }
 
-        // =========================================================================
-        // 👤 تهيئة حساب المستخدم، درع الحماية، وبدء تشغيل البريد المؤقت
-        // =========================================================================
         async function initPage() {
             generateHelperIdentity();
             updateVipBadgeUI();
 
-            // 1. جلب نقاط المستخدم فوراً
             if (tid) {
                 try {
                     const { data: u } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
@@ -645,21 +657,18 @@
                         userData = u;
                         document.getElementById('user-points').innerText = Number(u.points || 0).toLocaleString();
                     }
-                    // تشغيل درع الحماية في الخلفية
                     if (typeof MegaSecurity !== 'undefined') {
                         MegaSecurity.verifyDeviceAndAccount(client, tid).catch(() => {});
                     }
                 } catch (e) {}
             }
 
-            // 2. تحميل قائمة الإيميلات المحفوظة
             try {
                 savedAccounts = JSON.parse(localStorage.getItem(`megatask_saved_mails_${tid}`) || "[]");
             } catch (e) {
                 savedAccounts = [];
             }
 
-            // 3. التحقق من وجود حساب نشط وصالح، أو توليد حساب جديد فوراً
             if (savedAccounts.length > 0) {
                 currentAccount = savedAccounts[0];
                 document.getElementById('active-email').innerText = currentAccount.address;
@@ -702,9 +711,6 @@
             document.getElementById('saved-count').innerText = savedAccounts.length;
         }
 
-        // =========================================================================
-        // 📺 نظام الإعلانات والمكافآت (+2 نقطة) ووضع الـ VIP
-        // =========================================================================
         function updateVipBadgeUI() {
             const btn = document.getElementById('vip-badge-btn');
             if (isVipActive()) {
@@ -717,33 +723,56 @@
         }
 
         async function activateMailVip() {
+            if (isBusyMailAction) return;
             if (isVipActive()) return notifyUser("🟢 وضع VIP مفعل لديك بالفعل (بدون إعلانات)!");
-            if (!userData || Number(userData.points || 0) < 5) {
-                return notifyUser("❌ تحتاج إلى 5 نقاط لتفعيل وضع VIP الخالي من الإعلانات لمدة 30 دقيقة!\n\n💡 انسخ الإيميل أو أنشئ بريداً جديداً مجاناً لتكسب +2 نقطة مع كل استخدام!");
-            }
+            if (!tid) return notifyUser("❌ يرجى فتح الصفحة من داخل البوت.");
+
             if (!confirm("⚡ هل تريد خصم 5 نقاط وتفعيل وضع البريد المؤقت VIP لمدة 30 دقيقة بدون أي إعلانات؟")) return;
 
-            const newPts = Number(userData.points) - 5;
-            const { data, error } = await client.from('users').update({ points: newPts }).eq('telegram_id', tid).select().single();
-            if (!error && data) {
-                userData = data;
-                document.getElementById('user-points').innerText = newPts.toLocaleString();
-                localStorage.setItem(`tempmail_vip_until_${tid}`, String(Date.now() + 30 * 60 * 1000));
-                updateVipBadgeUI();
+            isBusyMailAction = true;
+            try {
+                const { data: freshU, error: fErr } = await client
+                    .from('users')
+                    .select('points, is_banned')
+                    .eq('telegram_id', tid)
+                    .single();
 
-                await client.from('transactions').insert([{
-                    telegram_id: String(tid),
-                    type: 'points',
-                    title: 'تفعيل وضع VIP للبريد المؤقت (30 دقيقة)',
-                    amount: '-5 نقاط',
-                    status: 'مكتمل'
-                }]);
-                notifyUser("🎉 تم تفعيل وضع VIP بنجاح!");
+                if (fErr || !freshU || freshU.is_banned) throw new Error("تعذر جلب الرصيد");
+
+                const realPts = Number(freshU.points || 0);
+                if (realPts < 5) {
+                    if (userData) userData.points = realPts;
+                    document.getElementById('user-points').innerText = realPts.toLocaleString();
+                    return notifyUser("❌ تحتاج إلى 5 نقاط لتفعيل وضع VIP الخالي من الإعلانات لمدة 30 دقيقة!\n\n💡 انسخ الإيميل أو أنشئ بريداً جديداً مجاناً لتكسب +2 نقطة مع كل استخدام!");
+                }
+
+                const newPts = realPts - 5;
+                const { data, error } = await client.from('users').update({ points: newPts }).eq('telegram_id', tid).select().single();
+                if (!error && data) {
+                    userData = data;
+                    document.getElementById('user-points').innerText = newPts.toLocaleString();
+                    localStorage.setItem(`tempmail_vip_until_${tid}`, String(Date.now() + 30 * 60 * 1000));
+                    updateVipBadgeUI();
+
+                    await client.from('transactions').insert([{
+                        telegram_id: String(tid),
+                        type: 'points',
+                        title: 'تفعيل وضع VIP للبريد المؤقت (30 دقيقة)',
+                        amount: '-5 نقاط',
+                        status: 'مكتمل'
+                    }]);
+                    notifyUser("🎉 تم تفعيل وضع VIP بنجاح!");
+                }
+            } catch (e) {
+                notifyUser("❌ تعذر تفعيل VIP حالياً.");
+            } finally {
+                isBusyMailAction = false;
             }
         }
 
         async function triggerAdAndReward(actionTitle) {
-            if (isVipActive()) return;
+            if (isVipActive() || isBusyMailAction) return;
+            isBusyMailAction = true;
             try {
                 if (typeof show_10959333 === 'function') {
                     await Promise.race([
@@ -755,32 +784,34 @@
                 const rewardKey = `tempmail_rewards_${tid}_${getTodayKey()}`;
                 const countToday = Number(localStorage.getItem(rewardKey) || 0);
 
-                if (userData && countToday < MAX_DAILY_MAIL_REWARDS) {
-                    const newPts = Number(userData.points || 0) + 2;
-                    const newTotal = Number(userData.total_earned || 0) + 2;
-                    const { data: updated } = await client.from('users').update({
-                        points: newPts,
-                        total_earned: newTotal
-                    }).eq('telegram_id', tid).select().single();
+                if (tid && countToday < MAX_DAILY_MAIL_REWARDS) {
+                    const { data: freshU } = await client.from('users').select('points, total_earned').eq('telegram_id', tid).single();
+                    if (freshU) {
+                        const newPts = Number(freshU.points || 0) + 2;
+                        const newTotal = Number(freshU.total_earned || 0) + 2;
+                        const { data: updated } = await client.from('users').update({
+                            points: newPts,
+                            total_earned: newTotal
+                        }).eq('telegram_id', tid).select().single();
 
-                    if (updated) userData = updated;
-                    document.getElementById('user-points').innerText = Number(userData.points || 0).toLocaleString();
-                    localStorage.setItem(rewardKey, String(countToday + 1));
+                        if (updated) userData = updated;
+                        document.getElementById('user-points').innerText = newPts.toLocaleString();
+                        localStorage.setItem(rewardKey, String(countToday + 1));
 
-                    await client.from('transactions').insert([{
-                        telegram_id: String(tid),
-                        type: 'points',
-                        title: actionTitle || 'مكافأة استخدام البريد المؤقت',
-                        amount: '+2 نقطة',
-                        status: 'مكتمل'
-                    }]);
+                        await client.from('transactions').insert([{
+                            telegram_id: String(tid),
+                            type: 'points',
+                            title: actionTitle || 'مكافأة استخدام البريد المؤقت',
+                            amount: '+2 نقطة',
+                            status: 'مكتمل'
+                        }]);
+                    }
                 }
-            } catch (e) {}
+            } catch (e) {} finally {
+                isBusyMailAction = false;
+            }
         }
 
-        // =========================================================================
-        // 🌐 محرك توليد البريد المؤقت ثلاثي السيرفرات (Mail.tm -> DropMail -> Guerrilla)
-        // =========================================================================
         async function fetchMailTmDomains() {
             if (availableDomains.length > 0) return availableDomains;
             try {
@@ -799,7 +830,6 @@
             display.innerText = "⏳ جاري إنشاء بريد سحابي جديد...";
             resetInboxUI();
 
-            // 1️⃣ المحرك الأول: Mail.tm الرسمي السريع (يدعم الاسم المخصص والعشوائي)
             try {
                 const domains = await fetchMailTmDomains();
                 if (domains.length > 0) {
@@ -841,7 +871,6 @@
                 console.warn("Mail.tm fallback:", errMailTm);
             }
 
-            // 2️⃣ المحرك الثاني: DropMail GraphQL
             try {
                 const res = await fetch("https://dropmail.me/api/graphql/megatask_" + Math.floor(1000 + Math.random() * 9000), {
                     method: "POST",
@@ -869,7 +898,6 @@
                 console.warn("DropMail fallback:", errDrop);
             }
 
-            // 3️⃣ المحرك الثالث: Guerrilla Mail
             try {
                 const res = await fetch("https://api.guerrillamail.com/ajax.php?f=get_email_address");
                 if (res.ok) {
@@ -904,9 +932,6 @@
                 </div>`;
         }
 
-        // =========================================================================
-        // 📥 جلب الرسائل وفحص صلاحية الجلسة واستخراج أكواد الـ OTP تلقائياً
-        // =========================================================================
         async function verifyAndFetchMessages() {
             if (!currentAccount || !currentAccount.address || isFetching) return true;
             isFetching = true;
@@ -917,7 +942,6 @@
                         headers: { "Authorization": `Bearer ${currentAccount.token}` }
                     });
 
-                    // إذا انتهت صلاحية التوكن (401) نعتبر الجلسة منتهية ليتم تجديدها
                     if (res.status === 401) {
                         isFetching = false;
                         return false;
@@ -1010,8 +1034,8 @@
                 if (document.getElementById(cardId)) return;
 
                 const otpHtml = msg.otp ? `
-                    <div class="otp-detected-bar" onclick="event.stopPropagation(); copyOtpCode('${msg.otp}')">
-                        <span>🔑 كود التفعيل: <b class="otp-code-num">${msg.otp}</b></span>
+                    <div class="otp-detected-bar" onclick="event.stopPropagation(); copyOtpCode('${escapeHtml(msg.otp)}')">
+                        <span>🔑 كود التفعيل: <b class="otp-code-num">${escapeHtml(msg.otp)}</b></span>
                         <button class="btn-copy-otp">نسخ الكود 📋</button>
                     </div>
                 ` : '';
@@ -1041,15 +1065,13 @@
             document.getElementById('m-subject').innerText = msg.subject;
             document.getElementById('m-meta').innerText = `من: ${msg.from} | إلى: ${currentAccount.address} | الوقت: ${msg.fullDate}`;
 
-            const bodyContainer = document.getElementById('m-body');
             const modalOtpBox = document.getElementById('modal-otp-box');
             modalOtpBox.style.display = 'none';
 
+            renderSafeEmailContentInIframe(null, "⏳ جاري تحميل محتوى الرسالة بالكامل...");
             document.getElementById('mail-modal').style.display = 'flex';
 
-            // جلب النص الكامل من Mail.tm أو Guerrilla إذا لم يكن محملاً بعد
             if (!msg.html && currentAccount.provider === "mailtm") {
-                bodyContainer.innerText = "⏳ جاري تحميل محتوى الرسالة بالكامل...";
                 try {
                     const res = await fetch(`https://api.mail.tm/messages/${msgId}`, {
                         headers: { "Authorization": `Bearer ${currentAccount.token}` }
@@ -1062,7 +1084,6 @@
                     }
                 } catch (e) {}
             } else if (!msg.html && currentAccount.provider === "guerrilla") {
-                bodyContainer.innerText = "⏳ جاري تحميل محتوى الرسالة...";
                 try {
                     const res = await fetch(`https://api.guerrillamail.com/ajax.php?f=fetch_email&email_id=${msgId}&sid_token=${currentAccount.token}`);
                     const full = await res.json();
@@ -1077,14 +1098,9 @@
                 modalOtpBox.style.display = 'flex';
             }
 
-            if (msg.html) {
-                bodyContainer.innerHTML = msg.html;
-            } else {
-                bodyContainer.innerText = msg.text || "الرسالة فارغة.";
-            }
+            renderSafeEmailContentInIframe(msg.html, msg.text);
         }
 
-        // ⭐ إرسال وحفظ الرسالة أو الكود في شات البوت مباشرة
         async function forwardCurrentMailToBot() {
             if (!currentlyOpenedMsg || !tid) return;
             const m = currentlyOpenedMsg;
@@ -1112,9 +1128,6 @@
             }
         }
 
-        // =========================================================================
-        // 🛠️ وظائف النسخ، الاسم المخصص، الإيميلات المحفوظة، والهوية المساعدة
-        // =========================================================================
         function copyEmailWithReward() {
             const email = document.getElementById('active-email').innerText;
             if (!email.includes('@')) return notifyUser("⏳ انتظر اكتمال توليد البريد ثوانٍ...");
@@ -1144,7 +1157,7 @@
 
             const domains = await fetchMailTmDomains();
             if (domains.length > 0) {
-                sel.innerHTML = domains.map(d => `<option value="${d}">@${d}</option>`).join("");
+                sel.innerHTML = domains.map(d => `<option value="${escapeHtml(d)}">@${escapeHtml(d)}</option>`).join("");
             } else {
                 sel.innerHTML = `<option value="">@سيرفر تلقائي</option>`;
             }
@@ -1173,7 +1186,7 @@
                     const isCurrent = currentAccount && currentAccount.address === acc.address;
                     return `
                         <div class="saved-acc-item" style="border-color:${isCurrent ? 'var(--emerald)' : '#232c3f'};">
-                            <span style="direction:ltr; font-family:monospace; color:${isCurrent ? 'var(--emerald)' : '#fff'};">${acc.address}</span>
+                            <span style="direction:ltr; font-family:monospace; color:${isCurrent ? 'var(--emerald)' : '#fff'};">${escapeHtml(acc.address)}</span>
                             ${isCurrent
                                 ? `<span style="color:var(--emerald); font-weight:bold;">النشط حالياً ✅</span>`
                                 : `<button class="btn-copy-otp" onclick="switchToSavedEmail(${idx})">تبديل ↩️</button>`}
