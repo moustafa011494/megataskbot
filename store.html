@@ -7,7 +7,6 @@
     <title>MegaTask Store & Escrow - المتجر والوسيط المالي</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <!-- استدعاء درع الحماية ضد تعدد الحسابات والـ VPN -->
     <script src="security.js"></script>
     <style>
         :root { 
@@ -23,7 +22,6 @@
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 15px; padding-bottom: 115px; overflow-x: hidden; }
         
-        /* هيدر المحفظتين (النقاط والجنيه) */
         .store-wallets-header {
             background: linear-gradient(145deg, #1a1f28, #12151b);
             border: 1px solid #2d333d;
@@ -48,38 +46,10 @@
         .w-mini-card.egp b { color: var(--neon-blue); }
 
         .wallets-actions-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
-        .btn-top-deposit {
-            background: linear-gradient(135deg, #00f2ff, #0077ff);
-            color: black;
-            border: none;
-            padding: 9px 6px;
-            border-radius: 11px;
-            font-weight: bold;
-            font-size: 11.5px;
-            cursor: pointer;
-        }
-        .btn-top-exchange {
-            background: rgba(255, 170, 0, 0.12);
-            color: var(--gold);
-            border: 1px solid rgba(255, 170, 0, 0.4);
-            padding: 9px 6px;
-            border-radius: 11px;
-            font-weight: bold;
-            font-size: 11px;
-            cursor: pointer;
-        }
-        .btn-top-merchant {
-            background: rgba(157, 78, 221, 0.18);
-            color: #e9d5ff;
-            border: 1px solid var(--violet);
-            padding: 9px 6px;
-            border-radius: 11px;
-            font-weight: bold;
-            font-size: 11px;
-            cursor: pointer;
-        }
+        .btn-top-deposit { background: linear-gradient(135deg, #00f2ff, #0077ff); color: black; border: none; padding: 9px 6px; border-radius: 11px; font-weight: bold; font-size: 11.5px; cursor: pointer; }
+        .btn-top-exchange { background: rgba(255, 170, 0, 0.12); color: var(--gold); border: 1px solid rgba(255, 170, 0, 0.4); padding: 9px 6px; border-radius: 11px; font-weight: bold; font-size: 11px; cursor: pointer; }
+        .btn-top-merchant { background: rgba(157, 78, 221, 0.18); color: #e9d5ff; border: 1px solid var(--violet); padding: 9px 6px; border-radius: 11px; font-weight: bold; font-size: 11px; cursor: pointer; }
 
-        /* بطاقة الوسيط المالي السريع (Private Escrow Deal) */
         .escrow-quick-bar {
             background: linear-gradient(135deg, rgba(0, 210, 106, 0.12), rgba(0, 242, 255, 0.08));
             border: 1.5px dashed var(--main-green);
@@ -94,30 +64,9 @@
         .escrow-quick-text h4 { margin: 0 0 3px; font-size: 13px; color: var(--main-green); }
         .escrow-quick-text p { margin: 0; font-size: 11px; color: #cbd5e1; line-height: 1.4; }
         .escrow-quick-btns { display: flex; gap: 6px; flex-shrink: 0; }
-        .btn-escrow-action {
-            background: var(--main-green);
-            color: #000;
-            border: none;
-            padding: 8px 10px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .btn-escrow-join {
-            background: #161922;
-            color: var(--neon-blue);
-            border: 1px solid var(--neon-blue);
-            padding: 8px 10px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            white-space: nowrap;
-        }
+        .btn-escrow-action { background: var(--main-green); color: #000; border: none; padding: 8px 10px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+        .btn-escrow-join { background: #161922; color: var(--neon-blue); border: 1px solid var(--neon-blue); padding: 8px 10px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap; }
 
-        /* شريط البحث والأزرار العلوية */
         .search-bar { width: 100%; background: #090b0e; border: 1px solid #2d333d; padding: 12px 15px; color: white; border-radius: 14px; outline: none; font-size: 13px; margin-bottom: 12px; transition: 0.2s; }
         .search-bar:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0, 242, 255, 0.15); }
 
@@ -125,20 +74,17 @@
         .btn-sell-item { background: linear-gradient(135deg, var(--main-green), #009e4f); color: black; border: none; padding: 12px 10px; border-radius: 13px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 210, 106, 0.2); }
         .btn-my-activity { background: #161920; color: var(--gold); border: 1.5px solid var(--gold); padding: 12px 10px; border-radius: 13px; font-size: 12px; font-weight: bold; cursor: pointer; }
 
-        /* فلاتر نوع العملة */
         .currency-filter-bar { display: flex; gap: 6px; margin-bottom: 12px; background: #0b0d10; padding: 5px; border-radius: 13px; border: 1px solid #22262f; }
         .curr-chip { flex: 1; text-align: center; padding: 8px 6px; border-radius: 9px; font-size: 11.5px; font-weight: bold; color: var(--text-gray); cursor: pointer; transition: 0.2s; }
         .curr-chip.active-all { background: #252a35; color: white; }
         .curr-chip.active-pts { background: rgba(0, 210, 106, 0.18); color: var(--main-green); border: 1px solid var(--main-green); }
         .curr-chip.active-egp { background: rgba(0, 242, 255, 0.18); color: var(--neon-blue); border: 1px solid var(--neon-blue); }
 
-        /* أقسام المتجر */
         .category-tabs { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; scrollbar-width: none; }
         .category-tabs::-webkit-scrollbar { display: none; }
         .category-tab { background: #16191e; border: 1px solid #2d333d; padding: 8px 14px; border-radius: 20px; font-size: 12px; color: var(--text-gray); cursor: pointer; white-space: nowrap; transition: 0.2s; }
         .category-tab.active { background: var(--main-green); color: black; font-weight: bold; border-color: var(--main-green); }
 
-        /* كروت المنتجات */
         .products-container { display: flex; flex-direction: column; gap: 12px; }
         .product-card { 
             background: var(--card-bg); 
@@ -155,12 +101,18 @@
 
         .product-header-row { display: flex; gap: 12px; align-items: flex-start; }
         .product-thumb {
-            width: 54px; height: 54px; border-radius: 13px;
+            width: 60px; height: 60px; border-radius: 13px;
             background: #11141a; border: 1px solid #2e3440;
             display: flex; align-items: center; justify-content: center;
-            font-size: 24px; flex-shrink: 0; overflow: hidden;
+            font-size: 24px; flex-shrink: 0; overflow: hidden; cursor: zoom-in;
+            position: relative;
         }
         .product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .store-logo-avatar {
+            width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
+            border: 1px solid var(--gold); display: inline-block; vertical-align: middle; margin-left: 4px;
+        }
 
         .product-main-info { flex: 1; }
         .badges-row { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; flex-wrap: wrap; }
@@ -176,6 +128,7 @@
         .price-tag { padding: 5px 10px; border-radius: 10px; font-size: 13px; font-weight: 800; white-space: nowrap; }
         .price-pts { background: rgba(0, 210, 106, 0.12); color: var(--main-green); border: 1px solid rgba(0, 210, 106, 0.35); }
         .price-egp { background: rgba(0, 242, 255, 0.12); color: var(--neon-blue); border: 1px solid rgba(0, 242, 255, 0.35); }
+        .price-negotiate { background: rgba(255, 170, 0, 0.15); color: var(--gold); border: 1px dashed var(--gold); }
 
         .product-desc { font-size: 12px; color: #cbd5e1; line-height: 1.5; background: #11141a; padding: 9px 12px; border-radius: 10px; border: 1px solid #22262f; white-space: pre-wrap; }
         
@@ -186,9 +139,9 @@
         .btn-buy:active { transform: scale(0.95); }
         .btn-buy-pts { background: var(--main-green); color: black; }
         .btn-buy-egp { background: linear-gradient(135deg, #00f2ff, #0077ff); color: black; }
+        .btn-buy-negotiate { background: var(--gold); color: black; }
         .btn-buy-soldout { background: #252932; color: #777; cursor: not-allowed; }
 
-        /* النوافذ المنبثقة */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 9999; align-items: center; justify-content: center; padding: 14px; }
         .modal-body { background: var(--card-bg); border: 1.5px solid #2d333d; border-radius: 22px; padding: 18px; width: 100%; max-width: 450px; max-height: 90vh; overflow-y: auto; text-align: right; }
         .input-group { margin-bottom: 12px; }
@@ -208,149 +161,31 @@
         .btn-confirm { background: var(--main-green); color: black; }
         .btn-cancel { background: #252932; color: white; }
 
-        /* صندوق عرض ونسخ كود الصفقة المولد */
         .generated-code-box {
-            background: #06080c;
-            border: 2px dashed var(--main-green);
-            border-radius: 16px;
-            padding: 16px 12px;
-            margin: 14px 0;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s;
+            background: #06080c; border: 2px dashed var(--main-green); border-radius: 16px; padding: 16px 12px; margin: 14px 0; text-align: center; cursor: pointer; transition: 0.2s;
         }
-        .generated-code-box:active { transform: scale(0.98); background: rgba(0, 210, 106, 0.08); }
-        .generated-code-val {
-            font-family: 'Courier New', monospace;
-            font-size: 24px;
-            font-weight: 900;
-            color: var(--main-green);
-            letter-spacing: 2px;
-            user-select: all;
-            display: block;
-            margin-bottom: 6px;
-        }
-        .copy-code-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            background: rgba(0, 242, 255, 0.14);
-            border: 1px solid var(--neon-blue);
-            color: var(--neon-blue);
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 11.5px;
-            font-weight: bold;
-            cursor: pointer;
-            user-select: all;
-        }
-        .copy-code-badge:active { transform: scale(0.94); }
+        .generated-code-val { font-family: 'Courier New', monospace; font-size: 24px; font-weight: 900; color: var(--main-green); letter-spacing: 2px; display: block; margin-bottom: 6px; }
+        .copy-code-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(0, 242, 255, 0.14); border: 1px solid var(--neon-blue); color: var(--neon-blue); padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 11.5px; font-weight: bold; cursor: pointer; }
 
-        /* غرفة الصفقة والوساطة المباشرة (Deal Room) */
-        .deal-status-banner {
-            background: #0b0e14;
-            border: 1.5px solid var(--gold);
-            border-radius: 14px;
-            padding: 12px;
-            margin-bottom: 12px;
-            font-size: 12px;
-            line-height: 1.6;
-        }
-        .deal-chat-box {
-            background: #07090d;
-            border: 1px solid #252c3b;
-            border-radius: 14px;
-            padding: 12px;
-            height: 225px;
-            overflow-y: auto;
-            margin-bottom: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .chat-bubble {
-            padding: 8px 11px;
-            border-radius: 11px;
-            font-size: 12px;
-            max-width: 86%;
-            line-height: 1.5;
-            word-break: break-word;
-        }
+        .deal-status-banner { background: #0b0e14; border: 1.5px solid var(--gold); border-radius: 14px; padding: 12px; margin-bottom: 12px; font-size: 12px; line-height: 1.6; }
+        .deal-chat-box { background: #07090d; border: 1px solid #252c3b; border-radius: 14px; padding: 12px; height: 225px; overflow-y: auto; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .chat-bubble { padding: 8px 11px; border-radius: 11px; font-size: 12px; max-width: 86%; line-height: 1.5; word-break: break-word; }
         .chat-me { background: rgba(0, 210, 106, 0.16); border: 1px solid rgba(0, 210, 106, 0.4); align-self: flex-start; color: #fff; }
         .chat-other { background: #181d27; border: 1px solid #2d3648; align-self: flex-end; color: #e2e8f0; }
         .chat-admin { background: rgba(157, 78, 221, 0.22); border: 1px solid var(--violet); align-self: center; max-width: 94%; color: #f3e8ff; }
         .chat-sys { background: rgba(255, 170, 0, 0.12); border: 1px dashed var(--gold); align-self: center; max-width: 95%; text-align: center; color: #fde68a; font-size: 11px; }
-        .chat-img-attachment {
-            max-width: 190px;
-            max-height: 180px;
-            border-radius: 9px;
-            margin-top: 6px;
-            border: 1px solid #334155;
-            cursor: zoom-in;
-            display: block;
-        }
+        .chat-img-attachment { max-width: 190px; max-height: 180px; border-radius: 9px; margin-top: 6px; border: 1px solid #334155; cursor: zoom-in; display: block; }
+        .btn-attach-img { background: #182030; color: var(--gold); border: 1px solid var(--gold); padding: 0 12px; border-radius: 11px; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-        .btn-attach-img {
-            background: #182030;
-            color: var(--gold);
-            border: 1px solid var(--gold);
-            padding: 0 12px;
-            border-radius: 11px;
-            font-size: 17px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        /* صندوق تقييم التاجر بعد إتمام الصفقة */
-        .rating-box-card {
-            background: rgba(255, 170, 0, 0.08);
-            border: 1.5px dashed var(--gold);
-            border-radius: 14px;
-            padding: 12px;
-            text-align: center;
-            margin-top: 6px;
-        }
-        .stars-row {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin: 8px 0;
-            direction: ltr;
-        }
-        .star-pick {
-            font-size: 28px;
-            color: #374151;
-            cursor: pointer;
-            user-select: none;
-            transition: 0.15s;
-        }
+        .rating-box-card { background: rgba(255, 170, 0, 0.08); border: 1.5px dashed var(--gold); border-radius: 14px; padding: 12px; text-align: center; margin-top: 6px; }
+        .stars-row { display: flex; justify-content: center; gap: 8px; margin: 8px 0; direction: ltr; }
+        .star-pick { font-size: 28px; color: #374151; cursor: pointer; transition: 0.15s; }
         .star-pick.lit { color: var(--gold); text-shadow: 0 0 10px rgba(255,170,0,0.4); }
 
-        /* مكبر الصور (Lightbox) */
-        #chat-lightbox {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 100000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-        }
-        #chat-lightbox img {
-            max-width: 95vw;
-            max-height: 80vh;
-            border-radius: 12px;
-            object-fit: contain;
-        }
+        #chat-lightbox, #product-lightbox { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 100000; flex-direction: column; align-items: center; justify-content: center; padding: 15px; }
+        #chat-lightbox img, #product-lightbox img { max-width: 95vw; max-height: 80vh; border-radius: 12px; object-fit: contain; }
 
         .status-box { text-align: center; padding: 35px 15px; color: var(--text-gray); font-size: 13px; background: var(--card-bg); border-radius: 16px; border: 1px dashed #2d333d; }
-
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; cursor: pointer; text-decoration: none; }
         .nav-item.active { color: var(--main-green); }
@@ -358,7 +193,6 @@
 </head>
 <body>
 
-    <!-- هيدر المحفظتين + زر بوابة التجار -->
     <div class="store-wallets-header">
         <div class="wallets-top-grid">
             <div class="w-mini-card pts">
@@ -377,10 +211,9 @@
         </div>
     </div>
 
-    <!-- شريط الوسيط المالي الخاص (Escrow Code Deal) -->
     <div class="escrow-quick-bar">
         <div class="escrow-quick-text">
-            <h4>🤝 نظام الوسيط المالي المضمون (Escrow)</h4>
+            <h4>🤝 نظام الوسيط المالي المضمون (Escrow)[span_1](start_span)[span_1](end_span)[span_2](start_span)[span_2](end_span)</h4>
             <p>أنشئ كود صفقة خاصة مع أي شخص، أو ادفع كود صفقة في خزنة الضمان!</p>
         </div>
         <div class="escrow-quick-btns">
@@ -389,25 +222,27 @@
         </div>
     </div>
 
-    <!-- شريط البحث -->
     <input type="text" id="search-input" class="search-bar" placeholder="🔍 ابحث عن منتج، حساب، خدمة، أو كود صفقة..." oninput="filterProducts()">
 
-    <!-- أزرار البيع وغرف الوساطة -->
     <div class="top-store-buttons">
         <button class="btn-sell-item" onclick="openSellModal()">➕ اعرض سلعتك أو خدمتك للبيع</button>
         <button class="btn-my-activity" onclick="openMyActivityModal()">💬 صفقاتي وطلباتي (<span id="active-deals-badge">0</span>)</button>
     </div>
 
-    <!-- شريط فلترة العملة -->
     <div class="currency-filter-bar">
         <div id="chip-curr-all" class="curr-chip active-all" onclick="switchCurrencyFilter('all')">🌐 كل العروض</div>
         <div id="chip-curr-points" class="curr-chip" onclick="switchCurrencyFilter('points')">🪙 عروض النقاط</div>
         <div id="chip-curr-egp" class="curr-chip" onclick="switchCurrencyFilter('egp')">💵 عروض الجنيه</div>
     </div>
 
-    <!-- أقسام المتجر -->
+    <!-- أقسام المتجر الموسعة والمحدثة -->
     <div class="category-tabs">
         <div class="category-tab active" onclick="switchCategory('all', this)">الكل</div>
+        <div class="category-tab" onclick="switchCategory('social', this)">💬 منصات تواصل</div>
+        <div class="category-tab" onclick="switchCategory('gaming', this)">🎮 ألعاب وبطاقات</div>
+        <div class="category-tab" onclick="switchCategory('streaming', this)">🎬 بث واشتراكات</div>
+        <div class="category-tab" onclick="switchCategory('accounts', this)">👤 حسابات جاهزة</div>
+        <div class="category-tab" onclick="switchCategory('software', this)">💻 برمجيات وأدوات</div>
         <div class="category-tab" onclick="switchCategory('recharge', this)">🔋 شحن وألعاب</div>
         <div class="category-tab" onclick="switchCategory('telegram', this)">📢 تيليجرام</div>
         <div class="category-tab" onclick="switchCategory('facebook', this)">📘 فيسبوك</div>
@@ -417,17 +252,16 @@
         <div class="category-tab" onclick="switchCategory('subscriptions', this)">👑 حسابات واشتراكات</div>
     </div>
 
-    <!-- قائمة المنتجات -->
     <div id="products-list" class="products-container">
         <div class="status-box">⏳ جاري تحميل عروض المتجر...</div>
     </div>
 
-    <!-- 1. نافذة إنشاء صفقة وساطة مالية خاصة (Private Escrow Deal - عمولة 10%) -->
+    <!-- نافذة إنشاء صفقة وساطة خاصة -->
     <div id="private-escrow-modal" class="modal-overlay">
         <div class="modal-body" style="border-color: var(--main-green);">
             <h3 style="color: var(--main-green); margin-top: 0; margin-bottom: 6px;">🤝 إنشاء كود صفقة وساطة خاصة</h3>
             <p style="font-size: 11.5px; color: var(--text-gray); margin-top: 0; margin-bottom: 12px; line-height: 1.5;">
-                هل اتفقت مع مشتري خارج البوت؟ أنشئ كود صفقة الآن وأرسله للمشتري؛ سيدفع المشتري المبلغ في خزنة البوت، وبعد تسليمك للخدمة يتحول الصافي لمحفظتك فوراً (عمولة الوساطة الخاصة 10% فقط)!
+                أنشئ كود صفقة وأرسله للمشتري؛ سيدفع المبلغ في خزنة الضمان، وبعد تسليمك للخدمة يتحول الصافي لمحفظتك (عمولة الوساطة الخاصة 10%)[span_3](start_span)[span_3](end_span)!
             </p>
 
             <div class="sell-currency-selector">
@@ -437,16 +271,16 @@
 
             <div class="input-group">
                 <label>عنوان الصفقة (ماذا ستسلم للمشتري؟):</label>
-                <input type="text" id="esc-title" class="input-field" placeholder="مثلاً: بيع حساب كلاش تاون 13 / قناة تليجرام 5K">
+                <input type="text" id="esc-title" class="input-field" placeholder="مثلاً: بيع حساب كلاش / قناة تليجرام">
             </div>
 
             <div class="input-group">
                 <label>شروط وتفاصيل التسليم المتفق عليها:</label>
-                <textarea id="esc-desc" class="input-field" rows="2" placeholder="اكتب مواصفات الحساب أو الخدمة لضمان حق الطرفين..."></textarea>
+                <textarea id="esc-desc" class="input-field" rows="2" placeholder="اكتب مواصفات الخدمة لضمان حق الطرفين..."></textarea>
             </div>
 
             <div class="input-group">
-                <label id="lbl-esc-price">مبلغ الصفقة المتفق عليه (بالجنيه):</label>
+                <label id="lbl-esc-price">مبلغ الصفقة المتفق عليه:</label>
                 <input type="number" id="esc-price" class="input-field" placeholder="مثلاً: 100" step="1" oninput="updateEscrowProfitPreview()">
             </div>
 
@@ -461,24 +295,17 @@
         </div>
     </div>
 
-    <!-- نافذة عرض ونسخ كود الصفقة بعد توليده مباشرة -->
     <div id="escrow-created-modal" class="modal-overlay">
         <div class="modal-body" style="border-color: var(--main-green); text-align: center;">
             <div style="font-size: 46px; margin-bottom: 6px;">🎉</div>
             <h3 style="color: var(--main-green); margin: 0 0 6px;">تم توليد كود الصفقة بنجاح!</h3>
             <p style="font-size: 12px; color: #cbd5e1; margin: 0; line-height: 1.6;">
-                انسخ الكود التالي وأرسله للمشتري ليضعه في زر <b>(🔍 كود صفقة)</b> ويدفع المبلغ في خزنة الضمان:
+                انسخ الكود التالي وأرسله للمشتري ليضعه في زر <b>(🔍 كود صفقة)</b> ويدفع في خزنة الضمان:
             </p>
-
             <div class="generated-code-box" onclick="copyCodeText(document.getElementById('created-deal-code-txt').innerText)">
                 <span class="generated-code-val" id="created-deal-code-txt">ESC-000000</span>
                 <span style="font-size: 11.5px; color: var(--gold); font-weight: bold;">👆 اضغط هنا لنسخ الكود للحافظة فوراً</span>
             </div>
-
-            <div style="font-size: 11px; color: var(--text-gray); margin-bottom: 14px;">
-                ✅ تم أيضاً إرسال نسخة من الكود إلى محادثتك في البوت للاحتفاظ به.
-            </div>
-
             <div class="modal-buttons">
                 <button class="btn-confirm" onclick="copyCodeText(document.getElementById('created-deal-code-txt').innerText)">📋 نسخ كود الصفقة</button>
                 <button class="btn-cancel" onclick="closeModal('escrow-created-modal')">تم ✖</button>
@@ -486,13 +313,10 @@
         </div>
     </div>
 
-    <!-- 2. نافذة البحث عن كود صفقة وساطة والدفع فيها (Join Escrow by Code) -->
     <div id="join-escrow-modal" class="modal-overlay">
         <div class="modal-body" style="border-color: var(--neon-blue); text-align: center;">
             <h3 style="color: var(--neon-blue); margin-top: 0;">🔍 الدخول إلى صفقة وساطة بالكود</h3>
-            <p style="font-size: 12px; color: var(--text-gray);">
-                أدخل كود الصفقة الذي أرسله لك البائع (مثال: <code>ESC-482910</code>) لفحص تفاصيلها ودفع المبلغ في خزنة ضمان البوت:
-            </p>
+            <p style="font-size: 12px; color: var(--text-gray);">أدخل كود الصفقة الذي أرسله لك البائع (مثال: <code>ESC-482910</code>) لعرضها والدفع في خزنة الضمان:</p>
             <input type="text" id="join-escrow-code-inp" class="input-field" style="text-align: center; font-family: monospace; font-size: 16px; margin: 10px 0; direction: ltr;" placeholder="ESC-XXXXXX">
             <div class="modal-buttons">
                 <button class="btn-confirm" style="background: var(--neon-blue);" onclick="findAndOpenEscrowDeal()">عرض تفاصيل الصفقة 🚀</button>
@@ -501,47 +325,27 @@
         </div>
     </div>
 
-    <!-- 3. غرفة الصفقة والوساطة الحية (Live Escrow Deal Room + الصور + التقييم) -->
-    <div id="deal-room-modal" class="modal-overlay">
-        <div class="modal-body" style="border-color: var(--gold);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <h3 style="color: var(--gold); margin: 0; font-size: 15px; display: flex; align-items: center; gap: 6px;" id="dr-title">🤝 غرفة الوساطة</h3>
-                <button onclick="refreshCurrentDealRoom()" style="background: none; border: 1px solid var(--neon-blue); color: var(--neon-blue); border-radius: 8px; padding: 4px 9px; font-size: 11px; font-weight: bold; cursor: pointer;">🔄 تحديث</button>
-            </div>
-
-            <div id="dr-status-banner" class="deal-status-banner"></div>
-
-            <div style="font-size: 11.5px; color: var(--text-gray); margin-bottom: 5px; font-weight: bold;">💬 محادثة الصفقة وبيانات التسليم (تدعم النصوص والصور 📷):</div>
-            <div id="dr-chat-box" class="deal-chat-box"></div>
-
-            <div id="dr-chat-input-row" style="display: flex; gap: 6px; margin-bottom: 12px;">
-                <input type="file" id="dr-img-inp" accept="image/*" style="display: none;" onchange="sendDealRoomImage(this)">
-                <button type="button" class="btn-attach-img" onclick="document.getElementById('dr-img-inp').click()" title="إرسال صورة أو لقطة شاشة">📷</button>
-                <input type="text" id="dr-msg-inp" class="input-field" style="padding: 10px;" placeholder="اكتب رسالة أو بيانات التسليم هنا..." onkeydown="if(event.key==='Enter') sendDealRoomMessage()">
-                <button onclick="sendDealRoomMessage()" style="background: var(--neon-blue); color: #000; border: none; padding: 0 15px; border-radius: 11px; font-weight: bold; cursor: pointer;">إرسال</button>
-            </div>
-
-            <div id="dr-actions-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
-
-            <button class="btn-cancel" style="width: 100%; padding: 11px; border-radius: 11px; margin-top: 10px; border: none; cursor: pointer; font-weight: bold;" onclick="closeModal('deal-room-modal')">إغلاق الغرفة</button>
-        </div>
-    </div>
-
-    <!-- 4. نافذة بيع سلعة عامة في المتجر -->
+    <!-- نافذة بيع سلعة مع خيار (السعر عند الاتفاق) و(صورة المنتج) و(لوجو التاجر) -->
     <div id="sell-modal" class="modal-overlay">
         <div class="modal-body">
             <h3 style="color: var(--neon-blue); margin-top:0; margin-bottom: 6px;">🛍️ عرض سلعة أو خدمة للبيع بالمتجر</h3>
             <p style="font-size: 11px; color: var(--text-gray); margin-top: 0; margin-bottom: 12px;">
-                تُحفظ أموال المشتري في خزنة الضمان (Escrow)، وفور تسليمك للخدمة يتحول صافي ربحك لمحفظة التاجر الخاصة بك لسحبه كاش أو استخدامه (عمولة المتجر 15% فقط)!
+                تُحفظ أموال المشتري في خزنة الضمان، وفور تسليمك للخدمة يتحول صافي ربحك لمحفظة التاجر (عمولة المتجر 15%)[span_4](start_span)[span_4](end_span)!
             </p>
 
-            <label style="font-size: 12px; color: #d1d5db; font-weight: bold; display: block; margin-bottom: 6px;">اختر عملة البيع:</label>
-            <div class="sell-currency-selector">
-                <div id="opt-sell-egp" class="curr-option selected-egp" onclick="selectSellCurrency('egp')">
-                    💵 بيع بالجنيه (قابل للسحب كاش)
+            <div class="input-group">
+                <label>نوع التسعير:</label>
+                <div class="sell-currency-selector">
+                    <div id="price-type-fixed" class="curr-option selected-egp" onclick="selectPricingType('fixed')">💵 سعر محدد وثابت</div>
+                    <div id="price-type-negotiate" class="curr-option" onclick="selectPricingType('negotiate')">🤝 السعر عند الاتفاق</div>
                 </div>
-                <div id="opt-sell-points" class="curr-option" onclick="selectSellCurrency('points')">
-                    🪙 بيع بالنقاط
+            </div>
+
+            <div class="input-group" id="sell-currency-group">
+                <label>اختر عملة البيع:</label>
+                <div class="sell-currency-selector">
+                    <div id="opt-sell-egp" class="curr-option selected-egp" onclick="selectSellCurrency('egp')">💵 جنيه (قابل للسحب كاش)</div>
+                    <div id="opt-sell-points" class="curr-option" onclick="selectSellCurrency('points')">🪙 نقاط</div>
                 </div>
             </div>
 
@@ -549,6 +353,11 @@
                 <div class="input-group">
                     <label>القسم:</label>
                     <select id="sell-category" class="input-field">
+                        <option value="social">💬 منصات تواصل</option>
+                        <option value="gaming">🎮 ألعاب وبطاقات</option>
+                        <option value="streaming">🎬 بث واشتراكات</option>
+                        <option value="accounts">👤 حسابات جاهزة</option>
+                        <option value="software">💻 برمجيات وأدوات</option>
                         <option value="recharge">🔋 شحن وألعاب</option>
                         <option value="telegram">📢 تيليجرام</option>
                         <option value="facebook">📘 فيسبوك</option>
@@ -580,42 +389,46 @@
             </div>
 
             <div class="input-group" style="background: rgba(157, 78, 221, 0.08); border: 1px dashed var(--violet); padding: 10px; border-radius: 12px;">
-                <label style="color: #e9d5ff;">⚡ بيانات التسليم التلقائي الفوري (اختياري - للأكواد والحسابات الجاهزة):</label>
-                <textarea id="sell-auto-stock" class="input-field" rows="2" placeholder="ضع كل كود أو حساب في سطر مستقل... البيانات مشفرة ولا تظهر لأحد إلا للمشتري بعد الدفع!" oninput="syncAutoStockCount()"></textarea>
+                <label style="color: #e9d5ff;">⚡ بيانات التسليم التلقائي الفوري (اختياري - للأكواد والحسابات):</label>
+                <textarea id="sell-auto-stock" class="input-field" rows="2" placeholder="ضع كل كود أو حساب في سطر مستقل..." oninput="syncAutoStockCount()"></textarea>
             </div>
 
-            <div class="input-group">
-                <label id="lbl-sell-price">💵 سعر البيع للمشتري (بالجنيه المصري):</label>
-                <input type="number" id="sell-price" class="input-field" placeholder="مثلاً: 50 جنيه" step="0.5" oninput="updateSellProfitPreview()">
+            <div class="input-group" id="sell-price-group">
+                <label id="lbl-sell-price">💵 سعر البيع للمشتري:</label>
+                <input type="number" id="sell-price" class="input-field" placeholder="مثلاً: 50" step="0.5" oninput="updateSellProfitPreview()">
             </div>
 
             <div id="sell-profit-box" class="profit-preview-box">
-                💡 صافي ربحك بعد عمولة الوساطة والمتجر (15%): <b>0.00 ج.م</b> لكل عملية بيع مكتملة.
+                💡 صافي ربحك بعد عمولة المتجر (15%): <b>0.00 ج.م</b> لكل مبيعة مكتملة.
             </div>
 
+            <!-- خيار رفع صورة المنتج البارزة (اختياري) -->
             <div class="input-group">
-                <label>صورة توضيحية للمنتج (اختياري):</label>
-                <input type="file" id="sell-img-file" class="input-field" accept="image/*" onchange="previewUserSellImage(this)">
+                <label>📸 صورة المنتج البارزة (اختياري - تظهر كصورة رئيسية):</label>
+                <input type="file" id="sell-img-file" class="input-field" accept="image/*" onchange="previewUserSellImage(this, 'product')">
+            </div>
+
+            <!-- خيار رفع لوجو التاجر أو المتجر بشكل منفصل ومميز (اختياري) -->
+            <div class="input-group">
+                <label>🎨 لوجو التاجر أو المتجر الخاص بك (اختياري - يظهر كأيقونة بجوار اسمك):</label>
+                <input type="file" id="sell-logo-file" class="input-field" accept="image/*" onchange="previewUserSellImage(this, 'logo')">
             </div>
 
             <div class="modal-buttons">
                 <button id="btn-submit-sell" class="btn-confirm" onclick="submitUserProduct()">إرسال للاعتماد والنشر 🚀</button>
-                <button class="btn-cancel" onclick="closeModal('sell-modal')">إغلاق</button>
+                <button class="btn-cancel" onclick="closeModal('sell-modal')">إلغاء</button>
             </div>
         </div>
     </div>
 
-    <!-- 5. نافذة تأكيد الشراء بضمان الوسيط (Escrow Buy Modal) -->
     <div id="buy-modal" class="modal-overlay">
         <div class="modal-body">
-            <h3 style="color: var(--main-green); margin-top:0;" id="buy-modal-title">🛒 شراء بضمان الوسيط المالي</h3>
+            <h3 style="color: var(--main-green); margin-top:0;" id="buy-modal-title">🛒 شراء بضمان الوسيط</h3>
             <div id="buy-modal-price" style="font-size: 12.5px; color: #e5e7eb; background: #11141a; padding: 12px; border-radius: 12px; margin-bottom: 12px; border: 1px solid #262c38; line-height: 1.7;"></div>
-
             <div class="input-group">
-                <label>📱 بيانات الاستلام أو ملاحظتك للبائع (حسابك / رقمك / يوزرك):</label>
+                <label>📱 بيانات الاستلام أو ملاحظتك للبائع:</label>
                 <input type="text" id="buyer-input" class="input-field" placeholder="أدخل البيانات المطلوبة ليبدأ البائع في التسليم...">
             </div>
-
             <div class="modal-buttons">
                 <button id="btn-confirm-buy" class="btn-confirm" onclick="confirmPurchase()">🔒 دفع وحجز المبلغ في الضمان</button>
                 <button class="btn-cancel" onclick="closeModal('buy-modal')">إلغاء</button>
@@ -623,17 +436,33 @@
         </div>
     </div>
 
-    <!-- 6. نافذة تحويل الجنيه إلى نقاط (1 جنيه = 1000 نقطة) -->
+    <!-- نافذة غرفة الوساطة الحية -->
+    <div id="deal-room-modal" class="modal-overlay">
+        <div class="modal-body" style="border-color: var(--gold);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h3 style="color: var(--gold); margin: 0; font-size: 15px;" id="dr-title">🤝 غرفة الوساطة</h3>
+                <button onclick="refreshCurrentDealRoom()" style="background: none; border: 1px solid var(--neon-blue); color: var(--neon-blue); border-radius: 8px; padding: 4px 9px; font-size: 11px; font-weight: bold; cursor: pointer;">🔄 تحديث</button>
+            </div>
+            <div id="dr-status-banner" class="deal-status-banner"></div>
+            <div style="font-size: 11.5px; color: var(--text-gray); margin-bottom: 5px; font-weight: bold;">💬 محادثة الصفقة (تدعم النصوص والصور 📷):</div>
+            <div id="dr-chat-box" class="deal-chat-box"></div>
+            <div id="dr-chat-input-row" style="display: flex; gap: 6px; margin-bottom: 12px;">
+                <input type="file" id="dr-img-inp" accept="image/*" style="display: none;" onchange="sendDealRoomImage(this)">
+                <button type="button" class="btn-attach-img" onclick="document.getElementById('dr-img-inp').click()" title="إرسال صورة">📷</button>
+                <input type="text" id="dr-msg-inp" class="input-field" style="padding: 10px;" placeholder="اكتب رسالة أو تفاصيل الاتفاق..." onkeydown="if(event.key==='Enter') sendDealRoomMessage()">
+                <button onclick="sendDealRoomMessage()" style="background: var(--neon-blue); color: #000; border: none; padding: 0 15px; border-radius: 11px; font-weight: bold; cursor: pointer;">إرسال</button>
+            </div>
+            <div id="dr-actions-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            <button class="btn-cancel" style="width: 100%; padding: 11px; border-radius: 11px; margin-top: 10px; border: none; font-weight: bold; cursor: pointer;" onclick="closeModal('deal-room-modal')">إغلاق الغرفة</button>
+        </div>
+    </div>
+
     <div id="exchange-modal" class="modal-overlay">
         <div class="modal-body" style="border-color: var(--neon-blue); text-align: center;">
             <h3 style="color: var(--neon-blue); margin-top:0;">⚡ تحويل سريع: جنيه ⬅ نقاط</h3>
-            <p style="font-size: 12px; color: var(--text-gray);">
-                كل <b style="color: var(--neon-blue);">1 جنيه</b> يمنحك <b style="color: var(--gold);">1,000 نقطة</b> فوراً لشراء خدمات النقاط أو تمويل المهام!
-            </p>
-            <input type="number" id="ex-egp-input" class="input-field" style="text-align: center; font-size: 15px; margin: 10px 0;" placeholder="أدخل المبلغ بالجنيه (مثلاً: 5)" min="1" step="0.5" oninput="updateStoreExchangePreview()">
-            <div id="ex-pts-preview" style="font-size: 14px; color: var(--main-green); font-weight: bold; margin-bottom: 12px;">
-                ستحصل على: 0 نقطة
-            </div>
+            <p style="font-size: 12px; color: var(--text-gray);">كل <b>1 جنيه</b> يمنحك <b>1,000 نقطة</b> فوراً!</p>
+            <input type="number" id="ex-egp-input" class="input-field" style="text-align: center; font-size: 15px; margin: 10px 0;" placeholder="المبلغ بالجنيه" min="1" step="0.5" oninput="updateStoreExchangePreview()">
+            <div id="ex-pts-preview" style="font-size: 14px; color: var(--main-green); font-weight: bold; margin-bottom: 12px;">ستحصل على: 0 نقطة</div>
             <div class="modal-buttons">
                 <button id="btn-confirm-store-ex" class="btn-confirm" style="background: linear-gradient(135deg, #00f2ff, #0077ff);" onclick="confirmStoreExchange()">تحويل فوراً ✅</button>
                 <button class="btn-cancel" onclick="closeModal('exchange-modal')">إلغاء</button>
@@ -641,18 +470,20 @@
         </div>
     </div>
 
-    <!-- 7. نافذة صفقاتي وطلباتي وسلعي -->
     <div id="activity-modal" class="modal-overlay">
         <div class="modal-body">
             <h3 style="color: var(--gold); margin-top: 0;">🤝 صفقاتي في الضمان وسلعي المعروضة</h3>
-            <div id="my-activity-content" style="max-height: 68vh; overflow-y: auto;">
-                جاري التحميل...
-            </div>
+            <div id="my-activity-content" style="max-height: 68vh; overflow-y: auto;">جاري التحميل...</div>
             <button class="btn-cancel" style="width: 100%; padding: 12px; border-radius: 12px; margin-top: 12px; border: none; font-weight: bold; cursor: pointer;" onclick="closeModal('activity-modal')">إغلاق</button>
         </div>
     </div>
 
-    <!-- مكبر صور الشات -->
+    <!-- مكبر الصور لعرض صورة المنتج بحجم كامل -->
+    <div id="product-lightbox" onclick="this.style.display='none'">
+        <img id="product-lightbox-img" src="" alt="Full Product Image">
+        <button style="margin-top: 14px; background: var(--crimson); color: #fff; border: none; padding: 9px 22px; border-radius: 10px; font-weight: bold; cursor: pointer;">✖ إغلاق الصورة</button>
+    </div>
+
     <div id="chat-lightbox" onclick="this.style.display='none'">
         <img id="chat-lightbox-img" src="" alt="Full Image">
         <button style="margin-top: 14px; background: var(--crimson); color: #fff; border: none; padding: 9px 22px; border-radius: 10px; font-weight: bold; cursor: pointer;">✖ إغلاق الصورة</button>
@@ -660,7 +491,7 @@
 
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
-        <div onclick="goStore()" class="nav-item active" style="color: var(--main-green);">🛍️<br>المتجر</div>
+        <div onclick="goStore()" class="nav-item active" style="color: var(--main-green);"><span style="font-size:18px;">🛍️</span><br>المتجر</div>
         <div onclick="goTasks()" class="nav-item">📋<br>اكسب</div>
         <div onclick="goInvite()" class="nav-item">👥<br>أصدقاء</div>
         <div onclick="goProfile()" class="nav-item">👤<br>أنا</div>
@@ -671,9 +502,9 @@
         tg.expand();
 
         const ADMIN_MASTER_ID = "875021647";
-        const STORE_COMMISSION_RATE = 0.15;   // 15% عمولة البوت على مبيعات المتجر
-        const PRIVATE_ESCROW_RATE = 0.10;     // 10% عمولة البوت على صفقات الوساطة الخاصة
-        const EGP_TO_POINTS_RATE = 1000;      // 1 جنيه = 1000 نقطة
+        const STORE_COMMISSION_RATE = 0.15;
+        const PRIVATE_ESCROW_RATE = 0.10;
+        const EGP_TO_POINTS_RATE = 1000;
 
         const S_URL = "https://smukfrwnguvmxvfwqwrv.supabase.co";
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
@@ -692,15 +523,22 @@
         let activeCurrencyFilter = 'all';
         let selectedSellCurrency = 'egp';
         let selectedEscrowCurrency = 'egp';
+        let selectedPricingType = 'fixed';
         let userSellImgBase64 = "";
+        let userSellLogoBase64 = "";
         let selectedProductForBuy = null;
         let currentOpenedOrder = null;
         let selectedRatingStars = 5;
         let isProcessingEscrowAction = false;
 
-        const SAFE_PUBLIC_PRODUCT_COLS = "id, product_code, creator_id, category, currency, title, description, price, link, image_url, target_count, completed_count, status, external_service_id";
+        const SAFE_PUBLIC_PRODUCT_COLS = "id, product_code, creator_id, category, currency, title, description, price, link, image_url, store_logo, pricing_type, target_count, completed_count, status, external_service_id";
 
         const CAT_ICONS = {
+            social: "💬",
+            gaming: "🎮",
+            streaming: "🎬",
+            accounts: "👤",
+            software: "💻",
             recharge: "🔋",
             telegram: "📢",
             facebook: "📘",
@@ -714,30 +552,20 @@
         function copyCodeText(codeVal) {
             const clean = String(codeVal || "").trim();
             if (!clean) return;
+            const ta = document.createElement("textarea");
+            ta.value = clean;
+            ta.style.position = "fixed";
+            ta.style.top = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand("copy"); } catch (e) {}
+            document.body.removeChild(ta);
+            tg.showAlert(`✅ تم نسخ الكود:\n${clean}`);
+        }
 
-            const fallbackCopy = () => {
-                const ta = document.createElement("textarea");
-                ta.value = clean;
-                ta.style.position = "fixed";
-                ta.style.top = "-9999px";
-                ta.style.opacity = "0";
-                document.body.appendChild(ta);
-                ta.focus();
-                ta.select();
-                try { document.execCommand("copy"); } catch (e) {}
-                document.body.removeChild(ta);
-                tg.showAlert(`✅ تم نسخ الكود بنجاح:\n${clean}`);
-            };
-
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(clean).then(() => {
-                    tg.showAlert(`✅ تم نسخ الكود بنجاح:\n${clean}`);
-                }).catch(() => {
-                    fallbackCopy();
-                });
-            } else {
-                fallbackCopy();
-            }
+        function openProductLightbox(src) {
+            document.getElementById('product-lightbox-img').src = src;
+            document.getElementById('product-lightbox').style.display = 'flex';
         }
 
         function openChatImageLightbox(src) {
@@ -797,7 +625,6 @@
             }
 
             allProducts = data || [];
-
             const creatorIds = [...new Set(allProducts.map(p => p.creator_id).filter(id => id && id !== 'ADMIN'))];
             if (creatorIds.length > 0) {
                 try {
@@ -810,7 +637,6 @@
                     }
                 } catch (e) {}
             }
-
             renderProducts();
         }
 
@@ -834,10 +660,7 @@
         }
 
         function getAutoStockLines(rawStr) {
-            return String(rawStr || "")
-                .split(/\r?\n/)
-                .map(line => line.trim())
-                .filter(line => line.length > 0);
+            return String(rawStr || "").split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
         }
 
         function renderProducts() {
@@ -846,7 +669,7 @@
 
             let filtered = allProducts.filter(p => {
                 const pCurr = p.currency || 'points';
-                const matchCurr = (activeCurrencyFilter === 'all' || pCurr === activeCurrencyFilter);
+                const matchCurr = (activeCurrencyFilter === 'all' || pCurr === activeCurrencyFilter || p.pricing_type === 'negotiate');
                 const matchCat = (activeCategory === 'all' || p.category === activeCategory);
                 const matchSearch = (p.title || "").toLowerCase().includes(query) || (p.description && p.description.toLowerCase().includes(query));
                 return matchCurr && matchCat && matchSearch;
@@ -862,15 +685,21 @@
                 const isEgp = p.currency === 'egp';
                 const isOfficial = !p.creator_id || p.creator_id === 'ADMIN';
                 const isAutoApi = Boolean(p.external_service_id);
+                const isNegotiate = p.pricing_type === 'negotiate';
                 const catIcon = CAT_ICONS[p.category] || "📦";
 
                 const remainingStock = Math.max(0, (p.target_count || 0) - (p.completed_count || 0));
-                const isSoldOut = remainingStock <= 0;
-
+                const isSoldOut = remainingStock <= 0 && !isNegotiate;
                 const borderClass = isEgp ? 'egp-border' : 'pts-border';
-                const priceBadgeHtml = isEgp
-                    ? `<span class="price-tag price-egp">💵 ${Number(p.price).toFixed(2)} ج.م</span>`
-                    : `<span class="price-tag price-pts">🪙 ${Number(p.price).toLocaleString()} ن</span>`;
+
+                let priceBadgeHtml = '';
+                if (isNegotiate) {
+                    priceBadgeHtml = `<span class="price-tag price-negotiate">🤝 السعر عند الاتفاق</span>`;
+                } else if (isEgp) {
+                    priceBadgeHtml = `<span class="price-tag price-egp">💵 ${Number(p.price).toFixed(2)} ج.م</span>`;
+                } else {
+                    priceBadgeHtml = `<span class="price-tag price-pts">🪙 ${Number(p.price).toLocaleString()} ن</span>`;
+                }
 
                 let sellerBadgeHtml = '';
                 if (isOfficial) {
@@ -881,8 +710,9 @@
                     const rCount = Number(sInfo.seller_rating_count || 0);
                     const rAvg = rCount > 0 ? (Number(sInfo.seller_rating_sum || 0) / rCount).toFixed(1) : "5.0";
                     const verifiedTag = salesCnt >= 3 ? `<span class="badge-verified">☑️ تاجر موثق</span>` : '';
+                    const storeLogoHtml = p.store_logo ? `<img src="${p.store_logo}" class="store-logo-avatar" alt="Logo">` : '';
                     sellerBadgeHtml = `
-                        <span class="seller-badge badge-user">👤 تاجر (${escapeHtml(String(p.creator_id).slice(-4))}) • ★ ${rAvg}</span>
+                        <span class="seller-badge badge-user">👤 التاجر ${storeLogoHtml} • ★ ${rAvg}</span>
                         ${verifiedTag}
                     `;
                 }
@@ -892,18 +722,18 @@
                     : `<span class="badge-escrow">🔒 محمي بالضمان</span>`;
 
                 const thumbHtml = (p.image_url && p.image_url.startsWith('data:image'))
-                    ? `<div class="product-thumb"><img src="${p.image_url}" alt="Product"></div>`
+                    ? `<div class="product-thumb" onclick="openProductLightbox('${p.image_url}')"><img src="${p.image_url}" alt="Product"></div>`
                     : `<div class="product-thumb">${catIcon}</div>`;
 
                 let buyBtnHtml = '';
-                if (isSoldOut) {
+                if (isNegotiate) {
+                    buyBtnHtml = `<button class="btn-buy btn-buy-negotiate" onclick="startNegotiationDeal('${escapeHtml(p.title)}')">💬 تواصل واتفق الآن</button>`;
+                } else if (isSoldOut) {
                     buyBtnHtml = `<button class="btn-buy btn-buy-soldout" disabled>نفدت الكمية ❌</button>`;
                 } else if (String(p.creator_id) === String(tid)) {
                     buyBtnHtml = `<button class="btn-buy btn-buy-soldout" onclick="openMyActivityModal()">سلعتك الخاصة 🏷️</button>`;
-                } else if (isEgp) {
-                    buyBtnHtml = `<button class="btn-buy btn-buy-egp" onclick="openBuyModal(${p.id})">${isAutoApi ? '⚡ شراء واستلام فوري' : '🔒 شراء بضمان الوسيط'}</button>`;
                 } else {
-                    buyBtnHtml = `<button class="btn-buy btn-buy-pts" onclick="openBuyModal(${p.id})">${isAutoApi ? '⚡ شراء واستلام فوري' : '🔒 شراء بضمان الوسيط'}</button>`;
+                    buyBtnHtml = `<button class="btn-buy ${isEgp ? 'btn-buy-egp' : 'btn-buy-pts'}" onclick="openBuyModal(${p.id})">${isAutoApi ? '⚡ شراء واستلام فوري' : '🔒 شراء بضمان الوسيط'}</button>`;
                 }
 
                 container.innerHTML += `
@@ -919,11 +749,9 @@
                             </div>
                             ${priceBadgeHtml}
                         </div>
-
                         ${p.description ? `<div class="product-desc">${escapeHtml(p.description)}</div>` : ''}
-
                         <div class="product-footer">
-                            <span class="stock-pill">📦 المتاح: <b style="color: ${isSoldOut ? '#ff4d4d' : 'white'};">${remainingStock}</b></span>
+                            <span class="stock-pill">📦 المتاح: <b style="color: ${isSoldOut ? '#ff4d4d' : 'white'};">${isNegotiate ? 'متاح للاتفاق' : remainingStock}</b></span>
                             ${buyBtnHtml}
                         </div>
                     </div>
@@ -931,8 +759,13 @@
             });
         }
 
+        function startNegotiationDeal(prodTitle) {
+            document.getElementById('esc-title').value = `تفاوض وافاق على: ${prodTitle}`;
+            document.getElementById('private-escrow-modal').style.display = 'flex';
+        }
+
         // =========================================================================
-        // 🤝 1. نظام إنشاء والانضمام لصفقة وساطة خاصة بكود (Private Escrow Deal)
+        // 🤝 إنشاء صفقة وساطة خاصة
         // =========================================================================
         function openCreatePrivateEscrowModal() {
             if (!tid) return tg.showAlert("❌ يرجى فتح المنصة من داخل البوت.");
@@ -956,9 +789,9 @@
             const net = price * (1 - PRIVATE_ESCROW_RATE);
             const box = document.getElementById('esc-profit-box');
             if (selectedEscrowCurrency === 'egp') {
-                box.innerHTML = `🛡️ سيُحجز المبلغ في خزنة الضمان، وتستلم صافي ربحك (بعد 10% عمولة الوسيط): <b style="color:var(--neon-blue);">${net.toFixed(2)} ج.م</b> فور تأكيد المشتري.`;
+                box.innerHTML = `🛡️ سيُحجز المبلغ في خزنة الضمان، وتستلم صافي ربحك (بعد 10% عمولة الوسيط): <b style="color:var(--neon-blue);">${net.toFixed(2)} ج.م</b> فور تأكيد المشتري[span_5](start_span)[span_5](end_span)[span_6](start_span)[span_6](end_span).`;
             } else {
-                box.innerHTML = `🛡️ سيُحجز المبلغ في خزنة الضمان، وتستلم صافي ربحك (بعد 10% عمولة الوسيط): <b style="color:var(--main-green);">${Math.floor(net).toLocaleString()} نقطة</b> فور تأكيد المشتري.`;
+                box.innerHTML = `🛡️ سيُحجز المبلغ في خزنة الضمان، وتستلم صافي ربحك (بعد 10% عمولة الوسيط): <b style="color:var(--main-green);">${Math.floor(net).toLocaleString()} نقطة</b> فور تأكيد المشتري[span_7](start_span)[span_7](end_span)[span_8](start_span)[span_8](end_span).`;
             }
         }
 
@@ -997,15 +830,13 @@
                     const unit = selectedEscrowCurrency === 'egp' ? 'ج.م' : 'نقطة';
                     await client.from('bot_messages').insert([{
                         telegram_id: String(tid),
-                        message: `🤝 *تم إنشاء كود صفقة الوساطة الخاصة بك بنجاح!*\n━━━━━━━━━━━━━━━\n🔐 *كود الصفقة (اضغط للنسخ):* \`${dealCode}\`\n📦 *العنوان:* ${title}\n💰 *المبلغ:* ${price} ${unit}\n\nأرسل هذا الكود للمشتري ليضعه في زر *(🔍 كود صفقة)* داخل المتجر ويدفع المبلغ في خزنة الضمان!`,
+                        message: `🤝 *تم إنشاء كود صفقة الوساطة الخاصة بك بنجاح!*\n━━━━━━━━━━━━━━━\n🔐 *كود الصفقة (اضغط للنسخ):* \`${dealCode}\`\n📦 *العنوان:* ${title}\n💰 *المبلغ:* ${price} ${unit}\n\nأرسل هذا الكود للمشتري ليضعه في زر *(🔍 كود صفقة)* داخل المتجر ويدفع في خزنة الضمان!`,
                         status: 'pending'
                     }]);
 
                     closeModal('private-escrow-modal');
                     document.getElementById('created-deal-code-txt').innerText = dealCode;
                     document.getElementById('escrow-created-modal').style.display = 'flex';
-                } else {
-                    tg.showAlert("❌ خطأ أثناء إنشاء الصفقة: " + (error?.message || ""));
                 }
             } finally {
                 isProcessingEscrowAction = false;
@@ -1030,15 +861,7 @@
                 .maybeSingle();
 
             if (!dealProd) {
-                return tg.showAlert("❌ لم يتم العثور على صفقة بهذا الكود! تأكد من الكود الصحيح.");
-            }
-
-            if ((dealProd.completed_count || 0) >= (dealProd.target_count || 1)) {
-                return tg.showAlert("⚠️ هذه الصفقة تم دفعها وحجزها بالفعل!");
-            }
-
-            if (String(dealProd.creator_id) === String(tid)) {
-                return tg.showAlert("ℹ️ أنت صاحب هذه الصفقة! أرسل الكود (" + code + ") للمشتري ليقوم بالدفع.");
+                return tg.showAlert("❌ لم يتم العثور على صفقة بهذا الكود!");
             }
 
             closeModal('join-escrow-modal');
@@ -1047,7 +870,7 @@
         }
 
         // =========================================================================
-        // 🛍️ 2. عرض سلعة عامة في المتجر
+        // 🛍️ عرض سلعة بالمتجر مع (السعر عند الاتفاق) و(صورة المنتج) و(لوجو التاجر)
         // =========================================================================
         function openSellModal() {
             if (!tid) return tg.showAlert("❌ يرجى فتح المنصة من داخل البوت.");
@@ -1058,9 +881,36 @@
             document.getElementById('sell-price').value = "";
             document.getElementById('sell-target').value = "1";
             document.getElementById('sell-img-file').value = "";
+            document.getElementById('sell-logo-file').value = "";
             userSellImgBase64 = "";
+            userSellLogoBase64 = "";
+            selectPricingType('fixed');
             selectSellCurrency('egp');
             document.getElementById('sell-modal').style.display = 'flex';
+        }
+
+        function selectPricingType(type) {
+            selectedPricingType = type;
+            const fixedBtn = document.getElementById('price-type-fixed');
+            const negoBtn = document.getElementById('price-type-negotiate');
+            const priceGrp = document.getElementById('sell-price-group');
+            const currGrp = document.getElementById('sell-currency-group');
+            const profitBox = document.getElementById('sell-profit-box');
+
+            if (type === 'negotiate') {
+                negoBtn.className = "curr-option selected-egp";
+                fixedBtn.className = "curr-option";
+                priceGrp.style.display = 'none';
+                currGrp.style.display = 'none';
+                profitBox.style.display = 'none';
+            } else {
+                fixedBtn.className = "curr-option selected-egp";
+                negoBtn.className = "curr-option";
+                priceGrp.style.display = 'block';
+                currGrp.style.display = 'block';
+                profitBox.style.display = 'block';
+                updateSellProfitPreview();
+            }
         }
 
         function syncAutoStockCount() {
@@ -1081,12 +931,12 @@
                 optEgp.className = "curr-option selected-egp";
                 optPts.className = "curr-option";
                 lblPrice.innerText = "💵 سعر البيع للمشتري (بالجنيه المصري):";
-                inputPrice.placeholder = "مثلاً: 50 جنيه";
+                inputPrice.placeholder = "مثلاً: 50";
             } else {
                 optPts.className = "curr-option selected-pts";
                 optEgp.className = "curr-option";
                 lblPrice.innerText = "🪙 سعر البيع للمشتري (بالنقاط):";
-                inputPrice.placeholder = "مثلاً: 5000 نقطة";
+                inputPrice.placeholder = "مثلاً: 5000";
             }
             updateSellProfitPreview();
         }
@@ -1095,17 +945,10 @@
             const price = parseFloat(document.getElementById('sell-price').value) || 0;
             const box = document.getElementById('sell-profit-box');
             const netProfit = price * (1 - STORE_COMMISSION_RATE);
-
-            if (selectedSellCurrency === 'egp') {
-                box.style.borderColor = "var(--neon-blue)";
-                box.innerHTML = `💵 صافي ربحك بعد عمولة الوساطة (15%): <b style="color: var(--neon-blue);">${netProfit.toFixed(2)} ج.م</b> لكل مبيعة (تُضاف لمحفظة التاجر القابلة للسحب كاش!).`;
-            } else {
-                box.style.borderColor = "var(--main-green)";
-                box.innerHTML = `🪙 صافي ربحك بعد عمولة الوساطة (15%): <b style="color: var(--main-green);">${Math.floor(netProfit).toLocaleString()} نقطة</b> لكل مبيعة مكتملة.`;
-            }
+            box.innerHTML = `💵 صافي ربحك بعد عمولة المتجر (15%): <b style="color:var(--neon-blue);">${netProfit.toFixed(2)} ج.م</b> لكل مبيعة[span_9](start_span)[span_9](end_span)[span_10](start_span)[span_10](end_span).`;
         }
 
-        function previewUserSellImage(input) {
+        function previewUserSellImage(input, type) {
             if (!input.files || !input.files[0]) return;
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -1113,12 +956,14 @@
                 img.src = e.target.result;
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const maxW = 400;
+                    const maxW = type === 'product' ? 600 : 150;
                     let w = img.width, h = img.height;
                     if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
                     canvas.width = w; canvas.height = h;
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    userSellImgBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    const b64 = canvas.toDataURL('image/jpeg', 0.7);
+                    if (type === 'product') userSellImgBase64 = b64;
+                    else userSellLogoBase64 = b64;
                 };
             };
             reader.readAsDataURL(input.files[0]);
@@ -1132,19 +977,12 @@
             const desc = document.getElementById('sell-desc').value.trim();
             const autoStockRaw = document.getElementById('sell-auto-stock').value.trim();
             const autoLines = getAutoStockLines(autoStockRaw);
-            const price = parseFloat(document.getElementById('sell-price').value);
+            const price = selectedPricingType === 'negotiate' ? 0 : parseFloat(document.getElementById('sell-price').value);
             const targetCount = autoLines.length > 0 ? autoLines.length : Math.max(1, parseInt(document.getElementById('sell-target').value) || 1);
             const btn = document.getElementById('btn-submit-sell');
 
-            if (!title || !link || isNaN(price) || price <= 0) {
-                return tg.showAlert("❌ يرجى ملء العنوان، الرابط، والسعر بشكل صحيح!");
-            }
-
-            if (selectedSellCurrency === 'points' && price < 100) {
-                return tg.showAlert("⚠️ الحد الأدنى لعرض سلعة بالنقاط هو 100 نقطة.");
-            }
-            if (selectedSellCurrency === 'egp' && price < 5) {
-                return tg.showAlert("⚠️ الحد الأدنى لعرض سلعة بالجنيه هو 5 ج.م.");
+            if (!title || !link || (selectedPricingType === 'fixed' && (isNaN(price) || price <= 0))) {
+                return tg.showAlert("⚠️ يرجى ملء العنوان، الرابط، والسعر بشكل صحيح!");
             }
 
             isProcessingEscrowAction = true;
@@ -1158,12 +996,14 @@
                     creator_id: tid,
                     category: category,
                     currency: selectedSellCurrency,
+                    pricing_type: selectedPricingType,
                     title: title,
                     description: desc,
                     auto_delivery_data: autoLines.length > 0 ? autoLines.join("\n") : null,
                     price: price,
                     link: link,
                     image_url: userSellImgBase64 || null,
+                    store_logo: userSellLogoBase64 || null,
                     target_count: targetCount,
                     completed_count: 0,
                     status: 'Pending'
@@ -1171,10 +1011,7 @@
 
                 if (!error) {
                     closeModal('sell-modal');
-                    const unitTxt = selectedSellCurrency === 'egp' ? 'ج.م' : 'نقطة';
-                    tg.showAlert(`✅ تم إرسال سلعتك (${title}) بسعر ${price} ${unitTxt} بنجاح!\n🆔 كود السلعة: ${prodCode}\n\nستظهر في المتجر فور اعتمادها من الإدارة.`);
-                } else {
-                    tg.showAlert("❌ خطأ أثناء الإرسال: " + error.message);
+                    tg.showAlert(`✅ تم إرسال سلعتك (${title}) بنجاح!\nستظهر في المتجر فور اعتمادها من الإدارة.`);
                 }
             } finally {
                 isProcessingEscrowAction = false;
@@ -1184,7 +1021,7 @@
         }
 
         // =========================================================================
-        // 🔒 3. شراء المنتج وحجز المبلغ في الضمان + حماية المخزون والأكواد الذرية
+        // 🔒 الشراء بضمان الوسيط
         // =========================================================================
         function openBuyModal(productId) {
             const p = allProducts.find(item => item.id === productId);
@@ -1200,8 +1037,8 @@
             document.getElementById('buy-modal-price').innerHTML = `
                 💰 <b>المبلغ المطلوب:</b> <span style="color: ${isEgp ? 'var(--neon-blue)' : 'var(--main-green)'}; font-weight:bold;">${priceText}</span><br>
                 💼 <b>رصيدك الحالي:</b> ${myBalText}<br>
-                ${isAutoApi ? '⚡ <b style="color:#e9d5ff;">ميزة المنتج:</b> تسليم تلقائي فوري للحساب/الكود في نفس الثانية بعد الدفع!<br>' : ''}
-                🛡️ <b>نظام الحماية:</b> يُحجز المبلغ في خزنة البوت ولا يُسلّم للبائع إلا بعد استلامك وتأكيدك بنفسك!
+                ${isAutoApi ? '⚡ <b style="color:#e9d5ff;">ميزة المنتج:</b> تسليم تلقائي فوري للحساب/الكود بعد الدفع!<br>' : ''}
+                🛡️ <b>نظام الحماية:</b> يُحجز المبلغ في خزنة البوت ولا يُسلّم للبائع إلا بعد استلامك وتأكيدك بنفسك[span_11](start_span)[span_11](end_span)[span_12](start_span)[span_12](end_span)!
             `;
             document.getElementById('buyer-input').value = isAutoApi ? "استلام تلقائي فوري" : "";
             document.getElementById('buy-modal').style.display = 'flex';
@@ -1226,43 +1063,26 @@
             btn.innerText = "⏳ جاري التحقق من الرصيد والمخزون...";
 
             try {
-                // 1. جلب الرصيد الحقيقي للمشتري من قاعدة البيانات لحظة التنفيذ
                 const { data: freshU, error: uFetchErr } = await client
                     .from('users')
                     .select('points, egp_balance, is_banned')
                     .eq('telegram_id', tid)
                     .single();
 
-                if (uFetchErr || !freshU) throw new Error("تعذر التحقق من رصيد حسابك");
-                if (freshU.is_banned) throw new Error("هذا الحساب محظور");
+                if (uFetchErr || !freshU || freshU.is_banned) throw new Error("تعذر التحقق من رصيد حسابك");
 
                 userPoints = Number(freshU.points || 0);
                 userEgp = Number(freshU.egp_balance || 0);
                 updateWalletHeaderUI();
 
-                if (isEgp) {
-                    if (userEgp < price) {
-                        closeModal('buy-modal');
-                        if (confirm(`❌ رصيدك بالجنيه غير كافٍ!\nسعر الصفقة: ${price.toFixed(2)} ج.م\nرصيدك الحالي: ${userEgp.toFixed(2)} ج.م\n\nهل ترغب في الانتقال لصفحة الشحن الفوري الآن؟`)) {
-                            goDeposit();
-                        }
-                        return;
-                    }
-                } else {
-                    if (userPoints < price) {
-                        closeModal('buy-modal');
-                        if (userEgp >= 1) {
-                            if (confirm(`❌ رصيد نقاطك غير كافٍ!\nهل ترغب في تحويل الجنيه إلى نقاط لإتمام الشراء فوراً؟`)) {
-                                openExchangeModal();
-                            }
-                        } else {
-                            tg.showAlert(`❌ رصيد نقاطك غير كافٍ لإتمام الشراء!`);
-                        }
-                        return;
-                    }
+                if (isEgp && userEgp < price) {
+                    closeModal('buy-modal');
+                    return tg.showAlert(`❌ رصيدك بالجنيه غير كافٍ!\nالمطلوب: ${price.toFixed(2)} ج.م\nرصيدك: ${userEgp.toFixed(2)} ج.م`);
+                } else if (!isEgp && userPoints < price) {
+                    closeModal('buy-modal');
+                    return tg.showAlert(`❌ رصيد نقاطك غير كافٍ لإتمام الشراء!`);
                 }
 
-                // 2. فحص توفر المنتج وحجز الوحدة/الكود بشكل ذري قبل خصم الرصيد لمنع بيع منتج نافد أو تكرار الكود لمشتريين
                 const { data: freshProd, error: pFetchErr } = await client
                     .from('store_products')
                     .select('id, completed_count, target_count, auto_delivery_data, external_service_id, status')
@@ -1292,11 +1112,8 @@
 
                 const newCompletedCount = oldCompleted + 1;
                 const prodUpdateObj = { completed_count: newCompletedCount };
-                if (deliveredAutoItem !== null) {
-                    prodUpdateObj.auto_delivery_data = remainingAutoStockStr;
-                }
+                if (deliveredAutoItem !== null) prodUpdateObj.auto_delivery_data = remainingAutoStockStr;
 
-                // تحديث مشروط بـ completed_count القديم لضمان عدم سحب نفس الكود لمشتريين في نفس اللحظة
                 const { data: reservedProd, error: resvErr } = await client
                     .from('store_products')
                     .update(prodUpdateObj)
@@ -1308,20 +1125,16 @@
                     throw new Error("حدث تزاحم على شراء المنتج في نفس الثانية، يرجى المحاولة مرة أخرى!");
                 }
 
-                p.completed_count = newCompletedCount;
-
-                // 3. خصم المبلغ من المشتري
-                let userUpdatePayload = {};
+                let userUpdateObj = {};
                 if (isEgp) {
                     userEgp = Number((userEgp - price).toFixed(2));
-                    userUpdatePayload.egp_balance = userEgp;
+                    userUpdateObj.egp_balance = userEgp;
                 } else {
                     userPoints = userPoints - price;
-                    userUpdatePayload.points = userPoints;
+                    userUpdateObj.points = userPoints;
                 }
 
-                const { error: err1 } = await client.from('users').update(userUpdatePayload).eq('telegram_id', tid);
-                if (err1) throw err1;
+                await client.from('users').update(userUpdateObj).eq('telegram_id', tid);
 
                 const hasExternalApi = Boolean(freshProd.external_service_id || p.external_service_id);
                 const sellerId = p.creator_id || 'ADMIN';
@@ -1335,7 +1148,7 @@
 
                 const initialChat = [{
                     sender: "SYSTEM",
-                    text: `🔒 تم حجز مبلغ (${price} ${unitLabel}) في خزنة ضمان البوت. بيانات المشتري: ${buyerInput}`,
+                    text: `🔒 تم حجز مبلغ (${price} ${unitLabel}) في خزنة ضمان البوت[span_13](start_span)[span_13](end_span)[span_14](start_span)[span_14](end_span). بيانات المشتري: ${buyerInput}`,
                     time: nowTimeStr
                 }];
 
@@ -1346,15 +1159,9 @@
                         text: `🎁 بيانات طلبك المسلمة تلقائياً:\n${deliveredAutoItem}`,
                         time: nowTimeStr
                     });
-                } else if (hasExternalApi) {
-                    initialChat.push({
-                        sender: "SYSTEM",
-                        text: "⚡ جاري سحب وتسليم بيانات الحساب/الكود تلقائياً من السيرفر خلال 3 ثوانٍ... اضغط (🔄 تحديث) بالأعلى بعد لحظات.",
-                        time: nowTimeStr
-                    });
                 }
 
-                const { data: createdOrder, error: err2 } = await client.from('store_orders').insert([{
+                const { data: createdOrder } = await client.from('store_orders').insert([{
                     order_code: orderCode,
                     product_code: p.product_code || `PRD-${p.id}`,
                     user_id: tid,
@@ -1372,31 +1179,6 @@
                     api_fulfill_status: (hasExternalApi && !deliveredAutoItem) ? 'pending_api' : null
                 }]).select().single();
 
-                if (err2) throw err2;
-
-                if (deliveredAutoItem) {
-                    await client.from('bot_messages').insert([{
-                        telegram_id: String(tid),
-                        message: `⚡ *تم تسليم طلبك تلقائياً بنجاح!* 🎉\n━━━━━━━━━━━━━━━\n🆔 *كود الصفقة:* \`${orderCode}\`\n📦 *المنتج:* ${p.title}\n🎁 *بيانات/كود الاستلام:*\n\`${deliveredAutoItem}\`\n\n✅ يرجى فحص الكود والضغط على *(✅ استلمت الطلب كاملاً)* داخل غرفة الوساطة، أو سيتم تحرير المبلغ تلقائياً بعد 24 ساعة.`,
-                        status: 'pending'
-                    }]);
-                } else if (!hasExternalApi) {
-                    await client.from('bot_messages').insert([{
-                        telegram_id: String(tid),
-                        message: `🔒 *تم حجز دفعتك في خزنة الضمان (Escrow)!* ✅\n━━━━━━━━━━━━━━━\n🆔 *كود الصفقة:* \`${orderCode}\`\n📦 *الطلب:* ${p.title}\n💰 *المبلغ المحجوز:* ${price} ${unitLabel}\n\n💬 تم إشعار البائع لتسليمك الطلب داخل (غرفة الوساطة) في المتجر. لا تقم بتحرير المبلغ إلا بعد استلامك الكامل!`,
-                        status: 'pending'
-                    }]);
-                }
-
-                if (!hasExternalApi || deliveredAutoItem) {
-                    const targetNotifySeller = sellerId === 'ADMIN' ? ADMIN_MASTER_ID : sellerId;
-                    await client.from('bot_messages').insert([{
-                        telegram_id: String(targetNotifySeller),
-                        message: `🔔 *صفقة جديدة مدفوعة في خزنة الضمان!* 💰\n━━━━━━━━━━━━━━━\n🆔 *كود الصفقة:* \`${orderCode}\`\n📦 *السلعة:* ${p.title}\n💵 *المبلغ المحجوز:* ${price} ${unitLabel}\n💎 *صافي ربحك عند التسليم:* ${netSeller} ${unitLabel}\n📱 *بيانات المشتري:* \`${buyerInput}\`\n${deliveredAutoItem ? '⚡ *تم إرسال الكود التلقائي للمشتري بنجاح!*' : '🚀 افتح المتجر الآن ⬅ اضغط (💬 صفقاتي وطلباتي) لتسليم المشتري واستلام أرباحك فوراً!'}`,
-                        status: 'pending'
-                    }]);
-                }
-
                 updateWalletHeaderUI();
                 await updateActiveDealsBadge();
                 renderProducts();
@@ -1404,13 +1186,6 @@
 
                 if (createdOrder) {
                     openDealRoom(createdOrder.id);
-                    if (hasExternalApi && !deliveredAutoItem) {
-                        setTimeout(() => {
-                            if (currentOpenedOrder && currentOpenedOrder.id === createdOrder.id) {
-                                refreshCurrentDealRoom();
-                            }
-                        }, 4200);
-                    }
                 }
             } catch (e) {
                 tg.showAlert("❌ حدث خطأ أثناء إتمام الشراء: " + e.message);
@@ -1421,13 +1196,9 @@
             }
         }
 
-        // =========================================================================
-        // 💬 4. غرفة الوساطة المباشرة (محمية ضد تكرار التحرير أو الاسترداد)
-        // =========================================================================
         async function openDealRoom(orderId) {
-            const { data: ord, error } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
-            if (error || !ord) return tg.showAlert("❌ تعذر فتح غرفة الصفقة.");
-
+            const { data: ord } = await client.from('store_orders').select('*').eq('id', orderId).maybeSingle();
+            if (!ord) return tg.showAlert("❌ تعذر فتح غرفة الصفقة.");
             currentOpenedOrder = ord;
             closeModal('activity-modal');
             document.getElementById('deal-room-modal').style.display = 'flex';
@@ -1443,20 +1214,8 @@
             }
         }
 
-        function calcRemainingAutoReleaseText(deliveredAtIso) {
-            if (!deliveredAtIso) return "يتحرر تلقائياً للبائع بعد 24 ساعة في حال عدم الاعتراض";
-            const dlvTime = new Date(deliveredAtIso).getTime();
-            const targetTime = dlvTime + (24 * 3600 * 1000);
-            const diffSec = Math.max(0, Math.floor((targetTime - Date.now()) / 1000));
-            if (diffSec <= 0) return "جاري التحرير التلقائي للأرباح...";
-            const h = Math.floor(diffSec / 3600);
-            const m = Math.floor((diffSec % 3600) / 60);
-            return `⏱️ يتحرر المبلغ تلقائياً للبائع خلال: <b>${h} ساعة و ${m} دقيقة</b> إذا لم يفتح المشتري نزاعاً`;
-        }
-
         function renderDealRoomUI(ord) {
             const isBuyer = String(ord.user_id) === String(tid);
-            const isSeller = String(ord.seller_id) === String(tid) || (ord.seller_id === 'ADMIN' && String(tid) === ADMIN_MASTER_ID);
             const unit = ord.currency === 'egp' ? 'ج.م' : 'نقطة';
             const code = ord.order_code || `ORD-${ord.id}`;
 
@@ -1467,16 +1226,15 @@
 
             let statusTxt = "";
             if (ord.status === 'Escrow_Held' || ord.status === 'Pending') {
-                statusTxt = `🔒 <b style="color:var(--gold);">المبلغ محجوز في خزنة الضمان (${ord.price_paid} ${unit})</b><br>بانتظار إرسال بيانات التسليم للمشتري.`;
+                statusTxt = `🔒 <b style="color:var(--gold);">المبلغ محجوز في خزنة الضمان (${ord.price_paid} ${unit})[span_15](start_span)[span_15](end_span)[span_16](start_span)[span_16](end_span)</b><br>بانتظار تسليم الطلب.`;
             } else if (ord.status === 'Delivered') {
-                const timerHint = calcRemainingAutoReleaseText(ord.delivered_at);
-                statusTxt = `📦 <b style="color:var(--neon-blue);">تم تسليم الطلب!</b><br>يرجى من المشتري الفحص والضغط على (✅ استلمت الطلب).<br><span style="color:var(--gold); font-size:11px;">${timerHint}</span>`;
+                statusTxt = `📦 <b style="color:var(--neon-blue);">تم تسليم الطلب!</b><br>يرجى من المشتري الفحص والتأكيد.`;
             } else if (ord.status === 'Completed') {
-                statusTxt = `✅ <b style="color:var(--main-green);">صفقة مكتملة بنجاح!</b><br>تم استلام الطلب وتحرير الأرباح لمحفظة البائع.`;
+                statusTxt = `✅ <b style="color:var(--main-green);">صفقة مكتملة بنجاح!</b>`;
             } else if (ord.status === 'Disputed') {
-                statusTxt = `🚨 <b style="color:var(--crimson);">الصفقة في حالة نزاع مفتوح!</b><br>المبلغ مجمد في خزنة البوت وتتدخل الإدارة حالياً للفصل بين الطرفين.`;
-            } else if (ord.status === 'Rejected' || ord.status === 'Refunded') {
-                statusTxt = `↩️ <b style="color:#ff7b72;">صفقة ملغاة ومستردة</b><br>تم إرجاع المبلغ بالكامل إلى محفظة المشتري.`;
+                statusTxt = `🚨 <b style="color:var(--crimson);">الصفقة في حالة نزاع مفتوح!</b>`;
+            } else {
+                statusTxt = `↩️ <b style="color:#ff7b72;">صفقة ملغاة ومستردة</b>`;
             }
 
             document.getElementById('dr-status-banner').innerHTML = `
@@ -1486,125 +1244,29 @@
 
             const chatBox = document.getElementById('dr-chat-box');
             const msgs = Array.isArray(ord.chat_messages) ? ord.chat_messages : [];
-            if (msgs.length === 0) {
-                chatBox.innerHTML = `<div class="chat-bubble chat-sys">🔒 بدأت غرفة الوساطة المحمية. بيانات المشتري: ${escapeHtml(ord.buyer_input || '')}</div>`;
-            } else {
-                chatBox.innerHTML = msgs.map(m => {
-                    if (m.sender === 'SYSTEM') {
-                        return `<div class="chat-bubble chat-sys">${escapeHtml(m.text)}</div>`;
-                    }
-                    if (m.sender === 'ADMIN') {
-                        return `<div class="chat-bubble chat-admin"><b>👮‍♂️ الإدارة • ${escapeHtml(m.time || '')}:</b><br>${escapeHtml(m.text)}</div>`;
-                    }
-                    const isMine = String(m.sender_id) === String(tid);
-                    const imgHtml = m.image
-                        ? `<img src="${m.image}" class="chat-img-attachment" onclick="openChatImageLightbox('${m.image}')" alt="مرفق">`
-                        : '';
-                    return `
-                        <div class="chat-bubble ${isMine ? 'chat-me' : 'chat-other'}">
-                            <div style="font-size:10px; color:var(--gold); font-weight:bold; margin-bottom:2px;">
-                                ${escapeHtml(m.role_label || '')} • ${escapeHtml(m.time || '')}
-                            </div>
-                            ${m.text ? `<div style="white-space:pre-wrap;">${escapeHtml(m.text)}</div>` : ''}
-                            ${imgHtml}
-                        </div>
-                    `;
-                }).join("");
-            }
+            chatBox.innerHTML = msgs.map(m => {
+                if (m.sender === 'SYSTEM') return `<div class="chat-bubble chat-sys">${escapeHtml(m.text)}</div>`;
+                const isMine = String(m.sender_id) === String(tid);
+                const imgHtml = m.image ? `<img src="${m.image}" class="chat-img-attachment" onclick="openChatImageLightbox('${m.image}')" alt="مرفق">` : '';
+                return `
+                    <div class="chat-bubble ${isMine ? 'chat-me' : 'chat-other'}">
+                        <div style="font-size:10px; color:var(--gold); font-weight:bold; margin-bottom:2px;">${escapeHtml(m.role_label || '')} • ${escapeHtml(m.time || '')}</div>
+                        ${m.text ? `<div style="white-space:pre-wrap;">${escapeHtml(m.text)}</div>` : ''}
+                        ${imgHtml}
+                    </div>
+                `;
+            }).join("");
             chatBox.scrollTop = chatBox.scrollHeight;
 
             const actionsBox = document.getElementById('dr-actions-container');
             const isClosed = ['Completed', 'Rejected', 'Refunded'].includes(ord.status);
             document.getElementById('dr-chat-input-row').style.display = isClosed ? 'none' : 'flex';
 
-            if (isClosed) {
-                if (ord.status === 'Completed' && isBuyer && !ord.is_rated && ord.seller_id && ord.seller_id !== 'ADMIN') {
-                    selectedRatingStars = 5;
-                    actionsBox.innerHTML = `
-                        <div class="rating-box-card">
-                            <b style="color:var(--gold); font-size:12.5px;">⭐ قيّم تعاملك مع البائع في هذه الصفقة:</b>
-                            <div class="stars-row">
-                                <span class="star-pick lit" onclick="pickSellerStar(1)">★</span>
-                                <span class="star-pick lit" onclick="pickSellerStar(2)">★</span>
-                                <span class="star-pick lit" onclick="pickSellerStar(3)">★</span>
-                                <span class="star-pick lit" onclick="pickSellerStar(4)">★</span>
-                                <span class="star-pick lit" onclick="pickSellerStar(5)">★</span>
-                            </div>
-                            <button onclick="submitSellerRating()" style="background:var(--gold); color:#000; border:none; padding:8px 18px; border-radius:9px; font-weight:bold; font-size:12px; cursor:pointer;">إرسال التقييم 🌟</button>
-                        </div>
-                    `;
-                } else {
-                    actionsBox.innerHTML = "";
-                }
-                return;
-            }
-
             let btnsHtml = "";
-            if (isBuyer) {
-                btnsHtml += `
-                    <button onclick="buyerReleaseEscrowFunds()" style="background: var(--main-green); color: #000; border: none; padding: 12px; border-radius: 11px; font-weight: 900; font-size: 13px; cursor: pointer;">
-                        ✅ استلمت الطلب كاملاً - حرر المبلغ للبائع
-                    </button>
-                    <button onclick="openEscrowDispute()" style="background: rgba(255, 61, 87, 0.15); color: var(--crimson); border: 1px solid var(--crimson); padding: 10px; border-radius: 11px; font-weight: bold; font-size: 12px; cursor: pointer;">
-                        🚨 لم أستلم / فتح نزاع واستدعاء الإدارة
-                    </button>
-                `;
+            if (isBuyer && !isClosed) {
+                btnsHtml += `<button onclick="buyerReleaseEscrowFunds()" style="background:var(--main-green); color:#000; border:none; padding:12px; border-radius:11px; font-weight:900; font-size:13px; cursor:pointer;">✅ استلمت الطلب كاملاً - حرر المبلغ</button>`;
             }
-
-            if (isSeller) {
-                btnsHtml += `
-                    <button onclick="sellerMarkDelivered()" style="background: var(--neon-blue); color: #000; border: none; padding: 12px; border-radius: 11px; font-weight: 900; font-size: 13px; cursor: pointer;">
-                        📦 تأكيد تسليم الطلب للمشتري (بدء عداد 24 ساعة)
-                    </button>
-                    <button onclick="sellerRefundBuyer()" style="background: #252932; color: #ff7b72; border: 1px solid #ff4d4d; padding: 10px; border-radius: 11px; font-weight: bold; font-size: 12px; cursor: pointer;">
-                        ↩️ إلغاء الصفقة وإرجاع المبلغ للمشتري
-                    </button>
-                `;
-            }
-
             actionsBox.innerHTML = btnsHtml;
-        }
-
-        function pickSellerStar(n) {
-            selectedRatingStars = n;
-            document.querySelectorAll('.star-pick').forEach((el, idx) => {
-                if (idx < n) el.classList.add('lit');
-                else el.classList.remove('lit');
-            });
-        }
-
-        async function submitSellerRating() {
-            if (!currentOpenedOrder || currentOpenedOrder.is_rated) return;
-            const ord = currentOpenedOrder;
-            const sellerId = String(ord.seller_id);
-
-            const { data: updatedOrd } = await client
-                .from('store_orders')
-                .update({ is_rated: true })
-                .eq('id', ord.id)
-                .eq('is_rated', false)
-                .select('id');
-
-            if (!updatedOrd || updatedOrd.length === 0) return;
-
-            const { data: sUser } = await client
-                .from('users')
-                .select('seller_rating_sum, seller_rating_count')
-                .eq('telegram_id', sellerId)
-                .maybeSingle();
-
-            if (sUser) {
-                const newSum = Number(sUser.seller_rating_sum || 0) + selectedRatingStars;
-                const newCnt = Number(sUser.seller_rating_count || 0) + 1;
-                await client.from('users').update({
-                    seller_rating_sum: newSum,
-                    seller_rating_count: newCnt
-                }).eq('telegram_id', sellerId);
-            }
-
-            tg.showAlert(`🌟 شكراً لتقييمك (${selectedRatingStars}/5 نجوم)!`);
-            await refreshCurrentDealRoom();
-            await loadStoreProducts();
         }
 
         async function sendDealRoomMessage() {
@@ -1619,120 +1281,16 @@
             const nowStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
             const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
-            msgs.push({
-                sender_id: String(tid),
-                role_label: roleLabel,
-                text: txt,
-                time: nowStr
-            });
-
+            msgs.push({ sender_id: String(tid), role_label: roleLabel, text: txt, time: nowStr });
             inp.value = "";
             await client.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
-
-            const otherPartyId = isBuyer
-                ? (ord.seller_id === 'ADMIN' ? ADMIN_MASTER_ID : ord.seller_id)
-                : ord.user_id;
-
-            await client.from('bot_messages').insert([{
-                telegram_id: String(otherPartyId),
-                message: `💬 *رسالة جديدة في غرفة الوساطة (${ord.order_code || ord.id}):*\nمن (${roleLabel}):\n\`${txt}\`\n\nافتح المتجر ⬅ (صفقاتي وطلباتي) للرد.`,
-                status: 'pending'
-            }]);
-
             await refreshCurrentDealRoom();
-        }
-
-        function sendDealRoomImage(input) {
-            if (!currentOpenedOrder || !input.files || !input.files[0]) return;
-            const file = input.files[0];
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = async function() {
-                    const canvas = document.createElement('canvas');
-                    const maxW = 600;
-                    let w = img.width, h = img.height;
-                    if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    const base64Img = canvas.toDataURL('image/jpeg', 0.65);
-
-                    const ord = currentOpenedOrder;
-                    const isBuyer = String(ord.user_id) === String(tid);
-                    const roleLabel = isBuyer ? "🛒 المشتري" : "🏷️ البائع";
-                    const nowStr = new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-
-                    const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
-                    msgs.push({
-                        sender_id: String(tid),
-                        role_label: roleLabel,
-                        text: "📷 [صورة مرفقة في الصفقة]",
-                        image: base64Img,
-                        time: nowStr
-                    });
-
-                    input.value = "";
-                    await client.from('store_orders').update({ chat_messages: msgs }).eq('id', ord.id);
-
-                    const otherPartyId = isBuyer
-                        ? (ord.seller_id === 'ADMIN' ? ADMIN_MASTER_ID : ord.seller_id)
-                        : ord.user_id;
-
-                    await client.from('bot_messages').insert([{
-                        telegram_id: String(otherPartyId),
-                        message: `📷 *قام (${roleLabel}) بإرسال صورة جديدة في غرفة الوساطة (${ord.order_code || ord.id})!*\nافتح المتجر ⬅ (صفقاتي وطلباتي) لمشاهدتها.`,
-                        status: 'pending'
-                    }]);
-
-                    await refreshCurrentDealRoom();
-                };
-            };
-            reader.readAsDataURL(file);
-        }
-
-        async function sellerMarkDelivered() {
-            if (!currentOpenedOrder || isProcessingEscrowAction) return;
-            const ord = currentOpenedOrder;
-            if (!['Pending', 'Escrow_Held'].includes(ord.status)) return;
-
-            isProcessingEscrowAction = true;
-            try {
-                const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
-                msgs.push({
-                    sender: "SYSTEM",
-                    text: "📦 أعلن البائع أنه قام بتسليم الطلب (بدأ عداد الحماية 24 ساعة). يرجى من المشتري الفحص والضغط على (✅ استلمت الطلب) لتحرير المبلغ.",
-                    time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-                });
-
-                await client.from('store_orders').update({
-                    status: 'Delivered',
-                    delivered_at: new Date().toISOString(),
-                    chat_messages: msgs
-                }).eq('id', ord.id).in('status', ['Pending', 'Escrow_Held']);
-
-                await client.from('bot_messages').insert([{
-                    telegram_id: String(ord.user_id),
-                    message: `📦 *قام البائع بتسليم طلبك (${ord.product_title})!* ✅\n\nيرجى فتح غرفة الوساطة في المتجر وفحص بيانات التسليم، ثم الضغط على *(✅ استلمت الطلب)* لتحرير المبلغ للبائع (أو سيتم تحريره تلقائياً بعد 24 ساعة في حال عدم وجود اعتراض).`,
-                    status: 'pending'
-                }]);
-
-                await refreshCurrentDealRoom();
-                tg.showAlert("✅ تم تحديث الحالة إلى (تم التسليم) وبدء عداد الـ 24 ساعة التلقائي!");
-            } finally {
-                isProcessingEscrowAction = false;
-            }
         }
 
         async function buyerReleaseEscrowFunds() {
             if (!currentOpenedOrder || isProcessingEscrowAction) return;
             const ord = currentOpenedOrder;
-            if (['Completed', 'Rejected', 'Refunded'].includes(ord.status)) return;
-
-            if (!confirm("✅ هل تأكدت من استلام الخدمة/السلعة كاملة؟\n\nبضغطك على موافق، سيقوم البوت بتحرير المبلغ من خزنة الضمان وتحويله إلى حساب البائع نهائياً ولا يمكن التراجع.")) {
-                return;
-            }
+            if (!confirm("✅ هل تأكدت من استلام الخدمة/السلعة كاملة وتحرير المبلغ للبائع؟")) return;
 
             isProcessingEscrowAction = true;
             try {
@@ -1740,253 +1298,55 @@
                 const unit = isEgp ? 'ج.م' : 'نقطة';
                 const price = Number(ord.price_paid || 0);
                 const sellerId = String(ord.seller_id || 'ADMIN');
-
-                const netSeller = Number(ord.net_seller_amount) > 0
-                    ? Number(ord.net_seller_amount)
-                    : Number((price * (1 - STORE_COMMISSION_RATE)).toFixed(2));
-                const botCommission = Number((price - netSeller).toFixed(2));
+                const netSeller = Number(ord.net_seller_amount) > 0 ? Number(ord.net_seller_amount) : Number((price * (1 - STORE_COMMISSION_RATE)).toFixed(2));
 
                 const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
-                msgs.push({
-                    sender: "SYSTEM",
-                    text: `🎉 أكّد المشتري استلام الطلب! تم خصم عمولة الوساطة (${botCommission} ${unit}) وتحويل الصافي (${netSeller} ${unit}) لمحفظة البائع.`,
-                    time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-                });
+                msgs.push({ sender: "SYSTEM", text: `🎉 أكّد المشتري الاستلام وتم تحرير الصافي (${netSeller} ${unit}) للبائع.`, time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) });
 
-                const { data: updatedRows, error: updErr } = await client
-                    .from('store_orders')
-                    .update({
-                        status: 'Completed',
-                        chat_messages: msgs
-                    })
-                    .eq('id', ord.id)
-                    .in('status', ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'])
-                    .select('id');
-
-                if (updErr) throw updErr;
-                if (!updatedRows || updatedRows.length === 0) {
-                    await refreshCurrentDealRoom();
-                    return tg.showAlert("ℹ️ هذه الصفقة تم تحريرها أو إغلاقها بالفعل.");
-                }
+                await client.from('store_orders').update({ status: 'Completed', chat_messages: msgs }).eq('id', ord.id);
 
                 if (sellerId !== 'ADMIN') {
-                    const { data: sellerUser } = await client
-                        .from('users')
-                        .select('points, egp_balance, merchant_balance_egp, total_earned, total_sales_count')
-                        .eq('telegram_id', sellerId)
-                        .maybeSingle();
-
+                    const { data: sellerUser } = await client.from('users').select('merchant_balance_egp, points').eq('telegram_id', sellerId).maybeSingle();
                     if (sellerUser) {
-                        const newSalesCount = Number(sellerUser.total_sales_count || 0) + 1;
                         if (isEgp) {
-                            const newMerchEgp = Number((Number(sellerUser.merchant_balance_egp || 0) + netSeller).toFixed(2));
-                            await client.from('users').update({
-                                merchant_balance_egp: newMerchEgp,
-                                total_sales_count: newSalesCount
-                            }).eq('telegram_id', sellerId);
+                            await client.from('users').update({ merchant_balance_egp: Number((Number(sellerUser.merchant_balance_egp || 0) + netSeller).toFixed(2)) }).eq('telegram_id', sellerId);
                         } else {
-                            const ptsAdd = Math.floor(netSeller);
-                            await client.from('users').update({
-                                points: Number(sellerUser.points || 0) + ptsAdd,
-                                total_earned: Number(sellerUser.total_earned || 0) + ptsAdd,
-                                total_sales_count: newSalesCount
-                            }).eq('telegram_id', sellerId);
+                            await client.from('users').update({ points: Number(sellerUser.points || 0) + Math.floor(netSeller) }).eq('telegram_id', sellerId);
                         }
-
-                        await client.from('transactions').insert([{
-                            telegram_id: sellerId,
-                            type: isEgp ? 'egp' : 'points',
-                            title: `أرباح بيع وساطة: ${ord.product_title}`,
-                            amount: `+${netSeller} ${unit}`,
-                            status: 'مكتمل'
-                        }]);
-
-                        await client.from('bot_messages').insert([{
-                            telegram_id: sellerId,
-                            message: `🎉 *مبروك! حرر المشتري مبلغ الصفقة (${ord.order_code || ord.id})!* 💰\n━━━━━━━━━━━━━━━\n📦 *السلعة:* ${ord.product_title}\n💵 *إجمالي الصفقة:* ${price} ${unit}\n🛡️ *عمولة الوساطة:* ${botCommission} ${unit}\n💎 *صافي ربحك المضاف:* *+${netSeller} ${unit}*\n\n💼 يمكنك سحب أرباح مبيعاتك في أي وقت من زر *(💼 سحب التجار)* داخل المتجر!`,
-                            status: 'pending'
-                        }]);
                     }
                 }
 
                 await updateActiveDealsBadge();
                 await refreshCurrentDealRoom();
-                tg.showAlert("🎉 شكراً لك! تم تأكيد الاستلام وتحرير المبلغ للبائع بنجاح. يمكنك الآن تقييم البائع بالنجوم!");
-            } catch (e) {
-                tg.showAlert("❌ حدث خطأ أثناء تحرير المبلغ: " + e.message);
+                tg.showAlert("🎉 تم تأكيد الاستلام وتحرير المبلغ بنجاح!");
             } finally {
                 isProcessingEscrowAction = false;
             }
         }
 
-        async function sellerRefundBuyer() {
-            if (!currentOpenedOrder || isProcessingEscrowAction) return;
-            const ord = currentOpenedOrder;
-            if (['Completed', 'Rejected', 'Refunded'].includes(ord.status)) return;
-            if (!confirm("↩️ هل أنت متأكد من إلغاء هذه الصفقة وإرجاع المبلغ المحجوز بالكامل إلى محفظة المشتري؟")) return;
-
-            isProcessingEscrowAction = true;
-            try {
-                const { data: updatedRows, error: refErr } = await client
-                    .from('store_orders')
-                    .update({ status: 'Refunded' })
-                    .eq('id', ord.id)
-                    .in('status', ['Pending', 'Escrow_Held', 'Delivered', 'Disputed'])
-                    .select('id');
-
-                if (refErr || !updatedRows || updatedRows.length === 0) {
-                    await refreshCurrentDealRoom();
-                    return tg.showAlert("⚠️ هذه الصفقة تم إغلاقها أو استردادها بالفعل.");
-                }
-
-                const isEgp = ord.currency === 'egp';
-                const unit = isEgp ? 'ج.م' : 'نقطة';
-                const price = Number(ord.price_paid || 0);
-
-                const { data: buyerUser } = await client.from('users').select('points, egp_balance').eq('telegram_id', ord.user_id).maybeSingle();
-                if (buyerUser) {
-                    if (isEgp) {
-                        const newEgp = Number((Number(buyerUser.egp_balance || 0) + price).toFixed(2));
-                        await client.from('users').update({ egp_balance: newEgp }).eq('telegram_id', ord.user_id);
-                    } else {
-                        const newPts = Number(buyerUser.points || 0) + price;
-                        await client.from('users').update({ points: newPts }).eq('telegram_id', ord.user_id);
-                    }
-                }
-
-                await client.from('bot_messages').insert([{
-                    telegram_id: String(ord.user_id),
-                    message: `↩️ *تم إلغاء الصفقة (${ord.product_title}) من قِبل البائع*\n✅ تم استرداد مبلغ (*+${price} ${unit}*) من خزنة الضمان إلى محفظتك فوراً!`,
-                    status: 'pending'
-                }]);
-
-                await refreshUserBalances();
-                await updateActiveDealsBadge();
-                await refreshCurrentDealRoom();
-                tg.showAlert("✅ تم إلغاء الصفقة وإرجاع المبلغ للمشتري.");
-            } catch (e) {} finally {
-                isProcessingEscrowAction = false;
-            }
-        }
-
-        async function openEscrowDispute() {
-            if (!currentOpenedOrder || isProcessingEscrowAction) return;
-            const ord = currentOpenedOrder;
-            if (['Completed', 'Rejected', 'Refunded', 'Disputed'].includes(ord.status)) return;
-
-            const reason = prompt("🚨 اكتب سبب فتح النزاع بالتفصيل (ستتدخل الإدارة وتفحص الشات وتفصل بينكما):");
-            if (!reason) return;
-
-            isProcessingEscrowAction = true;
-            try {
-                const msgs = Array.isArray(ord.chat_messages) ? [...ord.chat_messages] : [];
-                msgs.push({
-                    sender: "SYSTEM",
-                    text: `🚨 فتح المشتري نزاعاً رسمياً! السبب: ${reason} — تم تجميد المبلغ وإيقاف المؤقت التلقائي واستدعاء الإدارة.`,
-                    time: new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
-                });
-
-                await client.from('store_orders').update({
-                    status: 'Disputed',
-                    chat_messages: msgs
-                }).eq('id', ord.id).in('status', ['Pending', 'Escrow_Held', 'Delivered']);
-
-                await client.from('bot_messages').insert([{
-                    telegram_id: ADMIN_MASTER_ID,
-                    message: `🚨 *نزاع وساطة مالية عاجل!* ⚠️\n━━━━━━━━━━━━━━━\n🆔 *كود الصفقة:* \`${ord.order_code || ord.id}\`\n📦 *السلعة:* ${ord.product_title}\n💰 *المبلغ المجمد:* ${ord.price_paid} ${ord.currency}\n👤 *المشتري:* \`${ord.user_id}\`\n🏷️ *البائع:* \`${ord.seller_id}\`\n📝 *سبب النزاع:* ${reason}`,
-                    status: 'pending'
-                }]);
-
-                await refreshCurrentDealRoom();
-                tg.showAlert("🚨 تم تجميد المبلغ في خزنة البوت وإبلاغ الإدارة للفصل في النزاع!");
-            } finally {
-                isProcessingEscrowAction = false;
-            }
-        }
-
-        // =========================================================================
-        // 📦 5. نافذة صفقاتي وطلباتي وسلعي
-        // =========================================================================
         async function openMyActivityModal() {
             document.getElementById('activity-modal').style.display = 'flex';
             const box = document.getElementById('my-activity-content');
-            box.innerHTML = '<div class="status-box">⏳ جاري جلب صفقاتك وسلعك...</div>';
-
-            const { data: myDeals } = await client
-                .from('store_orders')
-                .select('*')
-                .or(`user_id.eq.${tid},seller_id.eq.${tid}`)
-                .order('id', { ascending: false })
-                .limit(20);
-
-            const { data: myItems } = await client
-                .from('store_products')
-                .select(SAFE_PUBLIC_PRODUCT_COLS)
-                .eq('creator_id', tid)
-                .order('id', { ascending: false });
-
-            let html = `<h4 style="color: var(--gold); margin: 5px 0 8px;">🤝 صفقات الوساطة والمشتريات (${myDeals ? myDeals.length : 0}):</h4>`;
-            if (!myDeals || myDeals.length === 0) {
-                html += `<p style="font-size:12px; color:gray;">لا توجد صفقات جارية أو سابقة بعد.</p>`;
-            } else {
+            box.innerHTML = '<div class="status-box">⏳ جاري جلب صفقاتك...</div>';
+            const { data: myDeals } = await client.from('store_orders').select('*').or(`user_id.eq.${tid},seller_id.eq.${tid}`).order('id', { ascending: false }).limit(20);
+            
+            let html = `<h4 style="color:var(--gold); margin:5px 0 8px;">🤝 صفقاتي النشطة (${myDeals ? myDeals.length : 0}):</h4>`;
+            if (!myDeals || myDeals.length === 0) html += `<p style="font-size:12px; color:gray;">لا توجد صفقات بعد.</p>`;
+            else {
                 myDeals.forEach(o => {
-                    const isBuyer = String(o.user_id) === String(tid);
-                    const roleBadge = isBuyer
-                        ? `<span style="color:var(--neon-blue); font-size:10.5px;">[أنت المشتري 🛒]</span>`
-                        : `<span style="color:var(--gold); font-size:10.5px;">[أنت البائع 🏷️]</span>`;
-
-                    const unit = o.currency === 'egp' ? 'ج.م' : 'نقطة';
-                    const oCode = o.order_code || `ESC-${o.id}`;
-                    let stBadge = `<span style="color:var(--gold);">🔒 محجوز بالضمان</span>`;
-                    if (o.status === 'Delivered') stBadge = `<span style="color:var(--neon-blue);">📦 تم التسليم (عداد 24h)</span>`;
-                    if (o.status === 'Completed') stBadge = `<span style="color:var(--main-green);">✅ مكتمل</span>`;
-                    if (o.status === 'Disputed') stBadge = `<span style="color:var(--crimson);">🚨 نزاع مفتوح</span>`;
-                    if (o.status === 'Rejected' || o.status === 'Refunded') stBadge = `<span style="color:#ff4d4d;">↩️ ملغي ومسترد</span>`;
-
                     html += `
                         <div style="background:#11141a; padding:12px; border-radius:12px; margin-bottom:9px; border:1px solid #262c38; font-size:12px;">
                             <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:6px;">
-                                <span>${roleBadge} ${escapeHtml(o.product_title)}</span>
-                                ${stBadge}
+                                <span>${escapeHtml(o.product_title)}</span>
+                                <span style="color:var(--main-green);">${o.status}</span>
                             </div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; color:var(--text-gray); font-size:11px; margin-top:6px;">
-                                <span>المبلغ: <b style="color:#fff;">${o.price_paid} ${unit}</b> | الكود: <span class="copy-code-badge" onclick="copyCodeText('${oCode}')">${oCode} 📋</span></span>
-                                <button onclick="openDealRoom(${o.id})" style="background:var(--main-green); color:#000; border:none; padding:5px 11px; border-radius:8px; font-weight:bold; font-size:11px; cursor:pointer;">💬 غرفة الوساطة</button>
-                            </div>
+                            <button onclick="openDealRoom(${o.id})" style="background:var(--main-green); color:#000; border:none; padding:5px 11px; border-radius:8px; font-weight:bold; font-size:11px; cursor:pointer;">💬 غرفة الوساطة</button>
                         </div>`;
                 });
             }
-
-            html += `<hr style="border-color:#262c38; margin: 15px 0;">`;
-            html += `<h4 style="color: var(--main-green); margin: 5px 0 8px;">🏷️ سلعي وأكواد صفقاتي المنشأة (${myItems ? myItems.length : 0}):</h4>`;
-            if (!myItems || myItems.length === 0) {
-                html += `<p style="font-size:12px; color:gray;">لم تعرض أي سلعة أو صفقة بعد.</p>`;
-            } else {
-                myItems.forEach(item => {
-                    const unit = item.currency === 'egp' ? 'ج.م' : 'نقطة';
-                    const pCode = item.product_code || `PRD-${item.id}`;
-                    let stTxt = `<span style="color:var(--gold);">⏳ قيد المراجعة</span>`;
-                    if (item.status === 'Approved') stTxt = `<span style="color:var(--main-green);">✅ نشط</span>`;
-                    if (item.status === 'Rejected') stTxt = `<span style="color:#ff4d4d;">❌ مرفوض</span>`;
-
-                    html += `
-                        <div style="background:#11141a; padding:10px 12px; border-radius:10px; margin-bottom:8px; border:1px solid #262c38; font-size:12px;">
-                            <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px;">
-                                <span>${escapeHtml(item.title)}</span>
-                                <span style="color:var(--neon-blue);">${item.price} ${unit}</span>
-                            </div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px;">
-                                <span>الحالة: ${stTxt}</span>
-                                <span class="copy-code-badge" onclick="copyCodeText('${pCode}')">نسخ الكود: ${pCode} 📋</span>
-                            </div>
-                        </div>`;
-                });
-            }
-
             box.innerHTML = html;
         }
 
-        // تحويل الجنيه لنقاط داخل المتجر (مؤمن بقفل التزامن وفحص الرصيد اللحظي ضد الضغط المزدوج)
         function openExchangeModal() {
             document.getElementById('ex-egp-input').value = "";
             document.getElementById('ex-pts-preview').innerText = "ستحصل على: 0 نقطة";
@@ -1995,78 +1355,36 @@
 
         function updateStoreExchangePreview() {
             const val = parseFloat(document.getElementById('ex-egp-input').value) || 0;
-            const pts = Math.floor(val * EGP_TO_POINTS_RATE);
-            document.getElementById('ex-pts-preview').innerText = `ستحصل على: ${pts.toLocaleString()} نقطة ⚡`;
+            document.getElementById('ex-pts-preview').innerText = `ستحصل على: ${Math.floor(val * EGP_TO_POINTS_RATE).toLocaleString()} نقطة ⚡`;
         }
 
         async function confirmStoreExchange() {
             if (isProcessingEscrowAction) return;
             const egpAmt = parseFloat(document.getElementById('ex-egp-input').value);
             if (!egpAmt || egpAmt < 1) return tg.showAlert("⚠️ الحد الأدنى للتحويل هو 1 جنيه.");
-
-            const btn = document.getElementById('btn-confirm-store-ex');
+            
             isProcessingEscrowAction = true;
-            btn.disabled = true;
-            btn.innerText = "⏳ جاري التحويل...";
-
             try {
-                const { data: freshU, error: fErr } = await client
-                    .from('users')
-                    .select('points, egp_balance')
-                    .eq('telegram_id', tid)
-                    .single();
-
-                if (fErr || !freshU) throw new Error("تعذر جلب الرصيد");
-
-                const currentEgp = Number(freshU.egp_balance || 0);
-                if (egpAmt > currentEgp) {
-                    userEgp = currentEgp;
-                    updateWalletHeaderUI();
-                    return tg.showAlert("❌ رصيدك بالجنيه غير كافٍ!");
-                }
+                const { data: freshU } = await client.from('users').select('points, egp_balance').eq('telegram_id', tid).single();
+                if (egpAmt > Number(freshU.egp_balance || 0)) return tg.showAlert("❌ رصيدك بالجنيه غير كافٍ!");
 
                 const ptsToAdd = Math.floor(egpAmt * EGP_TO_POINTS_RATE);
-                const newEgp = Number((currentEgp - egpAmt).toFixed(2));
-                const newPts = Number(freshU.points || 0) + ptsToAdd;
-
-                const { error } = await client.from('users').update({
-                    egp_balance: newEgp,
-                    points: newPts
+                await client.from('users').update({
+                    egp_balance: Number((Number(freshU.egp_balance) - egpAmt).toFixed(2)),
+                    points: Number(freshU.points || 0) + ptsToAdd
                 }).eq('telegram_id', tid);
 
-                if (!error) {
-                    userEgp = newEgp;
-                    userPoints = newPts;
-                    updateWalletHeaderUI();
-                    closeModal('exchange-modal');
-
-                    await client.from('transactions').insert([{
-                        telegram_id: String(tid),
-                        type: 'points',
-                        title: `تحويل ${egpAmt} ج.م إلى نقاط بالمتجر`,
-                        amount: `+${ptsToAdd.toLocaleString()} نقطة`,
-                        status: 'مكتمل'
-                    }]);
-
-                    tg.showAlert(`🎉 تم التحويل بنجاح! أُضيف ${ptsToAdd.toLocaleString()} نقطة لرصيدك.`);
-                }
-            } catch (e) {
-                tg.showAlert("❌ حدث خطأ أثناء التحويل.");
+                await refreshUserBalances();
+                closeModal('exchange-modal');
+                tg.showAlert(`🎉 تم التحويل بنجاح وأُضيف ${ptsToAdd.toLocaleString()} نقطة.`);
             } finally {
                 isProcessingEscrowAction = false;
-                btn.disabled = false;
-                btn.innerText = "تحويل فوراً ✅";
             }
         }
 
-        function closeModal(id) {
-            document.getElementById(id).style.display = 'none';
-        }
-
-        function escapeHtml(str) { return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
-        function goStore() { window.location.href = `store.html?id=${tid}&t=${Date.now()}`; }
         function goDeposit() { window.location.href = `deposit.html?id=${tid}&t=${Date.now()}`; }
         function goMerchantWithdraw() { window.location.href = `merchant_withdraw.html?id=${tid}&t=${Date.now()}`; }
         function goTasks() { window.location.href = `tasks.html?id=${tid}&t=${Date.now()}`; }
