@@ -60,7 +60,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 14px;
         }
         .stat-box {
             background: linear-gradient(145deg, #1b1f29, #12141a);
@@ -74,6 +74,26 @@
         .stat-box:hover { border-color: var(--neon-blue); transform: translateY(-2px); }
         .stat-box span { font-size: 11.5px; color: #9ca3af; display: block; margin-bottom: 4px; }
         .stat-box b { font-size: 20px; font-weight: 900; color: var(--neon-blue); }
+
+        .finance-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #11151d;
+            border: 1px dashed #2e3b52;
+            border-radius: 16px;
+            padding: 12px;
+        }
+        .fin-item {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid #222a38;
+            border-radius: 12px;
+            padding: 10px;
+            text-align: center;
+        }
+        .fin-item span { font-size: 11px; color: #9ca3af; display: block; margin-bottom: 3px; }
+        .fin-item b { font-size: 16px; font-weight: 900; }
 
         .card { background: var(--card-bg); border: 1px solid #333; padding: 18px; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .search-hub-card { border-top: 4px solid var(--gold); background: linear-gradient(145deg, #1b1912, #141414); }
@@ -125,6 +145,7 @@
         .approve-btn { background: var(--main-green); color: black; padding: 10px 14px; font-size: 13px; border-radius: 8px; flex: 1; }
         .reject-btn { background: var(--red); color: white; padding: 10px 14px; font-size: 13px; border-radius: 8px; flex: 1; }
         .chat-btn { background: var(--neon-blue); color: black; padding: 10px 14px; font-size: 13px; border-radius: 8px; flex: 1; }
+        .retry-api-btn { background: var(--gold); color: black; padding: 10px 14px; font-size: 13px; border-radius: 8px; flex: 1; }
         .actions-box { display: flex; gap: 8px; width: 100%; margin-top: 8px; flex-wrap: wrap; }
         
         .code-pill { background: rgba(255, 170, 0, 0.15); color: var(--gold); border: 1px dashed var(--gold); padding: 2px 9px; border-radius: 6px; font-family: monospace; font-size: 12px; font-weight: bold; cursor: pointer; }
@@ -201,7 +222,7 @@
 
 <div id="live-alert-toast">🔔 وصل طلب جديد في لوحة الأدمن!</div>
 
-<!-- 🔒 شاشة قفل لوحة التحكم المؤمنة -->
+<!-- 🔒 شاشة قفل لوحة التحكم المؤمنة بالسيرفر -->
 <div id="admin-lock-screen">
     <div class="lock-box">
         <div style="font-size: 46px; margin-bottom: 10px;">🛡️</div>
@@ -226,7 +247,7 @@
 
     <div id="db-status-bar">⏳ جاري الاتصال بقاعدة البيانات وسحب الأقسام...</div>
 
-    <!-- 📊 شريط الإحصائيات السريعة العلوي (مع خاصية التمرير التلقائي للأقسام) -->
+    <!-- 📊 شريط الإحصائيات السريعة العلوي -->
     <div class="top-stats-grid">
         <div class="stat-box" onclick="scrollToSection('user-wallet-card-sec')">
             <span>👥 إجمالي الأعضاء</span>
@@ -254,6 +275,26 @@
         </div>
     </div>
 
+    <!-- 💰 شريط الملخص المالي الشامل للمنصة (جديد) -->
+    <div class="finance-summary-grid">
+        <div class="fin-item">
+            <span>💵 إجمالي رصيد الشراء لدى الأعضاء</span>
+            <b id="fin-users-egp" style="color: var(--neon-blue);">0.00 ج.م</b>
+        </div>
+        <div class="fin-item">
+            <span>💼 إجمالي أرباح التجار بالمحافظ</span>
+            <b id="fin-merchants-egp" style="color: var(--gold);">0.00 ج.م</b>
+        </div>
+        <div class="fin-item">
+            <span>🪙 إجمالي نقاط الأعضاء (ومعادلها)</span>
+            <b id="fin-users-pts" style="color: var(--main-green);">0 ن</b>
+        </div>
+        <div class="fin-item">
+            <span>💎 صافي عمولات وأرباح المنصة المكتملة</span>
+            <b id="fin-platform-profit" style="color: var(--neon-purple);">0.00 ج.م</b>
+        </div>
+    </div>
+
     <!-- 🔍 01. رادار البحث الذكي بالأكواد -->
     <div class="card search-hub-card">
         <h3 onclick="toggleCard(this)" style="color: var(--gold);">🔍 رادار البحث بالأكواد (ESC / ORD / PRD / WTH / TKT) <span class="arrow-icon open">▼</span></h3>
@@ -266,7 +307,7 @@
         </div>
     </div>
 
-    <!-- 🚨 02. غرفة فض النزاعات العاجلة (مع عداد الأقسام) -->
+    <!-- 🚨 02. غرفة فض النزاعات العاجلة -->
     <div class="card dispute-card" id="dispute-card-sec">
         <h3 onclick="toggleCard(this)" style="color: var(--red);">
             <span>🚨 نزاعات الوساطة المالية المفتوحة (Disputes)</span>
@@ -278,19 +319,19 @@
         </div>
     </div>
 
-    <!-- 📥 03. طلبات شحن الجنيه (مع عداد الأقسام) -->
+    <!-- 📥 03. طلبات شحن الجنيه -->
     <div class="card deposit-card" id="deposit-card-sec">
         <h3 onclick="toggleCard(this)" style="color: var(--main-green);">
             <span>📥 طلبات شحن الجنيه الواردة</span>
             <span id="badge-deposits" class="section-badge">0 جديد</span>
-            <span class="arrow-icon">▼</span>
+            <span class="arrow-icon open">▼</span>
         </h3>
         <div class="collapsible-body" style="display: block;">
             <div id="deposits-requests-list" class="list-container">⏳ جاري فحص طلبات الإيداع...</div>
         </div>
     </div>
 
-    <!-- 💼 04. طلبات سحب أرباح التجار وسحوبات النقاط (مع عداد الأقسام) -->
+    <!-- 💼 04. طلبات سحب أرباح التجار وسحوبات النقاط -->
     <div class="card merchant-w-card" id="merchant-w-card-sec">
         <h3 onclick="toggleCard(this)" style="color: var(--gold);">
             <span>💼 طلبات السحب الواردة (أرباح التجار 💼 + سحوبات النقاط 🪙)</span>
@@ -309,7 +350,7 @@
         </div>
     </div>
 
-    <!-- 🎧 05. تذاكر الدعم وبلاغات الثغرات (مع عداد الأقسام) -->
+    <!-- 🎧 05. تذاكر الدعم وبلاغات الثغرات -->
     <div class="card tickets-card" id="tickets-card-sec">
         <h3 onclick="toggleCard(this)" style="color: var(--neon-blue);">
             <span>🎧 تذاكر الدعم وبلاغات الثغرات (Bug Bounty)</span>
@@ -323,9 +364,21 @@
 
     <!-- 🛒 06. الطلبات وصفقات الضمان الجارية -->
     <div class="card orders-card" id="orders-card-sec">
-        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 الطلبات وصفقات الضمان الجارية (Escrow Orders) <span class="arrow-icon">▼</span></h3>
+        <h3 onclick="toggleCard(this)" style="color: var(--main-green);">🛒 الطلبات وصفقات الضمان الجارية (Escrow Orders) <span class="arrow-icon open">▼</span></h3>
         <div class="collapsible-body" style="display: block;">
             <div id="store-orders-list" class="list-container">⏳ جاري فحص الطلبات...</div>
+        </div>
+    </div>
+
+    <!-- 🛍️ 06-B. مراجعة سلع التجار المعلقة (القسم الذي كان مفقوداً وتمت إضافته لإصلاح الكراش) -->
+    <div class="card pending-card" id="pending-store-card-sec">
+        <h3 onclick="toggleCard(this)" style="color: var(--orange);">
+            <span>🛍️ سلع وعروض التجار (قيد المراجعة)</span>
+            <span id="badge-pend-store" class="section-badge">0 معلق</span>
+            <span class="arrow-icon open">▼</span>
+        </h3>
+        <div class="collapsible-body" style="display: block;">
+            <div id="pending-store-list" class="list-container">⏳ جاري فحص سلع التجار...</div>
         </div>
     </div>
 
@@ -398,7 +451,7 @@
                 <div id="admin-profit-preview" style="color: var(--main-green); font-size: 12.5px; font-weight: bold; margin-top: 6px;">💰 صافي ربحك: 0</div>
             </div>
 
-            <!-- 🔌 08. كتالوج المورد التلقائي (Bunny Store API) تم نقله هنا تحت قسم إضافة منتج كما طلبت -->
+            <!-- 🔌 08. كتالوج المورد التلقائي (Bunny Store API) -->
             <div class="card bunny-api-card" style="margin: 10px 0 0 0; padding: 14px;">
                 <h3 onclick="toggleCard(this)" style="color: var(--neon-blue); font-size: 14px; margin-bottom: 0;">🔌 كتالوج المورد التلقائي (Bunny Store API) <span class="arrow-icon open">▼</span></h3>
                 <div class="collapsible-body" style="display: block;">
@@ -703,6 +756,7 @@
     var S_URL = 'https://smukfrwnguvmxvfwqwrv.supabase.co';
     var S_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM';
     var ADMIN_MASTER_ID = '875021647';
+    var FLASK_API_BASE = 'https://moustafa011494.pythonanywhere.com';
     var USDT_RATE = 53.0;
     var client = window.supabase.createClient(S_URL, S_KEY);
 
@@ -728,12 +782,10 @@
             .trim();
     }
 
-    // دالة الانتقال السلس للأقسام عند الضغط على الكروت العلوية
     function scrollToSection(secId) {
         var el = document.getElementById(secId);
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            // فتح الكارت تلقائياً إذا كان مغلقاً
             var body = el.querySelector('.collapsible-body');
             var arrow = el.querySelector('.arrow-icon');
             if (body && body.style.display !== 'block') {
@@ -743,22 +795,16 @@
         }
     }
 
+    // 🔐 نظام قفل لوحة الأدمن المربوط بتوثيق السيرفر (مع نظام احتياطي ذكي)
     (function setupIsolatedAdminSecurity() {
-        var _privateOtp = null;
-        var _privateOtpExpiry = 0;
+        var _fallbackOtp = null;
+        var _fallbackOtpExpiry = 0;
 
-        function verifyEncodedPin(str) {
-            var clean = String(str || '').trim().toLowerCase();
-            var target = [36, 38, 58, 61, 40, 47, 40, 9, 123, 121, 123, 127];
-            if (clean.length !== target.length) return false;
-            for (var i = 0; i < target.length; i++) {
-                if ((clean.charCodeAt(i) ^ 73) !== target[i]) return false;
-            }
-            return true;
-        }
-
-        function grantInternalAccess() {
-            try { sessionStorage.setItem('mt_admin_auth', '1'); } catch (e) {}
+        function grantInternalAccess(tokenStr) {
+            try {
+                sessionStorage.setItem('mt_admin_auth', '1');
+                if (tokenStr) sessionStorage.setItem('mt_admin_token', tokenStr);
+            } catch (e) {}
             document.getElementById('lock-error-msg').style.display = 'none';
             document.getElementById('admin-lock-screen').style.display = 'none';
             document.getElementById('main-admin-container').style.display = 'block';
@@ -772,43 +818,79 @@
             btn.disabled = true;
             btn.innerText = '⏳ جاري إرسال الكود لحسابك في تيليجرام...';
 
-            _privateOtp = String(Math.floor(100000 + Math.random() * 900000));
-            _privateOtpExpiry = Date.now() + 5 * 60 * 1000;
-
+            var sentViaServer = false;
             try {
-                await client.from('bot_messages').insert([{
-                    telegram_id: ADMIN_MASTER_ID,
-                    message: '🔐 *كود الدخول السري للوحة التحكم (OTP):*\n`' + _privateOtp + '`\n⏱️ صالح لمدة 5 دقائق فقط.',
-                    status: 'pending'
-                }]);
-                var errEl = document.getElementById('lock-error-msg');
-                errEl.style.display = 'block';
-                errEl.style.color = 'var(--main-green)';
-                errEl.innerText = '✅ تم إرسال الكود السري إلى محادثتك مع البوت في تيليجرام! اكتبه في الخانة بالأعلى.';
-            } catch (e) {
-                alert('❌ تعذر إرسال الكود.');
-            } finally {
-                setTimeout(function() {
-                    btn.disabled = false;
-                    btn.innerText = '📲 إرسال كود دخول سري (OTP) لتيليجرام الأدمن';
-                }, 15000);
+                var ctrl = new AbortController();
+                var tid = setTimeout(function() { ctrl.abort(); }, 4500);
+                var r = await fetch(FLASK_API_BASE + '/api/admin/send_otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    signal: ctrl.signal
+                });
+                clearTimeout(tid);
+                if (r.ok) sentViaServer = true;
+            } catch (e) {}
+
+            if (!sentViaServer) {
+                _fallbackOtp = String(Math.floor(100000 + Math.random() * 900000));
+                _fallbackOtpExpiry = Date.now() + 5 * 60 * 1000;
+                try {
+                    await client.from('bot_messages').insert([{
+                        telegram_id: ADMIN_MASTER_ID,
+                        message: '🔐 *كود الدخول السري للوحة التحكم (OTP):*\n`' + _fallbackOtp + '`\n⏱️ صالح لمدة 5 دقائق فقط.',
+                        status: 'pending'
+                    }]);
+                } catch (err) {}
             }
+
+            var errEl = document.getElementById('lock-error-msg');
+            errEl.style.display = 'block';
+            errEl.style.color = 'var(--main-green)';
+            errEl.innerText = '✅ تم إرسال الكود السري إلى محادثتك مع البوت في تيليجرام! اكتبه في الخانة بالأعلى.';
+
+            setTimeout(function() {
+                btn.disabled = false;
+                btn.innerText = '📲 إرسال كود دخول سري (OTP) لتيليجرام الأدمن';
+            }, 15000);
         }
 
-        function tryUnlockPanel() {
+        async function tryUnlockPanel() {
             var inp = document.getElementById('admin-pin-input');
             var val = (inp ? inp.value : '').trim();
+            var initData = window.Telegram?.WebApp?.initData || '';
 
-            var isOtpValid = (_privateOtp && val === _privateOtp && Date.now() < _privateOtpExpiry);
-            if (isOtpValid || verifyEncodedPin(val)) {
-                _privateOtp = null;
-                grantInternalAccess();
-            } else {
-                var errEl = document.getElementById('lock-error-msg');
-                errEl.style.display = 'block';
-                errEl.style.color = 'var(--red)';
-                errEl.innerText = '❌ كلمة المرور أو كود الـ OTP غير صحيح!';
+            // 1. محاولة التوثيق عبر السيرفر أولاً
+            try {
+                var ctrl = new AbortController();
+                var tid = setTimeout(function() { ctrl.abort(); }, 4000);
+                var res = await fetch(FLASK_API_BASE + '/api/admin/verify_login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin: val, init_data: initData }),
+                    signal: ctrl.signal
+                });
+                clearTimeout(tid);
+                if (res.ok) {
+                    var d = await res.json();
+                    if (d && d.status === 'ok') {
+                        grantInternalAccess(d.admin_token);
+                        return;
+                    }
+                }
+            } catch (e) {}
+
+            // 2. التحقق الاحتياطي إذا كان سيرفر Flask نائماً
+            var isFallbackOtpValid = (_fallbackOtp && val === _fallbackOtp && Date.now() < _fallbackOtpExpiry);
+            if (isFallbackOtpValid) {
+                _fallbackOtp = null;
+                grantInternalAccess('fallback_otp_session');
+                return;
             }
+
+            var errEl = document.getElementById('lock-error-msg');
+            errEl.style.display = 'block';
+            errEl.style.color = 'var(--red)';
+            errEl.innerText = '❌ كلمة المرور أو كود الـ OTP غير صحيح! (يمكنك طلب كود OTP فوري لتليجرام)';
         }
 
         window.addEventListener('DOMContentLoaded', function() {
@@ -832,7 +914,10 @@
     })();
 
     function logoutAdmin() {
-        try { sessionStorage.removeItem('mt_admin_auth'); } catch (e) {}
+        try {
+            sessionStorage.removeItem('mt_admin_auth');
+            sessionStorage.removeItem('mt_admin_token');
+        } catch (e) {}
         location.reload();
     }
 
@@ -896,20 +981,16 @@
         try {
             var dRes = await client.from('deposits').select('id').eq('status', 'Pending');
             var wRes = await client.from('withdrawals').select('id').eq('status', 'Pending');
-            var oRes = await client.from('store_orders').select('id').in('status', ['Pending', 'Escrow_Held', 'Disputed']);
+            var oRes = await client.from('store_orders').select('id, status').in('status', ['Pending', 'Escrow_Held', 'Disputed']);
             var tRes = await client.from('support_tickets').select('id').eq('status', 'Pending');
 
-            var totalNow =
-                ((dRes.data && dRes.data.length) || 0) +
-                ((wRes.data && wRes.data.length) || 0) +
-                ((oRes.data && oRes.data.length) || 0) +
-                ((tRes.data && tRes.data.length) || 0);
-
-            // تحديث شارات العدادات الجديدة في الأقسام
             var dCount = (dRes.data && dRes.data.length) || 0;
             var wCount = (wRes.data && wRes.data.length) || 0;
-            var dispCount = (oRes.data && oRes.data.length) || 0;
+            var oList = oRes.data || [];
+            var dispCount = oList.filter(function(x) { return x.status === 'Disputed'; }).length;
             var tCount = (tRes.data && tRes.data.length) || 0;
+
+            var totalNow = dCount + wCount + oList.length + tCount;
 
             document.getElementById('badge-deposits').innerText = dCount + ' جديد';
             document.getElementById('badge-withdraws').innerText = wCount + ' جديد';
@@ -1147,8 +1228,24 @@
 
     async function loadTopDashboardStats() {
         try {
-            var res = await client.from('users').select('id');
-            if (res.data) document.getElementById('st-total-users').innerText = res.data.length.toLocaleString();
+            var res = await client.from('users').select('id, points, egp_balance, merchant_balance_egp');
+            if (res.data) {
+                var users = res.data;
+                document.getElementById('st-total-users').innerText = users.length.toLocaleString();
+
+                var sumEgp = 0;
+                var sumMerchEgp = 0;
+                var sumPts = 0;
+                users.forEach(function(u) {
+                    sumEgp += Number(u.egp_balance || 0);
+                    sumMerchEgp += Number(u.merchant_balance_egp || 0);
+                    sumPts += Number(u.points || 0);
+                });
+
+                document.getElementById('fin-users-egp').innerText = sumEgp.toFixed(2) + ' ج.م';
+                document.getElementById('fin-merchants-egp').innerText = sumMerchEgp.toFixed(2) + ' ج.م';
+                document.getElementById('fin-users-pts').innerText = sumPts.toLocaleString() + ' ن (≈ ' + (sumPts / 1000).toFixed(1) + ' ج.م)';
+            }
         } catch (e) {}
     }
 
@@ -1374,17 +1471,37 @@
         }]);
         alert('✅ تم تحديث الرصيد بنجاح!');
         searchUserWallet();
+        loadTopDashboardStats();
     }
 
     async function loadStoreAndOrdersFast() {
         try {
-            var prodRes = await client.from('store_products').select('*').order('id', { ascending: false }).limit(80);
-            var ordRes = await client.from('store_orders').select('*').order('id', { ascending: false }).limit(80);
+            var prodRes = await client.from('store_products').select('*').order('id', { ascending: false }).limit(100);
+            var ordRes = await client.from('store_orders').select('*').order('id', { ascending: false }).limit(120);
 
             cachedAllProducts = prodRes.data || [];
             cachedAllOrders = ordRes.data || [];
             cachedStoreProductsMap = {};
             cachedAllProducts.forEach(function(p) { cachedStoreProductsMap[p.id] = p; });
+
+            // حساب صافي أرباح المنصة من الطلبات المكتملة والمسلمة
+            var netPlatformProfitEgp = 0;
+            cachedAllOrders.forEach(function(o) {
+                if (o.status === 'Completed' || o.status === 'Delivered') {
+                    var prod = cachedStoreProductsMap[o.product_id] || {};
+                    var isEgp = o.currency === 'egp';
+                    var paidEgp = isEgp ? Number(o.price_paid || 0) : (Number(o.price_paid || 0) / 1000);
+                    if (!o.seller_id || o.seller_id === 'ADMIN') {
+                        var cost = Number(prod.supplier_cost || 0);
+                        netPlatformProfitEgp += Math.max(0, paidEgp - cost);
+                    } else {
+                        var comm = Number(o.bot_commission || 0);
+                        netPlatformProfitEgp += isEgp ? comm : (comm / 1000);
+                    }
+                }
+            });
+            var profEl = document.getElementById('fin-platform-profit');
+            if (profEl) profEl.innerText = netPlatformProfitEgp.toFixed(2) + ' ج.م';
 
             var prodDiv = document.getElementById('store-products-list');
             var approved = cachedAllProducts.filter(function(p) { return p.status === 'Approved'; });
@@ -1422,22 +1539,27 @@
 
             var pendStoreDiv = document.getElementById('pending-store-list');
             var pendProds = cachedAllProducts.filter(function(p) { return p.status === 'Pending'; });
-            if (pendProds.length === 0) {
-                pendStoreDiv.innerHTML = '✅ لا توجد سلع تجار معلقة.';
-            } else {
-                var pendHtml = '';
-                pendProds.forEach(function(p) {
-                    var pCode = p.product_code || ('PRD-' + p.id);
-                    var unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
-                    pendHtml += '<div class="item-row" style="flex-direction:column; align-items:flex-start;">' +
-                        '<div><b>📦 ' + escapeHtml(p.title) + '</b> (' + p.price + ' ' + unit + ') | التاجر: <code>' + p.creator_id + '</code></div>' +
-                        '<div style="font-size:12px; color:#ccc;">' + escapeHtml(p.description || '') + '</div>' +
-                        '<div class="actions-box">' +
-                        '<button class="approve-btn" onclick="reviewStoreProduct(' + p.id + ', \'' + escapeQuote(p.creator_id) + '\', \'' + escapeQuote(p.title) + '\', \'' + escapeQuote(pCode) + '\', true)">قبول ونشر ✅</button>' +
-                        '<button class="reject-btn" onclick="reviewStoreProduct(' + p.id + ', \'' + escapeQuote(p.creator_id) + '\', \'' + escapeQuote(p.title) + '\', \'' + escapeQuote(pCode) + '\', false)">رفض ❌</button>' +
-                        '</div></div>';
-                });
-                pendStoreDiv.innerHTML = pendHtml;
+            var pendBadge = document.getElementById('badge-pend-store');
+            if (pendBadge) pendBadge.innerText = pendProds.length + ' معلق';
+
+            if (pendStoreDiv) {
+                if (pendProds.length === 0) {
+                    pendStoreDiv.innerHTML = '✅ لا توجد سلع تجار معلقة.';
+                } else {
+                    var pendHtml = '';
+                    pendProds.forEach(function(p) {
+                        var pCode = p.product_code || ('PRD-' + p.id);
+                        var unit = p.currency === 'egp' ? 'ج.م' : 'نقطة';
+                        pendHtml += '<div class="item-row" style="flex-direction:column; align-items:flex-start;">' +
+                            '<div><b>📦 ' + escapeHtml(p.title) + '</b> (' + p.price + ' ' + unit + ') | التاجر: <code>' + p.creator_id + '</code></div>' +
+                            '<div style="font-size:12px; color:#ccc;">' + escapeHtml(p.description || '') + '</div>' +
+                            '<div class="actions-box">' +
+                            '<button class="approve-btn" onclick="reviewStoreProduct(' + p.id + ', \'' + escapeQuote(p.creator_id) + '\', \'' + escapeQuote(p.title) + '\', \'' + escapeQuote(pCode) + '\', true)">قبول ونشر ✅</button>' +
+                            '<button class="reject-btn" onclick="reviewStoreProduct(' + p.id + ', \'' + escapeQuote(p.creator_id) + '\', \'' + escapeQuote(p.title) + '\', \'' + escapeQuote(pCode) + '\', false)">رفض ❌</button>' +
+                            '</div></div>';
+                    });
+                    pendStoreDiv.innerHTML = pendHtml;
+                }
             }
 
             var disputes = cachedAllOrders.filter(function(o) { return o.status === 'Disputed'; });
@@ -1452,6 +1574,7 @@
                 ? '✅ لا توجد طلبات أو صفقات ضمان جارية.'
                 : activeOrds.map(function(o) { return renderOrderCardHTML(o, false); }).join('');
         } catch (e) {
+            console.error('loadStoreAndOrdersFast error:', e);
             document.getElementById('store-orders-list').innerHTML = '✅ لا توجد طلبات حالياً.';
             document.getElementById('escrow-disputes-list').innerHTML = '✅ لا توجد نزاعات حالياً.';
         }
@@ -1465,10 +1588,12 @@
         var msgCount = Array.isArray(o.chat_messages) ? o.chat_messages.length : 0;
 
         var apiStatusBadge = '';
-        if (o.api_fulfill_status === 'pending_api') {
+        var retryApiBtn = '';
+        if (o.api_fulfill_status === 'pending_api' || o.api_fulfill_status === 'processing_api') {
             apiStatusBadge = ' | <span style="color:var(--neon-blue); font-weight:bold;">⏳ جاري السحب من Bunny API...</span>';
         } else if (o.api_fulfill_status === 'manual_fallback') {
-            apiStatusBadge = ' | <span style="color:var(--red); font-weight:bold;">⚠️ فشل السحب التلقائي (يرجى التسليم يدوياً)</span>';
+            apiStatusBadge = ' | <span style="color:var(--red); font-weight:bold;">⚠️ فشل السحب التلقائي (سلّم يدوياً أو أعد المحاولة)</span>';
+            retryApiBtn = '<button class="retry-api-btn" onclick="retryBunnyApiOrder(' + o.id + ')">🔄 إعادة السحب من Bunny API</button>';
         } else if (o.api_fulfill_status === 'fulfilled') {
             apiStatusBadge = ' | <span style="color:var(--main-green); font-weight:bold;">⚡ تم التسليم عبر Bunny API</span>';
         }
@@ -1485,9 +1610,24 @@
             '</div>' +
             '<div class="actions-box">' +
             '<button class="chat-btn" onclick="openAdminDealChatModal(' + o.id + ')">💬 شات الصفقة (' + msgCount + ')</button>' +
+            retryApiBtn +
             '<button class="approve-btn" onclick="completeStoreOrder(' + o.id + ')">⚖️ تحرير للبائع ✅</button>' +
             '<button class="reject-btn" onclick="rejectStoreOrder(' + o.id + ')">↩️ إرجاع للمشتري ❌</button>' +
             '</div></div>';
+    }
+
+    async function retryBunnyApiOrder(orderId) {
+        if (!confirm('هل تريد إعادة محاولة سحب وتسليم هذا الطلب تلقائياً من Bunny Store API الآن؟')) return;
+        try {
+            await client.from('store_orders').update({
+                api_fulfill_status: 'pending_api',
+                status: 'Escrow_Held'
+            }).eq('id', orderId);
+            showToastAlert('⚡ تمت إعادة جدولة الطلب للسحب الفوري من Bunny API خلال 3 ثوانٍ!');
+            setTimeout(loadStoreAndOrdersFast, 3500);
+        } catch (e) {
+            alert('❌ تعذر إعادة جدولة الطلب.');
+        }
     }
 
     async function openAdminDealChatModal(orderId) {
@@ -1626,6 +1766,7 @@
         }]);
         alert('✅ تم تحرير الصفقة بنجاح!');
         loadStoreAndOrdersFast();
+        loadTopDashboardStats();
     }
 
     async function rejectStoreOrder(orderId) {
@@ -1665,6 +1806,7 @@
         }]);
         alert('✅ تم إرجاع الرصيد للمشتري!');
         loadStoreAndOrdersFast();
+        loadTopDashboardStats();
     }
 
     async function addStoreProduct() {
@@ -1728,6 +1870,7 @@
         document.getElementById('store-title').value = '';
         document.getElementById('store-desc').value = '';
         document.getElementById('store-auto-stock').value = '';
+        storeFileBase64 = '';
         clearBunnyLinkFields();
         generateNewProductCode();
         alert('✅ تم نشر المنتج بنجاح في المتجر!');
@@ -1942,6 +2085,7 @@
             }
         }
         loadWithdrawals();
+        loadTopDashboardStats();
     }
 
     async function loadSupportTickets() {
@@ -2006,6 +2150,7 @@
         await client.from('bot_messages').insert([{ telegram_id: String(userTid), message: '🎧 *رد الإدارة على تذكرتك (' + code + '):*\n' + reply + bonusTxt, status: 'pending' }]);
         alert('✅ تم إرسال الرد!');
         loadSupportTickets();
+        loadTopDashboardStats();
     }
 
     async function loadDepositsRequests() {
@@ -2072,6 +2217,7 @@
             }
         }
         loadDepositsRequests();
+        loadTopDashboardStats();
     }
 
     async function loadMethods() {
@@ -2089,6 +2235,8 @@
         var description = document.getElementById('method-desc').value.trim();
         if (!name) return;
         await client.from('withdraw_methods').insert([{ name: name, description: description }]);
+        document.getElementById('method-name').value = '';
+        document.getElementById('method-desc').value = '';
         loadMethods();
     }
     async function deleteMethod(id) { await client.from('withdraw_methods').delete().eq('id', id); loadMethods(); }
@@ -2108,6 +2256,10 @@
         var description = document.getElementById('deposit-desc').value.trim();
         if (!name) return;
         await client.from('deposit_methods').insert([{ name: name, description: description, logo: depositLogoBase64 || null }]);
+        document.getElementById('deposit-name').value = '';
+        document.getElementById('deposit-desc').value = '';
+        document.getElementById('deposit-logo-file').value = '';
+        depositLogoBase64 = '';
         loadDepositMethods();
     }
     async function deleteDepositMethod(id) { await client.from('deposit_methods').delete().eq('id', id); loadDepositMethods(); }
@@ -2151,6 +2303,9 @@
         var unlock_cost = parseInt(document.getElementById('admin-method-cost').value, 10) || 50;
         if (!title || !content) return;
         await client.from('methods').insert([{ user_id: 'ADMIN', title: title, content: content, image_url: adminMethodBase64 || null, status: 'Approved', unlock_cost: unlock_cost }]);
+        document.getElementById('admin-method-title').value = '';
+        document.getElementById('admin-method-content').value = '';
+        adminMethodBase64 = '';
         alert('✅ تم نشر الميثود!');
         loadPublishedMethods();
     }
@@ -2353,6 +2508,8 @@
         var reward = parseInt(document.getElementById('task-reward').value, 10) || 10;
         if (!title || !link) return;
         await client.from('tasks').insert([{ platform: platform, title: title, url: link, link: link, reward: reward, status: 'Approved', target_count: 100, is_active: true }]);
+        document.getElementById('task-title').value = '';
+        document.getElementById('task-link').value = '';
         alert('✅ تم نشر المهمة!');
         loadTasks();
     }
@@ -2364,7 +2521,7 @@
     }
     function previewDepositLogo(input) {
         if (!input.files || !input.files[0]) return;
-        var r = new FileReader(); r.onload = function(e) { depositLogoBaseH64 = e.target.result; }; r.readAsDataURL(input.files[0]);
+        var r = new FileReader(); r.onload = function(e) { depositLogoBase64 = e.target.result; }; r.readAsDataURL(input.files[0]);
     }
     function previewStoreFile(input) {
         if (!input.files || !input.files[0]) return;
