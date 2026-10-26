@@ -9,16 +9,18 @@
     <title>Profile - MegaTask</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="security.js"></script>
     <style>
         :root { 
             --main-green: #00d26a; 
             --main-cyan: #00f2ff;
             --gold: #ffaa00;
+            --crimson: #ff3d57;
             --dark-bg: #0d0f12; 
             --card-bg: #1a1d23; 
             --text-gray: #9ca3af; 
         }
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--dark-bg); color: white; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 15px; padding-bottom: 115px; overflow-x: hidden; }
 
         /* بطاقة البروفايل العلوية */
@@ -120,7 +122,7 @@
         .xp-bar-bg { width: 100%; height: 7px; background: #22262f; border-radius: 10px; overflow: hidden; }
         .xp-bar-fill { height: 100%; width: 10%; background: linear-gradient(90deg, var(--main-green), var(--main-cyan)); border-radius: 10px; transition: width 0.5s ease; }
 
-        /* بطاقات العملتين (عند الضغط عليها تحول لصفحة الإيداع) */
+        /* بطاقات العملتين */
         .wallets-section-title { font-size: 13px; color: var(--text-gray); margin: 0 0 8px 0; display: flex; justify-content: space-between; align-items: center; }
         .wallets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
         .wallet-box {
@@ -249,19 +251,19 @@
         </div>
     </div>
 
-    <!-- قسم المحفظتين (النقاط والجنيه) - الضغط على أي منهما يحول لصفحة الإيداع -->
+    <!-- قسم المحفظتين (النقاط والجنيه) -->
     <div class="wallets-section-title">
         <span>💼 محافظي المالية</span>
-        <span style="font-size: 11px; color: var(--main-cyan);">اضغط على أي رصيد للشحن 📥</span>
+        <span style="font-size: 11px; color: var(--main-cyan);">اضغط على النقاط للسحب أو الجنيه للشحن ⚡</span>
     </div>
 
     <div class="wallets-grid">
         <!-- بطاقة رصيد النقاط -->
-        <div class="wallet-box points-card" onclick="goDeposit()">
+        <div class="wallet-box points-card" onclick="goPointsWithdraw()">
             <div class="wallet-top">🪙 رصيد النقاط</div>
             <div class="wallet-val" id="p">0</div>
             <div class="wallet-sub" id="p-egp-equiv">يعادل ≈ 0.00 ج.م</div>
-            <div class="wallet-cta">➕ شحن / تعزيز النقاط</div>
+            <div class="wallet-cta">💸 سحب النقاط كاش</div>
         </div>
 
         <!-- بطاقة رصيد الجنيه -->
@@ -344,12 +346,15 @@
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        const tid = String(new URLSearchParams(window.location.search).get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        const params = new URLSearchParams(window.location.search);
+        const tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(tg.initDataUnsafe?.user?.id || params.get('id') || localStorage.getItem('telegram_id') || "").trim();
+
         let currentUser = null;
         let allTransactions = [];
         let allStoreOrders = [];
 
-        // قوائم الألقاب لعرض لقب المستخدم في البروفايل
         const MALE_TITLES = [
             "جميل", "أنيق", "رائع", "بديع", "اخاذ", "جذاب", "خلاب", "ساحر", "متعلم", "قويم",
             "فهيم", "ذكي", "مجتهد", "مثابر", "سمح", "كريم", "كفو", "شهم", "رجل", "عنيد",
@@ -368,6 +373,10 @@
             "جبارة", "أسطورة"
         ];
 
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
         function getProfileTitle(streak, gender) {
             if (!streak || streak <= 0) return "مبتدئ (ابدأ الستريك اليوم!)";
             const list = (gender === 'female') ? FEMALE_TITLES : MALE_TITLES;
@@ -378,22 +387,23 @@
         async function load() {
             if (!tid) return;
 
-            // 1. جلب بيانات المستخدم الأساسية
+            if (typeof MegaSecurity !== 'undefined') {
+                const sec = await MegaSecurity.verifyDeviceAndAccount(client, tid);
+                if (!sec.allowed) return;
+            }
+
             let { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).maybeSingle();
             if (u) {
                 currentUser = u;
                 renderUserProfile(u);
             }
 
-            // 2. جلب طلبات المتجر الخاصة بالمستخدم
             await loadUserStoreOrders();
-
-            // 3. جلب سجل العمليات (الهيستوري)
             await loadHistoryData();
         }
 
         function renderUserProfile(u) {
-            const displayName = u.name || tg.initDataUnsafe.user?.first_name || "User";
+            const displayName = String(u.name || tg.initDataUnsafe?.user?.first_name || "User").trim() || "User";
             const pts = Number(u.points || 0);
             const egp = Number(u.egp_balance || 0);
             const totalEarned = Number(u.total_earned || pts);
@@ -406,21 +416,18 @@
             document.getElementById('name').innerText = displayName;
             document.getElementById('id-display').innerText = "ID: " + tid;
 
-            // عرض صورة تيليجرام إن وجدت أو الحرف الأول
-            const tgPhoto = tg.initDataUnsafe.user?.photo_url;
+            const tgPhoto = tg.initDataUnsafe?.user?.photo_url;
             const avatarEl = document.getElementById('avatar');
-            if (tgPhoto) {
-                avatarEl.innerHTML = `<img src="${tgPhoto}" style="width:100%; height:100%; object-fit:cover;">`;
+            if (tgPhoto && tgPhoto.startsWith('http')) {
+                avatarEl.innerHTML = `<img src="${escapeHtml(tgPhoto)}" style="width:100%; height:100%; object-fit:cover;">`;
             } else {
-                avatarEl.innerText = displayName[0].toUpperCase();
+                avatarEl.innerText = displayName.charAt(0).toUpperCase();
             }
 
-            // تحديث زر النوع واللقب
             document.getElementById('gender-btn').innerText = (gender === 'female') ? "👩 أنثى" : "🧔 ذكر";
             const currentTitle = getProfileTitle(streakDays, gender);
             document.getElementById('streak-title-badge').innerText = `🔥 اللقب: ${currentTitle}`;
 
-            // حساب المستوى وشريط الـ XP
             const level = Math.floor(streakDays / 15) + Math.floor(tasksDone / 25) + 1;
             const progressInLevel = ((streakDays % 15) / 15) * 100;
             const xpPercent = Math.min(100, Math.max(8, Math.round(progressInLevel)));
@@ -428,12 +435,10 @@
             document.getElementById('xp-percent-lbl').innerText = `${xpPercent}%`;
             document.getElementById('xp-bar-fill').style.width = `${xpPercent}%`;
 
-            // تحديث بطاقتي العملات (النقاط والجنيه)
             document.getElementById('p').innerText = pts.toLocaleString();
             document.getElementById('p-egp-equiv').innerText = `يعادل ≈ ${(pts / 1000).toFixed(2)} ج.م`;
             document.getElementById('egp').innerText = egp.toFixed(2) + " ج.م";
 
-            // تحديث شبكة الإحصائيات
             document.getElementById('stat-total-earned').innerText = totalEarned.toLocaleString();
             document.getElementById('t').innerText = tasksDone.toLocaleString();
             document.getElementById('stat-streak').innerText = `${streakDays} يوم`;
@@ -441,7 +446,6 @@
             document.getElementById('stat-valid-refs').innerText = validRefs.toLocaleString();
         }
 
-        // تبديل النوع (ذكر / أنثى) لتغيير ألقاب الستريك مباشرة من البروفايل
         async function toggleUserGender() {
             if (!currentUser) return;
             const newGender = (currentUser.gender === 'female') ? 'male' : 'female';
@@ -517,7 +521,6 @@
             }
         }
 
-        // عرض سجل طلبات المتجر وحالتها
         function renderStoreOrdersList() {
             const container = document.getElementById('history-container');
             if (!allStoreOrders || allStoreOrders.length === 0) {
@@ -531,9 +534,11 @@
                 const isEgp = o.currency === 'egp';
                 const paidTxt = isEgp ? `${o.price_paid} ج.م` : `${Number(o.price_paid).toLocaleString()} نقطة`;
 
-                let statusBadge = `<span class="order-status-pill st-pending">⏳ قيد التنفيذ</span>`;
-                if (o.status === 'Completed') statusBadge = `<span class="order-status-pill st-completed">✅ تم التسليم</span>`;
-                if (o.status === 'Rejected') statusBadge = `<span class="order-status-pill st-rejected">❌ مرفوض ومسترد</span>`;
+                let statusBadge = `<span class="order-status-pill st-pending">🔒 بالضمان</span>`;
+                if (o.status === 'Delivered') statusBadge = `<span class="order-status-pill st-pending" style="color:var(--main-cyan); border-color:var(--main-cyan);">📦 تم التسليم</span>`;
+                if (o.status === 'Completed') statusBadge = `<span class="order-status-pill st-completed">✅ مكتمل</span>`;
+                if (o.status === 'Disputed') statusBadge = `<span class="order-status-pill st-rejected">🚨 نزاع مفتوح</span>`;
+                if (o.status === 'Rejected' || o.status === 'Refunded') statusBadge = `<span class="order-status-pill st-rejected">↩️ مسترد</span>`;
 
                 container.innerHTML += `
                     <div class="history-card">
@@ -581,11 +586,7 @@
             });
         }
 
-        function escapeHtml(str) {
-            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-        // دوال التنقل (الضغط على أي رصيد يفتح صفحة الإيداع مباشرة)
+        function goPointsWithdraw() { window.location.href = `withdraw.html?id=${tid}&t=${Date.now()}`; }
         function goDeposit() { window.location.href = `deposit.html?id=${tid}&t=${Date.now()}`; }
         function goStore() { window.location.href = `store.html?id=${tid}&t=${Date.now()}`; }
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
