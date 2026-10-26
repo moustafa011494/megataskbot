@@ -124,7 +124,7 @@
             font-weight: 800;
         }
 
-        /* صندوق التحويل الفوري الداخلي بالبونص (بدون انتظار سحب) */
+        /* صندوق التحويل الفوري الداخلي بالبونص */
         .instant-convert-card {
             background: linear-gradient(135deg, rgba(255, 170, 0, 0.12), rgba(0, 242, 255, 0.08));
             border: 1.5px dashed var(--gold);
@@ -163,7 +163,7 @@
         .btn-conv-egp { background: var(--cyan); color: #000; }
         .btn-conv-pts { background: var(--gold); color: #000; }
 
-        /* اختيار وسيلة السحب الكاش */
+        /* اختيار وسيلة السحب الكاش باللوجو */
         .section-title {
             font-size: 14px;
             font-weight: bold;
@@ -176,7 +176,7 @@
         .methods-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 9px;
+            gap: 10px;
             margin-bottom: 16px;
         }
         .w-method-card {
@@ -186,29 +186,77 @@
             padding: 12px 10px;
             display: flex;
             align-items: center;
-            gap: 9px;
+            gap: 10px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.25s ease;
+            position: relative;
         }
         .w-method-card.active {
             border-color: var(--emerald);
             background: rgba(0, 230, 118, 0.1);
             box-shadow: 0 0 12px rgba(0, 230, 118, 0.18);
         }
-        .w-icon {
-            width: 36px;
-            height: 36px;
+        .w-method-card.binance-special {
+            border-color: rgba(252, 213, 53, 0.5);
+            background: linear-gradient(145deg, #211e12, #141821);
+        }
+        .w-method-card.binance-special.active {
+            border-color: var(--binance-yellow);
+            box-shadow: 0 0 15px rgba(252, 213, 53, 0.3);
+        }
+        .auto-tag {
+            position: absolute;
+            top: -8px;
+            left: 8px;
+            background: var(--emerald);
+            color: #000;
+            font-size: 9.5px;
+            font-weight: 900;
+            padding: 2px 7px;
+            border-radius: 6px;
+        }
+        .w-method-card.binance-special .auto-tag {
+            background: var(--binance-yellow);
+        }
+        .w-logo {
+            width: 38px;
+            height: 38px;
             border-radius: 10px;
+            object-fit: cover;
             background: #0b0e14;
             border: 1px solid #283248;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 19px;
             flex-shrink: 0;
         }
-        .w-info b { display: block; font-size: 12.5px; color: #fff; }
+        .w-info b { display: block; font-size: 12.5px; color: #fff; line-height: 1.3; }
         .w-info small { font-size: 10px; color: var(--text-muted); }
+
+        /* صندوق شرح الوسيلة المختارة */
+        .method-instructions-card {
+            background: #11151e;
+            border: 1px solid #283248;
+            border-right: 4px solid var(--emerald);
+            border-radius: 15px;
+            padding: 14px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .inst-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #1e2638;
+        }
+        .inst-header img {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid #333;
+        }
+        .inst-header b { font-size: 13.5px; color: var(--emerald); }
+        .inst-steps { margin: 0; padding-right: 18px; font-size: 11.5px; color: #cbd5e1; line-height: 1.75; }
 
         /* نموذج طلب السحب */
         .withdraw-form-card {
@@ -313,7 +361,6 @@
             cursor: pointer;
         }
 
-        /* شريط التنقل السفلي */
         .navbar {
             position: fixed;
             bottom: 0;
@@ -331,13 +378,12 @@
 </head>
 <body>
 
-    <!-- الشريط العلوي -->
     <div class="top-bar">
         <button class="btn-back" onclick="goStore()">↩️ العودة للمتجر</button>
         <div class="badge-merchant">💼 بوابة أرباح التجار والوسطاء</div>
     </div>
 
-    <!-- 1. لوحة أرصدة التاجر (الرصيد الجاهز للسحب + المعلق في الضمان) -->
+    <!-- 1. لوحة أرصدة التاجر -->
     <div class="merchant-hero-card">
         <div class="main-withdrawable-box">
             <span>💵 صافي أرباح المبيعات الجاهزة للسحب كاش</span>
@@ -372,12 +418,24 @@
         </div>
     </div>
 
-    <!-- 3. اختيار وسيلة السحب الخارجي (كاش / انستاباي / USDT) -->
+    <!-- 3. اختيار وسيلة السحب باللوجو -->
     <div class="section-title">
         <span>1️⃣ اختر وسيلة استلام أرباحك:</span>
         <span style="font-size: 11px; color: var(--emerald);">الحد الأدنى: <b id="min-w-lbl">20</b> ج.م</span>
     </div>
     <div id="withdraw-methods-grid" class="methods-grid"></div>
+
+    <!-- صندوق شرح طريقة السحب للوسيلة المختارة -->
+    <div id="method-instructions" class="method-instructions-card">
+        <div class="inst-header">
+            <img id="inst-logo" src="" alt="Logo">
+            <div>
+                <b id="inst-method-name">وسيلة السحب</b>
+                <div style="font-size: 11px; color: var(--text-muted);" id="inst-method-sub">أدخل بيانات الاستلام بدقة</div>
+            </div>
+        </div>
+        <ol class="inst-steps" id="inst-steps-list"></ol>
+    </div>
 
     <!-- 4. نموذج طلب السحب -->
     <div class="withdraw-form-card">
@@ -412,7 +470,6 @@
     </div>
     <div id="my-withdrawals-list"></div>
 
-    <!-- شريط التنقل السفلي -->
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
         <div onclick="goStore()" class="nav-item" style="color: var(--emerald);">🛍️<br>المتجر</div>
@@ -444,12 +501,28 @@
         let selectedWithdrawMethod = null;
         let isBusyAction = false;
 
+        const BUILTIN_LOGOS = {
+            binance: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#181A20"/><path fill="#FCD535" d="M50 20L62 32L54 40L50 36L46 40L38 32L50 20ZM32 38L40 46L36 50L40 54L32 62L20 50L32 38ZM68 38L80 50L68 62L60 54L64 50L60 46L68 38ZM50 42L58 50L50 58L42 50L50 42ZM50 64L54 60L62 68L50 80L38 68L46 60L50 64Z"/></svg>`),
+            vodafone: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#E60000"/><circle cx="50" cy="50" r="30" fill="#ffffff"/><path fill="#E60000" d="M53 26C40 28 33 38 33 50C33 61 41 70 52 70C62 70 69 62 69 53C69 43 61 38 53 38C49 38 46 40 46 40C46 33 52 28 58 27L53 26Z"/></svg>`),
+            instapay: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="ip" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6B11B4"/><stop offset="100%" stop-color="#FF5100"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#ip)"/><path fill="#fff" d="M30 32H58L48 48H68L36 74L44 52H26L30 32Z"/></svg>`),
+            wallets: "data:image/svg+xml;utf8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#0d261a"/><rect x="20" y="28" width="60" height="44" rx="10" fill="#00e676"/><circle cx="66" cy="50" r="6" fill="#0d261a"/></svg>`)
+        };
+
         let withdrawMethodsList = [
-            { id: "vf_cash", name: "فودافون كاش", icon: "🔴", hint: "أدخل رقم محفظة فودافون كاش (11 رقم)", min: 20, isCrypto: false },
-            { id: "instapay", name: "إنستا باي (InstaPay)", icon: "🟣", hint: "أدخل عنوان IPA أو رقم الهاتف المرتبط بإنستا باي", min: 20, isCrypto: false },
-            { id: "binance_pay", name: "Binance Pay (USDT)", icon: "🟡", hint: "أدخل معرف باينانس (Binance ID / UID) لاستلام USDT", min: 25, isCrypto: true },
-            { id: "et_or_we", name: "اتصالات / أورنج / WE كاش", icon: "🟢", hint: "أدخل رقم المحفظة الذكية ونوع الشبكة", min: 20, isCrypto: false }
+            { id: "binance_pay", name: "Binance Pay (USDT)", logo: BUILTIN_LOGOS.binance, hint: "أدخل معرف باينانس (Binance ID / UID) لاستلام USDT", min: 25, isCrypto: true, tag: "دولي ⚡" },
+            { id: "vf_cash", name: "فودافون كاش", logo: BUILTIN_LOGOS.vodafone, hint: "أدخل رقم محفظة فودافون كاش (11 رقم)", min: 20, isCrypto: false, tag: "كاش 🇪🇬" },
+            { id: "instapay", name: "إنستا باي (InstaPay)", logo: BUILTIN_LOGOS.instapay, hint: "أدخل عنوان IPA أو رقم الهاتف المرتبط بإنستا باي", min: 20, isCrypto: false, tag: "لحظي ⚡" },
+            { id: "et_or_we", name: "اتصالات / أورنج / WE كاش", logo: BUILTIN_LOGOS.wallets, hint: "أدخل رقم المحفظة الذكية ونوع الشبكة", min: 20, isCrypto: false, tag: "محافظ 💳" }
         ];
+
+        function resolveMethodLogo(name, customLogo) {
+            if (customLogo) return customLogo;
+            const n = String(name || "").toLowerCase();
+            if (n.includes("binance") || n.includes("بينانس") || n.includes("باينانس") || n.includes("usdt")) return BUILTIN_LOGOS.binance;
+            if (n.includes("فودافون") || n.includes("vodafone")) return BUILTIN_LOGOS.vodafone;
+            if (n.includes("انستا") || n.includes("إنستا") || n.includes("instapay")) return BUILTIN_LOGOS.instapay;
+            return BUILTIN_LOGOS.wallets;
+        }
 
         function notifyUser(txt) {
             if (tg && tg.showAlert) tg.showAlert(txt);
@@ -460,7 +533,6 @@
             return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
-        // دالة للتفريق الصارم بين سحب أرباح التاجر وسحب نقاط المهام
         function isPointsWithdrawalRecord(w) {
             const m = String(w.method || "").toLowerCase();
             const c = String(w.withdraw_code || w.tx_id || "").toUpperCase();
@@ -480,21 +552,35 @@
 
         async function loadWithdrawMethods() {
             try {
-                const { data } = await client.from('withdraw_methods').select('*').order('id', { ascending: true });
-                if (data && data.length > 0) {
-                    const customList = data.map(m => {
+                const [wRes, dRes] = await Promise.all([
+                    client.from('withdraw_methods').select('*').order('id', { ascending: true }),
+                    client.from('deposit_methods').select('name, logo')
+                ]);
+
+                const depositLogosMap = {};
+                if (dRes.data) {
+                    dRes.data.forEach(d => {
+                        if (d.name && d.logo) depositLogosMap[d.name.trim().toLowerCase()] = d.logo;
+                    });
+                }
+
+                if (wRes.data && wRes.data.length > 0) {
+                    const customList = wRes.data.map(m => {
                         const lower = (m.name || "").toLowerCase();
-                        const isCryp = lower.includes("binance") || lower.includes("usdt") || lower.includes("بينانس");
+                        const isCryp = lower.includes("binance") || lower.includes("usdt") || lower.includes("بينانس") || lower.includes("باينانس");
                         return {
                             id: "db_" + m.id,
                             name: m.name,
-                            icon: isCryp ? "🟡" : "💳",
+                            logo: resolveMethodLogo(m.name, m.logo || depositLogosMap[lower]),
                             hint: m.description || `أدخل رقم أو حساب (${m.name}) المستلم`,
                             min: Number(m.min_amount || MIN_WITHDRAW_EGP),
-                            isCrypto: isCryp
+                            isCrypto: isCryp,
+                            tag: isCryp ? "USDT ⚡" : "كاش 💳"
                         };
                     });
-                    withdrawMethodsList = customList;
+
+                    const hasBinance = customList.some(x => x.isCrypto);
+                    withdrawMethodsList = hasBinance ? customList : [withdrawMethodsList[0], ...customList];
                 }
             } catch (e) {}
 
@@ -507,8 +593,9 @@
         function renderWithdrawMethodsGrid() {
             const grid = document.getElementById('withdraw-methods-grid');
             grid.innerHTML = withdrawMethodsList.map((m, idx) => `
-                <div id="w-card-${idx}" class="w-method-card" onclick="selectWithdrawMethod(${idx})">
-                    <div class="w-icon">${m.icon}</div>
+                <div id="w-card-${idx}" class="w-method-card ${m.isCrypto ? 'binance-special' : ''}" onclick="selectWithdrawMethod(${idx})">
+                    <span class="auto-tag">${escapeHtml(m.tag || 'فوري')}</span>
+                    <img src="${m.logo}" class="w-logo" alt="${escapeHtml(m.name)}">
                     <div class="w-info">
                         <b>${escapeHtml(m.name)}</b>
                         <small>الحد الأدنى: ${m.min} ج.م</small>
@@ -528,6 +615,32 @@
             document.getElementById('min-w-lbl').innerText = selectedWithdrawMethod.min;
             document.getElementById('lbl-w-wallet').innerText = `3️⃣ بيانات الاستلام (${selectedWithdrawMethod.name}):`;
             document.getElementById('w-wallet-inp').placeholder = selectedWithdrawMethod.hint;
+
+            const instBox = document.getElementById('method-instructions');
+            const instLogo = document.getElementById('inst-logo');
+            const instName = document.getElementById('inst-method-name');
+            const instSub = document.getElementById('inst-method-sub');
+            const instSteps = document.getElementById('inst-steps-list');
+
+            instBox.style.display = 'block';
+            instLogo.src = selectedWithdrawMethod.logo;
+            instName.innerText = `سحب أرباح المبيعات عبر ${selectedWithdrawMethod.name}`;
+            instSub.innerText = selectedWithdrawMethod.hint;
+
+            if (selectedWithdrawMethod.isCrypto) {
+                instSteps.innerHTML = `
+                    <li>افتح تطبيق <b>Binance</b> وانسخ معرف الدفع <b>(Binance ID / UID)</b>.</li>
+                    <li>أدخل المبلغ بالجنيه في الخانة (2) وسيتم حساب معادله بعملة <b>USDT</b> تلقائياً.</li>
+                    <li>يصلك إشعار على البوت فور إتمام التحويل إلى حسابك.</li>
+                `;
+            } else {
+                instSteps.innerHTML = `
+                    <li>أدخل المبلغ المراد سحبه بالجنيه المصري في الخانة (2) أو اضغط <b>(الكل MAX)</b>.</li>
+                    <li>اكتب رقم المحفظة أو عنوان الدفع الصحيح في الخانة (3).</li>
+                    <li>تتم مراجعة وتحويل أرباح التجار بأولوية قصوى مع إشعارك على البوت.</li>
+                `;
+            }
+
             updateWithdrawPreview();
         }
 
@@ -590,9 +703,6 @@
             }
         }
 
-        // =========================================================================
-        // 🔥 ميزة تحويل أرباح التاجر لرصيد شراء بالبوت (+2%) أو نقاط (+10%) فوراً
-        // =========================================================================
         async function convertMerchantBalance(targetType) {
             if (!tid || !userData || isBusyAction) return;
 
@@ -633,12 +743,17 @@
                     const newMerch = Number((realMerch - amt).toFixed(2));
                     const newMainEgp = Number((Number(freshU.egp_balance || 0) + bonusEgp).toFixed(2));
 
-                    const { error } = await client.from('users').update({
-                        merchant_balance_egp: newMerch,
-                        egp_balance: newMainEgp
-                    }).eq('telegram_id', tid);
+                    const { data: updRows, error } = await client
+                        .from('users')
+                        .update({
+                            merchant_balance_egp: newMerch,
+                            egp_balance: newMainEgp
+                        })
+                        .eq('telegram_id', tid)
+                        .eq('merchant_balance_egp', realMerch)
+                        .select('id');
 
-                    if (!error) {
+                    if (!error && updRows && updRows.length > 0) {
                         await client.from('transactions').insert([{
                             telegram_id: String(tid),
                             type: 'egp',
@@ -658,12 +773,17 @@
                     const newMerch = Number((realMerch - amt).toFixed(2));
                     const newPts = Number(freshU.points || 0) + bonusPts;
 
-                    const { error } = await client.from('users').update({
-                        merchant_balance_egp: newMerch,
-                        points: newPts
-                    }).eq('telegram_id', tid);
+                    const { data: updRows, error } = await client
+                        .from('users')
+                        .update({
+                            merchant_balance_egp: newMerch,
+                            points: newPts
+                        })
+                        .eq('telegram_id', tid)
+                        .eq('merchant_balance_egp', realMerch)
+                        .select('id');
 
-                    if (!error) {
+                    if (!error && updRows && updRows.length > 0) {
                         await client.from('transactions').insert([{
                             telegram_id: String(tid),
                             type: 'points',
@@ -682,9 +802,6 @@
             }
         }
 
-        // =========================================================================
-        // 💸 إرسال طلب سحب أرباح التاجر الخارجي
-        // =========================================================================
         async function submitMerchantWithdrawal() {
             if (!tid || !userData || !selectedWithdrawMethod || isBusyAction) return;
 
@@ -710,6 +827,24 @@
             btn.innerText = "⏳ جاري التحقق وتسجيل طلب السحب...";
 
             try {
+                // 1. التحقق من عدم وجود طلب سحب تاجر معلق سابق (طلب واحد معلق فقط مسموح به)
+                const { data: myPendW } = await client
+                    .from('withdrawals')
+                    .select('*')
+                    .eq('telegram_id', String(tid))
+                    .eq('status', 'Pending');
+
+                const existingMerchantPend = (myPendW || []).find(w => !isPointsWithdrawalRecord(w));
+                if (existingMerchantPend) {
+                    return notifyUser(
+                        `⚠️ لديك طلب سحب أرباح تاجر معلق قيد المراجعة بالفعل!\n\n` +
+                        `🆔 رقم الطلب: ${existingMerchantPend.withdraw_code || existingMerchantPend.id}\n` +
+                        `💵 المبلغ: ${Number(existingMerchantPend.amount).toFixed(2)} ج.م\n\n` +
+                        `انتظر إتمام تحويله أو قم بإلغائه من السجل بالأسفل إذا أردت تعديل المبلغ أو الرقم.`
+                    );
+                }
+
+                // 2. جلب الرصيد الفعلي اللحظي من قاعدة البيانات
                 const { data: freshU, error: fErr } = await client
                     .from('users')
                     .select('name, merchant_balance_egp, is_banned')
@@ -729,11 +864,17 @@
                 const newMerchBal = Number((realMerchAvail - amt).toFixed(2));
                 const fullWalletDetails = note ? `${wallet} (${note})` : wallet;
 
-                const { error: uErr } = await client
+                // خصم ذري مشروط بتطابق الرصيد الحالي لمنع السحب المزدوج
+                const { data: updUserRows, error: uErr } = await client
                     .from('users')
                     .update({ merchant_balance_egp: newMerchBal })
-                    .eq('telegram_id', tid);
-                if (uErr) throw uErr;
+                    .eq('telegram_id', tid)
+                    .eq('merchant_balance_egp', realMerchAvail)
+                    .select('id');
+
+                if (uErr || !updUserRows || updUserRows.length === 0) {
+                    throw new Error("حدث تزامن في الرصيد، يرجى المحاولة مرة أخرى");
+                }
 
                 const { error: wErr } = await client.from('withdrawals').insert([{
                     withdraw_code: wCode,
@@ -757,31 +898,32 @@
                     ? `\n💲 *المعادل بالـ USDT:* \`${(amt / USDT_EXCHANGE_RATE).toFixed(2)} USDT\``
                     : "";
 
-                await client.from('bot_messages').insert([{
-                    telegram_id: ADMIN_MASTER_ID,
-                    message:
-                        `💸 *طلب سحب أرباح تاجر جديد!* 🔔\n` +
-                        `━━━━━━━━━━━━━━━\n` +
-                        `🆔 *كود الطلب:* \`${wCode}\`\n` +
-                        `👤 *التاجر:* ${freshU.name || 'عضو'} (\`${tid}\`)\n` +
-                        `💵 *المبلغ:* *${amt.toFixed(2)} ج.م*${cryptoNote}\n` +
-                        `💳 *الوسيلة:* ${selectedWithdrawMethod.name}\n` +
-                        `📥 *الحساب المستلم:* \`${fullWalletDetails}\``,
-                    status: 'pending'
-                }]);
-
-                await client.from('bot_messages').insert([{
-                    telegram_id: String(tid),
-                    message:
-                        `✅ *تم استلام طلب سحب أرباحك بنجاح!*\n` +
-                        `━━━━━━━━━━━━━━━\n` +
-                        `🆔 *رقم الطلب:* \`${wCode}\`\n` +
-                        `💵 *المبلغ:* ${amt.toFixed(2)} ج.م\n` +
-                        `💳 *الوسيلة:* ${selectedWithdrawMethod.name}\n` +
-                        `📥 *المستلم:* \`${fullWalletDetails}\`\n\n` +
-                        `⏳ جاري مراجعة الطلب وتحويل أرباحك في أسرع وقت.`,
-                    status: 'pending'
-                }]);
+                await client.from('bot_messages').insert([
+                    {
+                        telegram_id: ADMIN_MASTER_ID,
+                        message:
+                            `💸 *طلب سحب أرباح تاجر جديد!* 🔔\n` +
+                            `━━━━━━━━━━━━━━━\n` +
+                            `🆔 *كود الطلب:* \`${wCode}\`\n` +
+                            `👤 *التاجر:* ${freshU.name || 'عضو'} (\`${tid}\`)\n` +
+                            `💵 *المبلغ:* *${amt.toFixed(2)} ج.م*${cryptoNote}\n` +
+                            `💳 *الوسيلة:* ${selectedWithdrawMethod.name}\n` +
+                            `📥 *الحساب المستلم:* \`${fullWalletDetails}\``,
+                        status: 'pending'
+                    },
+                    {
+                        telegram_id: String(tid),
+                        message:
+                            `✅ *تم استلام طلب سحب أرباحك بنجاح!*\n` +
+                            `━━━━━━━━━━━━━━━\n` +
+                            `🆔 *رقم الطلب:* \`${wCode}\`\n` +
+                            `💵 *المبلغ:* ${amt.toFixed(2)} ج.م\n` +
+                            `💳 *الوسيلة:* ${selectedWithdrawMethod.name}\n` +
+                            `📥 *المستلم:* \`${fullWalletDetails}\`\n\n` +
+                            `⏳ جاري مراجعة الطلب وتحويل أرباحك في أسرع وقت.`,
+                        status: 'pending'
+                    }
+                ]);
 
                 document.getElementById('w-amount-inp').value = "";
                 document.getElementById('w-wallet-inp').value = "";
@@ -800,9 +942,6 @@
             }
         }
 
-        // =========================================================================
-        // 📂 عرض سجل سحوبات التاجر فقط (مع عزل سحوبات نقاط البوت والمهام تماماً)
-        // =========================================================================
         async function loadMyWithdrawalsHistory() {
             const box = document.getElementById('my-withdrawals-list');
             if (!tid) return;
@@ -814,7 +953,6 @@
                 .order('id', { ascending: false })
                 .limit(20);
 
-            // فلترة السجل ليظهر سحوبات أرباح التاجر فقط ويستبعد سحوبات النقاط والمهام
             const merchantOnlyList = (data || []).filter(w => !isPointsWithdrawalRecord(w));
 
             if (merchantOnlyList.length === 0) {
@@ -852,7 +990,6 @@
 
             isBusyAction = true;
             try {
-                // 1. فحص الطلب من قاعدة البيانات أولاً للتأكد من أنه طلب سحب تاجر وليس طلب سحب نقاط
                 const { data: checkW, error: chkErr } = await client
                     .from('withdrawals')
                     .select('*')
@@ -870,7 +1007,6 @@
                     return notifyUser("🚫 هذا الطلب خاص بسحب نقاط المهام وليس أرباح التاجر، لا يمكن استرداده إلى محفظة التاجر!");
                 }
 
-                // 2. تحديث ذري مشروط بأن تكون الحالة Pending
                 const { data: updatedW, error: wErr } = await client
                     .from('withdrawals')
                     .update({ status: 'Cancelled' })
