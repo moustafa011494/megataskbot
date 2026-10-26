@@ -20,6 +20,7 @@
             --main-cyan: #00f2ff;
             --gold: #ffaa00;
             --violet: #9d4edd;
+            --crimson: #ff3d57;
             --dark-bg: #0d0f12; 
             --card-bg: #1a1d23; 
             --text-gray: #9ca3af; 
@@ -30,6 +31,41 @@
         .header { padding: 18px 15px 10px; display: flex; justify-content: space-between; align-items: center; }
         .user-badge { background: var(--card-bg); padding: 5px 15px; border-radius: 20px; font-size: 12px; border: 1px solid #2d333d; color: var(--main-green); font-weight: bold; }
         
+        /* زر جرس الإشعارات العلوي */
+        .header-right-box { display: flex; align-items: center; gap: 10px; }
+        .notif-bell-btn {
+            position: relative;
+            background: var(--card-bg);
+            border: 1px solid #2d333d;
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .notif-bell-btn:active { transform: scale(0.92); border-color: var(--main-cyan); }
+        .notif-badge-dot {
+            display: none;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--crimson);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 900;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 4px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 8px rgba(255, 61, 87, 0.6);
+        }
+
         /* حاوية العملتين جنباً إلى جنب */
         .dual-balance-wrapper { padding: 0 15px; margin-bottom: 16px; }
         .dual-balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
@@ -222,6 +258,23 @@
         .wheel-container-box { position: relative; width: 260px; height: 260px; margin: 15px auto; display: flex; align-items: center; justify-content: center; }
         .wheel-pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 12px solid transparent; border-right: 12px solid transparent; border-top: 22px solid #ff3b5c; z-index: 10; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
 
+        /* كروت الإشعارات داخل نافذة الجرس */
+        .notif-item-card {
+            background: #101319;
+            border: 1px solid #262c3a;
+            border-right: 3px solid var(--main-cyan);
+            border-radius: 12px;
+            padding: 11px 12px;
+            margin-bottom: 9px;
+            text-align: right;
+            font-size: 12px;
+            line-height: 1.55;
+        }
+        .notif-item-card.unread {
+            border-right-color: var(--main-green);
+            background: rgba(0, 210, 106, 0.05);
+        }
+
         /* شريط تقدم شروط سحب النقاط */
         .req-prog-box {
             background: #0d1016;
@@ -235,6 +288,7 @@
         .req-bar-bg { width: 100%; height: 7px; background: #1a202c; border-radius: 8px; overflow: hidden; margin-top: 5px; }
         .req-bar-fill { height: 100%; background: var(--main-green); width: 0%; transition: width 0.3s; }
 
+        /* إصلاح كلاس شريط التنقل السفلي */
         .navbar { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(26, 29, 35, 0.98); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #2d333d; z-index: 1000; }
         .nav-item { text-align: center; color: var(--text-gray); font-size: 11px; text-decoration: none; cursor: pointer; }
         .nav-item.active { color: var(--main-green); }
@@ -257,6 +311,19 @@
             <input type="text" id="ref-input" class="modal-input" placeholder="ENTER CODE (ID)">
             <button class="btn-confirm-ad" onclick="submitRegistration(false)">ابدأ الآن 🚀</button>
             <button onclick="submitRegistration(true)" style="background: none; border: none; color: #777; margin-top: 12px; cursor: pointer;">تخطى ⬅</button>
+        </div>
+    </div>
+
+    <!-- 1-B. نافذة مركز الإشعارات (🔔 Notifications Modal) -->
+    <div id="notifications-modal" class="modal-overlay">
+        <div class="modal-box" style="border-color: var(--main-cyan);">
+            <h3 style="color: var(--main-cyan); margin: 0 0 10px;">🔔 إشعارات وتنبيهات المنصة</h3>
+            <div id="notifications-list-box" style="max-height: 55vh; overflow-y: auto; margin-bottom: 12px;">
+                <div style="padding: 20px; color: var(--text-gray); font-size: 12px;">لا توجد إشعارات جديدة حالياً.</div>
+            </div>
+            <button class="btn-confirm-ad" style="background: #252932; color: #fff;" onclick="closeNotificationsModal()">
+                إغلاق
+            </button>
         </div>
     </div>
 
@@ -381,7 +448,13 @@
 
     <div class="header">
         <div class="user-badge" id="user-lvl">LEVEL 1</div>
-        <div style="color: var(--text-gray); font-size: 12px;">WELCOME BACK</div>
+        <div class="header-right-box">
+            <div style="color: var(--text-gray); font-size: 12px;">WELCOME BACK</div>
+            <div class="notif-bell-btn" onclick="openNotificationsModal()" title="الإشعارات">
+                🔔
+                <span id="notif-count-badge" class="notif-badge-dot">0</span>
+            </div>
+        </div>
     </div>
 
     <!-- قسم العملتين (النقاط على جنب والجنيه على جنب) -->
@@ -501,6 +574,11 @@
         let userId = "";
         let userData = null;
         let isBusyTransaction = false;
+        let cachedNotifications = [];
+
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
 
         async function init() {
             const params = new URLSearchParams(window.location.search);
@@ -527,7 +605,6 @@
             const { data: user } = await client.from('users').select('*').eq('telegram_id', userId).maybeSingle();
             userData = user || null;
 
-            // إظهار نافذة كود الدعوة إذا كان المستخدم جديداً أو تم إنشاؤه بواسطة /start بدون كود دعوة ولم يتخط النافذة بعد
             const seenRefPrompt = localStorage.getItem(`ref_prompt_seen_${userId}`) === '1';
             const isBrandNewFromBot = user && !user.referred_by && Number(user.total_tasks || 0) === 0 && Number(user.streak || 0) === 0 && Number(user.points || 0) === 0;
 
@@ -536,7 +613,7 @@
             } else {
                 updateUI();
                 startStreakModule();
-                checkAndShowNotifications();
+                loadUserNotificationsBadge();
             }
         }
 
@@ -562,37 +639,62 @@
             }
         }
 
-        async function checkAndShowNotifications() {
+        // =========================================================================
+        // 🔔 نظام جرس ونافذة الإشعارات المدمجة
+        // =========================================================================
+        async function loadUserNotificationsBadge() {
             try {
-                let { data: unreadNotifs, error } = await client
+                const { data: notifs, error } = await client
                     .from('user_notifications')
                     .select('*')
                     .eq('user_id', userId)
-                    .eq('is_read', false);
+                    .order('id', { ascending: false })
+                    .limit(20);
 
-                if (error || !unreadNotifs || unreadNotifs.length === 0) return;
+                if (error || !notifs) return;
+                cachedNotifications = notifs;
 
-                const methodNotifs = unreadNotifs.filter(n => n.message && (n.message.includes('ميثود') || n.message.includes('إضافة')));
-                const otherNotifs = unreadNotifs.filter(n => n.message && !n.message.includes('ميثود') && !n.message.includes('إضافة'));
-
-                const idsToMark = unreadNotifs.map(n => n.id);
-
-                if (methodNotifs.length > 1) {
-                    tg.showAlert(`🔔 إشعارات جديدة:\n\nتم إضافة ${methodNotifs.length} ميثودات وتحديثات جديدة أثناء غيابك! تفقد قسم الميثودات للاستفادة منها.`);
-                } else if (methodNotifs.length === 1) {
-                    tg.showAlert((methodNotifs[0].title || "تنبيه جديد") + "\n\n" + methodNotifs[0].message);
-                }
-
-                otherNotifs.forEach(n => {
-                    tg.showAlert((n.title || "تنبيه") + "\n\n" + n.message);
-                });
-
-                if (idsToMark.length > 0) {
-                    await client.from('user_notifications').update({ is_read: true }).in('id', idsToMark);
+                const unreadCount = notifs.filter(n => !n.is_read).length;
+                const badgeEl = document.getElementById('notif-count-badge');
+                if (unreadCount > 0) {
+                    badgeEl.style.display = 'flex';
+                    badgeEl.innerText = unreadCount > 9 ? '9+' : unreadCount;
+                } else {
+                    badgeEl.style.display = 'none';
                 }
             } catch (e) {
                 console.error("Notification check error:", e);
             }
+        }
+
+        async function openNotificationsModal() {
+            const box = document.getElementById('notifications-list-box');
+            document.getElementById('notifications-modal').style.display = 'flex';
+
+            if (!cachedNotifications || cachedNotifications.length === 0) {
+                box.innerHTML = `<div style="padding: 20px; color: var(--text-gray); font-size: 12px;">📭 لا توجد إشعارات مسجلة حتى الآن.</div>`;
+                return;
+            }
+
+            box.innerHTML = cachedNotifications.map(n => `
+                <div class="notif-item-card ${!n.is_read ? 'unread' : ''}">
+                    <b style="color: ${!n.is_read ? 'var(--main-green)' : 'var(--main-cyan)'}; display:block; margin-bottom:4px;">
+                        ${escapeHtml(n.title || '🔔 تنبيه من المنصة')}
+                    </b>
+                    <div style="color: #e2e8f0; white-space: pre-wrap;">${escapeHtml(n.message || '')}</div>
+                </div>
+            `).join("");
+
+            const unreadIds = cachedNotifications.filter(n => !n.is_read).map(n => n.id);
+            if (unreadIds.length > 0) {
+                document.getElementById('notif-count-badge').style.display = 'none';
+                cachedNotifications.forEach(n => { n.is_read = true; });
+                await client.from('user_notifications').update({ is_read: true }).in('id', unreadIds);
+            }
+        }
+
+        function closeNotificationsModal() {
+            document.getElementById('notifications-modal').style.display = 'none';
         }
 
         async function submitRegistration(skip = false) {
@@ -630,6 +732,7 @@
                     .from('users')
                     .update({ referred_by: validRef, points: newPts, total_earned: newTot })
                     .eq('telegram_id', userId)
+                    .is('referred_by', null)
                     .select()
                     .single();
                 if (!error && data) userData = data;
@@ -641,6 +744,7 @@
             }
             updateUI();
             startStreakModule();
+            loadUserNotificationsBadge();
         }
 
         function updateUI() {
@@ -829,12 +933,20 @@
                     return tg.showAlert(`⚠️ يجب إكمال شروط السحب أولاً (${REQ_WITHDRAW_POINTS.toLocaleString()} نقطة + ${REQ_WITHDRAW_TASKS} مهمة منفذة)!`);
                 }
 
-                // استخدام بادئة PTS- لتمييز سحب النقاط والمهام عن سحب التجار MWTH-
                 const wCode = "PTS-" + Math.floor(100000 + Math.random() * 900000);
                 const newPts = realPts - REQ_WITHDRAW_POINTS;
 
-                const { error: uErr } = await client.from('users').update({ points: newPts }).eq('telegram_id', userId);
-                if (uErr) throw uErr;
+                // تحديث مشروط بالرصيد الحالي لمنع السحب المزدوج
+                const { data: updRows, error: uErr } = await client
+                    .from('users')
+                    .update({ points: newPts })
+                    .eq('telegram_id', userId)
+                    .eq('points', realPts)
+                    .select('points');
+
+                if (uErr || !updRows || updRows.length === 0) {
+                    throw new Error("حدث تزامن في العملية، حاول مرة أخرى");
+                }
 
                 await client.from('withdrawals').insert([{
                     withdraw_code: wCode,
@@ -930,6 +1042,7 @@
                 const newEgpBalance = Number((currentEgp - egpAmount).toFixed(2));
                 const newPointsBalance = Number(freshU.points || 0) + pointsToAdd;
 
+                // تحديث مشروط بالرصيد الحالي لمنع التلاعب بالضغط المزدوج
                 const { data, error } = await client
                     .from('users')
                     .update({
@@ -937,6 +1050,7 @@
                         points: newPointsBalance
                     })
                     .eq('telegram_id', userId)
+                    .eq('egp_balance', currentEgp)
                     .select()
                     .single();
 
