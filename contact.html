@@ -114,6 +114,12 @@
         .channel-btn.tg-bot { border-color: rgba(0, 229, 255, 0.45); }
         .channel-btn.tg-chan { border-color: rgba(157, 78, 221, 0.45); }
         .channel-btn.email-ch { border-color: rgba(255, 179, 0, 0.45); }
+        .channel-btn.proofs-ch {
+            grid-column: span 2;
+            border-color: rgba(0, 230, 118, 0.55);
+            background: linear-gradient(135deg, rgba(0, 230, 118, 0.12), rgba(17, 22, 33, 0.95));
+            justify-content: center;
+        }
 
         .ch-icon {
             width: 38px; height: 38px; border-radius: 11px;
@@ -318,6 +324,43 @@
             font-size: 12px;
         }
 
+        /* نافذة خيارات إرسال البريد الإلكتروني (Gmail / تطبيق البريد / نسخ) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 7, 12, 0.9);
+            backdrop-filter: blur(6px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-box {
+            background: var(--card-bg);
+            border: 1.5px solid var(--amber);
+            border-radius: 22px;
+            padding: 20px;
+            width: 100%;
+            max-width: 370px;
+            text-align: center;
+        }
+        .email-option-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: none;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
         .navbar {
             position: fixed;
             bottom: 0;
@@ -345,7 +388,7 @@
 
     <div class="hero-card">
         <h1>🎧 تواصل معنا ومركز المكافآت</h1>
-        <p>تواصل مع الإدارة مباشرة، أبلغ عن أي ثغرة واحصل على مكافأة مالية، اقترح مميزات جديدة، أو قيّم تجربتك في البوت!</p>
+        <p>تواصل مع الإدارة مباشرة، تابع إثباتات السحب الحية، أبلغ عن أي ثغرة واحصل على مكافأة مالية، أو قيّم تجربتك في البوت!</p>
     </div>
 
     <div class="direct-channels-grid">
@@ -376,8 +419,17 @@
         <div class="channel-btn email-ch" onclick="openExternalContact('email')">
             <div class="ch-icon">📧</div>
             <div class="ch-info">
-                <b style="color: var(--amber);">البريد الرسمي</b>
-                <span>للإعلانات والشراكات</span>
+                <b style="color: var(--amber);">البريد الرسمي (Gmail)</b>
+                <span>إرسال رسالة جديدة للإدارة</span>
+            </div>
+        </div>
+
+        <!-- قناة إثباتات السحب الرسمية -->
+        <div class="channel-btn proofs-ch" onclick="openExternalContact('tg_proofs')">
+            <div class="ch-icon" style="background: rgba(0, 230, 118, 0.16); border: 1px solid var(--emerald);">💸</div>
+            <div class="ch-info" style="text-align: right;">
+                <b style="color: var(--emerald); font-size: 13.5px;">قناة إثباتات السحب الرسمية (@MegaTask_Proofs) ✅</b>
+                <span style="color: #cbd5e1; font-size: 11px;">شاهد إثباتات دفع وسحب أرباح الأعضاء والتجار لحظة بلحظة!</span>
             </div>
         </div>
     </div>
@@ -570,6 +622,33 @@
         </div>
     </div>
 
+    <!-- 📧 نافذة إرسال رسالة بريد إلكتروني عبر Gmail للبريد الرسمي -->
+    <div id="email-compose-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div style="font-size: 42px; margin-bottom: 6px;">📧</div>
+            <h3 style="color: var(--amber); margin: 0 0 6px;">مراسلة البريد الرسمي للبوت</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 10px;">
+                البريد الرسمي للإدارة والشراكات والدعم:
+            </p>
+            <div style="background: #06080c; border: 1px dashed var(--amber); border-radius: 10px; padding: 10px; font-family: monospace; font-size: 13px; color: var(--cyan); margin-bottom: 14px; direction: ltr; user-select: all;">
+                mostafashiref011494@gmail.com
+            </div>
+
+            <button class="email-option-btn" style="background: linear-gradient(135deg, #ea4335, #c5221f); color: #fff;" onclick="launchGmailComposeWindow()">
+                ✉️ فتح نافذة رسالة جديدة في Gmail الآن
+            </button>
+            <button class="email-option-btn" style="background: var(--amber); color: #000;" onclick="launchDefaultMailApp()">
+                📱 فتح تطبيق البريد الافتراضي بالهاتف
+            </button>
+            <button class="email-option-btn" style="background: #1b2233; color: var(--emerald); border: 1px solid var(--emerald);" onclick="copyOfficialEmail()">
+                📋 نسخ عنوان البريد الإلكتروني
+            </button>
+            <button class="email-option-btn" style="background: #252b3b; color: #cbd5e1; margin-bottom: 0;" onclick="document.getElementById('email-compose-modal').style.display='none'">
+                إغلاق
+            </button>
+        </div>
+    </div>
+
     <nav class="navbar">
         <div onclick="goHome()" class="nav-item">🏠<br>الرئيسية</div>
         <div onclick="goTasks()" class="nav-item">📋<br>المهام</div>
@@ -584,7 +663,7 @@
 
         const CONTACT_CONFIG = {
             ADMIN_TELEGRAM_ID: "875021647",
-            PROOFS_CHANNEL_ID: "@MegaTask_Proofs",
+            PROOFS_CHANNEL_URL: "https://t.me/MegaTask_Proofs",
             WHATSAPP_URL: "https://wa.me/201022647804?text=" + encodeURIComponent("مرحباً إدارة MegaTask، أحتاج للمساعدة بخصوص البوت:"),
             TG_SUPPORT_BOT_URL: "https://t.me/MegaTask_group",
             TG_CHANNEL_URL: "https://t.me/MegaTask_Bott",
@@ -596,19 +675,22 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        let tid = String(
-            tg?.initDataUnsafe?.user?.id ||
-            params.get('id') ||
-            localStorage.getItem('telegram_id') ||
-            localStorage.getItem('megatask_uid') ||
-            ""
-        ).trim();
+        let tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(
+                tg?.initDataUnsafe?.user?.id ||
+                params.get('id') ||
+                localStorage.getItem('telegram_id') ||
+                localStorage.getItem('megatask_uid') ||
+                ""
+            ).trim();
         if (tid === "undefined" || tid === "null") tid = "";
 
         let userData = null;
         let selectedBugSeverity = "متوسطة";
         let selectedStars = 5;
         let attachedImages = { bug: null, issue: null };
+        let isSubmittingTicket = false;
 
         function notifyUser(txt) {
             if (tg && tg.showAlert) tg.showAlert(txt);
@@ -621,12 +703,13 @@
 
         async function initContactPage() {
             if (tid) {
+                if (typeof MegaSecurity !== 'undefined') {
+                    const sec = await MegaSecurity.verifyDeviceAndAccount(client, tid);
+                    if (!sec.allowed) return;
+                }
                 try {
                     const { data } = await client.from('users').select('*').eq('telegram_id', tid).maybeSingle();
                     if (data) userData = data;
-                    if (typeof MegaSecurity !== 'undefined') {
-                        MegaSecurity.verifyDeviceAndAccount(client, tid).catch(() => {});
-                    }
                 } catch (e) {}
             }
             loadMyTickets();
@@ -638,8 +721,9 @@
             if (type === 'whatsapp') url = CONTACT_CONFIG.WHATSAPP_URL;
             else if (type === 'tg_support') url = CONTACT_CONFIG.TG_SUPPORT_BOT_URL;
             else if (type === 'tg_channel') url = CONTACT_CONFIG.TG_CHANNEL_URL;
+            else if (type === 'tg_proofs') url = CONTACT_CONFIG.PROOFS_CHANNEL_URL;
             else if (type === 'email') {
-                window.location.href = `mailto:${CONTACT_CONFIG.SUPPORT_EMAIL}?subject=MegaTask Support (ID: ${tid})`;
+                document.getElementById('email-compose-modal').style.display = 'flex';
                 return;
             }
 
@@ -650,6 +734,36 @@
             } else {
                 window.open(url, "_blank");
             }
+        }
+
+        // فتح نافذة إرسال رسالة جديدة في Gmail مباشرة مع ملء الإيميل الرسمي ومعرف المستخدم تلقائياً
+        function launchGmailComposeWindow() {
+            const subject = encodeURIComponent(`دعم منصة MegaTask - المستخدم (ID: ${tid || 'New'})`);
+            const body = encodeURIComponent(`مرحباً إدارة MegaTask،\nمعرف حسابي في البوت: ${tid}\n\nتفاصيل الرسالة:\n`);
+            const gmailWebUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${CONTACT_CONFIG.SUPPORT_EMAIL}&su=${subject}&body=${body}`;
+
+            document.getElementById('email-compose-modal').style.display = 'none';
+            if (tg && typeof tg.openLink === 'function') {
+                tg.openLink(gmailWebUrl);
+            } else {
+                window.open(gmailWebUrl, "_blank");
+            }
+        }
+
+        function launchDefaultMailApp() {
+            const subject = encodeURIComponent(`MegaTask Support (ID: ${tid || 'User'})`);
+            const body = encodeURIComponent(`مرحباً إدارة MegaTask،\nمعرف حسابي: ${tid}\n\n`);
+            const mailtoUrl = `mailto:${CONTACT_CONFIG.SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+
+            document.getElementById('email-compose-modal').style.display = 'none';
+            window.open(mailtoUrl, "_blank");
+        }
+
+        function copyOfficialEmail() {
+            navigator.clipboard.writeText(CONTACT_CONFIG.SUPPORT_EMAIL).then(() => {
+                document.getElementById('email-compose-modal').style.display = 'none';
+                notifyUser(`✅ تم نسخ البريد الرسمي للإدارة:\n${CONTACT_CONFIG.SUPPORT_EMAIL}`);
+            });
         }
 
         function switchTab(tabKey, el) {
@@ -699,9 +813,10 @@
         }
 
         // =========================================================================
-        // 📤 إرسال التذكرة / الثغرة / الاقتراح / التقييم (مصحح بالكامل بدون .catch)
+        // 📤 إرسال التذكرة / الثغرة / الاقتراح / التقييم (مؤمن ضد الضغط المزدوج)
         // =========================================================================
         async function submitTicket(category) {
+            if (isSubmittingTicket) return;
             if (!tid) return notifyUser("❌ يرجى فتح الصفحة من داخل البوت أولاً.");
 
             const ticketCode = "TKT-" + Math.floor(100000 + Math.random() * 900000);
@@ -757,6 +872,7 @@
             }
 
             const btn = document.getElementById(btnId);
+            isSubmittingTicket = true;
             btn.disabled = true;
             const origText = btn.innerText;
             btn.innerText = "⏳ جاري الإرسال...";
@@ -775,15 +891,12 @@
                     status: 'Pending'
                 };
 
-                // 1. الحفظ في جدول support_tickets بطريقة صحيحة متوافقة مع Supabase v2
                 await client.from('support_tickets').insert([payload]);
 
-                // 2. الحفظ أيضاً في الذاكرة المحلية ليظهر للمستخدم فوراً
                 const localList = JSON.parse(localStorage.getItem(`my_tickets_${tid}`) || "[]");
                 localList.unshift({ ...payload, created_at: new Date().toISOString() });
                 localStorage.setItem(`my_tickets_${tid}`, JSON.stringify(localList.slice(0, 20)));
 
-                // 3. إرسال إشعار فوري للأدمن في شات تليجرام
                 const catBadges = {
                     bug: "🛡️ *بلاغ عن ثغرة جديدة (Bug Bounty)*",
                     issue: "🛠️ *تذكرة دعم فني / مشكلة مستخدم*",
@@ -806,14 +919,12 @@
                     status: 'pending'
                 }]);
 
-                // 4. إرسال تأكيد للمستخدم نفسه في شات البوت
                 await client.from('bot_messages').insert([{
                     telegram_id: String(tid),
                     message: `✅ *تم استلام رسالتك في مركز دعم MegaTask بنجاح!*\n━━━━━━━━━━━━━━━\n🆔 *كود التذكرة:* \`${ticketCode}\`\n📌 *الموضوع:* ${subject}\n⏳ *الحالة:* قيد المراجعة من الإدارة وسيتواصل معك الدعم الفني قريباً.`,
                     status: 'pending'
                 }]);
 
-                // تفريغ الحقول بعد الإرسال
                 if (category === 'bug') { document.getElementById('bug-desc').value = ""; document.getElementById('bug-img').value = ""; attachedImages.bug = null; }
                 if (category === 'issue') { document.getElementById('issue-subject').value = ""; document.getElementById('issue-desc').value = ""; document.getElementById('issue-img').value = ""; attachedImages.issue = null; }
                 if (category === 'suggestion') { document.getElementById('suggest-title').value = ""; document.getElementById('suggest-desc').value = ""; }
@@ -825,6 +936,7 @@
                 console.error(e);
                 notifyUser("❌ حدث خطأ أثناء الإرسال: " + (e.message || ""));
             } finally {
+                isSubmittingTicket = false;
                 btn.disabled = false;
                 btn.innerText = origText;
             }
@@ -900,7 +1012,7 @@
                 reviews = [
                     { user_name: "أحمد محمد", rating: 5, message: "بصراحة أفضل بوت مهام ومتجر تعاملت معه، صادق جداً وسريع!" },
                     { user_name: "Karim Adel", rating: 5, message: "قسم الألعاب وأدوات المطورين جامد جداً والشحن وصلني في دقيقتين." },
-                    { user_name: "محمود طارق", rating: 5, message: "فكرة تحويل الجنيه لنقاط مع بونص 20% ممتازة للربح والترويج." }
+                    { user_name: "محمود طارق", rating: 5, message: "نظام الوسيط المالي في المتجر ممتاز ويضمن حق البائع والمشتري." }
                 ];
             }
 
