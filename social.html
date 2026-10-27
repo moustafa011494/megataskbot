@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>MegaTask - التحميل السحابي الشامل</title>
     
     <!-- سكريبت إعلانات Monetag المدمج داخل الصفحة -->
@@ -10,6 +11,7 @@
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="security.js"></script>
     <style>
         :root {
             --main-green: #00d26a;
@@ -25,6 +27,7 @@
             margin: 0;
             padding: 0;
             font-family: 'Segoe UI', Tahoma, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -173,7 +176,7 @@
             outline: none;
         }
 
-        /* أزرار التحميل (مجاني بالإعلان +كسب نقاط / أو فوري بالنقاط) */
+        /* أزرار التحميل */
         .download-actions {
             display: flex;
             flex-direction: column;
@@ -206,6 +209,7 @@
             transition: 0.2s;
         }
         .btn-dl-vip:active { transform: scale(0.98); }
+        .btn-dl-vip:disabled { opacity: 0.6; cursor: not-allowed; }
 
         /* قسم سجل التحميلات */
         .history-section {
@@ -370,8 +374,13 @@
         const client = supabase.createClient(S_URL, S_KEY);
 
         const params = new URLSearchParams(window.location.search);
-        const userId = String(params.get('id') || tg.initDataUnsafe.user?.id || "").trim();
+        const userId = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(tg.initDataUnsafe?.user?.id || params.get('id') || localStorage.getItem('telegram_id') || "").trim();
+
+        const MAX_DAILY_DL_REWARDS = 10;
         let userPoints = 0;
+        let isBusyDownload = false;
 
         const PLATFORM_ICONS = {
             tiktok: "🎵 تيك توك",
@@ -383,8 +392,22 @@
             other: "🌐 رابط مباشر"
         };
 
+        function escapeHtml(str) {
+            return String(str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function getTodayKey() {
+            const d = new Date();
+            return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+        }
+
         async function init() {
             if (userId) {
+                if (typeof MegaSecurity !== 'undefined') {
+                    const sec = await MegaSecurity.verifyDeviceAndAccount(client, userId);
+                    if (!sec.allowed) return;
+                }
+
                 const { data } = await client.from('users').select('points').eq('telegram_id', userId).maybeSingle();
                 if (data) {
                     userPoints = Number(data.points || 0);
@@ -401,7 +424,6 @@
             qSelect.style.opacity = (mode === 'audio') ? '0.4' : '1';
         }
 
-        // التعرف الذكي على المنصة وتنوير الأيقونة
         function getPlatformFromUrl(url) {
             const u = url.toLowerCase();
             if (u.includes("tiktok.com")) return "tiktok";
@@ -447,21 +469,24 @@
             return url;
         }
 
-        // 1️⃣ الخيار الأول: مشاهدة إعلان Monetag داخل الصفحة + إرسال الفيديو للشات + مكافأة +2 نقطة
         function startDownloadWithAd() {
+            if (isBusyDownload) return;
             const videoUrl = validateInputUrl();
             if (!videoUrl) return;
 
             const btn = document.getElementById('btn-ad-dl');
 
             if (typeof show_10959333 === 'function') {
+                isBusyDownload = true;
                 btn.disabled = true;
                 btn.innerText = "⏳ جاري عرض الإعلان...";
 
                 show_10959333().then(async () => {
+                    isBusyDownload = false;
                     await queueDownloadJob(videoUrl, true);
                 }).catch((err) => {
                     console.error("Ad error:", err);
+                    isBusyDownload = false;
                     btn.disabled = false;
                     btn.innerText = "📺 شاهد إعلان وحمّل مجاناً (+2 نقطة هدية 🎁)";
                     tg.showAlert("❌ لم تكتمل مشاهدة الإعلان! شاهد الإعلان للنهاية لبدء التحميل واستلام النقاط.");
@@ -471,51 +496,74 @@
             }
         }
 
-        // 2️⃣ الخيار الثاني: تحميل فوري بدون إعلان مقابل خصم 5 نقاط
         async function startInstantVipDownload() {
+            if (isBusyDownload) return;
             const videoUrl = validateInputUrl();
             if (!videoUrl) return;
-
-            if (userPoints < 5) {
-                return tg.showAlert("❌ رصيد نقاطك غير كافٍ للتحميل الفوري بدون إعلان (مطلوب 5 نقاط)!\n\n💡 استخدم الزر الأخضر للتحميل مجاناً بمشاهدة إعلان واكسب +2 نقطة!");
-            }
 
             if (!confirm("⚡ هل تريد بدء التحميل الفوري بدون إعلانات مقابل خصم 5 نقاط من رصيدك؟")) return;
 
             await queueDownloadJob(videoUrl, false);
         }
 
-        // ⭐ إرسال أمر التحميل مباشرة لسيرفر البايثون عبر Supabase وحفظ السجل
         async function queueDownloadJob(videoUrl, isAdReward) {
+            if (isBusyDownload) return;
             const btnAd = document.getElementById('btn-ad-dl');
             const btnVip = document.getElementById('btn-vip-dl');
             const mode = document.getElementById('downloadMode').value;
             const quality = document.getElementById('videoQuality').value;
             const platform = getPlatformFromUrl(videoUrl);
 
+            isBusyDownload = true;
             btnAd.disabled = true;
             btnVip.disabled = true;
             btnAd.innerText = "🚀 جاري إرسال الأمر للبوت...";
 
             try {
-                // 1. تحديث النقاط (إضافة +2 لو شاهد إعلان، أو خصم 5 لو VIP)
-                const ptsDelta = isAdReward ? 2 : -5;
-                const newPoints = Math.max(0, userPoints + ptsDelta);
+                // 1. جلب الرصيد الفعلي اللحظي من قاعدة البيانات قبل الخصم أو الإضافة
+                const { data: freshU, error: uErr } = await client
+                    .from('users')
+                    .select('points, total_earned, is_banned')
+                    .eq('telegram_id', userId)
+                    .single();
 
-                const { data: uData } = await client.from('users').select('total_earned').eq('telegram_id', userId).maybeSingle();
-                const updateUserPayload = { points: newPoints };
-                if (isAdReward && uData) {
-                    updateUserPayload.total_earned = (uData.total_earned || 0) + 2;
+                if (uErr || !freshU || freshU.is_banned) {
+                    throw new Error("تعذر التحقق من الحساب");
                 }
-                await client.from('users').update(updateUserPayload).eq('telegram_id', userId);
 
-                await client.from('transactions').insert([{
-                    telegram_id: String(userId),
-                    type: 'points',
-                    title: isAdReward ? 'مكافأة استخدام محمل الفيديوهات' : 'تحميل فيديو فوري بدون إعلان (VIP)',
-                    amount: isAdReward ? '+2 نقطة' : '-5 نقاط',
-                    status: 'مكتمل'
-                }]);
+                const currentPts = Number(freshU.points || 0);
+
+                if (!isAdReward && currentPts < 5) {
+                    userPoints = currentPts;
+                    document.getElementById('user-points').innerText = userPoints.toLocaleString();
+                    return tg.showAlert("❌ رصيد نقاطك غير كافٍ للتحميل الفوري بدون إعلان (مطلوب 5 نقاط)!\n\n💡 استخدم الزر الأخضر للتحميل مجاناً بمشاهدة إعلان واكسب +2 نقطة!");
+                }
+
+                const rewardKey = `social_dl_rewards_${userId}_${getTodayKey()}`;
+                const rewardsToday = Number(localStorage.getItem(rewardKey) || 0);
+                const canGetAdReward = isAdReward && (rewardsToday < MAX_DAILY_DL_REWARDS);
+
+                let ptsDelta = 0;
+                if (!isAdReward) ptsDelta = -5;
+                else if (canGetAdReward) ptsDelta = 2;
+
+                const newPoints = Math.max(0, currentPts + ptsDelta);
+                const updateUserPayload = { points: newPoints };
+                if (ptsDelta > 0) {
+                    updateUserPayload.total_earned = Number(freshU.total_earned || 0) + ptsDelta;
+                    localStorage.setItem(rewardKey, String(rewardsToday + 1));
+                }
+
+                if (ptsDelta !== 0) {
+                    await client.from('users').update(updateUserPayload).eq('telegram_id', userId);
+                    await client.from('transactions').insert([{
+                        telegram_id: String(userId),
+                        type: 'points',
+                        title: isAdReward ? 'مكافأة استخدام محمل الفيديوهات' : 'تحميل فيديو فوري بدون إعلان (VIP)',
+                        amount: isAdReward ? '+2 نقطة' : '-5 نقاط',
+                        status: 'مكتمل'
+                    }]);
+                }
 
                 userPoints = newPoints;
                 document.getElementById('user-points').innerText = userPoints.toLocaleString();
@@ -532,7 +580,7 @@
 
                 const downloadId = dlRecord ? dlRecord.id : 0;
 
-                // 3. إرسال أمر التحميل المباشر لبوت البايثون عبر جدول bot_messages (بدون الحاجة لقفل الميني أب!)
+                // 3. إرسال أمر التحميل المباشر لبوت البايثون عبر جدول bot_messages
                 const jobPayload = JSON.stringify({
                     url: videoUrl,
                     mode: mode,
@@ -552,7 +600,7 @@
 
                 tg.showAlert(
                     `✅ تم بدء التحميل بنجاح!\n` +
-                    `${isAdReward ? '🎁 حصلت على +2 نقطة هدية!\n' : '⚡ تم استخدام التحميل السريع!\n'}` +
+                    `${ptsDelta > 0 ? '🎁 حصلت على +2 نقطة هدية!\n' : (!isAdReward ? '⚡ تم استخدام التحميل السريع!\n' : '')}` +
                     `📥 البوت يقوم الآن بسحب الملف وإرساله لك في الشات مباشرة.`
                 );
 
@@ -560,13 +608,13 @@
                 console.error("Queue error:", e);
                 tg.showAlert("❌ حدث خطأ أثناء إرسال الطلب، حاول مرة أخرى.");
             } finally {
+                isBusyDownload = false;
                 btnAd.disabled = false;
                 btnVip.disabled = false;
                 btnAd.innerText = "📺 شاهد إعلان وحمّل مجاناً (+2 نقطة هدية 🎁)";
             }
         }
 
-        // جلب وعرض سجل التحميلات الخاصة بالمستخدم
         async function loadDownloadHistory() {
             const listEl = document.getElementById('downloads-history-list');
             try {
@@ -587,14 +635,17 @@
                 listEl.innerHTML = "";
                 data.forEach(item => {
                     const pltName = PLATFORM_ICONS[item.platform] || "🌐 فيديو";
-                    const modeTxt = item.mode === 'audio' ? '🎵 MP3' : `🎬 فيديو (${item.quality || 'HD'})`;
+                    const modeTxt = item.mode === 'audio' ? '🎵 MP3' : `🎬 فيديو (${escapeHtml(item.quality || 'HD')})`;
                     const timeStr = new Date(item.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+                    const stRaw = String(item.status || '');
 
                     let stClass = "st-wait";
-                    if (item.status.includes("تم")) stClass = "st-done";
-                    if (item.status.includes("فشل")) stClass = "st-err";
+                    if (stRaw.includes("تم")) stClass = "st-done";
+                    if (stRaw.includes("فشل") || stRaw.includes("خطأ")) stClass = "st-err";
 
-                    const safeUrl = (item.url || "").replace(/'/g, "\\'");
+                    const safeUrl = escapeHtml(item.url || "").replace(/'/g, "\\'");
+                    const safeMode = escapeHtml(item.mode || 'video').replace(/'/g, "\\'");
+                    const safeQual = escapeHtml(item.quality || '720').replace(/'/g, "\\'");
 
                     listEl.innerHTML += `
                         <div class="history-card">
@@ -602,10 +653,10 @@
                                 <div class="h-title">${pltName} • ${modeTxt}</div>
                                 <div class="h-meta">
                                     <span>🕒 ${timeStr}</span>
-                                    <span class="status-badge ${stClass}">${item.status}</span>
+                                    <span class="status-badge ${stClass}">${escapeHtml(stRaw)}</span>
                                 </div>
                             </div>
-                            <button class="btn-redownload" onclick="reuseLink('${safeUrl}', '${item.mode}', '${item.quality}')">🔄 تكرار</button>
+                            <button class="btn-redownload" onclick="reuseLink('${safeUrl}', '${safeMode}', '${safeQual}')">🔄 تكرار</button>
                         </div>
                     `;
                 });
@@ -623,11 +674,11 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function goHome() { window.location.href = `index.html?id=${userId}`; }
-        function goTasks() { window.location.href = `tasks.html?id=${userId}`; }
-        function goStore() { window.location.href = `store.html?id=${userId}`; }
-        function goInvite() { window.location.href = `invite.html?id=${userId}`; }
-        function goProfile() { window.location.href = `profile.html?id=${userId}`; }
+        function goHome() { window.location.href = `index.html?id=${userId}&t=${Date.now()}`; }
+        function goTasks() { window.location.href = `tasks.html?id=${userId}&t=${Date.now()}`; }
+        function goStore() { window.location.href = `store.html?id=${userId}&t=${Date.now()}`; }
+        function goInvite() { window.location.href = `invite.html?id=${userId}&t=${Date.now()}`; }
+        function goProfile() { window.location.href = `profile.html?id=${userId}&t=${Date.now()}`; }
 
         init();
     </script>
