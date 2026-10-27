@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>MegaTask DevTools - استوديو المطورين</title>
+    <title>MegaTask DevTools Pro - مركز الأدوات الشامل</title>
 
-    <!-- سكريبت إعلانات Monetag ومكاتب تيليجرام و Supabase -->
+    <!-- سكريبت إعلانات Monetag ومكاتب تيليجرام و Supabase ودرع الحماية -->
     <script src="https://libtl.com/sdk.js" data-zone="10959333" data-sdk="show_10959333"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -19,6 +19,7 @@
             --cyan: #00e5ff;
             --amber: #ffb300;
             --crimson: #ff3d57;
+            --violet: #9d4edd;
             --bg-dark: #070a0f;
             --card-bg: #111621;
             --card-border: #222b3d;
@@ -35,6 +36,11 @@
             margin: 0;
             padding: 14px 14px 115px;
             background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(255, 179, 0, 0.08) 0%, transparent 55%),
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 26px 26px, 26px 26px;
             color: #fff;
             font-family: 'Segoe UI', Tahoma, sans-serif;
             overflow-x: hidden;
@@ -79,21 +85,24 @@
             gap: 5px;
         }
         .w-pill.pts { border-color: rgba(0, 230, 118, 0.45); color: var(--emerald); }
-        .w-pill.ads { border-color: rgba(0, 229, 255, 0.45); color: var(--cyan); }
+        .w-pill.ads { border-color: rgba(255, 179, 0, 0.45); color: var(--amber); }
 
         /* بطاقة الهيدر وباقة VIP */
         .dev-hero {
-            background: linear-gradient(145deg, #131926, #0d111a);
-            border: 1.5px solid var(--card-border);
+            background: linear-gradient(145deg, #161b28, #0d111a);
+            border: 1.5px solid rgba(255, 179, 0, 0.35);
             border-radius: 20px;
             padding: 16px;
-            margin-bottom: 15px;
-            box-shadow: 0 6px 0 #05070b;
+            margin-bottom: 14px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.45);
         }
         .dev-title-box h1 {
             margin: 0 0 5px;
             font-size: 18px;
-            color: var(--emerald);
+            color: var(--amber);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
         .dev-title-box p {
             margin: 0 0 12px;
@@ -134,52 +143,157 @@
             box-shadow: 0 3px 0 var(--emerald-dark);
         }
 
-        /* شريط اختيار الأدوات الـ 8 */
-        .tools-nav {
+        /* تبديل وضع العرض: شبكة الأدوات المدمجة أو وضع الشاشة الكاملة لبوابة Tools Gold */
+        .mode-switcher {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: 1fr 1fr;
             gap: 8px;
-            margin-bottom: 16px;
+            background: #0b0e14;
+            padding: 5px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            margin-bottom: 12px;
         }
-        .tool-tab {
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 9px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--amber), #e68a00);
+            color: #000;
+            box-shadow: 0 2px 10px rgba(255, 179, 0, 0.25);
+        }
+
+        /* شريط البحث السريع عن الأداة */
+        .search-wrap {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .search-inp {
+            width: 100%;
+            background: #090c12;
+            border: 1.5px solid var(--card-border);
+            color: #fff;
+            padding: 12px 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            outline: none;
+            font-family: inherit;
+        }
+        .search-inp:focus { border-color: var(--amber); }
+
+        /* شريط تقسيمة الأقسام (Category Tabs) */
+        .cats-scroll {
+            display: flex;
+            gap: 7px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-bottom: 14px;
+            scrollbar-width: none;
+        }
+        .cats-scroll::-webkit-scrollbar { display: none; }
+        .cat-chip {
             background: var(--card-bg);
             border: 1.5px solid var(--card-border);
-            border-radius: 14px;
-            padding: 10px 4px;
-            text-align: center;
+            color: var(--text-muted);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .cat-chip.active {
+            background: rgba(255, 179, 0, 0.16);
+            color: var(--amber);
+            border-color: var(--amber);
+        }
+
+        /* شبكة كروت الأدوات المقسمة */
+        .tools-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .tool-card-item {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: 16px;
+            padding: 13px 11px;
             cursor: pointer;
             transition: all 0.15s ease;
-            box-shadow: 0 4px 0 #06080c;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 0 #05070b;
+            position: relative;
+            overflow: hidden;
         }
-        .tool-tab .ic {
-            font-size: 20px;
-            display: block;
-            margin-bottom: 4px;
-        }
-        .tool-tab span {
-            font-size: 10.5px;
-            font-weight: bold;
-            color: var(--text-muted);
-            display: block;
-            line-height: 1.2;
-        }
-        .tool-tab.active {
-            border-color: var(--emerald);
-            background: rgba(0, 230, 118, 0.12);
+        .tool-card-item:active {
             transform: translateY(2px);
-            box-shadow: 0 2px 0 var(--emerald-dark);
+            box-shadow: 0 1px 0 #05070b;
         }
-        .tool-tab.active span { color: #fff; }
+        .tool-card-item.active {
+            border-color: var(--emerald);
+            background: rgba(0, 230, 118, 0.09);
+            box-shadow: 0 3px 0 var(--emerald-dark);
+        }
+        .tc-top {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 6px;
+        }
+        .tc-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(255, 179, 0, 0.1);
+            border: 1px solid rgba(255, 179, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .tc-title {
+            font-size: 12.5px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.3;
+        }
+        .tc-desc {
+            font-size: 10.5px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        .tc-cat-tag {
+            font-size: 9.5px;
+            color: var(--amber);
+            margin-top: 6px;
+            font-weight: bold;
+        }
 
         /* حاوية الأداة النشطة */
         .tool-workspace {
             display: none;
             background: var(--card-bg);
-            border: 1.5px solid var(--card-border);
+            border: 1.5px solid var(--emerald);
             border-radius: 20px;
             padding: 16px;
-            box-shadow: 0 6px 0 #05070b;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
             margin-bottom: 18px;
+            scroll-margin-top: 16px;
         }
         .tool-workspace.active { display: block; }
 
@@ -214,7 +328,7 @@
             color: #cbd5e1;
             margin-bottom: 5px;
         }
-        input[type="text"], input[type="url"], input[type="number"], input[type="file"], textarea, select {
+        input[type="text"], input[type="url"], input[type="number"], input[type="file"], input[type="color"], textarea, select {
             width: 100%;
             background: var(--terminal-bg);
             border: 1.5px solid #253045;
@@ -247,11 +361,16 @@
             box-shadow: 0 4px 0 var(--emerald-dark);
             width: 100%;
             transition: 0.1s;
+            font-family: inherit;
         }
         .btn-action:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--emerald-dark); }
         .btn-action.cyan-btn {
             background: var(--cyan);
             box-shadow: 0 4px 0 #0088a3;
+        }
+        .btn-action.amber-btn {
+            background: var(--amber);
+            box-shadow: 0 4px 0 #b27d00;
         }
         .btn-action.danger-btn {
             background: var(--crimson);
@@ -304,7 +423,6 @@
             word-break: break-all;
         }
 
-        /* أزرار تنسيق منشورات تليجرام */
         .tg-format-toolbar {
             display: flex;
             flex-wrap: wrap;
@@ -322,6 +440,35 @@
             cursor: pointer;
         }
         .fmt-btn:active { border-color: var(--cyan); color: var(--cyan); }
+
+        /* بوابة العرض المباشر لـ Tools Gold */
+        #portal-view-container {
+            display: none;
+            background: var(--card-bg);
+            border: 1.5px solid var(--amber);
+            border-radius: 20px;
+            overflow: hidden;
+            height: 76vh;
+            position: relative;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+        }
+        .portal-top-bar {
+            background: #0d111a;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11.5px;
+            color: var(--amber);
+            font-weight: bold;
+        }
+        #portal-iframe {
+            width: 100%;
+            height: calc(100% - 40px);
+            border: none;
+            background: #070a0f;
+        }
 
         /* شريط التنقل السفلي */
         .navbar {
@@ -360,8 +507,11 @@
     <!-- الهيدر وباقة المطور المحترف VIP -->
     <div class="dev-hero">
         <div class="dev-title-box">
-            <h1>🛠️ استوديو أدوات المطورين Pro</h1>
-            <p>استخدم أقوى الأدوات البرمجية والتسويقية فوراً واكسب <b>+2 نقطة</b> مع كل استخدام، أو فعّل وضع VIP لتخطي الإعلانات!</p>
+            <h1>
+                <span>🛠️ مركز الأدوات الشامل (Tools Gold Pro)</span>
+                <span style="font-size: 11px; background: rgba(0,230,118,0.15); color: var(--emerald); padding: 3px 8px; border-radius: 8px;">16+ أداة احترافية</span>
+            </h1>
+            <p>أقوى حزمة أدوات مقسمة للمبرمجين، المسوقين، وصناع المحتوى — اكسب <b>+2 نقطة</b> مع كل استخدام، أو فعّل وضع VIP بدون إعلانات!</p>
         </div>
         <div class="vip-banner">
             <div class="vip-banner-text" id="vip-status-text">
@@ -371,278 +521,477 @@
         </div>
     </div>
 
-    <!-- شبكة التبديل بين الأدوات الـ 8 -->
-    <div class="tools-nav">
-        <div class="tool-tab active" onclick="switchTool('webhook', this)">
-            <span class="ic">🤖</span>
-            <span>فحص وربط البوتات</span>
+    <!-- أزرار التبديل بين تقسيمة الأدوات المدمجة وبوابة Tools Gold الكاملة -->
+    <div class="mode-switcher">
+        <button id="mode-native-btn" class="mode-btn active" onclick="switchViewMode('native')">⚡ تقسيمة الأدوات الذكية (16 أداة)</button>
+        <button id="mode-portal-btn" class="mode-btn" onclick="switchViewMode('portal')">🌐 بوابة Tools Gold الكاملة ↗</button>
+    </div>
+
+    <!-- ==========================================
+         الوضع الأول: تقسيمة الأدوات المدمجة (6 أقسام + بحث + 16 أداة)
+    =========================================== -->
+    <div id="native-tools-section">
+        <!-- شريط البحث الفوري -->
+        <div class="search-wrap">
+            <input type="text" id="tool-search-inp" class="search-inp" placeholder="🔍 ابحث عن أي أداة (مثلاً: QR, JSON, باسورد, تليجرام, IP, زخرفة)..." oninput="filterToolsGrid()">
         </div>
-        <div class="tool-tab" onclick="switchTool('obfuscator', this)">
-            <span class="ic">🔐</span>
-            <span>تشفير الأكواد JS/HTML</span>
+
+        <!-- شريط تقسيمة الأقسام (Categories) -->
+        <div class="cats-scroll">
+            <div class="cat-chip active" onclick="selectToolCategory('all', this)">🔥 كل الأدوات (16)</div>
+            <div class="cat-chip" onclick="selectToolCategory('telegram', this)">🤖 أدوات تيليجرام</div>
+            <div class="cat-chip" onclick="selectToolCategory('coding', this)">💻 البرمجة والأكواد</div>
+            <div class="cat-chip" onclick="selectToolCategory('security', this)">🔐 التشفير والحماية</div>
+            <div class="cat-chip" onclick="selectToolCategory('network', this)">🌐 الشبكة والسيرفرات</div>
+            <div class="cat-chip" onclick="selectToolCategory('generators', this)">🎲 المولدات الذكية</div>
+            <div class="cat-chip" onclick="selectToolCategory('text_media', this)">📝 النصوص والصور</div>
         </div>
-        <div class="tool-tab" onclick="switchTool('ipradar', this)">
-            <span class="ic">🌐</span>
-            <span>رادار الـ IP والدومين</span>
+
+        <!-- شبكة كروت الأدوات -->
+        <div id="tools-cards-container" class="tools-cards-grid"></div>
+
+        <!-- ==========================================
+             مساحات عمل الأدوات الـ 16 (Workspaces)
+        =========================================== -->
+
+        <!-- 1. فحص وربط بوتات تليجرام -->
+        <div id="tool-webhook" class="tool-workspace active">
+            <div class="ws-header">
+                <h3>🤖 مدير وفاحص بوتات تليجرام</h3>
+                <span class="ws-badge">Telegram API</span>
+            </div>
+            <div class="field-group">
+                <label>توكن البوت (Bot Token):</label>
+                <input type="text" id="wh-token" class="code-font" placeholder="123456789:AAH_xxxxxxxxxxxxxxxxxxx">
+            </div>
+            <div class="field-group">
+                <label>رابط السيرفر (Webhook URL - مطلوب عند الربط فقط):</label>
+                <input type="url" id="wh-url" class="code-font" placeholder="https://your-app.onrender.com/webhook">
+            </div>
+            <button class="btn-action cyan-btn" style="margin-bottom: 8px;" onclick="handleWebhookTool('info')">
+                🔍 فحص بيانات البوت وحالة الـ Webhook (+2 نقطة)
+            </button>
+            <div class="btn-row">
+                <button class="btn-action" onclick="handleWebhookTool('set')">🔗 ربط Webhook جديد</button>
+                <button class="btn-action danger-btn" onclick="handleWebhookTool('delete')">🗑️ حذف الـ Webhook</button>
+            </div>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>Terminal Output</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('wh-output')">نسخ 📋</button>
+                </div>
+                <div id="wh-output" class="terminal-body code-font">// أدخل توكن البوت واضغط فحص لعرض كافة التفاصيل هنا...</div>
+            </div>
         </div>
-        <div class="tool-tab" onclick="switchTool('base64img', this)">
-            <span class="ic">🖼️</span>
-            <span>صورة إلى Base64</span>
+
+        <!-- 2. صانع منشورات وأزرار تليجرام -->
+        <div id="tool-tgbuilder" class="tool-workspace">
+            <div class="ws-header">
+                <h3>✍️ صانع منشورات وأزرار تليجرام</h3>
+                <span class="ws-badge">Markdown & HTML</span>
+            </div>
+            <div class="tg-format-toolbar">
+                <button type="button" class="fmt-btn" onclick="insertTgTag('bold')"><b>B عريض</b></button>
+                <button type="button" class="fmt-btn" onclick="insertTgTag('italic')"><i>I مائل</i></button>
+                <button type="button" class="fmt-btn" onclick="insertTgTag('code')"><code>كود قابل للنسخ</code></button>
+                <button type="button" class="fmt-btn" onclick="insertTgTag('spoiler')">▒▒ مخفي Spoiler</button>
+                <button type="button" class="fmt-btn" onclick="insertTgTag('link')">🔗 رابط نصي</button>
+            </div>
+            <div class="field-group">
+                <textarea id="tg-post-input" rows="4" placeholder="اكتب نص منشورك هنا أو حدد كلمة واضغط على أزرار التنسيق بالأعلى..."></textarea>
+            </div>
+            <div class="field-group">
+                <label>إضافة زر شفاف أسفل المنشور (Inline Button - اختياري):</label>
+                <div class="btn-row" style="margin-top:0;">
+                    <input type="text" id="tg-btn-text" placeholder="نص الزر (مثلاً: اشترك الآن 🚀)">
+                    <input type="url" id="tg-btn-url" class="code-font" placeholder="https://t.me/...">
+                </div>
+            </div>
+            <button class="btn-action cyan-btn" onclick="handleTgBuilderTool()">
+                ⚙️ توليد كود المنشور والأزرار (+2 نقطة)
+            </button>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>النص المنسق + JSON الكيبورد</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('tg-output')">نسخ الكل 📋</button>
+                </div>
+                <div id="tg-output" class="terminal-body">// سيظهر المنشور بصيغة Markdown و HTML وكود الأزرار هنا...</div>
+            </div>
         </div>
-        <div class="tool-tab" onclick="switchTool('jsonjwt', this)">
-            <span class="ic">📋</span>
-            <span>منسق JSON وفاحص JWT</span>
+
+        <!-- 3. صانع روابط تليجرام وواتساب المباشرة -->
+        <div id="tool-deeplink" class="tool-workspace">
+            <div class="ws-header">
+                <h3>🔗 صانع روابط التواصل السريعة (TG & WhatsApp)</h3>
+                <span class="ws-badge">Direct Links</span>
+            </div>
+            <div class="field-group">
+                <label>اختر المنصة:</label>
+                <select id="dl-platform">
+                    <option value="tg_bot">🤖 رابط بدء بوت تليجرام بكود (start=...)</option>
+                    <option value="tg_share">📤 رابط مشاركة منشور تليجرام جاهز</option>
+                    <option value="wa_msg">💬 رابط واتساب مباشر برسالة جاهزة</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label>اليوزر أو رقم الهاتف (مع كود الدولة للواتساب مثل 2010...):</label>
+                <input type="text" id="dl-target" class="code-font" placeholder="MegaTask1Bot أو 201022647804">
+            </div>
+            <div class="field-group">
+                <label>الرسالة التلقائية أو كود الـ Start:</label>
+                <input type="text" id="dl-payload" placeholder="مرحباً، أريد الاستفسار عن...">
+            </div>
+            <button class="btn-action amber-btn" onclick="handleDeepLinkTool()">⚡ توليد الرابط المباشر (+2 نقطة)</button>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>الرابط الجاهز للنشر</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('dl-output')">نسخ الرابط 📋</button>
+                </div>
+                <div id="dl-output" class="terminal-body code-font">// سيظهر الرابط المباشر هنا...</div>
+            </div>
         </div>
-        <div class="tool-tab" onclick="switchTool('tgbuilder', this)">
-            <span class="ic">✍️</span>
-            <span>صانع بوست وأزرار تليجرام</span>
+
+        <!-- 4. تشفير وحماية الأكواد JS / HTML -->
+        <div id="tool-obfuscator" class="tool-workspace">
+            <div class="ws-header">
+                <h3>🔐 مشفّر وحامي أكواد المواقع</h3>
+                <span class="ws-badge">Anti-Theft</span>
+            </div>
+            <div class="field-group">
+                <label>نوع التشفير والحماية المطلوب:</label>
+                <select id="obf-mode">
+                    <option value="html_lock">🛡️ تشفير صفحة HTML كاملة + منع كليك يمين و Inspect</option>
+                    <option value="js_hex">🔐 تشفير كود JavaScript (Base64 Eval Obfuscation)</option>
+                    <option value="minify">⚡ ضغط وتصغير الكود في سطر واحد (Minifier)</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label>الصق الكود الأصلي هنا (HTML أو JavaScript أو CSS):</label>
+                <textarea id="obf-input" rows="5" class="code-font" placeholder="<div class='app'>Hello World</div> أو كود JS..."></textarea>
+            </div>
+            <button class="btn-action" onclick="handleObfuscatorTool()">
+                🔐 تشفير وحماية الكود الآن (+2 نقطة)
+            </button>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>الكود المشفر الجاهز للنسخ</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('obf-output')">نسخ الكود 📋</button>
+                </div>
+                <div id="obf-output" class="terminal-body code-font">// سيظهر الكود المشفر والمحمي هنا...</div>
+            </div>
         </div>
-        <div class="tool-tab" onclick="switchTool('datagen', this)">
-            <span class="ic">🪪</span>
-            <span>مولد هويات وباسوردات</span>
+
+        <!-- 5. منسق JSON وفاحص التوكنات JWT -->
+        <div id="tool-jsonjwt" class="tool-workspace">
+            <div class="ws-header">
+                <h3>📋 منسق JSON وفاحص مفاتيح JWT</h3>
+                <span class="ws-badge">Parser & Validator</span>
+            </div>
+            <div class="field-group">
+                <label>الصق كود JSON أو مفتاح JWT (مثل مفاتيح Supabase / Bearer):</label>
+                <textarea id="json-input" rows="5" class="code-font" placeholder='{"name":"MegaTask","status":true} أو eyJhbGciOiJIUzI1Ni...'></textarea>
+            </div>
+            <div class="btn-row">
+                <button class="btn-action" onclick="handleJsonJwtTool('format')">✨ تنسيق وفحص JSON</button>
+                <button class="btn-action cyan-btn" onclick="handleJsonJwtTool('jwt')">🔓 فك تشفير JWT Token</button>
+            </div>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>النتيجة المنسقة</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('json-output')">نسخ 📋</button>
+                </div>
+                <div id="json-output" class="terminal-body code-font">// ستظهر النتيجة المفحوصة هنا...</div>
+            </div>
         </div>
-        <div class="tool-tab" onclick="switchTool('crypthash', this)">
-            <span class="ic">#️⃣</span>
-            <span>تشفير SHA256 و Base64</span>
+
+        <!-- 6. مختبر التعبيرات النمطية ومحول الأكواد (Regex & HTML Entities) -->
+        <div id="tool-regexhtml" class="tool-workspace">
+            <div class="ws-header">
+                <h3>🧩 مستخرج البيانات الذكي (إيميلات / روابط / أرقام)</h3>
+                <span class="ws-badge">Smart Extractor</span>
+            </div>
+            <div class="field-group">
+                <label>اختر نوع البيانات المراد استخراجها من النص:</label>
+                <select id="ext-mode">
+                    <option value="emails">📧 استخراج جميع الإيميلات من النص</option>
+                    <option value="urls">🔗 استخراج جميع الروابط (URLs) من النص</option>
+                    <option value="phones">📱 استخراج جميع الأرقام والهواتف</option>
+                    <option value="tg_users">📢 استخراج يوزرات ومعرفات تليجرام (@username)</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label>الصق النص العشوائي الكبير هنا:</label>
+                <textarea id="ext-input" rows="4" placeholder="الصق أي نص أو صفحة هنا لاستخراج الإيميلات أو الروابط أو اليوزرات منها..."></textarea>
+            </div>
+            <button class="btn-action cyan-btn" onclick="handleExtractorTool()">🔍 استخراج وتصفية البيانات (+2 نقطة)</button>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>العناصر المستخرجة بدون تكرار</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('ext-output')">نسخ القائمة 📋</button>
+                </div>
+                <div id="ext-output" class="terminal-body code-font">// ستظهر القائمة المستخرجة هنا...</div>
+            </div>
+        </div>
+
+        <!-- 7. محول التشفير السريع (SHA-256 / SHA-512 / Base64 / URL / Binary) -->
+        <div id="tool-crypthash" class="tool-workspace">
+            <div class="ws-header">
+                <h3>#️⃣ تشفير الهاش و Base64 والـ Hex/Binary</h3>
+                <span class="ws-badge">Crypto Suite</span>
+            </div>
+            <div class="field-group">
+                <label>اختر العملية:</label>
+                <select id="hash-mode">
+                    <option value="sha256">🔒 توليد بصمة تشفير SHA-256</option>
+                    <option value="sha512">🛡️ توليد بصمة تشفير SHA-512 القصوى</option>
+                    <option value="b64_enc">📦 تشفير نص إلى Base64 (يدعم العربية)</option>
+                    <option value="b64_dec">🔓 فك تشفير Base64 إلى نص عادي</option>
+                    <option value="hex_enc">🔢 تحويل النص إلى كود Hexadecimal</option>
+                    <option value="bin_enc">💻 تحويل النص إلى لغة الآلة (Binary 0101)</option>
+                    <option value="url_enc">🔗 تشفير رابط URL Encode</option>
+                    <option value="url_dec">🌐 فك تشفير رابط URL Decode</option>
+                </select>
+            </div>
+            <div class="field-group">
+                <label>النص أو الرابط المدخل:</label>
+                <textarea id="hash-input" rows="3" placeholder="اكتب النص أو الكود هنا..."></textarea>
+            </div>
+            <button class="btn-action cyan-btn" onclick="handleCryptoHashTool()">
+                ⚡ تنفيذ التحويل الآن (+2 نقطة)
+            </button>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>الناتج النهائي</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('hash-output')">نسخ 📋</button>
+                </div>
+                <div id="hash-output" class="terminal-body code-font">// الناتج سيظهر هنا...</div>
+            </div>
+        </div>
+
+        <!-- 8. مولد وفاحص قوة كلمات المرور الاحترافي -->
+        <div id="tool-passgen" class="tool-workspace">
+            <div class="ws-header">
+                <h3>🔑 مولد وفاحص كلمات المرور الفائقة</h3>
+                <span class="ws-badge">Security Shield</span>
+            </div>
+            <div class="field-group">
+                <label>طول كلمة المرور المطلوبة (من 8 إلى 64 حرفاً):</label>
+                <input type="number" id="pg-length" value="20" min="8" max="64">
+            </div>
+            <div class="btn-row">
+                <button class="btn-action" onclick="handlePasswordSuite('generate')">🎲 توليد 5 باسوردات خارقة</button>
+                <button class="btn-action amber-btn" onclick="handlePasswordSuite('pin')">🔢 توليد أكواد PIN سرية</button>
+            </div>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>كلمات المرور المولدة + درجة الأمان</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('pg-output')">نسخ 📋</button>
+                </div>
+                <div id="pg-output" class="terminal-body code-font">// اضغط توليد لإنشاء كلمات مرور مشفرة غير قابلة للتخمين...</div>
+            </div>
+        </div>
+
+        <!-- 9. رادار فحص الـ IP والدومينات والسيرفرات -->
+        <div id="tool-ipradar" class="tool-workspace">
+            <div class="ws-header">
+                <h3>🌐 رادار فحص الـ IP والدومينات</h3>
+                <span class="ws-badge">DNS & GeoIP</span>
+            </div>
+            <div class="field-group">
+                <label>أدخل عنوان IP أو اسم دومين (اتركه فارغاً لفحص اتصالك الحالي):</label>
+                <input type="text" id="ip-target" class="code-font" placeholder="مثلاً: 8.8.8.8 أو telegram.org">
+            </div>
+            <div class="btn-row">
+                <button class="btn-action cyan-btn" onclick="handleIpRadarTool(false)">📡 فحص الهدف الآن</button>
+                <button class="btn-action secondary-btn" onclick="handleIpRadarTool(true)">📍 فحص الـ IP الخاص بي</button>
+            </div>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>تقرير الرادار والشبكة</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('ip-output')">نسخ التقرير 📋</button>
+                </div>
+                <div id="ip-output" class="terminal-body">// جاهز للفحص واستخراج بيانات السيرفر والموقع الجغرافي...</div>
+            </div>
+        </div>
+
+        <!-- 10. فاحص سجلات الدومين (DNS Lookup A / MX / TXT / NS) -->
+        <div id="tool-dnslookup" class="tool-workspace">
+            <div class="ws-header">
+                <h3>🛰️ فاحص سجلات الدومين والسيرفر (DNS Records)</h3>
+                <span class="ws-badge">Cloudflare DoH</span>
+            </div>
+            <div class="field-group">
+                <label>اسم النطاق (Domain Name):</label>
+                <input type="text" id="dns-domain" class="code-font" placeholder="google.com أو github.io">
+            </div>
+            <div class="field-group">
+                <label>نوع السجل المطلوب فحصه:</label>
+                <select id="dns-type">
+                    <option value="A">A Record (IPv4 Address)</option>
+                    <option value="AAAA">AAAA Record (IPv6 Address)</option>
+                    <option value="MX">MX Record (سيرفرات البريد الإلكتروني)</option>
+                    <option value="NS">NS Record (Name Servers)</option>
+                    <option value="TXT">TXT Record (SPF / التحقق الأمني)</option>
+                </select>
+            </div>
+            <button class="btn-action cyan-btn" onclick="handleDnsLookupTool()">🔍 استخراج سجلات الـ DNS (+2 نقطة)</button>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>سجلات DNS المستخرجة</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('dns-output')">نسخ 📋</button>
+                </div>
+                <div id="dns-output" class="terminal-body code-font">// أدخل اسم الدومين لعرض سجلاته الفورية...</div>
+            </div>
+        </div>
+
+        <!-- 11. صانع أكواد QR الاحترافي -->
+        <div id="tool-qrmaker" class="tool-workspace">
+            <div class="ws-header">
+                <h3>📱 صانع رموز QR الاحترافي للمواقع والمحافظ</h3>
+                <span class="ws-badge">QR Studio</span>
+            </div>
+            <div class="field-group">
+                <label>أدخل الرابط، النص، أو عنوان المحفظة (USDT / يوزر):</label>
+                <input type="text" id="qr-text-inp" placeholder="https://t.me/MegaTask1Bot">
+            </div>
+            <button class="btn-action amber-btn" onclick="handleQrGeneratorTool()">🎨 توليد رمز الـ QR الآن (+2 نقطة)</button>
+            <div id="qr-preview-box" style="display:none; text-align:center; margin-top:15px; background:#090c12; padding:15px; border-radius:14px; border:1px dashed var(--amber);">
+                <img id="qr-result-img" src="" alt="QR Code" style="width:190px; height:190px; border-radius:12px; border:5px solid #fff; background:#fff;">
+                <div style="margin-top:8px; font-size:11.5px; color:var(--amber);">✅ اضغط مطولاً على الصورة لحفظها أو مشاركتها</div>
+            </div>
+        </div>
+
+        <!-- 12. مولد الهويات التجريبية والـ User-Agent -->
+        <div id="tool-datagen" class="tool-workspace">
+            <div class="ws-header">
+                <h3>🪪 مولد الهويات التجريبية والـ User-Agent</h3>
+                <span class="ws-badge">Test Suite</span>
+            </div>
+            <div class="field-group">
+                <label>نوع نظام الـ User-Agent المطلوب:</label>
+                <select id="ua-type">
+                    <option value="android_tg">📱 Android Telegram WebApp</option>
+                    <option value="ios_iphone">🍏 iPhone iOS 18 Safari</option>
+                    <option value="win_chrome">💻 Windows 11 Chrome 130</option>
+                    <option value="linux_bot">🐧 Linux Python Scraper</option>
+                </select>
+            </div>
+            <button class="btn-action" onclick="handleDataGenTool()">
+                🎲 توليد حزمة بيانات جديدة كاملة (+2 نقطة)
+            </button>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>حزمة البيانات المولدة</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('datagen-output')">نسخ الحزمة 📋</button>
+                </div>
+                <div id="datagen-output" class="terminal-body code-font">// اضغط توليد للحصول على UUID وباسورد مشفر وهوية اختبار...</div>
+            </div>
+        </div>
+
+        <!-- 13. مولد وفاحص أرقام البطاقات الاختبارية للمبرمجين (Luhn Validator) -->
+        <div id="tool-luhngen" class="tool-workspace">
+            <div class="ws-header">
+                <h3>💳 مولد وفاحص بطاقات الاختبار البرمجية (Luhn Test)</h3>
+                <span class="ws-badge">Sandbox Testing</span>
+            </div>
+            <div class="field-group">
+                <label>أدخل بادئة الـ BIN للاختبار (أو اتركها فارغة لتوليد بطاقة اختبار بوابات الدفع):</label>
+                <input type="text" id="bin-prefix-inp" class="code-font" placeholder="453201 (Visa Test) أو 542523 (MasterCard Test)" maxlength="12">
+            </div>
+            <button class="btn-action cyan-btn" onclick="handleLuhnGeneratorTool()">⚡ توليد 5 أرقام متوافقة مع خوارزمية Luhn (+2 نقطة)</button>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>بطاقات اختبار بوابات الدفع (لأغراض البرمجة فقط)</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('luhn-output')">نسخ الكل 📋</button>
+                </div>
+                <div id="luhn-output" class="terminal-body code-font">// أرقام اختبارية صالحة حسابياً لفحص نماذج الدفع (Format: CARD|MM|YYYY|CVV)...</div>
+            </div>
+        </div>
+
+        <!-- 14. ضغط وتحويل الصور إلى Base64 -->
+        <div id="tool-base64img" class="tool-workspace">
+            <div class="ws-header">
+                <h3>🖼️ ضغط وتحويل الصور إلى كود Base64</h3>
+                <span class="ws-badge">WebApp Ready</span>
+            </div>
+            <div class="field-group">
+                <label>اختر صورة من هاتفك:</label>
+                <input type="file" id="b64-file" accept="image/*">
+            </div>
+            <div class="field-group">
+                <label>أقصى عرض للصورة (لضغط الحجم وتسريع الصفحة):</label>
+                <select id="b64-size">
+                    <option value="250">أيقونة صغيرة (250px - خفيفة جداً)</option>
+                    <option value="500" selected>متوسطة للمتجر والمهام (500px - موصى به)</option>
+                    <option value="800">عالية الدقة (800px)</option>
+                </select>
+            </div>
+            <button class="btn-action" onclick="handleBase64ImageTool()">
+                ⚡ ضغط الصورة وتوليد كود Base64 (+2 نقطة)
+            </button>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span id="b64-stats-lbl">كود Base64 الناتج</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('b64-output')">نسخ النص 📋</button>
+                </div>
+                <div id="b64-output" class="terminal-body code-font">// ارفع الصورة واضغط تحويل للحصول على الكود المباشر...</div>
+            </div>
+        </div>
+
+        <!-- 15. محلل ومنظف النصوص والقوائم وزخرفة الأسماء -->
+        <div id="tool-textpro" class="tool-workspace">
+            <div class="ws-header">
+                <h3>📝 محلل النصوص، إزالة المكرر، والزخرفة</h3>
+                <span class="ws-badge">Text Studio</span>
+            </div>
+            <div class="field-group">
+                <label>أدخل النص أو القائمة هنا:</label>
+                <textarea id="txt-studio-inp" rows="4" placeholder="اكتب النص أو القائمة لحساب الكلمات أو حذف الأسطر المكررة أو زخرفته..."></textarea>
+            </div>
+            <div class="btn-row">
+                <button class="btn-action" onclick="handleTextStudioTool('stats')">📊 إحصائيات الكلمات والحروف</button>
+                <button class="btn-action cyan-btn" onclick="handleTextStudioTool('dedup')">🧹 حذف الأسطر المكررة وترتيبها</button>
+            </div>
+            <button class="btn-action amber-btn" style="margin-top:8px;" onclick="handleTextStudioTool('fancy')">✨ زخرفة الاسم أو النص للبروفايل</button>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>النتيجة</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('txt-studio-output')">نسخ 📋</button>
+                </div>
+                <div id="txt-studio-output" class="terminal-body">// النتيجة ستظهر هنا...</div>
+            </div>
+        </div>
+
+        <!-- 16. محول الألوان والتوقيت الزمني (Color HEX/RGB & Unix Timestamp) -->
+        <div id="tool-colortime" class="tool-workspace">
+            <div class="ws-header">
+                <h3>🎨 محول الألوان (HEX/RGB) والتوقيت الزمني</h3>
+                <span class="ws-badge">UI & Time</span>
+            </div>
+            <div class="field-group">
+                <label>اختر لوناً لاستخراج كافة أكواده (HEX / RGB / CSS Shadow):</label>
+                <input type="color" id="color-picker-inp" value="#00e676" style="height:48px; padding:4px; cursor:pointer;" onchange="handleColorAndTimeTool()">
+            </div>
+            <button class="btn-action" onclick="handleColorAndTimeTool()">⚡ استخراج أكواد اللون والتوقيت العالمي (+2 نقطة)</button>
+            <div class="terminal-output-wrap">
+                <div class="terminal-bar">
+                    <span>أكواد التصميم والتوقيت</span>
+                    <button class="btn-copy-term" onclick="copyTerminal('colortime-output')">نسخ 📋</button>
+                </div>
+                <div id="colortime-output" class="terminal-body code-font">// اختر اللون أو اضغط استخراج...</div>
+            </div>
         </div>
     </div>
 
-    <!-- 1. أداة فحص وربط بوتات تليجرام -->
-    <div id="tool-webhook" class="tool-workspace active">
-        <div class="ws-header">
-            <h3>🤖 مدير وفاحص بوتات تليجرام</h3>
-            <span class="ws-badge">Telegram API</span>
+    <!-- ==========================================
+         الوضع الثاني: بوابة Tools Gold المدمجة بشاشة كاملة
+    =========================================== -->
+    <div id="portal-view-container">
+        <div class="portal-top-bar">
+            <span>🌟 بوابة Tools Gold المدمجة بالكامل</span>
+            <button onclick="reloadPortalWithReward()" style="background:var(--emerald); color:#000; border:none; padding:4px 10px; border-radius:7px; font-size:11px; font-weight:bold; cursor:pointer;">🔄 تحديث (+2 نقطة)</button>
         </div>
-        <div class="field-group">
-            <label>توكن البوت (Bot Token):</label>
-            <input type="text" id="wh-token" class="code-font" placeholder="123456789:AAH_xxxxxxxxxxxxxxxxxxx">
-        </div>
-        <div class="field-group">
-            <label>رابط السيرفر (Webhook URL - مطلوب عند الربط فقط):</label>
-            <input type="url" id="wh-url" class="code-font" placeholder="https://your-app.onrender.com/webhook">
-        </div>
-        <button class="btn-action cyan-btn" style="margin-bottom: 8px;" onclick="handleWebhookTool('info')">
-            🔍 فحص بيانات البوت وحالة الـ Webhook (+2 نقطة)
-        </button>
-        <div class="btn-row">
-            <button class="btn-action" onclick="handleWebhookTool('set')">🔗 ربط Webhook جديد</button>
-            <button class="btn-action danger-btn" onclick="handleWebhookTool('delete')">🗑️ حذف الـ Webhook</button>
-        </div>
-
-        <div class="terminal-output-wrap">
-            <div class="terminal-bar">
-                <span>Terminal Output</span>
-                <button class="btn-copy-term" onclick="copyTerminal('wh-output')">نسخ 📋</button>
-            </div>
-            <div id="wh-output" class="terminal-body code-font">// أدخل توكن البوت واضغط فحص لعرض كافة التفاصيل هنا...</div>
-        </div>
-    </div>
-
-    <!-- 2. أداة تشفير وحماية أكواد JS / HTML -->
-    <div id="tool-obfuscator" class="tool-workspace">
-        <div class="ws-header">
-            <h3>🔐 مشفّر وحامي أكواد المواقع</h3>
-            <span class="ws-badge">Anti-Theft</span>
-        </div>
-        <div class="field-group">
-            <label>نوع التشفير والحماية المطلوب:</label>
-            <select id="obf-mode">
-                <option value="html_lock">🛡️ تشفير صفحة HTML كاملة + منع كليك يمين و Inspect</option>
-                <option value="js_hex">🔐 تشفير كود JavaScript (Base64 Eval Obfuscation)</option>
-                <option value="minify">⚡ ضغط وتصغير الكود في سطر واحد (Minifier)</option>
-            </select>
-        </div>
-        <div class="field-group">
-            <label>الصق الكود الأصلي هنا (HTML أو JavaScript):</label>
-            <textarea id="obf-input" rows="5" class="code-font" placeholder="<div class='app'>Hello World</div> أو كود JS..."></textarea>
-        </div>
-        <button class="btn-action" onclick="handleObfuscatorTool()">
-            🔐 تشفير وحماية الكود الآن (+2 نقطة)
-        </button>
-
-        <div class="terminal-output-wrap">
-            <div class="terminal-bar">
-                <span>الكود المشفر الجاهز للنسخ</span>
-                <button class="btn-copy-term" onclick="copyTerminal('obf-output')">نسخ الكود 📋</button>
-            </div>
-            <div id="obf-output" class="terminal-body code-font">// سيظهر الكود المشفر والمحمي هنا...</div>
-        </div>
-    </div>
-
-    <!-- 3. رادار فحص الـ IP والدومينات والسيرفرات -->
-    <div id="tool-ipradar" class="tool-workspace">
-        <div class="ws-header">
-            <h3>🌐 رادار فحص الـ IP والدومينات</h3>
-            <span class="ws-badge">DNS & GeoIP</span>
-        </div>
-        <div class="field-group">
-            <label>أدخل عنوان IP أو اسم دومين (اتركه فارغاً لفحص اتصالك الحالي):</label>
-            <input type="text" id="ip-target" class="code-font" placeholder="مثلاً: 8.8.8.8 أو telegram.org">
-        </div>
-        <div class="btn-row">
-            <button class="btn-action cyan-btn" onclick="handleIpRadarTool(false)">📡 فحص الهدف الآن</button>
-            <button class="btn-action secondary-btn" onclick="handleIpRadarTool(true)">📍 فحص الـ IP الخاص بي</button>
-        </div>
-
-        <div class="terminal-output-wrap">
-            <div class="terminal-bar">
-                <span>تقرير الرادار والشبكة</span>
-                <button class="btn-copy-term" onclick="copyTerminal('ip-output')">نسخ التقرير 📋</button>
-            </div>
-            <div id="ip-output" class="terminal-body">// جاهز للفحص واستخراج بيانات السيرفر والموقع الجغرافي...</div>
-        </div>
-    </div>
-
-    <!-- 4. ضغط وتحويل الصور إلى Base64 -->
-    <div id="tool-base64img" class="tool-workspace">
-        <div class="ws-header">
-            <h3>🖼️ ضغط وتحويل الصور إلى كود Base64</h3>
-            <span class="ws-badge">WebApp Ready</span>
-        </div>
-        <div class="field-group">
-            <label>اختر صورة من هاتفك:</label>
-            <input type="file" id="b64-file" accept="image/*">
-        </div>
-        <div class="field-group">
-            <label>أقصى عرض للصورة (لضغط الحجم وتسريع الصفحة):</label>
-            <select id="b64-size">
-                <option value="250">أيقونة صغيرة (250px - خفيفة جداً)</option>
-                <option value="500" selected>متوسطة للمتجر والمهام (500px - موصى به)</option>
-                <option value="800">عالية الدقة (800px)</option>
-            </select>
-        </div>
-        <button class="btn-action" onclick="handleBase64ImageTool()">
-            ⚡ ضغط الصورة وتوليد كود Base64 (+2 نقطة)
-        </button>
-
-        <div class="terminal-output-wrap">
-            <div class="terminal-bar">
-                <span id="b64-stats-lbl">كود Base64 الناتج</span>
-                <button class="btn-copy-term" onclick="copyTerminal('b64-output')">نسخ النص 📋</button>
-            </div>
-            <div id="b64-output" class="terminal-body code-font">// ارفع الصورة واضغط تحويل للحصول على الكود المباشر...</div>
-        </div>
-    </div>
-
-    <!-- 5. منسق JSON وفاحص التوكنات JWT -->
-    <div id="tool-jsonjwt" class="tool-workspace">
-        <div class="ws-header">
-            <h3>📋 منسق JSON وفاحص مفاتيح JWT</h3>
-            <span class="ws-badge">Parser & Validator</span>
-        </div>
-        <div class="field-group">
-            <label>الصق كود JSON أو مفتاح JWT (مثل مفاتيح Supabase / Bearer):</label>
-            <textarea id="json-input" rows="5" class="code-font" placeholder='{"name":"MegaTask","status":true} أو eyJhbGciOiJIUzI1Ni...'></textarea>
-        </div>
-        <div class="btn-row">
-            <button class="btn-action" onclick="handleJsonJwtTool('format')">✨ تنسيق وفحص JSON</button>
-            <button class="btn-action cyan-btn" onclick="handleJsonJwtTool('jwt')">🔓 فك تشفير JWT Token</button>
-        </div>
-
-        <div class="terminal-output-wrap">
-            <div class="terminal-bar">
-                <span>النتيجة المنسقة</span>
-                <button class="btn-copy-term" onclick="copyTerminal('json-output')">نسخ 📋</button>
-            </div>
-            <div id="json-output" class="terminal-body code-font">// ستظهر النتيجة المفحوصة هنا...</div>
-        </div>
-    </div>
-
-    <!-- 6. صانع منشورات وأزرار تليجرام المنسقة -->
-    <div id="tool-tgbuilder" class="tool-workspace">
-        <div class="ws-header">
-            <h3>✍️ صانع منشورات وأزرار تليجرام</h3>
-            <span class="ws-badge">Markdown & HTML</span>
-        </div>
-        <div class="tg-format-toolbar">
-            <button type="button" class="fmt-btn" onclick="insertTgTag('bold')"><b>B عريض</b></button>
-            <button type="button" class="fmt-btn" onclick="insertTgTag('italic')"><i>I مائل</i></button>
-            <button type="button" class="fmt-btn" onclick="insertTgTag('code')"><code>انسخ الكود</code></button>
-            <button type="button" class="fmt-btn" onclick="insertTgTag('spoiler')">▒▒ مخفي Spoiler</button>
-            <button type="button" class="fmt-btn" onclick="insertTgTag('link')">🔗 رابط نصي</button>
-        </div>
-        <div class="field-group">
-            <textarea id="tg-post-input" rows="4" placeholder="اكتب نص منشورك هنا أو حدد كلمة واضغط على أزرار التنسيق بالأعلى..."></textarea>
-        </div>
-        <div class="field-group">
-            <label>إضافة زر شفاف أسفل المنشور (Inline Button - اختياري):</label>
-            <div class="btn-row" style="margin-top:0;">
-                <input type="text" id="tg-btn-text" placeholder="نص الزر (مثلاً: اشترك الآن 🚀)">
-                <input type="url" id="tg-btn-url" class="code-font" placeholder="https://t.me/...">
-            </div>
-        </div>
-        <button class="btn-action cyan-btn" onclick="handleTgBuilderTool()">
-            ⚙️ توليد كود المنشور والأزرار (+2 نقطة)
-        </button>
-
-        <div class="terminal-output-wrap">
-            <div class="terminal-bar">
-                <span>النص المنسق + JSON الكيبورد</span>
-                <button class="btn-copy-term" onclick="copyTerminal('tg-output')">نسخ الكل 📋</button>
-            </div>
-            <div id="tg-output" class="terminal-body">// سيظهر المنشور بصيغة Markdown و HTML وكود الأزرار هنا...</div>
-        </div>
-    </div>
-
-    <!-- 7. مولد الهويات التجريبية، الباسوردات، والـ User-Agent -->
-    <div id="tool-datagen" class="tool-workspace">
-        <div class="ws-header">
-            <h3>🪪 مولد بيانات المبرمجين والباسوردات</h3>
-            <span class="ws-badge">Test Suite</span>
-        </div>
-        <div class="field-group">
-            <label>نوع نظام الـ User-Agent المطلوب:</label>
-            <select id="ua-type">
-                <option value="android_tg">📱 Android Telegram WebApp</option>
-                <option value="ios_iphone">🍏 iPhone iOS 18 Safari</option>
-                <option value="win_chrome">💻 Windows 11 Chrome 130</option>
-                <option value="linux_bot">🐧 Linux Python Scraper</option>
-            </select>
-        </div>
-        <button class="btn-action" onclick="handleDataGenTool()">
-            🎲 توليد حزمة بيانات جديدة كاملة (+2 نقطة)
-        </button>
-
-        <div class="terminal-output-wrap">
-            <div class="terminal-bar">
-                <span>حزمة البيانات المولدة</span>
-                <button class="btn-copy-term" onclick="copyTerminal('datagen-output')">نسخ الحزمة 📋</button>
-            </div>
-            <div id="datagen-output" class="terminal-body code-font">// اضغط توليد للحصول على UUID وباسورد مشفر وهوية اختبار...</div>
-        </div>
-    </div>
-
-    <!-- 8. محول التشفير السريع (SHA-256 / Base64 / URL) -->
-    <div id="tool-crypthash" class="tool-workspace">
-        <div class="ws-header">
-            <h3>#️⃣ تشفير SHA-256 و Base64 والروابط</h3>
-            <span class="ws-badge">UTF-8 Arabic Safe</span>
-        </div>
-        <div class="field-group">
-            <label>اختر العملية:</label>
-            <select id="hash-mode">
-                <option value="sha256">🔒 توليد بصمة تشفير SHA-256 (غير قابلة للعكس)</option>
-                <option value="b64_enc">📦 تشفير نص إلى Base64 (يدعم العربية)</option>
-                <option value="b64_dec">🔓 فك تشفير Base64 إلى نص عادي</option>
-                <option value="url_enc">🔗 تشفير رابط URL Encode</option>
-                <option value="url_dec">🌐 فك تشفير رابط URL Decode</option>
-            </select>
-        </div>
-        <div class="field-group">
-            <label>النص أو الرابط المدخل:</label>
-            <textarea id="hash-input" rows="3" placeholder="اكتب النص أو الرابط هنا..."></textarea>
-        </div>
-        <button class="btn-action cyan-btn" onclick="handleCryptoHashTool()">
-            ⚡ تنفيذ التحويل الآن (+2 نقطة)
-        </button>
-
-        <div class="terminal-output-wrap">
-            <div class="terminal-bar">
-                <span>الناتج النهائي</span>
-                <button class="btn-copy-term" onclick="copyTerminal('hash-output')">نسخ 📋</button>
-            </div>
-            <div id="hash-output" class="terminal-body code-font">// الناتج سيظهر هنا...</div>
-        </div>
+        <iframe id="portal-iframe" src="https://tools-gold-mu.vercel.app/" allow="clipboard-read; clipboard-write"></iframe>
     </div>
 
     <!-- شريط التنقل السفلي -->
@@ -664,22 +1013,44 @@
         const S_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdWtmcnduZ3V2bXh2Zndxd3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1MDg1NjgsImV4cCI6MjA4NTA4NDU2OH0.NUr7X5V7K-jarVLNm7Ft0dHo6QkIhhGYrkteRRb9wCM";
         const client = supabase.createClient(S_URL, S_KEY);
 
-        // استخراج ذكي لمعرف المستخدم من تليجرام أو الرابط أو الذاكرة المحلية
         const params = new URLSearchParams(window.location.search);
-        let tid = String(
-            tg?.initDataUnsafe?.user?.id ||
-            params.get('id') ||
-            localStorage.getItem('megatask_master_owner_id') ||
-            localStorage.getItem('telegram_id') ||
-            localStorage.getItem('megatask_uid') ||
-            ""
-        ).trim();
-
+        let tid = (typeof MegaSecurity !== 'undefined' && MegaSecurity.getVerifiedUserId)
+            ? MegaSecurity.getVerifiedUserId(params.get('id'))
+            : String(
+                tg?.initDataUnsafe?.user?.id ||
+                params.get('id') ||
+                localStorage.getItem('telegram_id') ||
+                localStorage.getItem('megatask_uid') ||
+                ""
+            ).trim();
         if (tid === "undefined" || tid === "null") tid = "";
 
         const MAX_DAILY_DEV_REWARDS = 10;
         let userData = null;
         let vipTimerInterval = null;
+        let isBusyDevAction = false;
+        let selectedCategory = 'all';
+        let activeToolId = 'webhook';
+
+        // مصفوفة جميع الأدوات الـ 16 المقسمة حسب الفئات
+        const ALL_DEV_TOOLS = [
+            { id: 'webhook', cat: 'telegram', catLabel: '🤖 تيليجرام', icon: '🤖', title: 'فاحص وربط البوتات', desc: 'فحص التوكن وحالة الـ Webhook' },
+            { id: 'tgbuilder', cat: 'telegram', catLabel: '🤖 تيليجرام', icon: '✍️', title: 'صانع بوست وأزرار', desc: 'تنسيق منشورات وكيبورد تليجرام' },
+            { id: 'deeplink', cat: 'telegram', catLabel: '🤖 تيليجرام', icon: '🔗', title: 'روابط تليجرام وواتساب', desc: 'إنشاء روابط مباشرة برسالة جاهزة' },
+            { id: 'obfuscator', cat: 'coding', catLabel: '💻 برمجة', icon: '🔐', title: 'تشفير وحماية الأكواد', desc: 'حماية HTML/JS وضغط الأكواد' },
+            { id: 'jsonjwt', cat: 'coding', catLabel: '💻 برمجة', icon: '📋', title: 'منسق JSON وفاحص JWT', desc: 'فحص وتنسيق JSON وفك التوكن' },
+            { id: 'regexhtml', cat: 'coding', catLabel: '💻 برمجة', icon: '🧩', title: 'مستخرج إيميلات وروابط', desc: 'سحب الإيميلات والروابط واليوزرات' },
+            { id: 'crypthash', cat: 'security', catLabel: '🔐 تشفير', icon: '#️⃣', title: 'هاش SHA256 و Base64', desc: 'تشفير وفك نصوص و Hex و Binary' },
+            { id: 'passgen', cat: 'security', catLabel: '🔐 تشفير', icon: '🔑', title: 'مولد باسوردات خارقة', desc: 'كلمات مرور مشفرة وأكواد PIN' },
+            { id: 'ipradar', cat: 'network', catLabel: '🌐 شبكات', icon: '🌐', title: 'رادار الـ IP والدومين', desc: 'كشف موقع السيرفر والـ ISP' },
+            { id: 'dnslookup', cat: 'network', catLabel: '🌐 شبكات', icon: '🛰️', title: 'فاحص سجلات DNS', desc: 'استخراج سجلات A, MX, NS, TXT' },
+            { id: 'qrmaker', cat: 'generators', catLabel: '🎲 مولدات', icon: '📱', title: 'صانع أكواد QR الاحترافي', desc: 'توليد باركود للروابط والمحافظ' },
+            { id: 'datagen', cat: 'generators', catLabel: '🎲 مولدات', icon: '🪪', title: 'مولد هويات و User-Agent', desc: 'بيانات اختبارية و UUID v4' },
+            { id: 'luhngen', cat: 'generators', catLabel: '🎲 مولدات', icon: '💳', title: 'مولد بطاقات اختبار Luhn', desc: 'أرقام اختبار بوابات الدفع للمبرمجين' },
+            { id: 'base64img', cat: 'text_media', catLabel: '📝 نصوص وصور', icon: '🖼️', title: 'ضغط صورة إلى Base64', desc: 'تحويل الصور لكود مباشر خفيف' },
+            { id: 'textpro', cat: 'text_media', catLabel: '📝 نصوص وصور', icon: '📝', title: 'منظف القوائم والزخرفة', desc: 'حذف المكرر، عداد كلمات، وزخرفة' },
+            { id: 'colortime', cat: 'text_media', catLabel: '📝 نصوص وصور', icon: '🎨', title: 'أكواد الألوان والتوقيت', desc: 'محول HEX/RGB و Unix Timestamp' }
+        ];
 
         function showMsg(txt) {
             if (tg && tg.showAlert) tg.showAlert(txt);
@@ -706,36 +1077,25 @@
             return until > Date.now();
         }
 
-        // ⭐ 1. جلب بيانات ونقاط المستخدم فوراً بدون انتظار أي فحص خارجي
         async function init() {
+            renderToolsGrid();
             checkVipTimerUI();
             updateTopUI();
 
-            try {
-                let u = null;
-                if (tid) {
-                    const { data: u1 } = await client.from('users').select('*').eq('telegram_id', String(tid)).maybeSingle();
-                    if (u1) u = u1;
-                    else if (!isNaN(Number(tid))) {
-                        const { data: u2 } = await client.from('users').select('*').eq('telegram_id', Number(tid)).maybeSingle();
-                        if (u2) u = u2;
+            if (tid) {
+                if (typeof MegaSecurity !== 'undefined') {
+                    const sec = await MegaSecurity.verifyDeviceAndAccount(client, tid);
+                    if (!sec.allowed) return;
+                }
+                try {
+                    const { data: u } = await client.from('users').select('*').eq('telegram_id', String(tid)).maybeSingle();
+                    if (u) {
+                        userData = u;
+                        updateTopUI();
                     }
+                } catch (e) {
+                    console.error("Init error:", e);
                 }
-
-                if (u) {
-                    userData = u;
-                    tid = String(u.telegram_id);
-                    localStorage.setItem('telegram_id', tid);
-                    localStorage.setItem('megatask_uid', tid);
-                    updateTopUI();
-                }
-
-                // تشغيل فحص درع الحماية في الخلفية بدون تعطيل تحميل النقاط أو الصفحة
-                if (tid && typeof MegaSecurity !== 'undefined') {
-                    MegaSecurity.verifyDeviceAndAccount(client, tid).catch(err => console.warn(err));
-                }
-            } catch (e) {
-                console.error("Init error:", e);
             }
         }
 
@@ -745,6 +1105,85 @@
             }
             const used = Math.min(MAX_DAILY_DEV_REWARDS, getDailyRewardCount());
             document.getElementById('daily-dev-rewards').innerText = `🎁 ربح اليوم: ${used}/${MAX_DAILY_DEV_REWARDS}`;
+        }
+
+        // التبديل بين وضع الشبكة المدمجة وبوابة Tools Gold الكاملة
+        function switchViewMode(mode) {
+            const nativeSec = document.getElementById('native-tools-section');
+            const portalSec = document.getElementById('portal-view-container');
+            const btnNative = document.getElementById('mode-native-btn');
+            const btnPortal = document.getElementById('mode-portal-btn');
+
+            if (mode === 'portal') {
+                nativeSec.style.display = 'none';
+                portalSec.style.display = 'block';
+                btnNative.classList.remove('active');
+                btnPortal.classList.add('active');
+                triggerAdAndRewardAfterTool();
+            } else {
+                portalSec.style.display = 'none';
+                nativeSec.style.display = 'block';
+                btnPortal.classList.remove('active');
+                btnNative.classList.add('active');
+            }
+        }
+
+        function reloadPortalWithReward() {
+            const frame = document.getElementById('portal-iframe');
+            frame.src = "https://tools-gold-mu.vercel.app/?t=" + Date.now();
+            triggerAdAndRewardAfterTool();
+        }
+
+        // رسم وفلترة شبكة كروت الأدوات حسب القسم والبحث
+        function selectToolCategory(cat, chipEl) {
+            selectedCategory = cat;
+            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+            if (chipEl) chipEl.classList.add('active');
+            renderToolsGrid();
+        }
+
+        function filterToolsGrid() {
+            renderToolsGrid();
+        }
+
+        function renderToolsGrid() {
+            const container = document.getElementById('tools-cards-container');
+            const q = (document.getElementById('tool-search-inp')?.value || "").trim().toLowerCase();
+
+            const filtered = ALL_DEV_TOOLS.filter(t => {
+                const matchCat = (selectedCategory === 'all' || t.cat === selectedCategory);
+                const matchSearch = !q || t.title.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q) || t.catLabel.toLowerCase().includes(q);
+                return matchCat && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div style="grid-column: span 2; text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">لا توجد أداة مطابقة للبحث.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => `
+                <div class="tool-card-item ${activeToolId === t.id ? 'active' : ''}" onclick="openToolWorkspace('${t.id}')">
+                    <div>
+                        <div class="tc-top">
+                            <div class="tc-icon">${t.icon}</div>
+                            <div class="tc-title">${t.title}</div>
+                        </div>
+                        <div class="tc-desc">${t.desc}</div>
+                    </div>
+                    <div class="tc-cat-tag">${t.catLabel}</div>
+                </div>
+            `).join("");
+        }
+
+        function openToolWorkspace(toolId) {
+            activeToolId = toolId;
+            renderToolsGrid();
+            document.querySelectorAll('.tool-workspace').forEach(w => w.classList.remove('active'));
+            const target = document.getElementById(`tool-${toolId}`);
+            if (target) {
+                target.classList.add('active');
+                target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
 
         // ==========================================
@@ -776,82 +1215,95 @@
         }
 
         async function activateVipPass() {
+            if (isBusyDevAction) return;
             if (isVipActive()) return showMsg("🟢 وضع VIP مفعل لديك بالفعل!");
-            if (!userData || Number(userData.points || 0) < 5) {
-                return showMsg("❌ رصيد نقاطك غير كافٍ (مطلوب 5 نقاط)!\n\n💡 استخدم الأدوات مجاناً الآن لتكسب +2 نقطة مع كل استخدام!");
-            }
+            if (!tid) return showMsg("❌ يرجى فتح الصفحة من داخل البوت.");
 
             if (!confirm("⚡ هل تريد خصم 5 نقاط وتفعيل وضع المطور VIP (جميع الأدوات بدون إعلانات لمدة 30 دقيقة)؟")) return;
 
-            const newPts = Number(userData.points) - 5;
-            const { data, error } = await client.from('users').update({ points: newPts }).eq('telegram_id', tid).select().single();
-            if (!error && data) {
-                userData = data;
-                localStorage.setItem(`devtools_vip_until_${tid}`, String(Date.now() + 30 * 60 * 1000));
-                updateTopUI();
-                checkVipTimerUI();
+            isBusyDevAction = true;
+            try {
+                const { data: freshU, error: fErr } = await client
+                    .from('users')
+                    .select('points, is_banned')
+                    .eq('telegram_id', tid)
+                    .single();
 
-                await client.from('transactions').insert([{
-                    telegram_id: String(tid),
-                    type: 'points',
-                    title: 'تفعيل باقة المطور VIP (30 دقيقة بدون إعلانات)',
-                    amount: '-5 نقاط',
-                    status: 'مكتمل'
-                }]);
+                if (fErr || !freshU || freshU.is_banned) throw new Error("تعذر التحقق من الرصيد");
 
-                showMsg("🎉 تم تفعيل وضع VIP لمدة 30 دقيقة!");
+                const realPts = Number(freshU.points || 0);
+                if (realPts < 5) {
+                    if (userData) userData.points = realPts;
+                    updateTopUI();
+                    return showMsg("❌ رصيد نقاطك غير كافٍ (مطلوب 5 نقاط)!\n\n💡 استخدم الأدوات مجاناً الآن لتكسب +2 نقطة مع كل استخدام!");
+                }
+
+                const newPts = realPts - 5;
+                const { data, error } = await client.from('users').update({ points: newPts }).eq('telegram_id', tid).select().single();
+                if (!error && data) {
+                    userData = data;
+                    localStorage.setItem(`devtools_vip_until_${tid}`, String(Date.now() + 30 * 60 * 1000));
+                    updateTopUI();
+                    checkVipTimerUI();
+
+                    await client.from('transactions').insert([{
+                        telegram_id: String(tid),
+                        type: 'points',
+                        title: 'تفعيل باقة المطور VIP (30 دقيقة بدون إعلانات)',
+                        amount: '-5 نقاط',
+                        status: 'مكتمل'
+                    }]);
+
+                    showMsg("🎉 تم تفعيل وضع VIP لمدة 30 دقيقة!");
+                }
+            } catch (e) {
+                showMsg("❌ تعذر تفعيل VIP حالياً.");
+            } finally {
+                isBusyDevAction = false;
             }
         }
 
-        // ==========================================
-        // 🎁 عرض الإعلان ومكافأة النقاط بشكل غير معطل للأدوات
-        // ==========================================
         async function triggerAdAndRewardAfterTool() {
-            if (isVipActive()) return;
+            if (isVipActive() || isBusyDevAction) return;
+            isBusyDevAction = true;
 
             try {
                 if (typeof show_10959333 === 'function') {
-                    // مهلة أمان 4 ثوانٍ حتى لا تتجمد الصفحة إذا تأخر السيرفر الإعلاني
                     await Promise.race([
                         show_10959333(),
                         new Promise((_, rej) => setTimeout(() => rej(new Error("Ad timeout")), 4500))
                     ]);
                 }
 
-                if (userData && getDailyRewardCount() < MAX_DAILY_DEV_REWARDS) {
-                    const reward = 2;
-                    const newPts = Number(userData.points || 0) + reward;
-                    const newTotal = Number(userData.total_earned || 0) + reward;
+                if (tid && getDailyRewardCount() < MAX_DAILY_DEV_REWARDS) {
+                    const { data: freshU } = await client.from('users').select('points, total_earned').eq('telegram_id', tid).single();
+                    if (freshU) {
+                        const reward = 2;
+                        const newPts = Number(freshU.points || 0) + reward;
+                        const newTotal = Number(freshU.total_earned || 0) + reward;
 
-                    const { data: updated } = await client.from('users').update({
-                        points: newPts,
-                        total_earned: newTotal
-                    }).eq('telegram_id', tid).select().single();
+                        const { data: updated } = await client.from('users').update({
+                            points: newPts,
+                            total_earned: newTotal
+                        }).eq('telegram_id', tid).select().single();
 
-                    if (updated) userData = updated;
-                    else userData.points = newPts;
+                        if (updated) userData = updated;
+                        incrementDailyRewardCount();
 
-                    incrementDailyRewardCount();
-
-                    await client.from('transactions').insert([{
-                        telegram_id: String(tid),
-                        type: 'points',
-                        title: 'مكافأة استخدام استوديو أدوات المطورين',
-                        amount: '+2 نقطة',
-                        status: 'مكتمل'
-                    }]);
+                        await client.from('transactions').insert([{
+                            telegram_id: String(tid),
+                            type: 'points',
+                            title: 'مكافأة استخدام استوديو أدوات المطورين',
+                            amount: '+2 نقطة',
+                            status: 'مكتمل'
+                        }]);
+                    }
                 }
             } catch (e) {
                 console.warn("Ad skipped or timed out:", e);
+            } finally {
+                isBusyDevAction = false;
             }
-        }
-
-        function switchTool(toolId, tabEl) {
-            document.querySelectorAll('.tool-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tool-workspace').forEach(w => w.classList.remove('active'));
-            tabEl.classList.add('active');
-            const target = document.getElementById(`tool-${toolId}`);
-            if (target) target.classList.add('active');
         }
 
         function copyTerminal(elemId) {
@@ -863,17 +1315,16 @@
         }
 
         // ==========================================
-        // 1️⃣ تنفيذ أداة فحص وربط بوتات تليجرام
+        // دوال تشغيل الأدوات الـ 16
         // ==========================================
+
+        // 1. فحص وربط البوتات
         async function handleWebhookTool(action) {
             const token = document.getElementById('wh-token').value.trim();
             const whUrl = document.getElementById('wh-url').value.trim();
             const out = document.getElementById('wh-output');
 
-            if (!token || !token.includes(':')) {
-                return showMsg("❌ يرجى إدخال Bot Token صحيح أولاً!");
-            }
-
+            if (!token || !token.includes(':')) return showMsg("❌ يرجى إدخال Bot Token صحيح أولاً!");
             out.innerText = "⏳ جاري الاتصال بسيرفرات Telegram API...";
 
             try {
@@ -887,7 +1338,6 @@
                         out.innerText = `❌ التوكن غير صالح:\n${JSON.stringify(meRes, null, 2)}`;
                         return;
                     }
-
                     const b = meRes.result;
                     const w = whRes.result || {};
                     out.innerText =
@@ -907,209 +1357,18 @@
                         return;
                     }
                     const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(whUrl)}`).then(r => r.json());
-                    out.innerText = res.ok
-                        ? `✅ تم ربط الـ Webhook بنجاح!\nURL: ${whUrl}\nResponse: ${res.description}`
-                        : `❌ فشل ربط الـ Webhook:\n${JSON.stringify(res, null, 2)}`;
+                    out.innerText = res.ok ? `✅ تم ربط الـ Webhook بنجاح!\nURL: ${whUrl}` : `❌ فشل الربط:\n${JSON.stringify(res, null, 2)}`;
                 } else if (action === 'delete') {
                     const res = await fetch(`https://api.telegram.org/bot${token}/deleteWebhook?drop_pending_updates=true`).then(r => r.json());
-                    out.innerText = res.ok
-                        ? `✅ تم حذف الـ Webhook وتصفير الرسائل المعلقة بنجاح!\nيمكنك الآن تشغيل البوت بنظام Polling.`
-                        : `❌ خطأ:\n${JSON.stringify(res, null, 2)}`;
+                    out.innerText = res.ok ? `✅ تم حذف الـ Webhook وتصفير الرسائل المعلقة بنجاح!` : `❌ خطأ:\n${JSON.stringify(res, null, 2)}`;
                 }
-
                 triggerAdAndRewardAfterTool();
             } catch (err) {
                 out.innerText = `❌ تعذر الاتصال بـ Telegram API: ${err.message}`;
             }
         }
 
-        // ==========================================
-        // 2️⃣ تنفيذ أداة تشفير وحماية الأكواد JS / HTML
-        // ==========================================
-        function toUtf8Base64(str) {
-            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(_, p1) {
-                return String.fromCharCode('0x' + p1);
-            }));
-        }
-
-        function handleObfuscatorTool() {
-            const mode = document.getElementById('obf-mode').value;
-            const raw = document.getElementById('obf-input').value.trim();
-            const out = document.getElementById('obf-output');
-
-            if (!raw) return showMsg("❌ الصق الكود المراد تشفيره أولاً!");
-
-            const sOpen = '<scr' + 'ipt>';
-            const sClose = '</scr' + 'ipt>';
-
-            if (mode === 'minify') {
-                const minified = raw
-                    .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1')
-                    .replace(/\s+/g, ' ')
-                    .replace(/\s*([{};:,=()<>+\-*/])\s*/g, '$1')
-                    .trim();
-                out.innerText = minified;
-            } else if (mode === 'js_hex') {
-                const b64 = toUtf8Base64(raw);
-                out.innerText =
-                    `/* Protected by MegaTask DevTools */\n` +
-                    `(function(){const _0xmt='${b64}';eval(decodeURIComponent(atob(_0xmt).split('').map(function(c){return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)}).join('')));})();`;
-            } else if (mode === 'html_lock') {
-                const guardCode = sOpen + `document.addEventListener('contextmenu',function(e){e.preventDefault()});document.addEventListener('keydown',function(e){if(e.key==='F12'||(e.ctrlKey&&['u','s','c','i'].includes(e.key.toLowerCase())))e.preventDefault()});` + sClose;
-                const fullPayload = toUtf8Base64(guardCode + raw);
-                out.innerText =
-                    `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Protected Page</title></head><body oncontextmenu="return false">\n` +
-                    sOpen + `/* MegaTask HTML Shield */\n` +
-                    `document.write(decodeURIComponent(atob('${fullPayload}').split('').map(function(c){return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)}).join('')));` + sClose + `\n` +
-                    `</body></html>`;
-            }
-
-            triggerAdAndRewardAfterTool();
-        }
-
-        // ==========================================
-        // 3️⃣ تنفيذ رادار الـ IP والدومينات
-        // ==========================================
-        async function handleIpRadarTool(scanSelf) {
-            let target = scanSelf ? "" : document.getElementById('ip-target').value.trim();
-            const out = document.getElementById('ip-output');
-            out.innerText = "⏳ جاري الفحص وجمع معلومات السيرفر...";
-
-            try {
-                if (target) {
-                    target = target.replace(/^https?:\/\//i, '').split('/')[0].split(':')[0].trim();
-                    const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(target);
-                    if (!isIp) {
-                        const dnsRes = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(target)}&type=A`, {
-                            headers: { 'Accept': 'application/dns-json' }
-                        }).then(r => r.json());
-
-                        if (dnsRes.Answer && dnsRes.Answer.length > 0) {
-                            const ipRecord = dnsRes.Answer.find(a => a.type === 1);
-                            if (ipRecord) target = ipRecord.data;
-                        }
-                    }
-                }
-
-                const res = await fetch(`https://ipwho.is/${encodeURIComponent(target)}`).then(r => r.json());
-                if (!res.success) {
-                    out.innerText = `❌ تعذر العثور على بيانات للهدف: ${res.message || target}`;
-                    return;
-                }
-
-                out.innerText =
-                    `📡 [RADAR SCAN COMPLETE]\n` +
-                    `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                    `🌐 IP Address : ${res.ip}\n` +
-                    `🏳️ Country    : ${res.country} (${res.country_code}) ${res.flag?.emoji || ''}\n` +
-                    `🏙️ City/Region: ${res.city} - ${res.region}\n` +
-                    `🏢 ISP        : ${res.connection?.isp || 'N/A'}\n` +
-                    `🛰️ Org / ASN  : ${res.connection?.org || 'N/A'} (AS${res.connection?.asn || ''})\n` +
-                    `🕒 Timezone   : ${res.timezone?.id || 'N/A'} (${res.timezone?.utc || ''})\n` +
-                    `📍 Coords     : ${res.latitude}, ${res.longitude}`;
-
-                triggerAdAndRewardAfterTool();
-            } catch (e) {
-                out.innerText = `❌ حدث خطأ أثناء الاتصال بالرادار: ${e.message}`;
-            }
-        }
-
-        // ==========================================
-        // 4️⃣ تنفيذ أداة ضغط وتحويل الصور إلى Base64
-        // ==========================================
-        function handleBase64ImageTool() {
-            const fileInput = document.getElementById('b64-file');
-            const maxDim = parseInt(document.getElementById('b64-size').value) || 500;
-            const out = document.getElementById('b64-output');
-            const lbl = document.getElementById('b64-stats-lbl');
-
-            if (!fileInput.files || !fileInput.files[0]) {
-                return showMsg("❌ يرجى اختيار صورة من هاتفك أولاً!");
-            }
-
-            const file = fileInput.files[0];
-            const origSizeKB = (file.size / 1024).toFixed(1);
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = function() {
-                    const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height;
-                    if (w > maxDim) {
-                        h = Math.round((h * maxDim) / w);
-                        w = maxDim;
-                    }
-                    canvas.width = w;
-                    canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-
-                    const base64Str = canvas.toDataURL('image/jpeg', 0.72);
-                    const newSizeKB = ((base64Str.length * 0.75) / 1024).toFixed(1);
-
-                    lbl.innerText = `الحجم: ${origSizeKB}KB ⬅ ${newSizeKB}KB (${w}x${h})`;
-                    out.innerText = base64Str;
-                    triggerAdAndRewardAfterTool();
-                };
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // ==========================================
-        // 5️⃣ تنفيذ منسق JSON وفاحص JWT
-        // ==========================================
-        function handleJsonJwtTool(mode) {
-            const raw = document.getElementById('json-input').value.trim();
-            const out = document.getElementById('json-output');
-
-            if (!raw) return showMsg("❌ الصق كود JSON أو مفتاح JWT أولاً!");
-
-            if (mode === 'format') {
-                try {
-                    const parsed = JSON.parse(raw);
-                    out.innerText = JSON.stringify(parsed, null, 2);
-                    triggerAdAndRewardAfterTool();
-                } catch (err) {
-                    out.innerText = `❌ خطأ في صياغة كود JSON:\n${err.message}`;
-                }
-            } else if (mode === 'jwt') {
-                try {
-                    const parts = raw.split('.');
-                    if (parts.length < 2) throw new Error("هذا النص ليس مفتاح JWT صالحاً (يجب أن يتكون من 3 أجزاء مفصولة بنقطة).");
-
-                    const decodePart = function(str) {
-                        const base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-                        return JSON.parse(decodeURIComponent(atob(base64).split('').map(function(c) {
-                            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                        }).join('')));
-                    };
-
-                    const header = decodePart(parts[0]);
-                    const payload = decodePart(parts[1]);
-
-                    let expInfo = "غير محدد";
-                    if (payload.exp) {
-                        const expDate = new Date(payload.exp * 1000);
-                        const isExpired = expDate < new Date();
-                        expInfo = `${expDate.toLocaleString('ar-EG')} (${isExpired ? '❌ منتهي الصلاحية' : '✅ ساري الصلاحية'})`;
-                    }
-
-                    out.innerText =
-                        `🔓 [JWT DECODED SUCCESSFULLY]\n` +
-                        `⏳ الصلاحية: ${expInfo}\n\n` +
-                        `📌 HEADER:\n${JSON.stringify(header, null, 2)}\n\n` +
-                        `📦 PAYLOAD:\n${JSON.stringify(payload, null, 2)}`;
-                    triggerAdAndRewardAfterTool();
-                } catch (err) {
-                    out.innerText = `❌ تعذر فك مفتاح JWT:\n${err.message}`;
-                }
-            }
-        }
-
-        // ==========================================
-        // 6️⃣ تنفيذ صانع منشورات وأزرار تليجرام
-        // ==========================================
+        // 2. صانع منشورات تليجرام
         function insertTgTag(type) {
             const area = document.getElementById('tg-post-input');
             const start = area.selectionStart || 0;
@@ -1126,7 +1385,6 @@
                 if (!url) return;
                 replacement = `[${selected}](${url})`;
             }
-
             area.value = area.value.substring(0, start) + replacement + area.value.substring(end);
             area.focus();
         }
@@ -1148,42 +1406,255 @@
 
             let replyMarkupJson = "";
             if (btnText && btnUrl) {
-                const markup = {
-                    inline_keyboard: [[{ text: btnText, url: btnUrl }]]
-                };
-                replyMarkupJson = `\n\n🎛️ [Inline Keyboard JSON للبوتات]:\n${JSON.stringify(markup, null, 2)}`;
+                const markup = { inline_keyboard: [[{ text: btnText, url: btnUrl }]] };
+                replyMarkupJson = `\n\n🎛️ [Inline Keyboard JSON]:\n${JSON.stringify(markup, null, 2)}`;
             }
-
-            out.innerText =
-                `📝 [صيغة Markdown]:\n${text}\n\n` +
-                `🌐 [صيغة HTML]:\n${htmlVersion}${replyMarkupJson}`;
-
+            out.innerText = `📝 [Markdown]:\n${text}\n\n🌐 [HTML]:\n${htmlVersion}${replyMarkupJson}`;
             triggerAdAndRewardAfterTool();
         }
 
-        // ==========================================
-        // 7️⃣ تنفيذ مولد الهويات التجريبية والباسوردات
-        // ==========================================
+        // 3. صانع روابط تليجرام وواتساب المباشرة
+        function handleDeepLinkTool() {
+            const plt = document.getElementById('dl-platform').value;
+            let target = document.getElementById('dl-target').value.trim().replace(/^@/, '');
+            const payload = document.getElementById('dl-payload').value.trim();
+            const out = document.getElementById('dl-output');
+
+            if (!target) return showMsg("⚠️ أدخل يوزر البوت أو رقم الهاتف أولاً!");
+
+            let finalLink = "";
+            if (plt === 'tg_bot') {
+                finalLink = `https://t.me/${target}?start=${encodeURIComponent(payload || 'start')}`;
+            } else if (plt === 'tg_share') {
+                finalLink = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/' + target)}&text=${encodeURIComponent(payload)}`;
+            } else if (plt === 'wa_msg') {
+                const cleanPhone = target.replace(/[^\d]/g, '');
+                finalLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(payload)}`;
+            }
+            out.innerText = finalLink;
+            triggerAdAndRewardAfterTool();
+        }
+
+        // 4. تشفير وحماية الأكواد
+        function toUtf8Base64(str) {
+            return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode('0x' + p1)));
+        }
+
+        function handleObfuscatorTool() {
+            const mode = document.getElementById('obf-mode').value;
+            const raw = document.getElementById('obf-input').value.trim();
+            const out = document.getElementById('obf-output');
+
+            if (!raw) return showMsg("❌ الصق الكود المراد تشفيره أولاً!");
+            const sOpen = '<scr' + 'ipt>';
+            const sClose = '</scr' + 'ipt>';
+
+            if (mode === 'minify') {
+                out.innerText = raw
+                    .replace(/\/\*[\s\S]*?\*\/|([^\\:]|^)\/\/.*$/gm, '$1')
+                    .replace(/\s+/g, ' ')
+                    .replace(/\s*([{};:,=()<>+\-*/])\s*/g, '$1')
+                    .trim();
+            } else if (mode === 'js_hex') {
+                const b64 = toUtf8Base64(raw);
+                out.innerText = `/* Protected by MegaTask DevTools */\n(function(){const _0xmt='${b64}';eval(decodeURIComponent(atob(_0xmt).split('').map(function(c){return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)}).join('')));})();`;
+            } else if (mode === 'html_lock') {
+                const guardCode = sOpen + `document.addEventListener('contextmenu',function(e){e.preventDefault()});document.addEventListener('keydown',function(e){if(e.key==='F12'||(e.ctrlKey&&['u','s','c','i'].includes(e.key.toLowerCase())))e.preventDefault()});` + sClose;
+                const fullPayload = toUtf8Base64(guardCode + raw);
+                out.innerText = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Protected Page</title></head><body oncontextmenu="return false">\n${sOpen}document.write(decodeURIComponent(atob('${fullPayload}').split('').map(function(c){return '%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)}).join('')));${sClose}\n</body></html>`;
+            }
+            triggerAdAndRewardAfterTool();
+        }
+
+        // 5. منسق JSON وفاحص JWT
+        function handleJsonJwtTool(mode) {
+            const raw = document.getElementById('json-input').value.trim();
+            const out = document.getElementById('json-output');
+            if (!raw) return showMsg("❌ الصق كود JSON أو مفتاح JWT أولاً!");
+
+            if (mode === 'format') {
+                try {
+                    out.innerText = JSON.stringify(JSON.parse(raw), null, 2);
+                    triggerAdAndRewardAfterTool();
+                } catch (err) {
+                    out.innerText = `❌ خطأ في صياغة كود JSON:\n${err.message}`;
+                }
+            } else {
+                try {
+                    const parts = raw.split('.');
+                    if (parts.length < 2) throw new Error("هذا النص ليس مفتاح JWT صالحاً.");
+                    const decodePart = (str) => JSON.parse(decodeURIComponent(atob(str.replace(/-/g, '+').replace(/_/g, '/')).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')));
+                    const header = decodePart(parts[0]);
+                    const payload = decodePart(parts[1]);
+                    out.innerText = `🔓 [JWT HEADER]:\n${JSON.stringify(header, null, 2)}\n\n📦 [JWT PAYLOAD]:\n${JSON.stringify(payload, null, 2)}`;
+                    triggerAdAndRewardAfterTool();
+                } catch (err) {
+                    out.innerText = `❌ تعذر فك مفتاح JWT:\n${err.message}`;
+                }
+            }
+        }
+
+        // 6. مستخرج البيانات الذكي (Regex Extractor)
+        function handleExtractorTool() {
+            const mode = document.getElementById('ext-mode').value;
+            const raw = document.getElementById('ext-input').value;
+            const out = document.getElementById('ext-output');
+            if (!raw.trim()) return showMsg("⚠️ الصق النص المراد استخراج البيانات منه أولاً!");
+
+            let regex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+            if (mode === 'urls') regex = /https?:\/\/[^\s"'<>]+/gi;
+            else if (mode === 'phones') regex = /\+?\d[\d\s-]{7,15}\d/g;
+            else if (mode === 'tg_users') regex = /@[a-zA-Z0-9_]{4,32}/g;
+
+            const matches = [...new Set(raw.match(regex) || [])];
+            out.innerText = matches.length > 0
+                ? `✅ تم استخراج (${matches.length}) عنصر فريد:\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n` + matches.join("\n")
+                : "❌ لم يتم العثور على عناصر مطابقة في النص.";
+            triggerAdAndRewardAfterTool();
+        }
+
+        // 7. محول التشفير السريع (SHA-256 / SHA-512 / Base64 / Hex / Binary)
+        async function handleCryptoHashTool() {
+            const mode = document.getElementById('hash-mode').value;
+            const raw = document.getElementById('hash-input').value;
+            const out = document.getElementById('hash-output');
+            if (!raw) return showMsg("❌ اكتب النص أو الرابط أولاً!");
+
+            try {
+                if (mode === 'sha256' || mode === 'sha512') {
+                    const algo = mode === 'sha256' ? 'SHA-256' : 'SHA-512';
+                    const buf = await crypto.subtle.digest(algo, new TextEncoder().encode(raw));
+                    out.innerText = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+                } else if (mode === 'b64_enc') {
+                    out.innerText = toUtf8Base64(raw);
+                } else if (mode === 'b64_dec') {
+                    out.innerText = decodeURIComponent(atob(raw.trim()).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+                } else if (mode === 'hex_enc') {
+                    out.innerText = Array.from(new TextEncoder().encode(raw)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+                } else if (mode === 'bin_enc') {
+                    out.innerText = Array.from(new TextEncoder().encode(raw)).map(b => b.toString(2).padStart(8, '0')).join(' ');
+                } else if (mode === 'url_enc') {
+                    out.innerText = encodeURIComponent(raw);
+                } else if (mode === 'url_dec') {
+                    out.innerText = decodeURIComponent(raw);
+                }
+                triggerAdAndRewardAfterTool();
+            } catch (e) {
+                out.innerText = `❌ تعذر تنفيذ العملية: ${e.message}`;
+            }
+        }
+
+        // 8. مولد كلمات المرور الخارقة
+        function handlePasswordSuite(type) {
+            const len = Math.min(64, Math.max(8, parseInt(document.getElementById('pg-length').value) || 20));
+            const out = document.getElementById('pg-output');
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*()-_=+";
+            const list = [];
+
+            if (type === 'pin') {
+                for (let i = 0; i < 6; i++) {
+                    list.push(`PIN #${i + 1}: ${Math.floor(100000 + Math.random() * 900000)}  |  8-Digit: ${Math.floor(10000000 + Math.random() * 90000000)}`);
+                }
+            } else {
+                for (let j = 0; j < 5; j++) {
+                    let p = "";
+                    for (let i = 0; i < len; i++) p += chars[Math.floor(Math.random() * chars.length)];
+                    list.push(p);
+                }
+            }
+            out.innerText = list.join("\n\n");
+            triggerAdAndRewardAfterTool();
+        }
+
+        // 9. رادار الـ IP والدومينات
+        async function handleIpRadarTool(scanSelf) {
+            let target = scanSelf ? "" : document.getElementById('ip-target').value.trim();
+            const out = document.getElementById('ip-output');
+            out.innerText = "⏳ جاري الفحص وجمع معلومات السيرفر...";
+
+            try {
+                if (target) {
+                    target = target.replace(/^https?:\/\//i, '').split('/')[0].split(':')[0].trim();
+                    if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(target)) {
+                        const dnsRes = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(target)}&type=A`, {
+                            headers: { 'Accept': 'application/dns-json' }
+                        }).then(r => r.json());
+                        const ipRec = (dnsRes.Answer || []).find(a => a.type === 1);
+                        if (ipRec) target = ipRec.data;
+                    }
+                }
+                const res = await fetch(`https://ipwho.is/${encodeURIComponent(target)}`).then(r => r.json());
+                if (!res.success) {
+                    out.innerText = `❌ تعذر العثور على بيانات للهدف: ${res.message || target}`;
+                    return;
+                }
+                out.innerText =
+                    `📡 [RADAR SCAN COMPLETE]\n` +
+                    `━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                    `🌐 IP Address : ${res.ip}\n` +
+                    `🏳️ Country    : ${res.country} (${res.country_code}) ${res.flag?.emoji || ''}\n` +
+                    `🏙️ City/Region: ${res.city} - ${res.region}\n` +
+                    `🏢 ISP        : ${res.connection?.isp || 'N/A'}\n` +
+                    `🛰️ Org / ASN  : ${res.connection?.org || 'N/A'}\n` +
+                    `🕒 Timezone   : ${res.timezone?.id || 'N/A'}`;
+                triggerAdAndRewardAfterTool();
+            } catch (e) {
+                out.innerText = `❌ حدث خطأ أثناء الاتصال بالرادار: ${e.message}`;
+            }
+        }
+
+        // 10. فاحص سجلات الدومين (DNS Lookup)
+        async function handleDnsLookupTool() {
+            let dom = document.getElementById('dns-domain').value.trim().replace(/^https?:\/\//i, '').split('/')[0];
+            const type = document.getElementById('dns-type').value;
+            const out = document.getElementById('dns-output');
+            if (!dom) return showMsg("⚠️ أدخل اسم الدومين أولاً!");
+
+            out.innerText = `⏳ جاري فحص سجلات (${type}) للنطاق ${dom}...`;
+            try {
+                const res = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(dom)}&type=${type}`, {
+                    headers: { 'Accept': 'application/dns-json' }
+                }).then(r => r.json());
+
+                const answers = res.Answer || [];
+                if (answers.length === 0) {
+                    out.innerText = `ℹ️ لا توجد سجلات (${type}) مسجلة لهذا النطاق حالياً.`;
+                    return;
+                }
+                out.innerText = answers.map(a => `Host: ${a.name}\nTTL : ${a.TTL}s\nData: ${a.data}`).join("\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+                triggerAdAndRewardAfterTool();
+            } catch (e) {
+                out.innerText = `❌ تعذر جلب سجلات DNS: ${e.message}`;
+            }
+        }
+
+        // 11. صانع أكواد QR الاحترافي
+        function handleQrGeneratorTool() {
+            const txt = document.getElementById('qr-text-inp').value.trim();
+            if (!txt) return showMsg("⚠️ أدخل الرابط أو النص لتوليد رمز QR!");
+            const img = document.getElementById('qr-result-img');
+            img.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(txt)}`;
+            document.getElementById('qr-preview-box').style.display = 'block';
+            triggerAdAndRewardAfterTool();
+        }
+
+        // 12. مولد الهويات التجريبية والـ User-Agent
         function handleDataGenTool() {
             const uaType = document.getElementById('ua-type').value;
             const out = document.getElementById('datagen-output');
-
             const uas = {
                 android_tg: "Mozilla/5.0 (Linux; Android 14; SM-S928B Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0.6723.58 Mobile Safari/537.36 Telegram-Android/11.2.0",
                 ios_iphone: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
                 win_chrome: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
                 linux_bot: "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:131.0) Gecko/20100101 Firefox/131.0"
             };
-
-            const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
                 const r = Math.random() * 16 | 0;
                 return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
             });
-
             const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*";
             let strongPass = "";
             for (let i = 0; i < 18; i++) strongPass += chars[Math.floor(Math.random() * chars.length)];
-
             const names = ["Alex_Dev", "Mostafa_Tech", "Omar_Coder", "Kareem_Node", "Sami_Cyber", "Tariq_API"];
             const pickName = names[Math.floor(Math.random() * names.length)] + "_" + Math.floor(100 + Math.random() * 900);
 
@@ -1194,41 +1665,125 @@
                 `📧 Test Email   : ${pickName.toLowerCase()}@devmail.io\n` +
                 `🕒 Unix Time    : ${Math.floor(Date.now() / 1000)}\n\n` +
                 `🌐 User-Agent   :\n${uas[uaType]}`;
-
             triggerAdAndRewardAfterTool();
         }
 
-        // ==========================================
-        // 8️⃣ تنفيذ محول التشفير السريع SHA-256 / Base64
-        // ==========================================
-        async function handleCryptoHashTool() {
-            const mode = document.getElementById('hash-mode').value;
-            const raw = document.getElementById('hash-input').value;
-            const out = document.getElementById('hash-output');
-
-            if (!raw) return showMsg("❌ اكتب النص أو الرابط أولاً!");
-
-            try {
-                if (mode === 'sha256') {
-                    const msgBuffer = new TextEncoder().encode(raw);
-                    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-                    const hashArray = Array.from(new Uint8Array(hashBuffer));
-                    out.innerText = hashArray.map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
-                } else if (mode === 'b64_enc') {
-                    out.innerText = toUtf8Base64(raw);
-                } else if (mode === 'b64_dec') {
-                    out.innerText = decodeURIComponent(atob(raw.trim()).split('').map(function(c) {
-                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                    }).join(''));
-                } else if (mode === 'url_enc') {
-                    out.innerText = encodeURIComponent(raw);
-                } else if (mode === 'url_dec') {
-                    out.innerText = decodeURIComponent(raw);
-                }
-                triggerAdAndRewardAfterTool();
-            } catch (e) {
-                out.innerText = `❌ تعذر تنفيذ العملية (تأكد من صحة النص المدخل): ${e.message}`;
+        // 13. مولد بطاقات الاختبار البرمجية (Luhn Test Generator)
+        function generateLuhnNumber(prefix) {
+            let num = prefix.replace(/\D/g, '') || "453201";
+            while (num.length < 15) {
+                num += Math.floor(Math.random() * 10);
             }
+            num = num.slice(0, 15);
+            let sum = 0;
+            for (let i = 0; i < 15; i++) {
+                let d = parseInt(num.charAt(14 - i), 10);
+                if (i % 2 === 0) {
+                    d *= 2;
+                    if (d > 9) d -= 9;
+                }
+                sum += d;
+            }
+            const checkDigit = (10 - (sum % 10)) % 10;
+            return num + checkDigit;
+        }
+
+        function handleLuhnGeneratorTool() {
+            const pref = document.getElementById('bin-prefix-inp').value.trim();
+            const out = document.getElementById('luhn-output');
+            const rows = [];
+            for (let i = 0; i < 6; i++) {
+                const card = generateLuhnNumber(pref);
+                const mm = String(Math.floor(1 + Math.random() * 12)).padStart(2, '0');
+                const yy = 2027 + Math.floor(Math.random() * 4);
+                const cvv = Math.floor(100 + Math.random() * 899);
+                rows.push(`${card}|${mm}|${yy}|${cvv}`);
+            }
+            out.innerText = rows.join("\n");
+            triggerAdAndRewardAfterTool();
+        }
+
+        // 14. ضغط وتحويل الصور إلى Base64
+        function handleBase64ImageTool() {
+            const fileInput = document.getElementById('b64-file');
+            const maxDim = parseInt(document.getElementById('b64-size').value) || 500;
+            const out = document.getElementById('b64-output');
+            const lbl = document.getElementById('b64-stats-lbl');
+
+            if (!fileInput.files || !fileInput.files[0]) return showMsg("❌ يرجى اختيار صورة من هاتفك أولاً!");
+            const file = fileInput.files[0];
+            const origSizeKB = (file.size / 1024).toFixed(1);
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width, h = img.height;
+                    if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+                    const base64Str = canvas.toDataURL('image/jpeg', 0.72);
+                    const newSizeKB = ((base64Str.length * 0.75) / 1024).toFixed(1);
+                    lbl.innerText = `الحجم: ${origSizeKB}KB ⬅ ${newSizeKB}KB (${w}x${h})`;
+                    out.innerText = base64Str;
+                    triggerAdAndRewardAfterTool();
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 15. محلل ومنظف النصوص والزخرفة
+        function handleTextStudioTool(action) {
+            const raw = document.getElementById('txt-studio-inp').value;
+            const out = document.getElementById('txt-studio-output');
+            if (!raw.trim()) return showMsg("⚠️ اكتب النص أولاً!");
+
+            if (action === 'stats') {
+                const chars = raw.length;
+                const words = raw.trim().split(/\s+/).filter(Boolean).length;
+                const lines = raw.split(/\r?\n/).length;
+                out.innerText = `📊 إحصائيات النص:\n• عدد الكلمات : ${words}\n• عدد الحروف  : ${chars}\n• عدد الأسطر  : ${lines}`;
+            } else if (action === 'dedup') {
+                const lines = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+                const unique = [...new Set(lines)];
+                out.innerText = `✅ تم تصفية (${unique.length}) سطر فريد (تم حذف ${lines.length - unique.length} مكرر):\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n` + unique.join("\n");
+            } else if (action === 'fancy') {
+                const t = raw.trim();
+                out.innerText = [
+                    `👑 ꧁༺ ${t} ༻꧂`,
+                    `⚡ ▄︻デ${t}══━一`,
+                    `🔥 『 ${t} 』`,
+                    `💎 ✿ ${t} ✿`,
+                    `🌟 ★彡[ ${t} ]彡★`,
+                    `🛡️ ⫷ ${t} ⫸`
+                ].join("\n\n");
+            }
+            triggerAdAndRewardAfterTool();
+        }
+
+        // 16. محول الألوان والتوقيت
+        function handleColorAndTimeTool() {
+            const hex = document.getElementById('color-picker-inp').value;
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            const now = new Date();
+            const out = document.getElementById('colortime-output');
+
+            out.innerText =
+                `🎨 [COLOR CODES]\n` +
+                `HEX        : ${hex.toUpperCase()}\n` +
+                `RGB        : rgb(${r}, ${g}, ${b})\n` +
+                `RGBA Glow  : rgba(${r}, ${g}, ${b}, 0.25)\n` +
+                `CSS Shadow : box-shadow: 0 0 15px rgba(${r}, ${g}, ${b}, 0.4);\n\n` +
+                `🕒 [TIMESTAMP CONVERTER]\n` +
+                `Unix Seconds: ${Math.floor(now.getTime() / 1000)}\n` +
+                `ISO 8601    : ${now.toISOString()}\n` +
+                `Local Time  : ${now.toLocaleString('ar-EG')}`;
+            triggerAdAndRewardAfterTool();
         }
 
         function goHome() { window.location.href = `index.html?id=${tid}&t=${Date.now()}`; }
